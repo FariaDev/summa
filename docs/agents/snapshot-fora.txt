@@ -1,5 +1,4 @@
 docs/AVALIACAO-BEND-MESA.md
-docs/DECISIONS.md
 docs/PI-LEARNING-CONTEXT.md
 docs/PLANO-MULTI-HARNESS-2026-10-04.md
 docs/QUALIDADE-DE-VIDA-MESA-2026-10-07.md
@@ -48,7 +47,6 @@ docs/reviews/r2-config-guia/modelos-gratis-dQ5iL5/cartao-dark-1440x900.png
 docs/reviews/r2-config-guia/modelos-gratis-dQ5iL5/cartao-light-1440x900.png
 docs/reviews/r2-config-guia/modelos-gratis-dQ5iL5/pronto.png
 docs/reviews/r2-config-guia/modelos-gratis-dQ5iL5/usar-esta-chave.png
-docs/START-HERE.md
 docs/STATUS-MESA-CODEX-PLUGIN-2026-10-05.md
 docs/STATUS-MESA-CODEX-TEST-2026-10-06.md
 docs/STATUS-MESA-CODEX-UI-2026-10-06.md
