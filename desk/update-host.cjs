@@ -6,6 +6,7 @@ const {writeReadableLog}=require('./desk-log.cjs');
 const updater=require('./updater.cjs');
 const components=require('./components.cjs');
 const {readInstallSource,updateOrigin}=require('./update-origin.cjs');
+const {reopenInstalled}=require('./install-location.cjs');
 const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 
@@ -29,10 +30,11 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  }
  function updateContext(){
   const root=path.join(deskDir,'..');
-  const bundle=path.resolve(deskDir,'..','..','..');
   const source=readInstallSource(deskDir);
   const mode=source&&source.path?'bundle':fs.existsSync(path.join(root,'.git'))?'git':'zip';
-  const reopen=mode==='bundle'?{cmd:'open',args:[bundle]}:{cmd:'npm',args:['start'],cwd:deskDir,shell:process.platform==='win32'};
+  /* #181: a raiz do app instalado muda com a plataforma (.app vs pasta do
+     Windows); reabrir pelo caminho errado deixava a versão antiga na tela. */
+  const reopen=reopenInstalled({mode,deskDir});
   /* #80: a chave pública viaja por parâmetro (o worker é uma cópia no tmpdir);
      marcador/ausente faz o updater recusar antes de qualquer download. */
   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));

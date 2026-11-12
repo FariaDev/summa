@@ -145,6 +145,14 @@ o bundle no macOS e reabre. Comportamento real, por modo:
   desenvolvimento" com o caminho em `~`; pasta que sumiu ou não é clone é
   "Origem indisponível" e a faixa diz que não dá para verificar — nunca
   "Atualizada". Rodando do código (`npm start`), o Sobre fica como antes.
+- **Windows por usuário (#181)**: `npm run install-app` copia o Electron e o
+  mesmo payload do `.app` para `%LOCALAPPDATA%\Programs\Summa`
+  (`resources\app`). O `install-source.json` no payload deixa o updater em modo
+  bundle: ele atualiza o clone até a tag assinada e re-roda o `install-app`, que
+  repõe o payload e o Electron (#103); a Mesa reabre pelo `electron.exe` da
+  instalação. Atalho do menu Iniciar e chave de desinstalação são preservados;
+  o `uninstall.ps1` do payload apaga só a pasta, o atalho e a chave — dados do
+  aluno em `%APPDATA%\Mesa de Estudos` ficam (ADR 0005).
 
 Falhou = rollback automático: instantâneo dos arquivos gerenciados (nunca da
 raiz toda), `git reset --hard` para a cabeça anterior (só com o clone limpo)

@@ -49,7 +49,7 @@ npm start
 
 Na primeira abertura, a Mesa mostra um passo por vez: idioma e cor, como a Mesa funciona, nome da matéria, pasta de PDFs (subpastas contam), tutor e pronto. A matéria só é criada no último passo. O OpenCode permite entrar no provedor na primeira conexão; a conta fica nele, não na Mesa.
 
-`npm run doctor` confere o motor instalado, políticas, fontes, extensão visual (quando aplicável) e persistência sem abrir o app. No Mac, `npm run install-app` monta o **Summa.app**.
+`npm run doctor` confere o motor instalado, políticas, fontes, extensão visual (quando aplicável) e persistência sem abrir o app. No Mac, `npm run install-app` monta o **Summa.app**; no Windows, instala por usuário em `%LOCALAPPDATA%\Programs\Summa`, com atalho no menu Iniciar e desinstalação em "Aplicativos instalados".
 
 Para um agente configurar o computador: [`desk/SETUP.md`](desk/SETUP.md).
 

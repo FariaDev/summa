@@ -131,6 +131,24 @@ function copyBundleHelpers({desk,root,app}){
  if(fs.existsSync(icns))fs.copyFileSync(icns,path.join(app,'Contents','Resources','mesa.icns'));
 }
 /**
+ * Monta o payload da instalação por usuário do Windows em
+ * `<installDir>/resources/app`: a MESMA seleção de `stageBundlePayload` que o
+ * `.app` recebe em `Contents/Resources/app` (#181), mais procedência e
+ * manifesto. O Electron de `node_modules` e o atalho/registro ficam com o
+ * `windows-install.cjs`; aqui é só o payload que o updater troca.
+ * @param {{desk: string, root: string, installDir: string, version: string}} input
+ * @returns {{dest: string, managed: string[]}}
+ * @example installWindowsBundle({desk, root, installDir: 'C:\\Users\\ana\\AppData\\Local\\Programs\\Summa', version: '1.2.0'})
+ */
+function installWindowsBundle({desk,root,installDir,version}){
+ const dest=path.join(installDir,'resources','app');
+ const managed=stageBundlePayload(desk,dest);
+ recordInstallSource(root,dest);
+ writeManifest(dest,managed,version||'');
+ return {dest,managed};
+}
+
+/**
  * Monta o `Summa.app` a partir de `desk/`: versão no Info.plist,
  * payload em Contents/Resources/app, procedência, manifesto e auxiliares. É a
  * parte do `npm run install-app` que não toca no sistema (sem assinatura, sem
@@ -158,4 +176,4 @@ function installBundle({desk,root,app,version}){
  fs.utimesSync(app,new Date(),new Date());
  return {dest,managed};
 }
-module.exports={runtimePackages,stageBundlePayload,installBundle};
+module.exports={runtimePackages,stageBundlePayload,installBundle,installWindowsBundle};
