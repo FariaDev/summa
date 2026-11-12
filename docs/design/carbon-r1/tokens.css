@@ -1,0 +1,134 @@
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-Medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/IBMPlexMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/IBMPlexMono-Medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"STIX Two Text";src:url("fonts/STIXTwoText.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"STIX Two Text";src:url("fonts/STIXTwoText-Italic.woff2") format("woff2");font-weight:400;font-style:italic;font-display:swap}
+
+:root{
+  color-scheme:light;
+  --font-ui:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+  --font-serif:"STIX Two Text",Georgia,serif;
+
+  --text-12:12px;
+  --text-14:14px;
+  --text-16:16px;
+  --text-20:20px;
+  --text-28:28px;
+  --lh-12:16px;
+  --lh-14:20px;
+  --lh-16:24px;
+  --lh-20:28px;
+  --lh-28:36px;
+  --lh-serif:26px;
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+
+  --space-2:2px;
+  --space-4:4px;
+  --space-8:8px;
+  --space-12:12px;
+  --space-16:16px;
+  --space-24:24px;
+  --space-32:32px;
+  --space-48:48px;
+
+  --control-sm:32px;
+  --control-md:40px;
+  --icon-size:16px;
+  --icon-stroke:1.5;
+  --bar-height:48px;
+  --panel-head:48px;
+  --tutor-width:400px;
+  --settings-nav:288px;
+  --footer-height:64px;
+  --paper-max:560px;
+  --search-width:224px;
+  --menu-width:256px;
+  --toast-width:360px;
+  --component-cell-min:200px;
+  --settings-max:720px;
+  --field-w:280px;
+  --index-max:1120px;
+  --brand-16:16px;
+  --brand-32:32px;
+  --brand-128:128px;
+  --toggle-width:40px;
+  --toggle-height:20px;
+  --toggle-knob:14px;
+  --toggle-inset:2px;
+  --toggle-knob-on:22px;
+  --checkbox-size:16px;
+  --dot-size:8px;
+
+  --stroke:1px;
+  --stroke-strong:2px;
+  --focus-width:2px;
+  --radius:0;
+  --radius-dot:50%;
+  --measure:68ch;
+
+  --motion-fast:120ms;
+  --ease-standard:cubic-bezier(.2,0,.38,.9);
+
+  --bg:#ffffff;
+  --layer-1:#f4f4f4;
+  --layer-2:#ffffff;
+  --layer-hover:#e8e8e8;
+  --border-subtle:#e0e0e0;
+  --border-strong:#8d8d8d;
+  --text:#161616;
+  --text-2:#525252;
+  --text-3:#6f6f6f;
+  --success:#24a148;
+
+  --accent:#0f62fe;
+  --accent-hover:#0043ce;
+  --on-accent:#ffffff;
+  --acc-blue:#0f62fe;
+  --acc-violet:#8a3ffc;
+  --acc-green:#198038;
+  --acc-orange:#ba4e00;
+  --acc-pink:#d02670;
+  --acc-graphite:#393939;
+  --shadow-overlay:0 2px 6px rgba(0,0,0,.3);
+}
+
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#161616;
+  --layer-1:#262626;
+  --layer-2:#393939;
+  --layer-hover:#333333;
+  --border-subtle:#393939;
+  --border-strong:#6f6f6f;
+  --text:#f4f4f4;
+  --text-2:#c6c6c6;
+  --text-3:#a8a8a8;
+  --success:#42be65;
+  --accent:#4589ff;
+  --accent-hover:#78a9ff;
+  --on-accent:#161616;
+  --acc-blue:#4589ff;
+  --acc-violet:#be95ff;
+  --acc-green:#42be65;
+  --acc-orange:#ff832b;
+  --acc-pink:#ff7eb6;
+  --acc-graphite:#c6c6c6;
+  --shadow-overlay:0 2px 6px rgba(0,0,0,.6);
+}
+
+:root[data-accent="violet"]{--accent:#8a3ffc;--accent-hover:#6929c4;--on-accent:#ffffff}
+:root[data-accent="green"]{--accent:#198038;--accent-hover:#0e6027;--on-accent:#ffffff}
+:root[data-accent="orange"]{--accent:#ba4e00;--accent-hover:#8a3800;--on-accent:#ffffff}
+:root[data-accent="pink"]{--accent:#d02670;--accent-hover:#9f1853;--on-accent:#ffffff}
+:root[data-accent="graphite"]{--accent:#393939;--accent-hover:#161616;--on-accent:#ffffff}
+
+:root[data-theme="dark"][data-accent="violet"]{--accent:#be95ff;--accent-hover:#d4bbff;--on-accent:#161616}
+:root[data-theme="dark"][data-accent="green"]{--accent:#42be65;--accent-hover:#6fdc8c;--on-accent:#161616}
+:root[data-theme="dark"][data-accent="orange"]{--accent:#ff832b;--accent-hover:#ffb784;--on-accent:#161616}
+:root[data-theme="dark"][data-accent="pink"]{--accent:#ff7eb6;--accent-hover:#ffafd2;--on-accent:#161616}
+:root[data-theme="dark"][data-accent="graphite"]{--accent:#c6c6c6;--accent-hover:#e0e0e0;--on-accent:#161616}

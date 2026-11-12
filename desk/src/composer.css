@@ -1,0 +1,393 @@
+/* Composer (caixa, contexto de estudo, menções, anexos, Conferir) e fila de mensagens.
+   Saiu do style.css na #43 fase 2; o index.html liga os CSS na ordem original
+   (style.css primeiro, com os tokens), então a cascata não mudou. */
+/* ---------- Composer: uma caixa só (ticket #15) ----------
+   Dentro da caixa, uma pílula de contexto (o que segue com a mensagem) e o
+   botão de lápis que edita o contexto de estudo. A caixa guarda a fila, os
+   anexos (a captura do Conferir entra aqui), o campo e a fileira de ações; o
+   foco acende o fio do composer. A caixa é container: em coluna estreita a
+   fileira troca rótulos por ícones em vez de estourar. Enviar é a ação
+   principal (acento); Parar fica neutro. O menu Anexar (#90) fica em
+   `#attach-pop`, fora da fileira. */
+
+/* O composer encosta na coluna, de ponta a ponta: fundo da coluna e um único
+   fio de --border no topo separam a conversa da escrita. O recuo de --pad fica
+   por dentro (o texto não encosta na lateral) e o foco acende o fio, sem
+   mudar a largura da borda — o layout não pula. */
+#composer{position:relative;anchor-name:--composer;padding:var(--space-3) var(--pad) var(--space-3);background:var(--side)}
+/* O fio de cima é a alça da altura: 8px de pegada invisível e um traço de
+   32×2 que só aparece no hover e no foco. O duplo clique volta às três linhas. */
+#composer-grip{position:absolute;left:0;right:0;top:0;z-index:1;height:var(--space-3);cursor:row-resize}
+#composer-grip::after{content:"";position:absolute;left:50%;top:50%;width:calc(var(--space-7) + var(--space-3));height:var(--space-0);border-radius:var(--r-sm);background:var(--border-strong);opacity:0;transform:translate(-50%,-50%)}
+#composer-grip:hover::after,#composer-grip:focus-visible::after{opacity:1}
+#composer-grip:hover,#composer-grip:focus-visible{border-top:var(--space-0) solid var(--ring)}
+#composer-grip:focus-visible{outline:none}
+/* O chat lateral segue a mesma regra: dois composers, uma só forma. */
+:is(#composer,#sidechat-composer){border-top:1px solid var(--border);transition:border-color var(--t-fast) var(--ease-out)}
+:is(#composer,#sidechat-composer):focus-within{border-top-color:var(--ring)}
+/* Conversa de um motor fora da vista (#release OpenCode): o histórico fica,
+   o composer sai e este painel diz por quê, com o caminho para a sessão nova. */
+/* Conversa antiga (#release OpenCode): o aviso e a sessão nova moram no pé da
+   coluna, na fileira do composer que ele substitui. Uma frase curta à esquerda
+   e a ação principal à direita; nada de dois caminhos competindo. */
+#legacy-session{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2) var(--space-3);min-height:52px;padding:var(--space-3) 0}
+#legacy-session[hidden]{display:none}
+#legacy-session p{flex:1 1 100%;min-width:0;margin:0;font-size:var(--fs-md);line-height:1.45;color:var(--muted)}
+#legacy-session button{flex:none;height:var(--ctl);padding:0 var(--space-5);font-size:var(--fs-md);font-weight:600}
+#legacy-session .legacy-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:var(--space-2);flex:1 1 100%;min-width:0}
+/* Linha de contexto do chat lateral: de onde veio o contexto (escopo) e a
+   ação que a acompanha. No tutor, o resumo do que vai junto saiu do composer
+   na #123 e mora em Mais opções → Contexto; aqui fica só a forma compartilhada
+   que o lateral ainda usa. */
+.goes-along{display:flex;align-items:center;gap:var(--space-2);min-height:var(--ctl);margin:0 0 var(--space-1);padding:0 var(--space-1) 0 0;font-size:var(--fs-xs);color:var(--muted)}
+/* Resumo do contexto no submenu (#123): as pílulas da matéria, da questão, do
+   rascunho e de cada material aberto, com a página. A matéria vem primeiro;
+   quando falta espaço ela cede antes da lista/questão e da página. */
+#context-summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1);min-width:0;overflow:hidden}
+#context-summary>.goes-lead{flex:none;white-space:pre;color:var(--muted)}
+#context-summary:has(.goes-pill)>.goes-lead{display:none}
+#context-summary>.goes-pill{
+ display:inline-flex;align-items:center;justify-content:center;flex:1 1 0;min-width:0;max-width:max-content;height:22px;padding:0 6px;
+ border-radius:var(--r-sm);background:color-mix(in oklab,var(--muted) 14%,transparent);
+ line-height:22px;white-space:nowrap;color:var(--muted);
+}
+#context-summary>.goes-pill>.goes-pill-name{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#context-summary>.goes-pill>.goes-pill-page{flex:none;white-space:pre}
+#context-summary>.goes-course{min-width:calc(8ch + 12px)}
+#context-summary>.goes-rest{min-width:calc(4ch + 33px)}
+/* O que vai junto abre o submenu Contexto; a edição do estudo fecha, depois
+   do medidor e das compactações. */
+.more-context-what{padding:var(--space-1) var(--space-2) var(--space-2)}
+.more-context-edit{display:flex;flex-direction:column;gap:var(--space-2);margin:var(--space-1) 0 0;padding:var(--space-2);border-top:1px solid var(--border)}
+/* Com a flag `studyContext` desligada não há o que editar: o bloco some inteiro. */
+.more-context-edit:has(#study-context[hidden]){display:none}
+.more-context-edit .fine{margin:0;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+.more-context-edit .guide-link{align-self:flex-start}
+/* Fila, anexos e chips começam na coluna do texto do campo, sem o recuo que
+   tinham quando a caixa não existia (o respiro agora é o da caixa). */
+#composer-box>.queue-strip .queue-label{padding-left:0}
+#composer-box>#attachments{padding:var(--space-3) 0 0}
+#composer-box>.mention-chips{padding:var(--space-3) 0 0}
+.goes-along button{
+ /* 24px: o menor alvo aceitável (WCAG 2.2 · 2.5.8); a linha tem 28px. */
+ flex:none;height:24px;padding:0 var(--space-3);border-color:transparent;background:transparent;box-shadow:none;
+ font-size:var(--fs-xs);color:var(--accent-text);
+}
+.goes-along button[aria-expanded="true"]{background:var(--selected);color:var(--fg-strong)}
+.goes-along button[hidden]{display:none}
+/* A linha de escopo diz mais que um nome de arquivo: quebra em até duas
+   linhas em vez de cortar o "não entra na sessão principal". */
+/* Mesma altura da linha "Vai junto" do tutor: fica alinhada ao lado dela. */
+#sidechat-scope{flex-wrap:wrap;row-gap:0;align-items:center;min-height:24px;margin:0;padding-block:0}
+/* O texto nunca quebra por dentro e só ganha a linha própria quando a linha
+   inteira (texto + cadeado + legenda + ação) não cabe (montagem da rodada 5,
+   achado 1). Sem largura fixa, ele divide a linha e cresce até empurrar o
+   cadeado, a legenda e a ação para a direita. */
+#sidechat-scope>#sidechat-scope-text{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+/* Legenda curta junto do cadeado (#157, rodada 2, achado 1): diz em repouso
+   que a conversa não entra na sessão principal. Some abaixo de 200px, onde o
+   nome acessível do cadeado continua. */
+#sidechat-scope-note{flex:none;white-space:nowrap;line-height:1.4;color:var(--muted)}
+/* Cadeado, legenda e ação andam juntos: quando o texto não cabe na mesma
+   linha, o grupo desce inteiro e o `margin-left:auto` encosta a ação na borda
+   direita (montagem da rodada 5, achado 1). */
+.sidechat-scope-meta{display:flex;align-items:center;gap:var(--space-2);flex:none;margin-left:auto}
+#sidechat-scope button{height:24px;display:inline-flex;align-items:center;gap:var(--space-1)}
+/* Alvo de 24px com tamanho real (auditoria rodada 5, D2): a área invisível
+   (::after com inset:-6px) podia invadir o vizinho, como a do `.setup-link`. */
+#sidechat-scope-lock{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;color:var(--muted)}
+#sidechat-scope-lock .icon{width:12px;height:12px}
+#sidechat-scope-lock:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+#sidechat-scope button .icon{width:12px;height:12px}
+/* Coluna estreita (900×650): a ação vira só o ícone, e o texto corta com
+   reticências. O nome acessível (aria-label) e a dica seguem completos. A
+   legenda "Só neste chat" só some abaixo de 200px (rodada 3, achado 3): a
+   prioridade de corte é o rótulo do "Atualizar contexto" antes dela. */
+#sidechat-composer{container-type:inline-size;container-name:sidechat-composer}
+@container sidechat-composer (max-width:300px){
+ /* Coluna mínima: o cadeado, a legenda e o ícone precisam caber na mesma
+    linha do texto de um material curto (os 229,5px de 900×650). O aperto de
+    4px troca respiro por linha única sem tocar no texto nem nos alvos. */
+ #sidechat-scope{column-gap:var(--space-1)}
+ .sidechat-scope-meta{gap:var(--space-1)}
+ #sidechat-scope button{width:24px;padding:0;justify-content:center}
+ #sidechat-scope button span{display:none}
+}
+@container sidechat-composer (max-width:200px){
+ #sidechat-scope-note{display:none}
+}
+.composer-box{container-type:inline-size}
+/* Região ao vivo do aviso de sem internet (#142): fora da vista, mas lida pelo
+   leitor de tela; o texto só troca quando o estado vira. */
+#offline-live{
+ position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+ clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+/* O escopo do lateral ocupa 24px acima da caixa; o resumo do tutor saiu na
+   #123, então a caixa reserva a mesma altura no topo para os dois campos
+   alinharem sem o lateral mudar. Na caixa (e não no composer) para valer em
+   qualquer altura de janela. */
+body:not(.chat-full) #composer-box{padding-top:24px}
+#attachments{display:flex;gap:var(--space-3);flex-wrap:wrap;margin:0;padding:var(--space-3) 0 0}
+.attachment{position:relative}
+.attachment img{width:54px;height:54px;object-fit:contain;display:block;background:var(--mix-white);border:1px solid var(--border);border-radius:var(--r-sm);cursor:zoom-in}
+.attachment .file{display:flex;align-items:center;box-sizing:border-box;max-width:190px;height:54px;padding:0 var(--space-3);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--hover);color:var(--fg);font-size:var(--fs-sm);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attachment .attachment-remove{
+ position:absolute;top:-7px;right:-7px;width:18px;height:18px;min-width:0;padding:0;border-radius:var(--r-sm);
+ background:var(--surface);color:var(--muted);border:1px solid var(--border-strong);
+ font-size:var(--fs-xs);line-height:1;
+}
+.attachment .attachment-remove:hover{background:var(--active);color:var(--fg)}
+#chat.dropping{box-shadow:inset 0 0 0 2px var(--ring)}
+/* Menções @ (#53): chips acima do campo, dentro da caixa; o menu reaproveita o .slash-pop. */
+.mention-chips{display:flex;gap:var(--space-2);flex-wrap:wrap;margin:0;padding:var(--space-3) var(--space-3) 0}
+.mention-chips[hidden]{display:none}
+.mention-chip{display:inline-flex;align-items:center;gap:var(--space-2);max-width:100%;padding:2px var(--space-1) 2px var(--space-3);border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--hover);color:var(--fg);font-size:var(--fs-sm)}
+.mention-chip-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.mention-chip-remove{flex:none;width:18px;height:18px;min-width:0;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-size:var(--fs-md);line-height:1;cursor:pointer}
+.mention-chip-remove:hover{background:var(--active);color:var(--fg)}
+/* #67: o desenho fica em 18px, mas o alvo de clique chega a 24px (WCAG 2.5.8)
+   por uma borda invisível de 3px; o vão entre chips e entre anexos é maior
+   que isso, então dois alvos não se sobrepõem. tests/target-size.test.mjs. */
+.mention-chip-remove{position:relative}
+:is(.mention-chip-remove,.attachment .attachment-remove)::after{content:"";position:absolute;inset:-3px;border-radius:inherit}
+.mention-icon{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;color:var(--muted)}
+.mention-icon .icon{width:14px;height:14px}
+.mention-item .mention-icon{width:20px;color:var(--fg)}
+.mention-item .mention-icon .icon{width:16px;height:16px}
+.mention-pop{max-width:calc(100vw - 16px)}
+textarea{
+ width:100%;resize:vertical;max-height:180px;min-height:56px;border:1px solid var(--border-strong);
+ border-radius:var(--r-sm);background:var(--surface);padding:var(--space-3) var(--space-4);line-height:1.5;
+ color:var(--fg);font-size:var(--reading-size);
+ transition:border-color var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out);
+}
+textarea::placeholder{color:var(--faint)}
+/* Dentro da caixa o campo não tem moldura própria: a moldura é da caixa. */
+.composer-box .composer-field{
+ display:block;border:0;border-radius:0;background:transparent;resize:none;
+ field-sizing:content;min-height:44px;max-height:180px;padding:var(--space-3) 0 var(--space-2);box-shadow:none;
+ font-size:var(--reading-size);line-height:1.6;
+}
+/* Campo do tutor (#123, r2): três linhas por padrão, texto começando no alto e
+   altura escolhida pelo fio de cima (`composer-resize.mjs`), de duas linhas a
+   metade da coluna. O texto longo rola por dentro. O chat lateral mantém o
+   campo que cresce, como antes. */
+#composer-box .composer-field{
+ field-sizing:fixed;height:calc(3lh);min-height:calc(2lh);max-height:none;
+ padding:0;overflow:auto;
+}
+/* Janela solta do chat lateral (#157, rodada 1, achado 3): sem o tutor ao lado,
+   o composer não reserva a altura dele nem o pé da calculadora — o campo fica
+   fixo em três linhas, como o do tutor, e o Enviar não fica no pé de uma área
+   morta. `body>#sidechat` só casa no documento da filha: na Mesa o lateral mora
+   dentro de #support-body. */
+body>#sidechat #sidechat-composer{min-height:0}
+body>#sidechat #sidechat-box>#sidechat-prompt{
+ flex:none;field-sizing:fixed;
+ height:calc(3lh + 14px);min-height:calc(3lh + 14px);max-height:calc(3lh + 14px);
+ overflow:auto;
+}
+.composer-box .composer-field:focus{outline:none;border-color:transparent;box-shadow:none}
+/* Foco do campo na janela solta (#157, rodada 1, achado 5): o contorno do painel
+   (`#sidechat:focus-within::after`) é desligado no layout da filha e o
+   substituto `:has(:focus-visible)` não repõe `display`; o campo ganha o mesmo
+   anel de --ring do resto da Mesa. */
+body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.composer-actions{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-1) 0 0}
+.composer-actions button{
+ flex:none;height:32px;padding:0 var(--space-3);gap:var(--space-2);white-space:nowrap;
+ border-color:transparent;background:transparent;box-shadow:none;font-size:var(--fs-sm);color:var(--muted);
+}
+.composer-actions button:hover{background:var(--hover);color:var(--fg)}
+.composer-actions button:active{background:var(--active)}
+.composer-actions button:disabled{opacity:.45;background:transparent}
+.composer-actions .icon{width:14px;height:14px}
+/* Anexar é só o clipe (o nome acessível vem do aria-label); as outras duas
+   mantêm o rótulo enquanto cabem. */
+.composer-actions #attach{width:32px;padding:0}
+.composer-actions #attach span{display:none}
+/* Referências é sempre só o ícone (#90); o estado ligado/desligado continua na
+   forma do botão. */
+#composer-box .composer-actions #include-refs{width:32px;padding:0;justify-content:center}
+#composer-box .composer-actions #include-refs span{display:none}
+/* Enviar é a seta (#90): o nome acessível segue no aria-label do index.html. */
+#composer-box .composer-actions #send{width:32px;padding:0;justify-content:center}
+/* A fileira do tutor respira 8px abaixo do fim da 3ª linha (r2, ajuste): o
+   campo não tem padding embaixo e a distância até o topo dos botões fica
+   medida por `tests/composer-height-ui.mjs`. */
+#composer-box .composer-actions{padding-top:var(--space-3)}
+/* Menu Anexar (#90): imagem/PDF, foto do celular e captura do Conferir num
+   popover acima do clipe. Os itens mostram ícone e nome; o Conferir mantém a
+   redação inteira (#35, #38). */
+.attach-pop{
+ position:absolute;z-index:12;display:flex;flex-direction:column;min-width:196px;padding:var(--space-1);
+ border:1px solid var(--border-strong);border-radius:var(--r-md);background:var(--raised);box-shadow:var(--shadow-pop);
+}
+.attach-pop[hidden]{display:none}
+.attach-pop button{display:flex;align-items:center;gap:var(--space-2);justify-content:flex-start;width:100%;height:var(--ctl);padding:0 var(--space-2);border:0;background:transparent;box-shadow:none;font-size:var(--fs-sm);color:var(--fg);text-align:left;white-space:nowrap}
+.attach-pop button:hover{background:var(--hover)}
+.attach-pop button:disabled{opacity:.45;background:transparent}
+.attach-pop button .icon{flex:none;width:14px;height:14px;color:var(--muted)}
+.attach-pop #phone-photo[hidden]{display:none}
+.attach-pop #check .label-short{display:none}
+.attach-pop #check:disabled{opacity:1;background:transparent;color:var(--muted)}
+/* Escolha de fixos (#99): o mesmo popover do Anexar, com a marca de fixado
+   antes do nome. O check é decorativo; o estado vai no aria-checked. */
+.attach-pin-pop{min-width:216px}
+.attach-pin-pop button::before{content:"";flex:none;width:14px;text-align:center;color:var(--accent-text);font-weight:600}
+.attach-pin-pop button[aria-checked="true"]{color:var(--fg-strong)}
+.attach-pin-pop button[aria-checked="true"]::before{content:"✓"}
+/* Fixo na fileira: só o ícone, como o Anexar; o nome acessível segue no
+   aria-label do próprio botão. O teto de dois mantém a fileira em coluna
+   estreita. */
+.composer-actions [data-pinned="true"]{width:var(--ctl);padding:0;justify-content:center}
+.composer-actions [data-pinned="true"]>span{display:none}
+#composer-box .composer-actions #attach[aria-expanded="true"]{background:var(--selected);color:var(--fg-strong)}
+.phone-pop{
+ position:absolute;z-index:12;display:flex;flex-direction:column;gap:var(--space-2);overflow:auto;
+ width:min(320px,calc(100% - var(--space-5)));padding:var(--space-3);
+ border:1px solid var(--border-strong);border-radius:var(--r-md);background:var(--raised);box-shadow:var(--shadow-pop);
+ font-size:var(--fs-sm);color:var(--fg);
+}
+.phone-pop[hidden]{display:none}
+.phone-pop p{margin:0;line-height:1.45}
+.phone-pop .fine{font-size:var(--fs-xs);color:var(--muted)}
+.phone-lead{color:var(--fg)}
+.phone-qr{align-self:center;width:176px;height:176px;border-radius:var(--r-sm);overflow:hidden}
+.phone-qr[hidden],.phone-address[hidden],.phone-hint[hidden],.phone-network[hidden]{display:none}
+.phone-qr svg{display:block;width:100%;height:100%}
+.phone-address{font-size:var(--fs-xs);color:var(--muted)}
+.phone-address code{display:block;margin-top:var(--space-1);font-size:var(--fs-xs);color:var(--fg-strong);overflow-wrap:anywhere;user-select:all}
+.phone-network{display:flex;align-items:center;gap:var(--space-2);font-size:var(--fs-xs);color:var(--muted)}
+.phone-network select{flex:1;min-width:0;padding:var(--space-1) var(--space-2);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);font-size:var(--fs-xs);color:var(--fg)}
+.phone-state{font-weight:600;color:var(--fg-strong)}
+.phone-hint{padding:var(--space-2);border-radius:var(--r-sm);background:var(--tint)}
+.phone-actions{display:flex;justify-content:flex-end;gap:var(--space-2)}
+.phone-actions button[hidden]{display:none}
+.composer-actions .label-short{display:none}
+/* Enviar (ou Parar, no mesmo lugar) fecha a fileira à direita. */
+.composer-actions :is(#send,#sidechat-send),.composer-actions :is(#stop,#sidechat-stop):not([hidden]){margin-left:auto}
+.composer-actions :is(#send,#stop,#sidechat-send,#sidechat-stop)[hidden]{display:none}
+/* Com os dois à vista (resposta chegando), só o Parar empurra: duas margens
+   automáticas dividiam a sobra e o Parar ia para o meio (v1.0.2). */
+.composer-actions :is(#stop,#sidechat-stop):not([hidden]) + :is(#send,#sidechat-send){margin-left:0}
+/* Referências: ligado = tinta de acento; desligado = contorno vazio. A forma
+   muda, não só a cor (vale também no modo só-ícone). */
+.composer-actions #include-refs[aria-pressed="false"]{border-color:var(--border-strong)}
+.composer-actions #include-refs[aria-pressed="true"]{background:var(--tint);color:var(--accent-text)}
+.composer-actions #include-refs[aria-pressed="true"]:hover{background:color-mix(in oklab,var(--primary) 18%,transparent)}
+.composer-actions :is(#send,#sidechat-send).primary{background:var(--primary);border-color:var(--primary);color:var(--primary-fg);font-weight:500}
+.composer-actions :is(#send,#sidechat-send).primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.composer-actions :is(#send,#sidechat-send).primary:disabled{background:var(--selected);border-color:transparent;color:var(--faint);opacity:1}
+/* Enviar desligado no chat lateral (#157, rodada 1, achado 13): a opacidade
+   .45 da regra base deixava o rótulo em 2,04:1 no claro. Em --muted sobre
+   --selected o texto fica em 5,27:1 e o botão mantém a forma de desligado. */
+#sidechat .composer-actions #sidechat-send:disabled{opacity:1;background:var(--selected);border-color:transparent;color:var(--muted)}
+/* Parar: neutro e invertido (estado, não ação principal — sem acento). */
+.composer-actions :is(#stop,#sidechat-stop){background:var(--fg-strong);border-color:var(--fg-strong);color:var(--bg);font-weight:500}
+.composer-actions :is(#stop,#sidechat-stop):hover{background:color-mix(in oklab,var(--fg-strong) 82%,var(--bg));border-color:transparent;color:var(--bg)}
+.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.primary:disabled{background:var(--selected);border-color:transparent;color:var(--faint);opacity:1;box-shadow:none}
+/* Conferir com outros programas (tickets #35 e #38): a caixa de mensagem só tem
+   o botão Conferir. Quando o programa faltou, `#check-note` (árvore do
+   `core/conferir.bend`) diz a frase e oferece "Escolher outro programa…"; flutua
+   sobre a coluna (posta por src/conferir.mjs). A escolha mora nas
+   Configurações → Pastas e programas (`#cfg-conferir`). */
+#check-note{
+ position:fixed;overflow:auto;z-index:8;
+ padding:var(--space-3);
+ background:var(--raised);border:1px solid var(--border-strong);border-radius:var(--r-md);box-shadow:var(--shadow-pop);
+}
+#check-note[hidden]{display:none}
+#check-note .check-note-body{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-2)}
+#check-note .check-note-text{margin:0;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+/* O link começa na mesma margem da frase de cima (#42): o recuo interno do
+   alvo (para o fundo do hover) e a borda de 1px voltam pela margem negativa. */
+#check-note .check-note-pick{height:var(--ctl);padding:0 var(--space-2);margin-left:calc((var(--space-2) + 1px) * -1);border-color:transparent;background:transparent;box-shadow:none;font-size:var(--fs-xs);color:var(--accent-text)}
+#check-note .check-note-pick:hover{background:var(--hover)}
+/* Limite do grátis (429 FreeUsageLimitError): a frase curta e a saída moram no
+   fluxo, entre a linha de atividade e a caixa — o turno falhou sem derrubar a
+   conexão, então a coluna do tutor não muda. O link segue o mesmo ritmo do
+   aviso do Conferir (frase em --muted, ação em --accent-text). */
+.free-limit-note{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 var(--space-2);padding:var(--space-1) var(--pad)}
+.free-limit-note[hidden]{display:none}
+.free-limit-note .free-limit-text{margin:0;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+.free-limit-note .free-limit-action{height:var(--ctl);padding:0 var(--space-2);margin-left:calc((var(--space-2) + 1px) * -1);border-color:transparent;background:transparent;box-shadow:none;font-size:var(--fs-xs);color:var(--accent-text)}
+.free-limit-note .free-limit-action:hover{background:var(--hover)}
+/* A lista de modelos do chat lateral (#144) abre no próprio aviso: o lateral
+   não tem o popover de modelo da coluna do tutor. */
+#sidechat-free-limit-note .free-limit-models{flex-basis:100%;min-width:0;max-width:100%;height:var(--ctl);margin:var(--space-1) 0 0;padding:0 var(--space-2);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);font-size:var(--fs-xs);color:var(--fg)}
+#sidechat-free-limit-note .free-limit-models[hidden]{display:none}
+/* Campo "Programa de escrita" e a lista de janelas, no ritmo das Configurações. */
+#settings-form .cfg-conferir-wrap{margin:0 0 var(--space-6)}
+#settings-form .cfg-conferir{display:flex;flex-direction:column;align-items:stretch;gap:var(--space-2)}
+#settings-form .cfg-conferir-label{font-size:var(--fs-sm);color:var(--fg)}
+#settings-form .cfg-conferir-row{align-items:center;margin-top:0;min-height:var(--ctl)}
+#settings-form .cfg-conferir-app{flex:1;min-width:0;display:flex;align-items:center;height:var(--ctl);padding:0 var(--space-3);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);font-size:var(--fs-sm);color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#settings-form .cfg-conferir-back{height:var(--ctl);padding:0;border:0;background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-sm);cursor:pointer}
+#settings-form .cfg-conferir-back:hover{text-decoration:underline}
+#settings-form .cfg-conferir-back[hidden]{display:none}
+#settings-form .cfg-conferir-hint{margin:0;font-size:var(--fs-sm);line-height:1.4;color:var(--faint)}
+#settings-form .cfg-conferir-list{margin-top:var(--space-3);padding:var(--space-3);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface)}
+#settings-form .cfg-conferir-list[hidden]{display:none}
+#settings-form .cfg-conferir-list-body{display:flex;flex-direction:column;gap:var(--space-2)}
+#settings-form .cfg-conferir-lead{margin:0;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+#settings-form .check-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-hairline);max-height:220px;overflow:auto}
+#settings-form .check-row{
+ display:flex;flex-direction:column;align-items:flex-start;gap:0;width:100%;height:auto;min-height:var(--ctl);
+ padding:var(--space-1) var(--space-2);border-color:transparent;background:transparent;box-shadow:none;text-align:left;
+}
+#settings-form .check-row:hover{background:var(--hover)}
+#settings-form .check-row:active{background:var(--active)}
+#settings-form .check-row-app{font-size:var(--fs-sm);color:var(--fg);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#settings-form .check-row-title{font-size:var(--fs-xs);color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#settings-form .check-empty{padding:var(--space-2);font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+#settings-form .cfg-conferir-foot{display:flex;align-items:center;justify-content:flex-start}
+#settings-form .cfg-conferir-foot button{height:var(--ctl);padding:0 var(--space-2);border-color:transparent;background:transparent;box-shadow:none;font-size:var(--fs-xs);color:var(--muted)}
+#settings-form .cfg-conferir-foot button:hover{background:var(--hover);color:var(--fg)}
+/* O nome do programa no botão não empurra Enviar para fora: corta com reticências. */
+/* Caixa estreita: os controles que ainda têm rótulo o perdem; o nome
+   acessível segue completo (aria-label / título). */
+@container (max-width:419px){
+ .composer-actions .label-full{display:none}
+ .composer-actions .label-short{display:inline}
+}
+
+/* ---------- Fila de mensagens ----------
+   Faixa do núcleo `core/composerview.bend` (a mesma view da Conversa): rótulo
+   "Na fila · N", item com editar (⏎ salva / Esc cancela) e × para remover. */
+
+/* A faixa é um bloco só, preso ao topo da caixa do composer: cabeçalho com o
+   rótulo e as ações da fila (Enviar agora / Limpar), mensagens em linhas de 24px
+   com o texto cortado e as ações da linha à direita. */
+.queue-strip{display:flex;flex-direction:column;gap:0;margin:0 0 var(--space-1);padding:0 0 var(--space-1);border-bottom:1px solid var(--border)}
+#composer-box>.queue-strip{margin:0 0 var(--space-3);padding:0 0 var(--space-2)}
+#composer-box>.queue-strip .queue-head{padding-left:0;padding-right:0}
+#composer-box>.queue-strip .queue-item{padding-left:0}
+.queue-head{display:flex;align-items:center;gap:var(--space-2);min-height:24px}
+.queue-label{flex:1;min-width:0;padding:0 var(--space-2);font-size:var(--fs-xs);font-weight:600;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Os botões da linha (× e "Enviar agora") ocupam a altura dela: 24px de alvo
+   (WCAG 2.5.8, #69). O de steer leva texto e por isso não tem a largura fixa. */
+.queue-item{display:flex;align-items:center;gap:var(--space-1);min-width:0;min-height:24px;padding:0 var(--space-0) 0 var(--space-2);border-radius:var(--r-sm);font-size:var(--fs-sm);color:var(--muted)}
+.queue-item>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-item button{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-width:0;padding:0;border:0;background:none;box-shadow:none;border-radius:var(--r-sm);font-size:var(--fs-md);line-height:1;color:var(--faint)}
+.queue-item button .icon{width:14px;height:14px}
+.queue-item button:hover{background:var(--hover);color:var(--fg)}
+.queue-item button:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.queue-item button.queue-steer-now{width:auto;padding:0 var(--space-1);font-size:var(--fs-xs);color:var(--muted);white-space:nowrap}
+.queue-item.sending{opacity:.55}
+.queue-item.sending>span{cursor:default}
+.queue-item>span[role=button]{cursor:text}
+.queue-item>span[role=button]:focus-visible{outline:2px solid var(--ring);outline-offset:1px;border-radius:var(--r-sm)}
+.queue-edit{flex:1;min-width:0;height:20px;margin:0;padding:0 var(--space-2);border:1px solid var(--ring);border-radius:var(--r-sm);background:var(--surface);font:inherit;font-size:var(--fs-sm);color:var(--fg)}
+.queue-edit:focus{outline:none}
+.queue-item button:disabled{opacity:.35;pointer-events:none}
+/* Ações da faixa no cabeçalho, à direita do rótulo. A visibilidade é decisão do
+   núcleo (`hidden`); aqui só o desenho. */
+.queue-actions{display:flex;align-items:center;gap:var(--space-1);justify-content:flex-end;padding:0}
+.queue-actions button{height:24px;font-size:var(--fs-xs);padding:0 var(--space-1);box-shadow:none;color:var(--muted)}
+.queue-actions button:hover{background:var(--hover);color:var(--fg)}
+.queue-actions button:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.queue-actions .queue-clear{color:var(--muted)}

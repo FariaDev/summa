@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Cadernos — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+<style>
+.cadernos{max-width:var(--index-max);margin:0 auto;padding:var(--space-48) var(--space-32)}
+.cadernos-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-24);padding-bottom:var(--space-32);border-bottom:var(--stroke) solid var(--border-subtle)}
+.cadernos-head h1{margin:0 0 var(--space-8);font-family:var(--font-serif);font-size:var(--text-28);line-height:var(--lh-28);font-weight:var(--weight-regular)}
+.cadernos-head p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.cadernos-section{padding:var(--space-32) 0;border-top:var(--stroke) solid var(--border-subtle)}
+.cadernos-section h2{margin:0 0 var(--space-4);font-size:var(--text-20);line-height:var(--lh-20);font-weight:var(--weight-semibold)}
+.cadernos-section>p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.specimen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,380px));justify-content:start;gap:var(--space-24);margin-top:var(--space-24)}
+.specimen{min-width:0}
+.specimen-label{display:flex;align-items:center;gap:var(--space-8);margin:0 0 var(--space-8);font-family:var(--font-mono);font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+.specimen-label::after{content:"";flex:1;height:var(--stroke);background:var(--border-subtle)}
+.search-field{margin-bottom:var(--space-8)}
+.search-field .field-control{padding-right:var(--space-32)}
+.chat-specimen{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-32);align-items:start;margin-top:var(--space-24)}
+.chat-notes{max-width:var(--measure)}
+.chat-notes p{margin:0 0 var(--space-12);font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.cadernos-note{max-width:var(--measure);margin-top:var(--space-32);padding-top:var(--space-16);border-top:var(--stroke) solid var(--border-subtle);font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+@media (max-width:900px){.specimen-grid{grid-template-columns:minmax(0,1fr)}.chat-specimen{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp" viewBox="0 0 32 32">
+    <rect width="32" height="32" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M17.6 17.4 27 14 34 27H15Z" opacity=".32"/>
+      <rect x="11" y="27" width="21" height="1.5"/>
+      <circle cx="9.5" cy="16.5" r="2.2"/>
+      <path d="M17.3 15.7a5 5 0 0 1 10 0Z" transform="rotate(-20 22.3 15.7)"/>
+    </g>
+    <path d="M4.5 28.5 9.5 16.5l9-5" fill="none" style="stroke:var(--on-accent)" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+</svg>
+<main class="cadernos">
+  <header class="cadernos-head">
+    <div>
+      <h1>Cadernos, tinta e o chat à parte</h1>
+      <p>O popover Cadernos com a lista, a busca, a leitura da tinta e o vazio; ao lado, a janela do chat lateral com o mesmo conteúdo do app e a pele do r2.</p>
+    </div>
+    <a class="btn btn-ghost" href="index.html"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Índice</a>
+  </header>
+
+  <section class="cadernos-section">
+    <h2>Popover Cadernos</h2>
+    <p>Lista por matéria, busca no texto digitado, leitura da tinta e o estado sem caderno. O ícone do caderno fica em <span class="mono">--text-2</span>; a busca é um campo preenchido, sem borda.</p>
+    <div class="specimen-grid">
+      <div class="specimen">
+        <p class="specimen-label">LISTA</p>
+        <div class="float-panel" role="dialog" aria-label="Cadernos">
+          <div class="float-head">
+            <h3 class="float-title">Cadernos</h3>
+            <button type="button" class="icon-btn" aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+          <div class="field field-wrap search-field">
+            <label class="sr-only" for="cadernos-search-lista">Buscar no texto dos cadernos</label>
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <input class="field-control" id="cadernos-search-lista" type="search" placeholder="Buscar no texto dos cadernos…" autocomplete="off">
+          </div>
+          <div class="float-body">
+            <h3 class="notebooks-group">Cálculo I</h3>
+            <button type="button" class="notebook-row"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button>
+            <button type="button" class="notebook-row"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">revisao.xopp</span><span class="notebook-meta">08:40</span></button>
+            <button type="button" class="notebook-row"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">treino.xopp</span><span class="notebook-meta">06/11, 16:32</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <p class="specimen-label">BUSCA COM RESULTADOS</p>
+        <div class="float-panel" role="dialog" aria-label="Cadernos">
+          <div class="float-head">
+            <h3 class="float-title">Cadernos</h3>
+            <button type="button" class="icon-btn" aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+          <div class="field field-wrap search-field">
+            <label class="sr-only" for="cadernos-search-resultados">Buscar no texto dos cadernos</label>
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <input class="field-control" id="cadernos-search-resultados" type="search" value="denominador" autocomplete="off">
+            <button type="button" class="icon-btn field-clear" aria-label="Limpar busca"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+          <p class="search-status sr-only" role="status">2 resultados</p>
+          <div class="float-body">
+            <button type="button" class="notebook-row notebook-result">
+              <span class="notebook-title">aula.xopp</span>
+              <span class="notebook-meta">Cálculo I · página 58</span>
+              <span class="notebooks-excerpt">Quando o <mark>denominador</mark> tem um fator do 2º grau sem raízes reais, o numerador da parcela precisa de grau 1.</span>
+            </button>
+            <button type="button" class="notebook-row notebook-result">
+              <span class="notebook-title">revisao.xopp</span>
+              <span class="notebook-meta">Cálculo I · página 3</span>
+              <span class="notebooks-excerpt">Porque o <mark>denominador</mark> é um quadrático irredutível.</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <p class="specimen-label">LEITURA DA TINTA</p>
+        <div class="float-panel" role="dialog" aria-label="Cadernos">
+          <div class="float-head">
+            <h3 class="float-title">Cadernos</h3>
+            <button type="button" class="icon-btn" aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+          <div class="float-body">
+            <h3 class="notebooks-group">Cálculo I</h3>
+            <button type="button" class="notebook-row"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button>
+          </div>
+          <section class="ink-panel" aria-labelledby="ink-title">
+            <div class="ink-head">
+              <div class="ink-copy">
+                <div class="ink-title" id="ink-title">Ler a escrita à mão</div>
+                <p class="ink-desc">Envia as páginas com tinta ao seu modelo para buscar no que você escreveu.</p>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Ler a escrita à mão</span></label>
+            </div>
+            <p class="ink-status"><span class="status-dot"></span><span class="ink-count">12 páginas lidas</span><span>· Em dia</span></p>
+          </section>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <p class="specimen-label">VAZIO</p>
+        <div class="float-panel" role="dialog" aria-label="Cadernos">
+          <div class="float-head">
+            <h3 class="float-title">Cadernos</h3>
+            <button type="button" class="icon-btn" aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+          <p class="notebooks-empty">Nenhum caderno .xopp ainda. Salve um na pasta da matéria e ele aparece aqui.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cadernos-section">
+    <h2>Chat solto</h2>
+    <div class="chat-specimen">
+      <div class="chat-notes">
+        <p>A janela filha guarda o mesmo chat lateral da Mesa: cabeçalho com o alfinete de “sempre por cima”, a conversa curta e a caixa de mensagem. O escopo fica acima da caixa, com a única ação que renova o contexto.</p>
+        <p>O balão do aluno usa o canto de 4 px dos controles; a resposta do tutor fica solta, com os metadados em mono.</p>
+      </div>
+      <div class="sidechat-window" role="region" aria-label="Chat lateral">
+        <div class="tutor-head">
+          <div class="tutor-titles"><div class="sidechat-title">Chat lateral</div></div>
+          <span class="sidechat-engine mono">deepseek</span>
+          <span class="sidechat-pin" role="img" aria-label="Sempre por cima ligado" title="Sempre por cima ligado"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></span>
+          <div class="panel-actions">
+            <button type="button" class="icon-btn" aria-label="Chat lateral novo"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Mais opções do chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Fechar o chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+          </div>
+        </div>
+        <div class="chat">
+          <div class="chat-scroll">
+            <div class="msg-student">Por que o caso 3 usa <span class="math"><i>Ax</i> + <i>B</i></span> no numerador? Não bastaria uma constante?</div>
+            <div class="msg-tutor">
+              <p>Porque o divisor tem grau 2: o resto pode ter grau 1. O termo <span class="math"><i>Bx</i> + <i>C</i></span> cobre todos os restos possíveis.</p>
+              <div class="msg-meta"><button type="button">Copiar</button><span class="sep">·</span><button type="button">Levar à sessão principal</button></div>
+            </div>
+          </div>
+          <form class="composer">
+            <div class="sidechat-scope">
+              <span>Apostila.pdf p. 58, Formulário p. 1</span>
+              <span class="grow"></span>
+              <span>Só aqui</span>
+              <button type="button" class="icon-btn" aria-label="Atualizar contexto"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+            </div>
+            <label class="sr-only" for="sidechat-prompt-demo">Mensagem no chat lateral</label>
+            <textarea class="composer-input" id="sidechat-prompt-demo" rows="3" placeholder="Pergunte no lateral…"></textarea>
+            <div class="composer-foot">
+              <span class="grow"></span>
+              <button type="submit" class="send-btn" aria-label="Enviar mensagem"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  <p class="cadernos-note">Fora do desenho do #167: raios de pílula e de 2 px, borda na busca, realce amarelo fixo e o interruptor de 30×18. O destaque da busca sai do acento; o interruptor da tinta é o das Configurações, 40×20.</p>
+</main>
+</body>
+</html>

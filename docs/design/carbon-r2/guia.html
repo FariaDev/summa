@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Guia — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp" viewBox="0 0 32 32">
+    <rect width="32" height="32" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M17.6 17.4 27 14 34 27H15Z" opacity=".32"/>
+      <rect x="11" y="27" width="21" height="1.5"/>
+      <circle cx="9.5" cy="16.5" r="2.2"/>
+      <path d="M17.3 15.7a5 5 0 0 1 10 0Z" transform="rotate(-20 22.3 15.7)"/>
+    </g>
+    <path d="M4.5 28.5 9.5 16.5l9-5" fill="none" style="stroke:var(--on-accent)" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+</svg>
+<div class="guide">
+  <aside class="guide-side">
+    <div class="guide-brand">
+      <svg class="brand-mark brand-32" aria-hidden="true"><use href="#i-lamp"/></svg>
+      <div class="guide-title">Guia da Mesa</div>
+    </div>
+    <div class="field field-wrap">
+      <label class="sr-only" for="guide-search">Buscar no guia</label>
+      <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input class="field-control" id="guide-search" type="search" placeholder="Buscar no guia" autocomplete="off" spellcheck="false">
+    </div>
+    <nav class="guide-nav" id="guide-nav" aria-label="Seções do guia">
+      <button type="button" data-guide-nav="comecar" aria-current="page"><span class="num">01</span>Começar</button>
+      <button type="button" data-guide-nav="tutor"><span class="num">02</span>O tutor</button>
+      <button type="button" data-guide-nav="leitores"><span class="num">03</span>Leitores de PDF</button>
+      <button type="button" data-guide-nav="lateral"><span class="num">04</span>Chat lateral</button>
+      <button type="button" data-guide-nav="revisao"><span class="num">05</span>Revisão</button>
+      <button type="button" data-guide-nav="calc"><span class="num">06</span>Calculadora</button>
+      <button type="button" data-guide-nav="atalhos"><span class="num">07</span>Atalhos</button>
+    </nav>
+    <p class="field-help">Abre com <kbd>⌘</kbd> <kbd>/</kbd> em qualquer lugar.</p>
+  </aside>
+  <div class="guide-main">
+    <div class="guide-scroll" id="guide-scroll">
+      <div class="guide-page">
+        <section class="guide-section" data-guide-section="comecar">
+          <h1>Mesa ao lado, caderno do outro</h1>
+          <p class="guide-lead">A Mesa mostra o material e o tutor. A resolução fica com você: no Xournal++, em outro programa de escrita ou no caderno de papel.</p>
+          <div class="guide-body">
+            <div class="guide-step"><span class="step-num">01</span><div><strong class="step-title">Abra o material</strong><p>Enunciado e formulário nos leitores. Solte um PDF no leitor para abrir.</p></div></div>
+            <div class="guide-step"><span class="step-num">02</span><div><strong class="step-title">Resolva do seu jeito</strong><p>No Xournal++, em outro programa de escrita ou no papel (a foto do celular leva a página). A Mesa não tem tinta.</p></div></div>
+            <div class="guide-step"><span class="step-num">03</span><div><strong class="step-title">Pergunte ou confira</strong><p>Escreva ao tutor ou use <strong>Conferir Xournal++</strong>: a captura vai junto com a mensagem.</p></div></div>
+            <div class="guide-topic"><h4>Onde está o quê</h4><p>As matérias ficam em abas no topo. O menu <strong>Estudar</strong> abre o Caderno de revisão, as Estatísticas, as Anotações e a Busca; as sessões de cada matéria abrem pelo título da sessão, na cabeça do tutor.</p></div>
+            <div class="guide-topic"><h4>O tutor chama sozinho</h4><p>A Mesa conecta o tutor ao abrir e ao trocar de matéria. Se ele não responder, a coluna diz o motivo e oferece <strong>Chamar de novo</strong> e o caminho para os ajustes do programa do tutor.</p></div>
+            <div class="guide-topic"><h4>Pastas, matérias e aparência</h4><p>Pastas, nomes de matérias e o caminho do programa do tutor ficam em <strong>Configurações</strong>. O tema (automático, claro ou escuro), a cor de acento e a densidade (<strong>Compacta</strong>, <kbd>⌘</kbd><kbd>⇧</kbd><kbd>D</kbd>) estão na seção <strong>Aparência e avisos</strong>.</p></div>
+            <div class="guide-topic"><h4>GeoGebra</h4><p>A aba <strong>GeoGebra</strong> traz o applet embutido. Com ela aberta, o tutor pode comandar o applet e ler a construção, e <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> manda um print para ele conferir (o modelo precisa aceitar imagens). A construção é lembrada por matéria.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="tutor" hidden>
+          <h1>Conversar com o tutor</h1>
+          <p class="guide-lead">Pergunte por escrito, mande a sua resolução e deixe o tutor ver o que você está vendo.</p>
+          <div class="guide-body">
+            <div class="guide-topic"><h4>O que vai junto</h4><p>As pílulas dentro da caixa de mensagem dizem o que segue com a próxima mensagem: a matéria, a questão ativa, o rascunho <code>.xopp</code> e os PDFs abertos com a página. O lápis ao lado troca a lista ou questão ativa e o rascunho. O botão <strong>Referências</strong> (o ícone de livro) liga e desliga os materiais — mandam caminho e página, não o PDF inteiro.</p></div>
+            <div class="guide-topic"><h4>Conferir Xournal++</h4><p>Captura a janela do Xournal++ e põe na bandeja de anexos, uma imagem por captura. Nada sai até você escrever e enviar. Escreve em outro programa? Em <strong>Configurações → Pastas e programas</strong>, o campo <strong>Programa de escrita</strong> tem <strong>Escolher…</strong>, que lista as janelas abertas (a busca de comandos também leva até lá com <strong>Escolher outra janela…</strong>); a Mesa guarda o programa e o botão passa a se chamar por ele. No macOS o sistema pode pedir Gravação de Tela; no Windows a captura usa o PowerShell do próprio sistema.</p></div>
+            <div class="guide-topic"><h4>Escrever enquanto ele responde</h4><p>Enviar durante a resposta põe a mensagem na fila; ela vai assim que ele terminar, e a fila fica salva se você fechar a Mesa. <kbd>⌘</kbd><kbd>⏎</kbd> interrompe e envia agora. <kbd>Esc</kbd> para a resposta e segura a fila: <strong>Enviar agora</strong> ou <strong>Limpar</strong> na faixa.</p></div>
+            <div class="guide-topic"><h4>Anexar imagens</h4><p>Pelo botão <strong>Anexar</strong>, colando (<kbd>⌘</kbd><kbd>V</kbd>) ou arrastando para a mensagem. O modelo precisa aceitar imagens. Para o tutor ver a página inteira, use <strong>Capturar página</strong> em <strong>Mais opções</strong> do leitor.</p></div>
+            <div class="guide-topic"><h4>Citar um trecho</h4><p>Selecione um trecho da sessão ou do texto de um PDF e clique em <strong>Citar</strong> para perguntar sobre ele. Fórmulas entram como LaTeX; trechos de PDF citam com o nome do arquivo e a página.</p></div>
+            <div class="guide-topic"><h4>Modelo e esforço</h4><p>Ficam no indicador na fileira da caixa de mensagem, por exemplo <strong>Sonnet · médio</strong>. Clique nele para trocar. Cada sessão conserva o motor que a criou; para abrir uma no <strong>Claude</strong> (experimental, usa o login feito no próprio Claude Code), use a busca de comandos (<kbd>⌘</kbd><kbd>K</kbd>) → <strong>Sessão nova com Claude (experimental)</strong>.</p></div>
+            <div class="guide-topic"><h4>Sessões e contexto</h4><p>O título da sessão, no cabeçalho do tutor, lista as sessões da matéria; escolher por lá mantém rascunho, fila e anexos. Em <strong>Mais opções</strong> estão o medidor de contexto, <strong>Resumir o contexto agora</strong> e a compactação automática. Digitar <code>/compact</code> na mensagem faz o mesmo (aceita instruções: <code>/compact foque na questão 7</code>).</p></div>
+            <div class="guide-topic"><h4>Encerrar por hoje</h4><p>Em <strong>Mais opções</strong> do tutor. Grava o registro local da matéria — onde você parou, o próximo passo, a questão, as páginas e o <code>.xopp</code> — e só depois avisa o tutor; sem o tutor o registro fica igual. Na abertura seguinte a coluna diz onde você parou: <strong>Retomar</strong> restaura questão, página e rascunho; <strong>Sessão nova</strong> abre outra e deixa o registro guardado; <strong>Esquecer</strong> só apaga o registro.</p></div>
+            <div class="guide-topic"><h4>Nas respostas</h4><p>Passe o mouse sobre uma mensagem para <strong>Copiar</strong>, ou use <strong>Exportar sessão em Markdown</strong> em Mais opções. Quizzes aparecem como cartões: clique na resposta, ou marque várias e envie. Gráficos e diagramas que o tutor gera aparecem na sessão; clique na imagem para ampliar. Visualizações (gráficos, tabelas, diagramas) e atividades interativas aparecem soltas na sessão, sem rede: passe o mouse para ver a <strong>Tela cheia</strong> (Esc sai); numa atividade, <strong>Levar ao tutor</strong> põe a sua tentativa no rascunho, sem enviar. Blocos de código têm realce e um botão de cópia.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="leitores" hidden>
+          <h1>Ler e citar o material</h1>
+          <p class="guide-lead">Um ou dois leitores lado a lado; o tutor sabe qual página está aberta.</p>
+          <div class="guide-body">
+            <div class="guide-topic"><h4>Citação clicável</h4><p><code>Limites.pdf, p. 3</code> numa resposta abre o PDF naquela página (ou carrega o arquivo no leitor). Depois de um pulo, <strong>Voltar</strong> aparece na barra do leitor; <strong>Marcadores</strong>, nos três pontos, guarda favoritos nomeados e mostra o sumário do documento.</p></div>
+            <div class="guide-topic"><h4>Buscar</h4><p><kbd>⌘</kbd><kbd>F</kbd> busca no PDF focado: varre todas as páginas, destaca cada ocorrência e conta; <strong>Buscar</strong> de novo vai para a seguinte e <kbd>Esc</kbd> limpa.</p></div>
+            <div class="guide-topic"><h4>Mais opções do leitor</h4><p>Os três pontos na barra de cada leitor reúnem <strong>Capturar página</strong>, zoom, <strong>Largura</strong>, <strong>Página escura</strong> (a escolha fica por arquivo), <strong>Girar</strong>, <strong>Marcadores</strong> e <strong>Minimizar este leitor</strong>, que vira uma faixa e libera o espaço para o outro; clique na faixa para restaurar.</p></div>
+            <div class="guide-topic"><h4>Mover-se no documento</h4><p>Roda ou trackpad rolam as páginas em sequência; <kbd>⌘</kbd> + roda ou pinça dá zoom; <kbd>←</kbd> <kbd>→</kbd> mudam a página do PDF focado.</p></div>
+            <div class="guide-topic"><h4>Soltar um PDF</h4><p>Solte um PDF sobre o leitor para abrir o arquivo de onde ele está, sem copiar. Sem material, o leitor mostra o quadro <strong>Solte um PDF aqui</strong>.</p></div>
+            <div class="guide-topic"><h4>Sem material</h4><p>Arraste um PDF do computador para o quadro, ou use <strong>Abrir PDF…</strong>. Os arquivos da pasta da matéria aparecem sozinhos; <strong>Pedir ao tutor</strong> cria uma lista de exercícios.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="lateral" hidden>
+          <h1>Uma pergunta à parte</h1>
+          <p class="guide-lead">Uma conversa paralela, com histórico próprio, que não entra na sessão principal.</p>
+          <div class="guide-body">
+            <div class="guide-topic"><h4>Onde abre</h4><p>Pelo botão do cabeçalho do tutor, mesmo com um leitor só. O segundo leitor (<strong>Formulário</strong>) recolhe pelo menu <strong>Estudar</strong> e volta pela faixa que fica no lugar dele, sem perder documento, página ou rascunho.</p></div>
+            <div class="guide-topic"><h4>Contexto copiado</h4><p>Começa com um recorte da sessão principal, dos PDFs abertos e da questão ativa. <strong>Atualizar contexto</strong> copia de novo o recorte atual; retomar a sessão não o renova sozinho.</p></div>
+            <div class="guide-topic"><h4>Levar à sessão principal</h4><p>Insere a resposta no rascunho da principal, sem enviar.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="revisao" hidden>
+          <h1>Voltar no que errou</h1>
+          <p class="guide-lead">Guarde respostas para revisar e o caderno traz cada uma de volta na hora certa.</p>
+          <div class="guide-body">
+            <div class="guide-topic"><h4>Guardar para revisar</h4><p>Embaixo das respostas do tutor; na última, o ícone de guardar fica à vista. O item já vem com a questão ativa, sua última mensagem, o trecho selecionado e a página aberta.</p></div>
+            <div class="guide-topic"><h4>Como foi?</h4><p>No <strong>Caderno de revisão</strong>, no menu <strong>Estudar</strong>, cada item do dia pede uma resposta. <strong>Errei</strong> volta amanhã; <strong>Difícil</strong>, <strong>Bom</strong> e <strong>Fácil</strong> voltam cada vez mais espaçados. Cada botão diz quando o item volta.</p></div>
+            <div class="guide-topic"><h4>Tentar de novo</h4><p>Em cada item, <strong>Tentar de novo</strong> e <strong>Pedir um parecido</strong> escrevem o pedido na caixa de mensagem, sem enviar. <strong>Editar</strong> muda o texto do item e <strong>Remover</strong> o tira, com confirmação.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="calc" hidden>
+          <h1>Conta rápida, sem gastar tokens</h1>
+          <p class="guide-lead">Numérica e local, no pé da coluna do tutor. Não faz álgebra simbólica.</p>
+          <div class="guide-body">
+            <div class="guide-topic"><h4>Escrever a conta</h4><p>Multiplicação sempre explícita: <code>2*pi</code>. Parênteses agrupam: <code>(2+3)*4</code>. <strong>Enter</strong> calcula. É local: não gasta tokens e não faz álgebra simbólica.</p></div>
+            <div class="guide-topic"><h4>Ângulo</h4><p><strong>RAD</strong> ou <strong>GRAUS</strong> vale para <code>sin</code>, <code>cos</code>, <code>tan</code> e as inversas.</p></div>
+            <div class="guide-topic"><h4>Histórico</h4><p>O botão à direita da linha abre o painel com o ângulo, as contas anteriores e a cola dos nomes aceitos. Clique numa conta do histórico para reaproveitá-la.</p></div>
+          </div>
+        </section>
+        <section class="guide-section" data-guide-section="atalhos" hidden>
+          <h1>Atalhos</h1>
+          <p class="guide-lead">Os que mais aparecem no dia. Todos podem ser trocados.</p>
+          <div class="guide-body">
+            <h2>Mensagem</h2>
+            <table class="key-table">
+              <thead><tr><th>Ação</th><th>Atalho</th></tr></thead>
+              <tbody>
+                <tr><td>Enviar mensagem</td><td><kbd>⏎</kbd></td></tr>
+                <tr><td>Com o tutor respondendo, põe na fila</td><td><kbd>⏎</kbd></td></tr>
+                <tr><td>Interromper a resposta e enviar agora</td><td><kbd>⌘</kbd><kbd>⏎</kbd></td></tr>
+                <tr><td>Nova linha</td><td><kbd>⇧</kbd><kbd>⏎</kbd></td></tr>
+                <tr><td>Parar a resposta</td><td><kbd>Esc</kbd></td></tr>
+                <tr><td>Colar uma imagem como anexo</td><td><kbd>⌘</kbd><kbd>V</kbd></td></tr>
+              </tbody>
+            </table>
+            <h2>Material</h2>
+            <table class="key-table">
+              <thead><tr><th>Ação</th><th>Atalho</th></tr></thead>
+              <tbody>
+                <tr><td>Anexar a captura do Xournal++</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>C</kbd></td></tr>
+                <tr><td>Conferir o applet GeoGebra</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd></td></tr>
+                <tr><td>Buscar no PDF focado</td><td><kbd>⌘</kbd><kbd>F</kbd></td></tr>
+                <tr><td>Página anterior / seguinte</td><td><kbd>←</kbd><kbd>→</kbd></td></tr>
+                <tr><td>Página escura no leitor</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd></td></tr>
+              </tbody>
+            </table>
+            <h2>Mesa</h2>
+            <table class="key-table">
+              <thead><tr><th>Ação</th><th>Atalho</th></tr></thead>
+              <tbody>
+                <tr><td>Busca de comandos</td><td><kbd>⌘</kbd><kbd>K</kbd></td></tr>
+                <tr><td>Recolher ou mostrar o tutor</td><td><kbd>⌘</kbd><kbd>\</kbd></td></tr>
+                <tr><td>Chat na tela inteira ou ao lado</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>E</kbd></td></tr>
+                <tr><td>Ir para a matéria</td><td><kbd>⌘</kbd><kbd>1</kbd>…<kbd>9</kbd></td></tr>
+                <tr><td>Próxima ou anterior matéria</td><td><kbd>⌘</kbd><kbd>Tab</kbd></td></tr>
+                <tr><td>Nova matéria (Configurações)</td><td><kbd>⌘</kbd><kbd>T</kbd></td></tr>
+                <tr><td>Modo compacto</td><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>D</kbd></td></tr>
+                <tr><td>Configurações</td><td><kbd>⌘</kbd><kbd>,</kbd></td></tr>
+                <tr><td>Este guia</td><td><kbd>⌘</kbd><kbd>/</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+    <footer class="guide-foot">
+      <button type="button" class="btn btn-ghost" id="guide-prev"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Anterior</button>
+      <button type="button" class="btn btn-ghost next" id="guide-next">Próximo: O tutor<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+    </footer>
+  </div>
+</div>
+<script>
+(() => {
+  const order = ['comecar', 'tutor', 'leitores', 'lateral', 'revisao', 'calc', 'atalhos'];
+  const labels = { comecar: 'Começar', tutor: 'O tutor', leitores: 'Leitores de PDF', lateral: 'Chat lateral', revisao: 'Revisão', calc: 'Calculadora', atalhos: 'Atalhos' };
+  const nav = [...document.querySelectorAll('[data-guide-nav]')];
+  const sections = [...document.querySelectorAll('[data-guide-section]')];
+  const prev = document.getElementById('guide-prev');
+  const next = document.getElementById('guide-next');
+  const scroll = document.getElementById('guide-scroll');
+  let current = 'comecar';
+  const show = (id) => {
+    current = id;
+    const index = order.indexOf(id);
+    sections.forEach((section) => { section.hidden = section.dataset.guideSection !== id; });
+    nav.forEach((button) => {
+      if (button.dataset.guideNav === id) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    prev.disabled = index === 0;
+    next.disabled = index === order.length - 1;
+    next.replaceChildren(document.createTextNode(index === order.length - 1 ? 'Fim do guia' : `Próximo: ${labels[order[index + 1]]}`));
+    if (index < order.length - 1) {
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('class', 'icon');
+      icon.setAttribute('aria-hidden', 'true');
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', '#i-arrow-right');
+      icon.append(use);
+      next.append(icon);
+    }
+    scroll.scrollTop = 0;
+  };
+  nav.forEach((button) => button.addEventListener('click', () => show(button.dataset.guideNav)));
+  prev.addEventListener('click', () => { const index = order.indexOf(current); if (index > 0) show(order[index - 1]); });
+  next.addEventListener('click', () => { const index = order.indexOf(current); if (index < order.length - 1) show(order[index + 1]); });
+  document.getElementById('guide-search').addEventListener('input', (event) => {
+    const query = event.target.value.trim().toLowerCase();
+    nav.forEach((button) => { button.hidden = !!query && !button.textContent.toLowerCase().includes(query); });
+  });
+  show('comecar');
+})();
+</script>
+</body>
+</html>

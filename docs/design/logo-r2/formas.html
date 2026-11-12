@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Logo — formas × estilos</title>
+<style>
+body{margin:0;font:14px/1.45 system-ui,sans-serif;color:#d8d8d8}
+p{margin:6px 0 10px;color:#a8a8a8;font-size:13px;max-width:700px}
+table{border-collapse:collapse}
+th{font:600 12px system-ui;color:#bbb;text-align:center;padding:4px 6px}
+th.l{text-align:left;width:170px}
+td{padding:6px;vertical-align:middle;text-align:center}
+td.l{text-align:left;font-size:12px;color:#aaa;line-height:1.35}
+td.l b{display:block;color:#eee;font-size:13px}
+tr{border-bottom:1px solid #8882}
+.ic{width:92px;height:92px;display:block;margin:auto}
+.dock{display:inline-flex;gap:5px;padding:5px 8px;border-radius:16px;background:#ffffff26;border:1px solid #ffffff30}
+.dock svg{width:40px;height:40px;display:block}
+.desk{display:inline-block;padding:8px;border-radius:10px;background:linear-gradient(135deg,#2b3a55,#4a3b5c 60%,#6b4e4a)}
+</style></head><body>
+<p>Linhas: desenhos novos (nada de luminária, π, M, ∫Σ∇, folhinha). Colunas: os três estilos que você aceitou. A última coluna é o objeto na dock. Tudo no azul; o acento troca a cor da placa como antes.</p>
+<div id="out"></div>
+<script>
+let K=0;
+const mix=(c,p,w)=>`color-mix(in oklch,${c} ${p}%,${w})`;
+const PLATE=`<rect x="100" y="100" width="824" height="824" rx="185"`;
+// cada forma: partes brancas (main) e detalhe na cor (det, recebe a cor do acento)
+const F={
+ dobra:{n:'Folha dobrada',d:'Uma folha com o canto dobrado: o material de referência que a Mesa abre.',
+  main:`<path d="M330 240H604L724 360V784H330Z"/>`, det:a=>`<path d="M604 240V360H724Z" fill="${mix(a,55,'#fff')}"/>`},
+ duas:{n:'Duas folhas',d:'Uma folha atrás da outra: enunciado e formulário lado a lado, o coração da Mesa.',
+  main:`<rect x="268" y="250" width="330" height="440" rx="22" opacity=".55" transform="rotate(-8 433 470)"/><rect x="420" y="320" width="330" height="440" rx="22"/>`, det:a=>`<g fill="${mix(a,45,'#fff')}"><rect x="470" y="400" width="200" height="26" rx="13"/><rect x="470" y="460" width="230" height="26" rx="13"/><rect x="470" y="520" width="170" height="26" rx="13"/></g>`},
+ marcador:{n:'Marcador',d:'Uma página com a fita de marcador. "Onde parei" e "guardar para revisar".',
+  main:`<rect x="300" y="240" width="424" height="544" rx="28"/>`, det:a=>`<path d="M560 240V500L612 456L664 500V240Z" fill="${a}"/>`},
+ balao:{n:'Página que conversa',d:'Um balão com linhas de texto: o tutor lendo o material com você.',
+  main:`<path d="M330 270H694A70 70 0 0 1 764 340V600A70 70 0 0 1 694 670H470L360 770L384 670H330A70 70 0 0 1 260 600V340A70 70 0 0 1 330 270Z"/>`, det:a=>`<g fill="${mix(a,45,'#fff')}"><rect x="340" y="370" width="300" height="30" rx="15"/><rect x="340" y="440" width="344" height="30" rx="15"/><rect x="340" y="510" width="220" height="30" rx="15"/></g>`},
+ esquadro:{n:'Esquadro',d:'O esquadro da mesa de estudo: ferramenta de matemática sem ser fórmula.',
+  main:`<path fill-rule="evenodd" d="M290 770V270L790 770Z M380 680H580L380 480Z"/>`, det:a=>`<g stroke="${mix(a,50,'#fff')}" stroke-width="14" stroke-linecap="round"><path d="M300 330h36M300 400h24M300 470h36M300 540h24M300 610h36"/></g>`},
+ tampo:{n:'Tampo',d:'A mesa vista de cima, como um bloco: o nome do app, sem cena.',
+  main:`<path d="M512 300L790 450L512 600L234 450Z"/>`, det:a=>`<path d="M234 450V520L512 670V600Z" fill="${mix(a,30,'#fff')}"/><path d="M790 450V520L512 670V600Z" fill="${mix(a,55,'#fff')}"/>`},
+};
+function icon(style,shape,acc,cls='ic'){
+ const k='k'+(K++),id=n=>n+k,f=F[shape];
+ const defs=`<filter id="${id('sh')}" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity=".28"/></filter>
+ <filter id="${id('gs')}" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="${mix(acc,55,'#000')}" flood-opacity=".6"/></filter>
+ <clipPath id="${id('pl')}">${PLATE}/></clipPath>
+ <linearGradient id="${id('v')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(acc,72,'#fff')}"/><stop offset="1" stop-color="${mix(acc,85,'#000')}"/></linearGradient>
+ <linearGradient id="${id('vd')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(acc,90,'#fff')}"/><stop offset="1" stop-color="${mix(acc,62,'#000')}"/></linearGradient>
+ <linearGradient id="${id('w')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dde2ea"/></linearGradient>
+ <linearGradient id="${id('g')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".92"/><stop offset=".55" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity=".38"/></linearGradient>
+ <radialGradient id="${id('glow')}" cx=".28" cy=".12" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+ <filter id="${id('bl')}"><feGaussianBlur stdDeviation="40"/></filter>`;
+ const plate=fill=>`<g filter="url(#${id('sh')})">${PLATE} fill="${fill}"/></g>`;
+ let b;
+ if(style==='chapado')b=`${plate(acc)}<g fill="#fff">${f.main}</g>${f.det(acc)}`;
+ if(style==='objeto')b=`${plate(`url(#${id('v')})`)}${PLATE} fill="url(#${id('glow')})"/><rect x="104" y="104" width="816" height="816" rx="181" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="6"/><g filter="url(#${id('gs')})"><g fill="url(#${id('w')})">${f.main}</g>${f.det(acc)}</g>`;
+ // vidro mais firme: placa mais escura, peça mais opaca e contorno branco cheio, para não sumir
+ if(style==='vidro')b=`${plate(`url(#${id('vd')})`)}<g clip-path="url(#${id('pl')})" filter="url(#${id('bl')})"><circle cx="290" cy="240" r="250" fill="${mix(acc,45,'#fff')}" opacity=".75"/><circle cx="820" cy="900" r="280" fill="${mix(acc,55,'#000')}" opacity=".8"/></g>${PLATE} fill="url(#${id('glow')})"/><g filter="url(#${id('gs')})"><g fill="url(#${id('g')})" stroke="#fff" stroke-width="10" stroke-linejoin="round">${f.main}</g>${f.det(acc)}</g>`;
+ return `<svg class="${cls}" viewBox="0 0 1024 1024"><defs>${defs}</defs>${b}</svg>`;
+}
+const nb=(bg,inner)=>`<svg viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="185" fill="${bg}"/>${inner}</svg>`;
+const N=[nb('#f5f5f2','<circle cx="512" cy="512" r="230" fill="#e2483d"/>'),nb('#1f8a5b','<rect x="300" y="300" width="424" height="424" rx="60" fill="#fff"/>'),nb('#262626','<path d="M330 690L512 330L694 690Z" fill="#f2b632"/>')];
+const A='#2d5fdc';
+let h='<table><tr><th class="l"></th><th>Chapado</th><th>Objeto</th><th>Vidro</th><th>Dock (objeto)</th></tr>';
+for(const s of Object.keys(F))h+=`<tr><td class="l"><b>${F[s].n}</b>${F[s].d}</td>${['chapado','objeto','vidro'].map(st=>`<td>${icon(st,s,A)}</td>`).join('')}<td><div class="desk"><div class="dock">${N[0]}${N[1]}${icon('objeto',s,A,'')}${N[2]}</div></div></td></tr>`;
+document.getElementById('out').innerHTML=h+'</table>';
+</script></body></html>

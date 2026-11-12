@@ -1,0 +1,164 @@
+const path=require('node:path');
+const core=require('./src/generated/sessions.core.js').default;
+const {toNat}=require('./src/bend-nat.mjs');
+
+/* Rótulos/preview de sessão: o núcleo Bend (core/sessions.bend) decide; o host
+   faz o split/JSON.parse, o filtro por arquivo e a data local (componentes).
+   Núcleo `sessions` (antes dividido com o chat/lib.cjs da Conversa, aposentada na #50).
+   Degradação defensiva (issue bendlang/bend#798): se o núcleo falhar, o
+   preview e o rótulo caem em extratores locais em vez de derrubar a lista de
+   sessões ou engolir para vazio. */
+const toList=xs=>xs.reduceRight((tail,head)=>({$:'Con',head,tail}),{$:'Nil'});
+
+const IMAGE_EXT=/\.(?:png|jpe?g|gif|webp|svg)$/i;
+const LOCAL_IMAGE_PREFIX=/^(?:file:\/\/|\.{0,2}[\\/]|[\\/]|desk[\\/]|[a-zA-Z]:[\\/])/i;
+
+function imageCandidates(input,{learningRoot='',roots=[]}={}){
+ if(typeof input!=='string')return [];
+ let raw=input.trim();
+ if(raw.length>4096)return [];
+ if(raw.startsWith('<')&&raw.endsWith('>'))raw=raw.slice(1,-1);
+ if(/^file:\/\//i.test(raw))raw=raw.replace(/^file:\/\//i,'');
+ try{raw=decodeURIComponent(raw);}catch{}
+ raw=raw.replace(/[?#].*$/,'').trim();
+ if(!raw||!LOCAL_IMAGE_PREFIX.test(raw)||!IMAGE_EXT.test(raw))return [];
+ const base=learningRoot?path.resolve(learningRoot):'';
+ if(!base)return [];
+ const candidates=path.isAbsolute(raw)?[path.resolve(raw)]:roots.map(root=>path.resolve(root,raw));
+ const out=[];
+ for(const candidate of candidates){
+  if(candidate===base||!candidate.startsWith(base+path.sep))continue;
+  if(!IMAGE_EXT.test(candidate))continue;
+  out.push(candidate);
+ }
+ return out;
+}
+
+function overlaps(bounds,area){
+ return bounds.x<area.x+area.width&&bounds.x+(bounds.width||0)>area.x&&bounds.y<area.y+area.height&&bounds.y+(bounds.height||0)>area.y;
+}
+
+/* Com monitor externo conectado, a Mesa vai para ele; sem externo, fica no
+   interno. Os bounds salvos só mandam dentro da tela alvo — é onde a janela foi
+   ajustada; na outra tela vale só o tamanho, adaptado ao workArea. `internal` é
+   o sinal direto; `id !== primaryId` fica como reserva (o externo pode ser o
+   primário). */
+function placeWindow(displays,primaryId,savedBounds){
+ const list=displays||[];
+ const external=list.find(d=>d.internal===false)||list.find(d=>d.id!==primaryId);
+ const target=external||list.find(d=>d.internal===true)||list.find(d=>d.id===primaryId)||list[0];
+ if(!target?.workArea)return {width:Math.min(1600,savedBounds?.width||1200),height:Math.min(1020,savedBounds?.height||800)};
+ if(savedBounds&&overlaps(savedBounds,target.workArea))return savedBounds;
+ const wa=target.workArea;
+ return {
+  x:wa.x+20,
+  y:wa.y+20,
+  width:Math.max(900,Math.min(1600,savedBounds?.width||1600,wa.width-40)),
+  height:Math.max(650,Math.min(1020,savedBounds?.height||1020,wa.height-40)),
+ };
+}
+
+function sessionStartedFromPath(file){
+ return Number(core.sessionStartedFromPath(String(file||'')));
+}
+
+function pad2(n){return String(n).padStart(2,'0');}
+
+/* Preview local (só quando o núcleo falha): primeira mensagem user do JSONL,
+   espaços colapsados e corte de 48 — sem os cortes de marcador do núcleo.
+   Garante que o preview degrade com texto em vez de engolir para vazio
+   (issue bendlang/bend#798). */
+function degradedPreview(raw){
+ for(const line of String(raw||'').split('\n')){
+  if(!line.trim())continue;
+  let e;try{e=JSON.parse(line);}catch{continue;}
+  const msg=e?.message||e;
+  if(msg?.role!=='user')continue;
+  const content=msg.content;
+  const text=typeof content==='string'?content
+   :Array.isArray(content)?content.filter(part=>part&&(part.type==='text'||typeof part==='string')).map(part=>typeof part==='string'?part:String(part.text||'')).join(' ')
+   :typeof e?.text==='string'?e.text:'';
+  const clean=String(text||'').replace(/\s+/g,' ').trim();
+  if(clean)return clean.slice(0,48);
+ }
+ return '';
+}
+
+/* Rótulo local (só quando o núcleo falha): mesma forma do núcleo — data
+   `dd/mm, hh:mm` (ou "Conversa") + separador + nota em 40. */
+function labelFallback(preview,valid,d){
+ const when=valid?`${pad2(d.getDate())}/${pad2(d.getMonth()+1)}, ${pad2(d.getHours())}:${pad2(d.getMinutes())}`:'Sessão';
+ const note=String(preview||'').replace(/\s+/g,' ').trim().slice(0,40);
+ return note?`${when} · ${note}`:when;
+}
+
+function parseSessionMessages(raw){
+ const msgs=[];
+ for(const line of String(raw||'').split('\n').slice(0,80)){
+  if(!line.trim())continue;
+  let e;try{e=JSON.parse(line);}catch{continue;}
+  const msg=e.message||e;
+  const role=msg.role||e.role;
+  let body=null;
+  if(typeof msg.content==='string')body={$:'BodyString',text:msg.content};
+  else if(Array.isArray(msg.content)){
+   const parts=msg.content.filter(c=>c&&(c.type==='text'||typeof c==='string')).map(c=>typeof c==='string'?c:(c.text||''));
+   body={$:'BodyParts',parts:toList(parts)};
+  }
+  else if(typeof e.text==='string')body={$:'BodyField',text:e.text};
+  if(!body)continue;
+  msgs.push({$:'SessionMsg',isUser:role==='user',body});
+ }
+ return toList(msgs);
+}
+
+/* O preview guardado em disco pode ter vindo de antes do corte de marcador
+   depois de espaço (o host juntava as partes da mensagem com espaço). O
+   rótulo passa o preview pelo corte do núcleo antes de cortar a nota, então a
+   regra fica num lugar só (`core/sessions.bend#cutOne`). */
+function previewForLabel(preview){
+ return core.cutSuffixes(core.mesaSuffix(),String(preview||''));
+}
+
+function formatSessionLabel({started,preview,path}){
+ const t=started||sessionStartedFromPath(path);
+ const d=t?new Date(t):null;
+ const valid=!!(d&&!Number.isNaN(d.getTime()));
+ /* O preview guardado é a mensagem enviada ao motor, com o `[Contexto da
+    Mesa]` no fim; o rótulo é fala do aluno e corta os blocos como o preview
+    da sessão (#165). */
+ let visible=String(preview||'');
+ try{visible=core.applyCuts(visible,core.mesaCuts());}catch{/* o fallback abaixo cobre */}
+ try{
+  /* O núcleo `sessions` nasceu compartilhado com a Conversa e diz "Conversa" sem data;
+     na Mesa a palavra é Sessão. */
+  const label=core.formatSessionLabel('',String(previewForLabel(visible)||''),false,valid,
+   valid?toNat(d.getDate()):0,valid?toNat(d.getMonth()+1):0,valid?toNat(d.getHours()):0,valid?toNat(d.getMinutes()):0);
+  return label.startsWith('Conversa')?'Sessão'+label.slice('Conversa'.length):label;
+ }catch{
+  /* O núcleo não deve falhar com o preview tail-safe; se algo inesperado
+     acontecer, o rótulo degrada em vez de derrubar a lista de sessões (#798). */
+  return labelFallback(visible,valid,d);
+ }
+}
+
+function sessionPreviewFromJsonl(raw){
+ try{
+  return core.sessionPreview(parseSessionMessages(raw),core.mesaCuts());
+ }catch{
+  /* Degradação defensiva: o núcleo aguenta 100k; se ainda assim falhar, o
+     preview local entra no lugar do vazio (#798). */
+  return degradedPreview(raw);
+ }
+}
+
+/* Prefixo do motor nativo no rótulo da sessão; o Pi não tem prefixo (#57). */
+const ENGINE_LABEL_PREFIX=Object.freeze({claude:'Claude Code · ',opencode:'OpenCode · '});
+/**
+ * @param {unknown} engine
+ * @returns {string}
+ * @example engineLabelPrefix('opencode') // 'OpenCode · '
+ */
+function engineLabelPrefix(engine){return typeof engine==='string'&&Object.hasOwn(ENGINE_LABEL_PREFIX,engine)?ENGINE_LABEL_PREFIX[engine]:'';}
+
+module.exports={placeWindow,overlaps,sessionStartedFromPath,formatSessionLabel,engineLabelPrefix,sessionPreviewFromJsonl,imageCandidates};

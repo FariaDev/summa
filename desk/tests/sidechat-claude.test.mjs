@@ -1,0 +1,180 @@
+/* Fábrica do canal Claude do chat lateral: wiring do descritor PRÓPRIO, cache de
+   mensagens, permissões e incerteza — com adaptador fake, nada de SDK real. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {ptMatches} from './pt-text.mjs';
+import os from 'node:os';
+import path from 'node:path';
+import {EventEmitter} from 'node:events';
+import {createRequire} from 'node:module';
+
+const require = createRequire(import.meta.url);
+const {createClaudeSideEngine} = require('../sidechat-engine.cjs');
+const {ClaudeService} = require('../src/agents/service.cjs');
+const conversations = require('../src/agents/conversations.cjs');
+
+class FakeAdapter extends EventEmitter {
+  constructor(options) {
+    super();
+    this.options = options;
+    this.sent = [];
+    this.responses = [];
+    this.cancelled = 0;
+    this.stopped = false;
+    this.initialized = 0;
+    FakeAdapter.instances.push(this);
+  }
+  async connect() {}
+  async initializeControls() {
+    this.initialized += 1;
+    return {};
+  }
+  controlsSnapshot() {
+    return {models: [], levels: [], selection: {model: null, effort: null}, modelSelection: false, effort: false};
+  }
+  snapshot() {
+    return {busy: false, model: {id: 'claude-test', input: ['text']}};
+  }
+  async history() {
+    return [];
+  }
+  async send(input) {
+    this.sent.push(input);
+    await this.options.persistDelivery?.({id: input.id, status: 'accepted'});
+    this.emit('event', {type: 'delivery', id: input.id, status: 'accepted'});
+    return {id: input.id, accepted: true};
+  }
+  async cancel() {
+    this.cancelled += 1;
+    return {cancelled: true};
+  }
+  respond(input) {
+    this.responses.push(input);
+    return {ok: true};
+  }
+  stop() {
+    this.stopped = true;
+  }
+}
+FakeAdapter.instances = [];
+
+function newRuntime() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-sidechat-claude-'));
+}
+
+function build(runtime, descriptor, claudePath = '/fake/claude', tools = {}) {
+  const events = [];
+  const engine = createClaudeSideEngine({
+    id: 'sc-lateral',
+    descriptor,
+    runtime,
+    prepare: (record) => ({cwd: runtime, systemPrompt: `prompt-${record.id}`}),
+    sdkLoader: null,
+    claudePath,
+    onEvent: (event) => events.push(event),
+    ...tools,
+    deps: {Adapter: FakeAdapter, Service: ClaudeService},
+  });
+  return {engine, events, adapter: FakeAdapter.instances.at(-1)};
+}
+
+test('canal Claude: descritor próprio e cache persistido', async () => {
+  const runtime = newRuntime();
+  const descriptor = conversations.createClaudeConversation({runtime, courseId: 'Calculo I'});
+  const {engine, events, adapter} = build(runtime, descriptor);
+  assert.equal(adapter.options.conversationId, descriptor);
+  assert.equal(adapter.options.claudePath, '/fake/claude', 'sem executável fixado, usa o binário do host');
+  assert.equal(adapter.options.deliveryUncertain, false);
+  const result = await engine.prompt({text: 'olá claude'});
+  assert.equal(result.accepted, true);
+  assert.equal(adapter.sent.length, 1);
+  assert.equal(adapter.sent[0].text, 'olá claude');
+  const record = conversations.readClaudeConversation(descriptor, {runtime});
+  assert.equal(record.delivery.status, 'accepted');
+  assert.equal(record.nativeEstablished, true, 'aceite marca a sessão nativa do lateral');
+  /* #119: o aceite não reescreve `messages`; o turno inteiro sai numa gravação
+     no `turn_end` (a fase da entrega cumpre o papel de incerteza na queda). */
+  assert.equal(record.messages, undefined, 'o aceite não grava mensagens');
+  adapter.emit('event', {type: 'message_end', conversationId: descriptor, message: {role: 'assistant', content: [{type: 'text', text: 'resposta do claude'}]}});
+  assert.equal(conversations.readClaudeConversation(descriptor, {runtime}).messages, undefined, 'a resposta grava no fim do turno (#116)');
+  adapter.emit('event', {type: 'turn_end', conversationId: descriptor, cancelled: false, isError: false, uncertain: false});
+  const after = conversations.readClaudeConversation(descriptor, {runtime});
+  assert.deepEqual(after.messages.map((message) => message.role), ['user', 'assistant']);
+  assert.equal(events[0].type, 'message_end');
+  assert.equal(events[0].conversationId, descriptor);
+  assert.equal(engine.isBusy(), false);
+  assert.equal(engine.isUncertain(), false);
+  fs.rmSync(runtime, {recursive: true, force: true});
+});
+
+test('canal Claude: ler_pdf e buscar_material chegam ao adaptador do chat lateral', async () => {
+  const runtime = newRuntime();
+  const descriptor = conversations.createClaudeConversation({runtime, courseId: 'Calculo I'});
+  const readPdf = async () => ({file: 'A.pdf', total: 1, pages: [{page: 1, text: 'x'}]});
+  const searchMaterial = async () => ({query: 'x', limit: 5, hits: []});
+  const {engine, adapter} = build(runtime, descriptor, '/fake/claude', {readPdf, searchMaterial});
+  assert.equal(adapter.options.readPdf, readPdf);
+  assert.equal(adapter.options.searchMaterial, searchMaterial);
+  engine.close();
+  fs.rmSync(runtime, {recursive: true, force: true});
+});
+
+test('canal Claude: permissão roteada e cancelamento passam pelo próprio adaptador', async () => {
+  const runtime = newRuntime();
+  const descriptor = conversations.createClaudeConversation({runtime, courseId: 'Calculo I'});
+  const {engine, events, adapter} = build(runtime, descriptor);
+  adapter.emit('event', {type: 'permission_request', id: 'pedido-1', method: 'confirm', title: 'Permitir leitura?'});
+  assert.equal(events.length, 1);
+  assert.equal(events[0].type, 'extension_ui_request');
+  assert.equal(events[0].id, 'pedido-1');
+  assert.equal(events[0].permission, true);
+  assert.deepEqual(engine.respond({id: 'pedido-1', confirmed: true}), {ok: true});
+  assert.deepEqual(adapter.responses, [{id: 'pedido-1', confirmed: true}]);
+  const aborted = await engine.abort();
+  assert.equal(adapter.cancelled, 1);
+  assert.deepEqual(aborted, {cancelled: true});
+  engine.close();
+  assert.equal(adapter.stopped, true, 'fechar o canal encerra só a consulta do lateral');
+  fs.rmSync(runtime, {recursive: true, force: true});
+});
+
+test('incerteza hidratada do descritor bloqueia novo envio no canal Claude', async () => {
+  const runtime = newRuntime();
+  const descriptor = conversations.createClaudeConversation({runtime, courseId: 'Calculo I'});
+  conversations.updateClaudeConversation(descriptor, {delivery: {id: 'antigo', status: 'uncertain'}}, {runtime});
+  const {engine, adapter} = build(runtime, descriptor);
+  assert.equal(adapter.options.deliveryUncertain, true);
+  assert.equal(engine.isUncertain(), true);
+  await assert.rejects(
+    () => engine.prompt({text: 'não repete'}),
+    (error) => error.notSent === true && ptMatches(/incerta/i)(error),
+  );
+  assert.equal(adapter.sent.length, 0);
+  fs.rmSync(runtime, {recursive: true, force: true});
+});
+
+test('descritor Claude inválido nunca vira Pi: a fábrica recusa', () => {
+  const runtime = newRuntime();
+  const fake = path.join(runtime, 'conversations', 'claude-11111111-1111-4111-8111-111111111111.json');
+  fs.mkdirSync(path.dirname(fake), {recursive: true});
+  fs.writeFileSync(fake, '{ isto não é um descritor }');
+  assert.throws(() => build(runtime, fake), /inválido|indisponível/i);
+  fs.rmSync(runtime, {recursive: true, force: true});
+});
+
+test('#28: retomada usa launcher atual e conserva ID; sem launcher usa último binário',()=>{
+ const runtime=newRuntime();
+ try{
+  const descriptor=conversations.createClaudeConversation({runtime,courseId:'Synthetic'});
+  conversations.updateClaudeConversation(descriptor,{pinnedExecutable:'/old/2.1.246',nativeEstablished:true},{runtime});
+  const id=conversations.readClaudeConversation(descriptor,{runtime}).nativeSessionId;
+  const current=build(runtime,descriptor,'/current/2.1.301');
+  assert.equal(current.adapter.options.claudePath,'/current/2.1.301','binário obsoleto não congela uma sessão retomada');
+  assert.equal(current.adapter.options.sessionId,id);assert.equal(current.adapter.options.resume,true);
+  current.engine.close();
+  const fallback=build(runtime,descriptor,'');
+  assert.equal(fallback.adapter.options.claudePath,'/old/2.1.246','sem launcher preserva o último binário para detecção estrita');
+  fallback.engine.close();
+ }finally{fs.rmSync(runtime,{recursive:true,force:true});}
+});

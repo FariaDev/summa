@@ -1,0 +1,265 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const require = createRequire(import.meta.url);
+const {ACTIVITY_TOOL_NAME, ACTIVITY_TOOL_DESCRIPTION, createActivityTool, createActivityServer} = require('../src/agents/activity-tools.cjs');
+
+test('createActivityTool devolve a definição da ferramenta com schema e handler', async () => {
+  assert.equal(ACTIVITY_TOOL_NAME, 'mcp__mesa__criar_atividade');
+  assert.match(ACTIVITY_TOOL_DESCRIPTION, /alternativeMarkdown/);
+  assert.match(ACTIVITY_TOOL_DESCRIPTION, /64 KiB/);
+  assert.match(ACTIVITY_TOOL_DESCRIPTION, /offline/);
+  const definition = await createActivityTool(async () => ({published: true, id: 'x'}));
+  assert.equal(typeof definition.handler, 'function');
+  const parse = (args) => definition.inputSchema.safeParse(args).success;
+  const base = {title: 'MRUV', objective: 'Explorar', alternativeMarkdown: 'a'};
+  assert.equal(parse(base), true);
+  assert.equal(parse({...base, title: 'x'.repeat(161)}), false);
+  assert.equal(parse({...base, objective: 'x'.repeat(301)}), false);
+  assert.equal(parse({...base, alternativeMarkdown: 'x'.repeat(8001)}), false);
+  assert.equal(parse({...base, html: 'x'.repeat(51201)}), false);
+  assert.equal(parse({...base, css: 'x'.repeat(32769)}), false);
+  assert.equal(parse({...base, js: 'x'.repeat(32769)}), false);
+  assert.equal(parse({...base, activityId: 'act-abc12345'}), true);
+  assert.equal(parse({...base, activityId: 'x'.repeat(65)}), false);
+  assert.equal(parse({...base, previaId: 'prv-0123456789ab'}), true);
+  assert.equal(parse({...base, katex: true}), true);
+  /* M1: o `callRef` do hook não aparece no esquema que o modelo vê, mas o
+     `passthrough()` o deixa chegar ao handler (o hook o injeta). */
+  assert.equal('callRef' in definition.inputSchema.shape, false);
+  const withRef = definition.inputSchema.safeParse({...base, callRef: 'ref-injetado'});
+  assert.equal(withRef.success, true);
+  assert.equal(withRef.data.callRef, 'ref-injetado');
+});
+
+test('createActivityServer compõe o servidor mesa com a ferramenta (sem API privada)', async () => {
+  const server = await createActivityServer(async () => ({published: true, id: 'act-1'}));
+  assert.equal(server.type, 'sdk');
+  assert.equal(server.name, 'mesa');
+  assert.ok(server.instance, 'instância do servidor presente para o SDK montar');
+});
+
+test('handler repassa o callRef injetado (nunca assume toolCallId do extra)', async () => {
+  const calls = [];
+  const definition = await createActivityTool(async (args) => {
+    calls.push(args);
+    return {published: true, id: 'act-1', title: 't', version: 1, hash: 'sha256:h'};
+  });
+  const result = await definition.handler({
+    title: 'MRUV', objective: 'Explorar', alternativeMarkdown: 'a', html: '<p/>', css: '', js: '', katex: false, callRef: 'ref-injetado',
+  }, {});
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].callRef, 'ref-injetado');
+  assert.equal(calls[0].toolCallId, undefined);
+  /* O resultado é a frase do guia, a mesma do Pi: id e versão para revisar,
+     e o lembrete de não anunciar o quadro. Nada de JSON interno (#40). */
+  assert.equal(result.content[0].text, (await import('../src/extensions/mesa-activity/guide.mjs')).publishedText({title: 't', id: 'act-1', version: 1}, undefined));
+  assert.match(result.content[0].text, /act-1 v1/);
+  assert.match(result.content[0].text, /não a anuncie/);
+  assert.equal(result.isError, undefined);
+});
+
+test('erro do publicador vira isError com a mensagem, sem stack', async () => {
+  const definition = await createActivityTool(async () => {
+    const error = new Error('referência de chamada desconhecida; atividade não publicada.');
+    error.code = 'BAD_INPUT';
+    throw error;
+  });
+  const result = await definition.handler({title: 't', objective: 'o', alternativeMarkdown: 'a', html: '<p/>', css: '', js: ''}, {});
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /referência de chamada desconhecida/);
+});
+
+/* Regressão (#43 fase 3): o erro marcado do host ia ao modelo com a marca U+E000. */
+test('createActivityTool devolve ao modelo o erro marcado na língua do tutor', async () => {
+  const {message} = await import('../src/i18n.mjs');
+  const definition = await createActivityTool(async () => { throw new Error(message('err.activity.sessionChangedNotPublished')); }, {language: 'en'});
+  const result = await definition.handler({title: 't', objective: 'o', alternativeMarkdown: 'a', html: '<p/>', css: '', js: ''}, {});
+  assert.equal(result.isError, true);
+  assert.equal(result.content[0].text, 'The session changed; the activity was not published.');
+});
+
+/* ---------- #42: tipo, gráficos e prévia ---------- */
+
+const {PREVIEW_TOOL_NAME, PREVIEW_TOOL_DESCRIPTION, createPreviewTool} = require('../src/agents/activity-tools.cjs');
+
+test('criar_atividade aceita o tipo e a biblioteca de gráficos', async () => {
+  const definition = await createActivityTool(async () => ({published: true}));
+  const base = {title: 't', objective: 'o', alternativeMarkdown: 'a'};
+  const parse = (extra) => definition.inputSchema.safeParse({...base, ...extra}).success;
+  assert.equal(parse({kind: 'visualizacao'}), true);
+  assert.equal(parse({kind: 'atividade'}), true);
+  assert.equal(parse({kind: 'grafico'}), false);
+  assert.equal(parse({}), true, 'sem tipo = atividade (as antigas seguem valendo)');
+  assert.equal(parse({charts: true}), true);
+});
+
+test('as instruções dizem o que a issue pede: prévia antes, quadro solto, tokens, offline e o texto que não repete', () => {
+  for (const pattern of [
+    /[Pp]review/, /before writing the reply/, /do not announce it/, /without background, card, border/, /no card, border or title/,
+    /fluid width/, /fixed height in px/, /100vh/, /16px padding/, /var\(--mesa-radius\)/,
+    /--mesa-chart-1 … --mesa-chart-6/, /--color-background-primary/, /--mesa-font-sans\/serif\/mono/, /offline/, /Chart\.js 4/, /KaTeX/,
+    /plain SVG or canvas/, /generated PNG/, /Levar ao tutor/,
+  ]) assert.match(ACTIVITY_TOOL_DESCRIPTION, pattern);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /PNG print/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /contentHeight/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /log, info, warning, error and exceptions/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /Nothing is published while this call runs/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /publishes the last preview/);
+});
+
+/* M1: a descrição era ~2,1 mil tokens (auditoria das ferramentas do tutor). O
+   corte de 20% é medido com a mesma régua do `measure-prompts`, incluindo o
+   esquema que vai junto no mesmo objeto da ferramenta. */
+test('M1: criar_atividade encolheu pelo menos 20% sem perder as regras', async () => {
+  const {estimateTokens} = await import('../scripts/measure-prompts.mjs');
+  const definition = await createActivityTool(async () => ({}));
+  const {z} = await import('zod');
+  const tool = JSON.stringify({name: ACTIVITY_TOOL_NAME, description: ACTIVITY_TOOL_DESCRIPTION, input_schema: z.toJSONSchema(definition.inputSchema, {io: 'input', unrepresentable: 'any'})});
+  assert.ok(estimateTokens(tool) <= Math.floor(2127 * 0.8), `ferramenta com ${estimateTokens(tool)} tokens (teto 1701)`);
+  assert.ok(estimateTokens(ACTIVITY_TOOL_DESCRIPTION) <= Math.floor(1681 * 0.8), `descrição com ${estimateTokens(ACTIVITY_TOOL_DESCRIPTION)} tokens (teto 1344)`);
+});
+
+test('a ferramenta do Claude usa o MESMO texto do guia', async () => {
+  const guide = await import('../src/extensions/mesa-activity/guide.mjs');
+  assert.equal(ACTIVITY_TOOL_DESCRIPTION, guide.CREATE_DESCRIPTION);
+  assert.equal(PREVIEW_TOOL_DESCRIPTION, guide.PREVIEW_DESCRIPTION);
+  assert.equal(PREVIEW_TOOL_NAME, 'mcp__mesa__previsualizar_atividade');
+});
+
+test('prévia no Claude: devolve a imagem e o resumo do console; nada de publicação', async () => {
+  const calls = [];
+  const definition = await createPreviewTool(async (args) => {
+    calls.push(args);
+    return {previewed: true, width: 390, theme: 'escuro', contentHeight: 240, capturedHeight: 240, previaId: 'prv-0123456789ab',
+      consoleMessages: [{level: 'log', text: 'ok'}, {level: 'error', text: 'TypeError: x (linha 3)'}],
+      screenshot: {mimeType: 'image/png', data: 'iVBORw0KGgo=', width: 390, height: 240}};
+  });
+  assert.equal(definition.inputSchema.theme.safeParse('escuro').success, true);
+  assert.equal(definition.inputSchema.theme.safeParse('dark').success, false);
+  assert.equal(definition.inputSchema.width.safeParse(100).success, false);
+  assert.equal(definition.inputSchema.title.safeParse(undefined).success, true, 'título opcional na prévia');
+  const result = await definition.handler({html: '<p>x</p>', js: 'mesa.ready()', theme: 'escuro', width: 390}, {});
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].theme, 'escuro');
+  assert.deepEqual(result.content[0], {type: 'image', data: 'iVBORw0KGgo=', mimeType: 'image/png'});
+  assert.match(result.content[1].text, /Prévia em 390px \(escuro\): o conteúdo pede 240px/);
+  assert.match(result.content[1].text, /\[error\] TypeError: x \(linha 3\)/);
+  assert.match(result.content[1].text, /Corrija os 1 erro/);
+  assert.match(result.content[1].text, /criar_atividade com previaId "prv-0123456789ab"/);
+  const failing = await createPreviewTool(async () => { throw new Error('O documento não ficou pronto a tempo.'); });
+  const failed = await failing.handler({html: '<p/>'}, {});
+  assert.equal(failed.isError, true);
+});
+
+test('o servidor mesa inclui a prévia só junto da ferramenta de mostrar', async () => {
+  const study = require('../src/agents/study-tools.cjs');
+  const withPreview = await study.createStudyToolsServer({createActivity: async () => ({}), previewActivity: async () => ({})});
+  const without = await study.createStudyToolsServer({previewActivity: async () => ({})});
+  const names = (server) => [...(server.instance?._registeredTools ? Object.keys(server.instance._registeredTools) : [])];
+  assert.deepEqual(names(withPreview).sort(), ['calcular', 'criar_atividade', 'previsualizar_atividade']);
+  assert.deepEqual(names(without), ['calcular']);
+  assert.equal(withPreview.name, 'mesa');
+});
+
+/* ---------- #40: o esquema que o SDK anuncia é o do guia ---------- */
+
+test('paridade: o esquema anunciado pelo Claude é o descrito no guia', async () => {
+  const {Client} = await import('@modelcontextprotocol/sdk/client/index.js');
+  const {InMemoryTransport} = await import('@modelcontextprotocol/sdk/inMemory.js');
+  const guide = await import('../src/extensions/mesa-activity/guide.mjs');
+  const fields = await import('../src/extensions/tool-fields.mjs');
+  const {ACTIVITY_CALL_REF_FIELD} = require('../activity-bridge.cjs');
+  assert.equal(ACTIVITY_CALL_REF_FIELD in guide.CREATE_FIELDS, false, 'M1: o callRef não aparece no esquema');
+  assert.equal('previaId' in guide.CREATE_FIELDS, true, 'A3: a publicação aceita o id da prévia');
+  const server = await createActivityServer(async () => ({}), async () => ({}));
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  const client = new Client({name: 'mesa-activity-contract', version: '1.0.0'});
+  await server.instance.connect(b);
+  await client.connect(a);
+  try {
+    const {tools} = await client.listTools();
+    const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
+    assert.deepEqual(fields.canonical(byName.criar_atividade.inputSchema), fields.canonicalFields(guide.CREATE_FIELDS));
+    assert.deepEqual(fields.canonical(byName.previsualizar_atividade.inputSchema), fields.canonicalFields(guide.PREVIEW_FIELDS));
+    assert.equal(byName.criar_atividade.description, guide.CREATE_DESCRIPTION);
+    assert.equal(byName.previsualizar_atividade.description, guide.PREVIEW_DESCRIPTION);
+  } finally {
+    await client.close();
+    await server.instance.close();
+  }
+});
+
+/* M1: o `tools/list` não mostra `callRef`, mas o transporte MCP do SDK não a
+   descarta: o `passthrough()` deixa o valor injetado pelo hook chegar ao
+   handler, e a correlação continua igual. */
+test('M1: o callRef injetado passa pelo MCP do Claude sem aparecer em tools/list', async () => {
+  const {Client} = await import('@modelcontextprotocol/sdk/client/index.js');
+  const {InMemoryTransport} = await import('@modelcontextprotocol/sdk/inMemory.js');
+  const calls = [];
+  const server = await require('../src/agents/study-tools.cjs').createStudyToolsServer({
+    createActivity: async (args) => { calls.push(args); return {id: 'act-1', version: 1, title: 't'}; },
+  });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  const client = new Client({name: 'mesa-callref', version: '1.0.0'});
+  await server.instance.connect(b);
+  await client.connect(a);
+  try {
+    const {tools} = await client.listTools();
+    const create = tools.find((tool) => tool.name === 'criar_atividade');
+    assert.equal('callRef' in (create.inputSchema.properties || {}), false, 'o modelo não vê callRef');
+    const result = await client.callTool({name: 'criar_atividade', arguments: {title: 't', objective: 'o', alternativeMarkdown: 'a', html: '<p/>', callRef: 'ref-do-hook'}});
+    assert.equal(result.isError, undefined, JSON.stringify(result.content));
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].callRef, 'ref-do-hook', 'o hook continua correlacionando a chamada');
+  } finally {
+    await client.close();
+    await server.instance.close();
+  }
+});
+
+/* ---------- M4: o console da prévia não some em silêncio ---------- */
+
+test('M4: com mais de 50 mensagens, o texto diz quanto mostrou e prioriza erros', async () => {
+  const guide = await import('../src/extensions/mesa-activity/guide.mjs');
+  const messages = [];
+  for (let i = 0; i < 198; i += 1) messages.push({level: 'log', text: `log ${i}`});
+  messages.push({level: 'error', text: 'TypeError: fim 198 (linha 3)'});
+  messages.push({level: 'error', text: 'ReferenceError: fim 199 (linha 4)'});
+  const text = guide.previewText({width: 390, theme: 'claro', contentHeight: 200, consoleMessages: messages});
+  assert.match(text, /\(mostrando 50 de 200 mensagens; as demais ficaram no console da prévia\)/);
+  assert.match(text, /\[error\] TypeError: fim 198/);
+  assert.match(text, /\[error\] ReferenceError: fim 199/);
+  assert.equal(text.split('\n').filter((line) => line.startsWith('- [')).length, 50);
+  const short = guide.previewText({width: 390, theme: 'claro', contentHeight: 200, consoleMessages: messages.slice(0, 10)});
+  assert.doesNotMatch(short, /mostrando 50 de/);
+});
+
+/* ---------- M9: a soma da atividade cabe no store ---------- */
+
+test('M9: soma acima de 64 KiB falha antes de pré-visualizar ou publicar, com tamanho e teto', async () => {
+  const huge = {title: 'Grande', objective: 'o', alternativeMarkdown: 'a'.repeat(8000), html: 'h'.repeat(51200), css: 'c'.repeat(16000), js: 'j'.repeat(16000)};
+  const created = [];
+  const definition = await createActivityTool(async (args) => { created.push(args); return {published: true, id: 'act-1', title: 't', version: 1}; });
+  const result = await definition.handler(huge, {});
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /91207 bytes/);
+  assert.match(result.content[0].text, /65536/);
+  assert.equal(created.length, 0, 'nada foi publicado');
+
+  const previewed = [];
+  const preview = await createPreviewTool(async (args) => { previewed.push(args); return {screenshot: {data: '', mimeType: 'image/png'}}; });
+  const previewResult = await preview.handler(huge, {});
+  assert.equal(previewResult.isError, true);
+  assert.match(previewResult.content[0].text, /65536/);
+  assert.equal(previewed.length, 0, 'a prévia nem abriu');
+});
+
+test('A3/M9: previaId e conteúdo juntos são recusados antes de publicar', async () => {
+  const created = [];
+  const definition = await createActivityTool(async (args) => { created.push(args); return {published: true, id: 'act-1', title: 't', version: 1}; });
+  const result = await definition.handler({title: 't', objective: 'o', alternativeMarkdown: 'a', previaId: 'prv-0123456789ab', html: '<p>x</p>'}, {});
+  assert.equal(result.isError, true);
+  assert.match(result.content[0].text, /previaId sozinho ou html\/css\/js/);
+  assert.equal(created.length, 0);
+});

@@ -1,0 +1,80 @@
+const fs=require('node:fs');const path=require('node:path');
+const {scanFiles}=require('./file-scan.cjs');
+const core=require('./src/generated/courses.core.js').default;
+const DEFAULT_LABELS={'Calculus I':'Cálculo I','Discrete Math':'Matemática Discreta','Physics I':'Física I','Algorithms II':'Algoritmos II'};
+
+/* Tradutores para o formato do artefato Bend (registros sem tag; listas
+   Con/Nil). O núcleo é core/courses.bend. */
+const toCourses=xs=>xs.reduceRight((tail,c)=>({$:'Con',head:{id:c.id,name:c.name,path:c.path},tail}),{$:'Nil'});
+const fromCourses=ls=>{const out=[];for(let l=ls;l&&l.$==='Con';l=l.tail)out.push({id:l.head.id,name:l.head.name,path:l.head.path});return out;};
+const toPdfs=xs=>xs.reduceRight((tail,p)=>({$:'Con',head:{name:p.name,path:p.path,canonical:p.canonical},tail}),{$:'Nil'});
+const fromPdfs=ls=>{const out=[];for(let l=ls;l&&l.$==='Con';l=l.tail)out.push({name:l.head.name,path:l.head.path,canonical:l.head.canonical});return out;};
+
+function discoverCourses(vault,labels={}){
+ if(!vault)return [];
+ const root=path.join(vault,'Courses');
+ if(!fs.existsSync(root))return [];
+ const names={...DEFAULT_LABELS,...labels};
+ return fs.readdirSync(root,{withFileTypes:true}).filter(e=>e.isDirectory()&&fs.existsSync(path.join(root,e.name,'_state.md'))).map(e=>({id:e.name,name:names[e.name]||e.name,path:path.join(root,e.name)}));
+}
+
+/* Os .pdf da matéria vêm da varredura compartilhada (`file-scan.cjs`), a
+   mesma dos cadernos: o `seen` corta os ciclos de symlink e a dedupe por
+   canônico fica no núcleo. */
+
+/* Pastas varridas atrás de PDFs: `Sources/`, as `source_roots` do `_state.md` ou,
+   sem nenhuma, a própria pasta da matéria. */
+function sourceRoots(course){
+ const roots=[];
+ const sources=path.join(course,'Sources');
+ if(fs.existsSync(sources))roots.push(sources);
+ const state=path.join(course,'_state.md');
+ if(fs.existsSync(state)){
+  const text=fs.readFileSync(state,'utf8');
+  const block=text.match(/^source_roots:\s*\n((?:[ \t]+.*\n?)*)/m)?.[1]||'';
+  for(const line of block.split('\n')){
+   const raw=line.match(/^\s*-\s*(.+?)\s*$/)?.[1];
+   if(raw)roots.push(path.resolve(course,raw.replace(/^["']|["']$/g,'')));
+  }
+ }
+ if(!roots.length)roots.push(course);
+ return roots;
+}
+
+/* Onde o usuário deve jogar um PDF para a biblioteca da matéria o ver: a
+   primeira pasta varrida que existe (a da matéria, quando não há outra). */
+function courseDropFolder(course){
+ if(!course||!fs.existsSync(course))return '';
+ return sourceRoots(course).find(root=>{try{return fs.statSync(root).isDirectory();}catch{return false;}})||course;
+}
+
+function courseLibrary(course){
+ if(!course||!fs.existsSync(course))return [];
+ const roots=sourceRoots(course);
+ const generated=path.join(course,'Materiais da Mesa');
+ if(fs.existsSync(generated))roots.push(generated);
+ const seen=new Set(),all=[];
+ roots.forEach(r=>scanFiles({dir:r,seen,result:all,isMatch:(name)=>/\.pdf$/i.test(name)}));
+ const order=new Map();
+ all.forEach((p,i)=>{if(!order.has(p.canonical))order.set(p.canonical,i);});
+ /* O núcleo dedupa (primeiro canônico vence); a ordem final fica a do app:
+    nome em localeCompare e, no empate, a ordem de varredura (como o sort
+    estável de antes). */
+ return fromPdfs(core.courseLibrary(toPdfs(all)))
+  .sort((a,b)=>a.name.localeCompare(b.name)||(order.get(a.canonical)??0)-(order.get(b.canonical)??0))
+  .map(({name,path})=>({name,path}));
+}
+
+function mergeCourses(config){
+ const labels={};
+ for(const c of config?.courses||[])if(c?.id&&c.name)labels[c.id]=c.name;
+ const discovered=config?.vaultPath?discoverCourses(config.vaultPath,labels):[];
+ const cfg=[];
+ for(const c of config?.courses||[]){
+  if(!c?.path||!fs.existsSync(c.path))continue;
+  cfg.push({id:c.id||path.basename(c.path),name:c.name||'',path:c.path});
+ }
+ return fromCourses(core.mergeCourses(toCourses(discovered),toCourses(cfg)));
+}
+
+module.exports={DEFAULT_LABELS,discoverCourses,courseLibrary,courseDropFolder,mergeCourses};

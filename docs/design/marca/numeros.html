@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Números e contadores</title>
+<style>
+@font-face{font-family:"IBM Plex Sans";font-weight:400;src:url(../../../desk/src/fonts/IBMPlexSans-Regular.woff2)}
+@font-face{font-family:"IBM Plex Sans";font-weight:600;src:url(../../../desk/src/fonts/IBMPlexSans-SemiBold.woff2)}
+@font-face{font-family:"IBM Plex Mono";font-weight:400;src:url(../../../desk/src/fonts/IBMPlexMono-Regular.woff2)}
+@font-face{font-family:"STIX Two Text";font-weight:400 700;src:url(../../../desk/src/fonts/STIXTwoText.woff2)}
+:root{color-scheme:light;--bg:#fff;--surface:#fff;--fg:#161616;--fg-strong:#0e0e0e;--muted:#525252;--faint:#6f6f6f;--border:#e0e0e0;--border-strong:#8d8d8d;--hover:#e8e8e8;--selected:#dedede;--code:#f4f4f4;
+ --accent-fill:#303030;--accent-text:#303030;--accent-fg:#fff;
+ --sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;--serif:"STIX Two Text",Georgia,serif}
+:root[data-theme=dark]{color-scheme:dark;--bg:#161616;--surface:#161616;--fg:#f4f4f4;--fg-strong:#fff;--muted:#c6c6c6;--faint:#a8a8a8;--border:#393939;--border-strong:#6f6f6f;--hover:#333;--selected:#393939;--code:#262626;--accent-fill:#e6e6e6;--accent-text:#e6e6e6;--accent-fg:#161616}
+:root[data-accent=violet]{--accent-fill:#8044ca;--accent-text:#8044ca;--accent-fg:#fff}
+:root[data-theme=dark][data-accent=violet]{--accent-fill:#8957d0;--accent-text:#b89cea;--accent-fg:#fff}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--code);color:var(--fg);font:13px/1.4 var(--sans)}
+.bar{display:flex;gap:16px;align-items:center;margin-bottom:20px;font-size:12px;color:var(--muted)}
+.bar button{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--fg);font:inherit;cursor:pointer}
+.bar button[aria-pressed=true]{border-color:var(--fg);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr;gap:12px;max-width:720px}
+.opt{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px 24px 24px}
+.opt>h2{margin:0 0 18px;font:600 14px var(--sans);color:var(--fg-strong)}
+.opt>h2 span{font-weight:400;color:var(--muted)}
+.ctx{margin-top:22px}
+.ctx:first-of-type{margin-top:0}
+.ctx-l{display:block;margin-bottom:8px;font-size:11px;color:var(--faint)}
+ol.trail{display:flex;flex-wrap:nowrap;gap:6px;margin:0;padding:0;list-style:none}
+ol.trail li{display:flex;align-items:center;gap:6px;height:24px;font-size:12px;color:var(--muted);white-space:nowrap}
+.tour{display:flex;align-items:baseline;gap:10px}
+.tour h1{margin:0;font:500 22px/1.15 var(--serif);color:var(--fg-strong)}
+.tabs{display:flex;gap:2px;align-items:center;font-size:13px}
+.tab{display:inline-flex;gap:6px;align-items:center;height:28px;padding:0 10px;border-radius:4px;color:var(--muted)}
+.tab.on{background:var(--selected);color:var(--fg-strong)}
+.tab.has{color:var(--fg-strong)}
+
+/* A: atual */
+.A ol.trail li{padding:0 10px 0 6px;border-radius:4px}
+.A li[data-s=done]{color:var(--fg-strong)}
+.A li[data-s=cur]{background:var(--accent-fill);color:var(--accent-fg);font-weight:600}
+.A .m{display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:var(--selected);color:var(--muted);font-size:11px;font-weight:700}
+.A li[data-s=done] .m{background:transparent;color:var(--accent-text)}
+.A li[data-s=cur] .m{background:rgba(255,255,255,.22);color:inherit}
+.A .tour .n{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:var(--accent-fill);color:var(--accent-fg);font-size:12px;font-weight:700;transform:translateY(-3px)}
+.A .c{font-size:11px;background:var(--selected);color:var(--fg-strong);font-weight:600;border-radius:4px;padding:0 6px;line-height:14px}
+
+/* B: só o número, como o Guia */
+.B ol.trail{gap:18px}
+.B ol.trail li{position:relative;height:28px}
+.B .m{font:400 12px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+.B li[data-s=done]{color:var(--fg)}
+.B li[data-s=done] .m{color:var(--accent-text)}
+.B li[data-s=cur]{color:var(--fg-strong);font-weight:600}
+.B li[data-s=cur] .m{color:var(--accent-text)}
+.B li[data-s=cur]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent-fill)}
+.B .tour .n{font:400 14px var(--mono);color:var(--faint);transform:translateY(-2px)}
+.B .c{font:400 12px var(--mono);color:var(--muted)}
+
+/* C: círculo de contorno */
+.C ol.trail{gap:16px}
+.C .m{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border:1px solid var(--border-strong);border-radius:50%;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.C li[data-s=done]{color:var(--fg)}
+.C li[data-s=done] .m{border-color:var(--accent-text);color:var(--accent-text)}
+.C li[data-s=cur]{color:var(--fg-strong);font-weight:600}
+.C li[data-s=cur] .m{border-color:var(--accent-fill);background:var(--accent-fill);color:var(--accent-fg);font-weight:600}
+.C .tour .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--border-strong);border-radius:50%;font-size:12px;color:var(--muted);transform:translateY(-3px)}
+.C .c{font-size:12px;color:var(--muted)}
+
+/* D: sem número na trilha, só o passo e um "2 de 6" */
+.D .wrap{display:flex;align-items:center;gap:18px}
+.D ol.trail{gap:18px}
+.D ol.trail li{position:relative;height:28px}
+.D .m{display:none}
+.D li[data-s=done]{color:var(--fg)}
+.D li[data-s=cur]{color:var(--fg-strong);font-weight:600}
+.D li[data-s=cur]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent-fill)}
+.D .of{margin-left:auto;font:400 12px var(--mono);color:var(--faint);white-space:nowrap}
+.D .tour .n{display:none}
+.D .tour .of{font:400 12px var(--mono);color:var(--faint);margin-left:4px;white-space:nowrap}
+.D .c{font-size:12px;color:var(--muted)}
+.of{display:none}
+.D .of{display:inline}
+</style>
+</head>
+<body>
+<div class="bar">
+ <span>Tema</span><button data-k="theme" data-v="light" aria-pressed="true">Claro</button><button data-k="theme" data-v="dark">Escuro</button>
+ <span>Acento</span><button data-k="accent" data-v="graphite" aria-pressed="true">Grafite</button><button data-k="accent" data-v="violet">Violeta</button>
+</div>
+<div class="grid" id="grid"></div>
+<template id="t">
+ <section class="ctx"><span class="ctx-l">Trilha da primeira abertura</span>
+  <div class="wrap"><ol class="trail">
+   <li data-s="done"><span class="m">✓</span>Boas-vindas</li>
+   <li data-s="cur"><span class="m">2</span>Como funciona</li>
+   <li><span class="m">3</span>Nome</li>
+   <li><span class="m">4</span>PDFs</li>
+   <li><span class="m">5</span>Tutor</li>
+   <li><span class="m">6</span>Pronto</li>
+  </ol><span class="of">2 de 6</span></div>
+ </section>
+ <section class="ctx"><span class="ctx-l">Passo do passeio</span>
+  <div class="tour"><span class="n">1</span><h1>Abra o material</h1><span class="of">1 de 4</span></div>
+ </section>
+ <section class="ctx"><span class="ctx-l">Contador da aba Caderno</span>
+  <div class="tabs"><span class="tab on">Cálculo I</span><span class="tab">Livre</span><span class="tab has">Caderno <span class="c">3</span></span></div>
+ </section>
+</template>
+<script>
+const OPTS=[['A','Atual'],['B','Só o número, como o Guia'],['C','Círculo de contorno'],['D','Sem número na trilha']];
+const grid=document.getElementById('grid'),t=document.getElementById('t');
+for(const [k,name] of OPTS){const s=document.createElement('section');s.className='opt '+k;s.innerHTML=`<h2>${k} <span>${name}</span></h2>`;s.append(t.content.cloneNode(true));grid.append(s);}
+const root=document.documentElement;
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>{root.dataset[b.dataset.k]=b.dataset.v;document.querySelectorAll(`.bar button[data-k=${b.dataset.k}]`).forEach(x=>x.setAttribute('aria-pressed',x===b));});
+const q=new URLSearchParams(location.search);if(q.get('tema'))root.dataset.theme=q.get('tema');if(q.get('acento'))root.dataset.accent=q.get('acento');
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+/* Regras globais da página de impressão. Tipografia/elementos vivem no
+   `pdf-template.css` (compartilhado com a prévia); aqui só a página física. */
+
+@page{
+  size:A4;
+  margin:18mm 16mm 20mm;
+}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:#fff;
+  color:#1f2328;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+/* O `.pdf-doc` define a largura de conteúdo (178 mm) para a medição da prévia
+   no renderizador escondido; na impressão a área já tem essa largura. */
+.doc{max-width:none}

@@ -1,0 +1,220 @@
+/* Guia da Mesa (#help-dialog) e Sobre (#34).
+   Saiu do style.css na #43 fase 2; o index.html liga os CSS na ordem original
+   (style.css primeiro, com os tokens), então a cascata não mudou. */
+/* ---------- Guia da Mesa (#help-dialog) ----------
+   Carbon r2 (docs/design/carbon-r2/guia.html, aprovado em 2026-11-10): tela
+   cheia, lateral de 288px com a marca, a busca preenchida e as seções
+   numeradas em Plex Mono; a página com o título em STIX, a abertura, os passos
+   numerados com fio entre eles e o rodapé fixo com Anterior/Próximo. O corpo
+   das seções continua no `index.html`; a busca em lista é a da #64. */
+#help-dialog{width:100vw;max-width:none;height:100vh;max-height:none;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:var(--bg);overflow:hidden}
+#help-dialog[open]{display:block}
+#help-dialog .guide{display:grid;grid-template-columns:288px minmax(0,1fr);height:100%;margin:0;padding:0}
+#help-dialog [hidden]{display:none!important}
+.guide-side{display:flex;flex-direction:column;gap:var(--space-6);min-height:0;padding:var(--space-7) var(--space-6);background:var(--code);border-right:1px solid var(--border)}
+.guide-head{display:flex;flex-direction:row;align-items:center;gap:var(--space-5);margin:0}
+/* A integral ao lado do título; o seletor composto vence o tamanho de `.brand-icon`. */
+.guide-head .guide-lamp{width:32px;height:32px;flex:none;border-radius:0}
+.guide-head-text{display:flex;flex-direction:column;min-width:0}
+/* O título do guia é a exceção do padrão de diálogos: STIX, como no protótipo. */
+.guide-title{margin:0;font:400 var(--fs-3xl)/1.1 var(--serif,serif);color:var(--fg-strong,var(--fg))}
+.guide-search{position:relative;display:block;margin:0}
+.guide-search-icon{position:absolute;left:var(--space-4);top:50%;display:flex;color:var(--muted);transform:translateY(-50%);pointer-events:none}
+.guide-search-icon .icon{width:16px;height:16px}
+/* A busca do Guia é a mesma forma da busca dos Cadernos: 40px, sem borda e
+   preenchida. O seletor vale fora do diálogo para o painel reaproveitá-la. */
+.guide-search input{width:100%;height:40px;box-sizing:border-box;margin:0;padding:0 var(--space-5) 0 36px;border:0;border-radius:var(--r-sm);background:var(--surface)}
+.guide-search input:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.guide-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.guide-nav{display:flex;flex-direction:column;gap:var(--space-0);min-height:0;overflow:auto}
+/* O número mono (01–07) é o índice editorial, desenhado do `data-index`; o
+   ícone continua a âncora de cada seção. O ativo ganha o fundo de seleção e a
+   barra de 2px do acento à esquerda, sem deslocar o texto. */
+.guide-nav-item{position:relative;display:flex;align-items:center;height:40px;flex:none;justify-content:flex-start;gap:var(--space-3);padding:0 var(--space-3);border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;color:var(--muted);text-align:left;font-size:var(--fs-lg)}
+.guide-nav-item:hover{background:var(--hover);color:var(--fg)}
+.guide-nav-item[aria-current="page"]{background:var(--selected);color:var(--fg-strong,var(--fg));font-weight:600}
+.guide-nav-item[aria-current="page"]::after{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:var(--r-round);background:var(--accent-fill)}
+/* r2 (2026-11-11): sem ícone por seção; o número em mono e o nome. No item
+   atual o número fica no acento e o nome em semibold. */
+.guide-nav-item::before{content:attr(data-index);width:24px;flex:none;color:var(--faint);font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:400;font-variant-numeric:tabular-nums}
+.guide-nav-item[aria-current="page"]::before{color:var(--accent-text);font-weight:400}
+.guide-side-foot{display:flex;flex-direction:column;gap:var(--space-2);margin-top:auto;padding-top:var(--space-5);border-top:1px solid var(--border)}
+.guide-side-foot .guide-link{justify-content:flex-start}
+.guide-hint,.guide-side-foot .help-version{margin:0;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
+.guide-side-foot .help-version{color:var(--faint)}
+.guide-main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.guide-bar{display:flex;align-items:center;gap:var(--space-5);flex:none;height:44px;padding:0 12px 0 48px;border-bottom:0;background:transparent}
+.guide-crumb{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.guide-bar .dialog-close{margin-left:auto}
+.guide-scroll{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--space-6) 48px 48px}
+/* 68ch é a medida de leitura do protótipo, centrada na coluna. */
+.guide-page{display:flex;flex-direction:column;gap:var(--space-7);width:100%;max-width:68ch;margin:0 auto;--motion-from:var(--from-rise);animation:mesa-in var(--t-base) var(--ease-out)}
+.guide-intro{display:flex;flex-direction:column;gap:var(--space-2)}
+.guide-section-title{margin:0;font:400 var(--fs-display)/1.15 var(--serif,serif);color:var(--fg-strong,var(--fg));text-transform:none;letter-spacing:0;outline:0}
+.guide-section-title:focus-visible{outline:2px solid var(--accent-text);outline-offset:4px;border-radius:var(--r-sm)}
+.guide-lead{margin:0;max-width:none;font-size:var(--fs-xl);line-height:1.6;color:var(--muted)}
+/* Passos empilhados com o número mono à esquerda e o fio entre eles. */
+.guide-steps{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;border-top:1px solid var(--border)}
+.guide-card{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:var(--space-5);row-gap:var(--space-1);padding:var(--space-6) 0;border-bottom:1px solid var(--border);background:transparent;border-radius:0;color:var(--fg)}
+.guide-card:last-child{border-bottom:0}
+.guide-card>strong{grid-column:2;font-size:var(--fs-xl);font-weight:600;line-height:1.4;color:var(--fg-strong,var(--fg))}
+.guide-card>span:last-child{grid-column:2;font-size:var(--fs-lg);line-height:1.6;color:var(--fg)}
+.guide-card>span strong{font-weight:600;color:var(--fg-strong,var(--fg))}
+.guide-num{grid-column:1;grid-row:1 / span 2;color:var(--faint);font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:400;line-height:1.6;font-variant-numeric:tabular-nums}
+.guide-topics{display:flex;flex-direction:column;border-top:1px solid var(--border)}
+.guide-topic{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-6) 0;border-bottom:1px solid var(--border)}
+.guide-topic h4{margin:0;font-size:var(--fs-xl);font-weight:600;line-height:1.4;color:var(--fg-strong,var(--fg))}
+.guide-topic p{margin:0;max-width:none;font-size:var(--fs-lg);line-height:1.6;color:var(--fg)}
+.guide-topic strong,.guide-topic code{color:var(--fg-strong,var(--fg))}
+.guide-topic strong{font-weight:600}
+.guide-topic code{padding:1px 5px;border-radius:var(--r-sm);background:var(--code);font-size:var(--fs-sm);white-space:nowrap}
+.guide-topic kbd,.guide-card kbd{white-space:nowrap}
+.guide-hit-section{align-self:flex-start;height:20px;padding:0 var(--space-3);border:0;border-radius:var(--r-sm);background:var(--code);box-shadow:none;color:var(--muted);font-size:var(--fs-xs)}
+.guide-hit-section:hover{color:var(--fg)}
+/* Atalhos: tabela zebrada (ação à esquerda, teclas à direita). */
+.guide-keygroups{display:flex;flex-direction:column;gap:26px}
+.guide-keygroup{display:block}
+.guide-keygroup h4{margin:0 0 var(--space-3);font-size:var(--fs-2xl);font-weight:600;line-height:1.3;color:var(--fg-strong,var(--fg))}
+.guide-key{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-6);align-items:center;min-height:40px;padding:0 var(--space-5);border-bottom:1px solid var(--border);font-size:var(--fs-lg);line-height:1.5}
+.guide-keygroup h4+.guide-key{border-top:1px solid var(--border)}
+.guide-key:nth-child(odd){background:var(--code)}
+.guide-key>span:last-child{grid-column:1;grid-row:1;min-width:0}
+.guide-key .guide-combo{grid-column:2;grid-row:1;justify-content:flex-end}
+.guide-key kbd{font-family:var(--font-mono);font-size:var(--fs-xs);font-weight:500;padding:2px 6px;border-width:1px;border-radius:var(--r-sm);background:var(--surface)}
+.guide-combo{display:flex;flex-wrap:wrap;gap:var(--space-1);align-items:center}
+.guide-link{align-self:flex-start;height:30px;padding:0;border:0;background:transparent;box-shadow:none;color:var(--accent-text)}
+.guide-link:hover{text-decoration:underline}
+.guide-empty{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);padding:var(--space-7) 0;color:var(--muted)}
+.guide-empty p{margin:0;font-size:var(--fs-lg)}
+.guide-empty-mascote{width:120px;height:130px}
+/* Rodapé fixo: fora da rolagem, com o fio em cima. */
+.guide-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--space-5);flex:none;min-height:64px;padding:0 48px;border-top:1px solid var(--border);background:var(--bg)}
+.guide-foot:empty{display:none}
+/* O "Próximo: <seção>" mora no fim do texto da seção, depois de um fio; o
+   nome da seção vai em STIX. O botão do núcleo continua a navegação por
+   clique e teclado. */
+.guide-page .guide-next{max-width:68ch;margin:var(--space-7) 0 0;padding-top:var(--space-6);border-top:var(--space-hairline) solid var(--border);font-size:var(--fs-xl);line-height:1.6}
+.guide-next-link{display:inline-flex;align-items:baseline;gap:var(--space-1);height:auto;min-height:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--accent-text);font:inherit;font-weight:400;text-align:left}
+.guide-next-link:hover,.guide-next-link:active{background:transparent;text-decoration:underline;color:var(--accent-text)}
+.guide-next-name{font-family:var(--serif);font-size:calc(var(--fs-2xl) + var(--space-0));line-height:1.3}
+@media (max-width:760px){
+ #help-dialog .guide{grid-template-columns:1fr}
+ .guide-side{display:none}
+ .guide-bar,.guide-foot{padding-inline:20px}
+ .guide-scroll{padding-inline:20px}
+ .guide-topic,.guide-keygroup{display:flex;flex-direction:column}
+ .guide-keygroup{gap:0}
+}
+
+/* ---------- Sobre (#34): cabeçalho com marca, faixa de atualização, "O que a Mesa usa" e rodapé ---------- */
+#about-dialog{width:min(540px,94vw);max-width:540px;max-height:min(640px,92vh);padding:0;overflow:hidden}
+#about-dialog[open]{display:flex;flex-direction:column}
+#about-dialog form{display:flex;flex-direction:column;min-height:0;max-height:min(640px,92vh);padding:0;margin:0}
+.about-head{display:flex;align-items:center;gap:14px;padding:20px 20px 16px;flex:none}
+/* A marca é o ícone do app no acento, como a do cabeçalho (#70, #100):
+   arquivo pela classe `.brand-icon`; o seletor composto vence o tamanho dela. */
+.about-head .about-mark{flex:none;width:44px;height:44px;border-radius:var(--r-sm)}
+.about-id{flex:1;min-width:0}
+.about-name{margin:0;font:500 var(--fs-3xl)/1.2 var(--serif);color:var(--fg-strong)}
+.about-lead{margin:2px 0 0;font-size:var(--fs-sm);color:var(--muted)}
+/* #109: de onde o app se atualiza. Uma linha discreta; o caminho corta por
+   CSS e o completo fica no `title` (o Sobre é do próprio usuário). */
+.about-origin{display:flex;align-items:baseline;min-width:0;margin:2px 0 0;font-size:var(--fs-xs);line-height:1.5;color:var(--faint);white-space:nowrap}
+.about-origin[hidden]{display:none}
+.about-origin-label{flex:none}
+.about-origin-path{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);color:var(--muted)}
+.about-head .dialog-close{align-self:flex-start}
+.about-update{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:44px;padding:6px 20px;box-sizing:border-box;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--code);flex:none}
+.update-icon{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:var(--r-round);font-size:var(--fs-sm);font-weight:700;line-height:1;background:var(--selected);color:var(--muted)}
+.update-icon[data-state="ok"]{background:color-mix(in oklab,var(--success) 22%,transparent);color:var(--success-text)}
+.update-icon[data-state="new"]{background:var(--accent-fill);color:var(--accent-fg)}
+.update-icon[data-state="warn"]{background:color-mix(in oklab,var(--warn) 22%,transparent);color:var(--warn-text)}
+.about-update .update-text{flex:1;min-width:0;margin:0;font-size:var(--fs-sm)}
+.update-main{font-weight:600;color:var(--fg-strong)}
+.update-muted{color:var(--muted)}
+.about-update button:not(.icon-btn){height:30px;padding:0 10px;border:0;background:transparent;box-shadow:none;color:var(--accent-text)}
+.about-update button:not(.icon-btn):hover{text-decoration:underline}
+.about-update button.primary{background:var(--accent-fill);color:var(--accent-fg);border-radius:var(--r-sm)}
+.about-update button.primary:hover{text-decoration:none;filter:brightness(1.06)}
+.about-update button.primary[disabled]{opacity:.55}
+.about-update .icon-btn{width:30px;height:30px;color:var(--muted)}
+.update-notes{flex-basis:100%;margin:0 0 4px;padding-left:30px;font-size:var(--fs-xs);color:var(--faint);white-space:pre-wrap}
+/* Avisos de atualização (#45): uma linha por ferramenta, sem toast nem modal. */
+.about-notices{flex:none;display:flex;flex-direction:column;border-bottom:1px solid var(--border)}
+.about-notice{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 20px;box-sizing:border-box}
+.about-notice + .about-notice{border-top:1px solid var(--border)}
+.about-notice .update-text{flex:1 1 180px;min-width:0;margin:0;font-size:var(--fs-sm)}
+.about-notice .notice-btn{height:28px;padding:0 8px;border:0;background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-sm)}
+.about-notice .notice-btn:hover{text-decoration:underline}
+/* A mesma linha no topo das Configurações (#52): uma faixa com borda, no ritmo das seções. */
+.settings-notices{margin:var(--space-2) 0 var(--space-4);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);overflow:hidden}
+.settings-notices .about-notice{padding:8px 12px}
+/* O ponto no ⚙: aparece só com uma versão que a pessoa ainda não viu. Pinta com
+   --accent-text (#67): no escuro o --accent-fill fica abaixo de 3:1 contra o fundo
+   e o ponto é a única pista; no claro os dois tons são o mesmo. */
+.header-actions #settings-trigger{position:relative}
+.header-actions #settings-trigger[data-dot="true"]::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:var(--r-round);background:var(--accent-text);box-shadow:0 0 0 2px var(--bg)}
+/* O mesmo ponto no item Ajustes do menu: sem ele, quem abria o ⚙ não sabia
+   onde a linha da atualização morava (#52 manda seguir o ponto até as Configurações). */
+#settings-menu:has(#settings-trigger[data-dot="true"]) #settings-pop #settings::after{content:"";width:7px;height:7px;margin-left:auto;border-radius:var(--r-round);background:var(--accent-text);flex:none}
+.about-body{flex:1;min-height:0;overflow:auto;padding:16px 20px 12px}
+.about-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 4px}
+.about-section-head h3{margin:0;font-size:var(--fs-xs);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
+.about-section-head .icon-btn{width:30px;height:30px;color:var(--muted)}
+.component-rows{display:flex;flex-direction:column}
+.component-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 0;border-top:1px solid var(--border)}
+.component-row:first-child{border-top:0}
+.component-main{flex:1;min-width:0}
+.component-head{display:flex;align-items:center;gap:8px;font-size:var(--fs-sm)}
+.component-name{font-weight:600;color:var(--fg-strong)}
+.component-version{font-variant-numeric:tabular-nums;color:var(--muted)}
+.component-dot{flex:none;width:7px;height:7px;border-radius:var(--r-round);background:var(--faint)}
+.component-dot[data-state="ok"]{background:var(--success)}
+.component-dot[data-state="new"]{background:var(--accent-text)}
+.component-dot[data-state="warn"]{background:var(--warn)}
+.component-dot[data-state="busy"]{background:var(--faint);opacity:.6}
+.component-state{color:var(--muted)}
+.component-hint{display:block;margin-top:2px;font-size:var(--fs-xs);line-height:1.45;color:var(--faint)}
+.component-actions{flex:none;display:flex;align-items:center;gap:4px}
+.component-link,.component-update{height:30px;padding:0 10px;border:0;background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-sm)}
+.component-link:hover,.component-update:hover{text-decoration:underline}
+.component-ahead{font-size:var(--fs-xs);color:var(--warn-text)}
+.component-wait{flex-basis:100%;font-size:var(--fs-xs);color:var(--faint)}
+.component-update[disabled]{opacity:.55;cursor:not-allowed}
+.component-update[disabled]:hover{text-decoration:none}
+/* "Instalar plugin" desabilitado no erro (#133, achado 1 da rodada 6): a ação
+   ativa é o "Tentar de novo", mas o rótulo fica legível (≥4,5:1) com
+   `opacity:1` + `--faint`, como os desabilitados do composer. Vem antes da
+   regra do `aria-busy`, que vence no "Instalando…". */
+.component-plugin-install[disabled]{opacity:1;color:var(--faint)}
+/* O "Instalando…" do plugin (#133, rodada 5): em voo o botão segue `disabled`
+   + `aria-busy`, mas o rótulo é o único progresso na tela e a opacidade de
+   desabilitado o deixava a 2,59:1/2,81:1. O composer já mantém os seus
+   desabilitados legíveis com `opacity:1` + token. */
+.component-plugin-install[aria-busy="true"]{opacity:1;color:var(--accent-text)}
+.component-plugin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.component-plugin-state{font-size:var(--fs-xs);color:var(--muted)}
+.component-plugin-version{font-size:var(--fs-xs);color:var(--muted)}
+.component-plugin-restart,.component-plugin-next{flex-basis:100%;font-size:var(--fs-xs);line-height:1.45;color:var(--muted)}
+/* Confirmação e saída do "Atualizar": ocupa a largura da linha, embaixo. */
+.component-run{flex-basis:100%;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--code)}
+.run-line{margin:0;font-size:var(--fs-sm);color:var(--fg)}
+.run-command{font-family:var(--font-mono);font-size:var(--fs-xs);padding:2px 6px;border-radius:var(--r-sm);background:var(--selected);overflow-wrap:anywhere}
+.run-warn{margin:0;font-size:var(--fs-xs);line-height:1.45;color:var(--warn-text)}
+.run-result{font-weight:600;color:var(--fg-strong)}
+.component-run[data-phase="failed"] .run-result{color:var(--warn-text)}
+.run-output{margin:0;max-height:140px;overflow:auto;padding:8px;border-radius:var(--r-sm);background:var(--bg);color:var(--muted);font:var(--fs-xs)/1.5 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.run-actions{display:flex;justify-content:flex-end;gap:8px}
+.run-actions button{height:30px;padding:0 12px}
+.run-cancel,.run-close{border:0;background:transparent;box-shadow:none;color:var(--accent-text)}
+.run-confirm{border-radius:var(--r-sm)}
+.about-credits{margin-top:8px;padding-top:4px;border-top:1px solid var(--border)}
+.about-credits h3{margin:12px 0 8px;font-size:var(--fs-xs);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
+.about-credits ul{margin:0;padding-left:18px;font-size:var(--fs-sm);line-height:1.6;color:var(--muted)}
+.about-repo{margin:8px 0 0;font-size:var(--fs-xs);color:var(--faint)}
+/* Aviso da licença MIT do que foi adaptado de perto (#42): texto pequeno, rola se precisar. */
+.about-license{margin:8px 0 0;max-height:96px;overflow:auto;font-size:var(--fs-2xs);line-height:1.5;color:var(--faint)}
+.about-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;margin:0;padding:0 20px;border-top:1px solid var(--border);flex:none}
+.about-by{font-size:var(--fs-sm);color:var(--muted)}
+.about-links{display:flex;align-items:center;gap:4px}
+.about-links .guide-link{align-self:center;padding:0 8px}

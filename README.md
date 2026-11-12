@@ -1,0 +1,83 @@
+<p align="center"><img src="docs/release-assets/v1.0.0/banner-readme.png" alt="Summa: a ∫, o Σ e o ∇ ao lado da logo da folha com a integral" width="800"></p>
+
+<p align="center"><b>Português</b> · <a href="README.en.md">English</a></p>
+
+# Summa
+
+App local (Electron) para estudar com PDFs e um tutor de IA na mesma janela. A escrita à mão continua no [Xournal++](https://xournalpp.github.io/) ou em outro programa de sua escolha; a Mesa não tem canvas de tinta.
+
+```
+Summa                                   Xournal++ (ou outro)
+  enunciado + formulário (PDF)            escrita à mão
+  tutor (OpenCode)                       tentativa
+  calculadora, GeoGebra, caderno          → Conferir manda a página ao tutor
+```
+
+O nome é o mesmo nas duas línguas: **Summa**.
+
+<p align="center"><img src="docs/release-assets/v1.0.0/mesa-1.0-novidades.png" alt="Novidades da versão 1.0" width="800"></p>
+
+## O que tem
+
+- **Dois leitores de PDF** independentes, com busca, favoritos, sumário e citação "Arquivo.pdf, p. N" clicável nas respostas.
+- **Tutor** com OpenCode, o motor visível e o padrão; o login do provedor acontece no app e a conta fica nele. O código do Claude Code continua no repositório para testes e sessões antigas; o Pi foi aposentado e sessões antigas abrem só para leitura.
+- **Conferir:** captura a janela do programa de escrita e anexa à mensagem. **Foto do celular:** um QR code abre uma página na mesma rede, e as fotos entram na Mesa na ordem de envio.
+- **Figuras, gráficos e atividades interativas** no chat, que funcionam offline. GeoGebra sob demanda, com pacote offline opcional.
+- **PDF pelo tutor:** Lista, Apostila, Resumo, Simulado e Formulário, com prévia em A4 e revisão antes de salvar.
+- **Caderno** (Revisar hoje), **Estatísticas** de estudo, **Guia da Mesa** (⌘/) e calculadora numérica.
+- **Aba Livre** para estudo avulso, sem criar matéria; **Criar matéria** leva a conversa e os PDFs para uma aba nova.
+- Interface e tutor em **português ou inglês**, tema claro ou escuro (Grafite) e seis cores de acento.
+
+**Não entra:** canvas de tinta, edição de PDF, telemetria, conta na nuvem. O login acontece no app e a conta do provedor fica no OpenCode; a chave dos modelos grátis do OpenCode Zen, quando usada, fica cifrada no cofre do sistema.
+
+## Requisitos
+
+- Node **20+** só para instalar a partir do código (`npm ci`, `npm run setup`, `npm start`). O app e o servidor MCP do tutor rodam no Node embutido do Electron, então estudar não depende do Node do sistema.
+- **OpenCode 2.2.4** (a Mesa instala na primeira abertura, com o pacote fixado). O código do Claude Code ainda aceita a faixa 2.1.296 até a série 2.1, mas ele não aparece nesta versão; sessões Pi antigas abrem só para leitura.
+- Os PDFs da matéria numa pasta qualquer.
+- macOS ou Windows. O Conferir funciona nos dois; o resto do dia a dia foi testado à mão no macOS.
+
+## Começar
+
+```sh
+cd desk
+npm ci
+npm run setup
+npm run doctor
+npm start
+```
+
+Na primeira abertura, a Mesa mostra um passo por vez: idioma e cor, como a Mesa funciona, nome da matéria, pasta de PDFs (subpastas contam), tutor e pronto. A matéria só é criada no último passo. O OpenCode permite entrar no provedor na primeira conexão; a conta fica nele, não na Mesa.
+
+`npm run doctor` confere o motor instalado, políticas, fontes, extensão visual (quando aplicável) e persistência sem abrir o app. No Mac, `npm run install-app` monta o **Summa.app**.
+
+Para um agente configurar o computador: [`desk/SETUP.md`](desk/SETUP.md).
+
+## Atualizar
+
+**Sobre → Atualizar e reiniciar** (de 0.4.0 em diante), ou `npm run update` em `desk/`. O `config.json` continua valendo como está. O que mudou em cada versão fica nas [Releases](https://github.com/FariaDev/mesa-de-estudos/releases).
+
+## Configurações
+
+**Ajustes → Configurações** (⌘ , / Ctrl+,): matérias e pastas, leitores (um ou dois, nomes e PDF inicial), recursos visíveis, aparência e o programa do Conferir. As mudanças valem ao salvar. Para personalizar com um agente: [`docs/agents/customizar.md`](docs/agents/customizar.md) e [`desk/config.example.json`](desk/config.example.json). O uso e os dados locais estão em [`desk/README.md`](desk/README.md).
+
+## Problemas
+
+**Relatar um problema** (Mais opções do tutor) ou `npm run triage` monta um relatório limpo, sem chaves, sessões, nomes de matéria nem de PDF, e oferece um prompt pronto para um agente e a issue já preenchida no repositório público [`FariaDev/mesa-de-estudos`](https://github.com/FariaDev/mesa-de-estudos) para você revisar. O log do app abre no Sobre.
+
+## Desenvolvimento
+
+Código em `desk/` (app), `core/` (invariantes em Bend, com leis e provas) e `visual-check/` (captura no macOS). Portões e regras: [`AGENTS.md`](AGENTS.md).
+
+```sh
+cd desk
+npm run verify:bend
+npm test
+npm run ui
+```
+
+## Créditos
+
+- **Lucas Faria** — autor
+
+Licença [MIT](LICENSE).

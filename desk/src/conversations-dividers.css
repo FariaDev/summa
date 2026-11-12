@@ -1,0 +1,248 @@
+/* Conversas da matéria, caderno no cabeçalho e divisórias.
+   Saiu do style.css na #43 fase 2; o index.html liga os CSS na ordem original
+   (style.css primeiro, com os tokens), então a cascata não mudou. */
+/* ---------- Conversas da matéria (main.mjs) ---------- */
+#chat{position:relative}
+/* A lista rola; o título, a explicação e o link do pé ficam sempre à vista (#23). */
+#conversations-pop{
+ position:absolute;z-index:20;top:calc(var(--bar) - var(--space-1));right:var(--space-2);
+ display:flex;flex-direction:column;
+ width:min(380px,94%);max-height:min(64vh,440px);overflow:hidden;
+ background:var(--raised);border:1px solid var(--border-strong);border-radius:var(--r-md);
+ box-shadow:var(--shadow-pop);padding:var(--space-3);
+}
+.conv-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);margin-bottom:var(--space-1)}
+.conv-head strong{font-size:var(--fs-sm)}
+#conv-list{display:flex;flex-direction:column;gap:var(--space-1);flex:1 1 auto;min-height:0;overflow:auto}
+.conv-head,#conversations-pop>.fine,.conv-library{flex:none}
+.conv-row{
+ display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;
+ background:transparent;border:1px solid transparent;box-shadow:none;padding:var(--space-2);border-radius:var(--r-sm);
+}
+.conv-row:hover{background:var(--hover)}
+.conv-row.current{background:var(--selected);border-color:var(--border-strong)}
+.conv-title{font-size:var(--fs-sm);font-weight:600;color:var(--fg);overflow-wrap:anywhere}
+.conv-meta{font-size:var(--fs-2xs);color:var(--faint)}
+.conv-meta[hidden]{display:none}
+.conv-row.current .conv-meta{color:var(--muted)}
+.conv-preview{font-size:var(--fs-xs);color:var(--muted);overflow-wrap:anywhere}
+.conv-empty{margin:var(--space-2);font-size:var(--fs-sm);color:var(--faint)}
+.conv-library{display:flex;justify-content:flex-start;width:100%;margin-top:var(--space-2);height:var(--ctl);padding:0 var(--space-2);border:0;border-top:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-sm)}
+.conv-library:hover{background:var(--hover)}
+
+/* ---------- Cadernos (#133, só vista; encaixado desde o r2) ----------
+   O painel entra no fluxo da coluna do tutor, logo abaixo do cabeçalho: largura
+   inteira, sem sombra, sem cantos e sem fio lateral. Só o fio de baixo separa;
+   a lista rola por dentro e a conversa encolhe enquanto ele está aberto. */
+#notebooks-pop{
+ position:relative;z-index:auto;display:flex;flex-direction:column;flex:none;
+ width:auto;max-height:60%;overflow:hidden;
+ background:var(--bg);border:0;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;padding:0;
+}
+#notebooks-pop[hidden]{display:none}
+.dock-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);flex:none;height:var(--bar);padding:0 var(--space-3) 0 var(--space-5)}
+#notebooks-pop .dock-head strong{font-size:var(--fs-lg);line-height:1.3}
+#notebooks-list{display:flex;flex-direction:column;gap:var(--space-1);flex:1 1 auto;min-height:0;overflow:auto;padding:0 var(--space-2)}
+/* "Buscando…" (#158, rodada 4): as linhas antigas seguem em contraste cheio
+   e inertes (o JS põe `inert`/`aria-busy`); a espera é do status. */
+#notebooks-list.notebooks-searching{cursor:progress}
+.notebooks-group{font-size:var(--fs-sm);font-weight:600;color:var(--muted);margin:var(--space-3) var(--space-2) var(--space-1);position:sticky;top:0;background:var(--bg);z-index:1;padding:var(--space-1) 0}
+.notebooks-row{
+ display:grid;grid-template-columns:14px minmax(0,1fr) auto;grid-template-areas:"icon title format" "icon meta format";
+ align-items:start;column-gap:var(--space-2);row-gap:2px;width:100%;text-align:left;
+ background:transparent;border:1px solid transparent;box-shadow:none;padding:var(--space-2);border-radius:var(--r-sm);
+}
+.notebooks-row:hover{background:var(--hover)}
+.notebooks-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.notebooks-row:hover .notebooks-meta,.notebooks-row:focus-visible .notebooks-meta{color:var(--fg)}
+.notebooks-icon{grid-area:icon;display:inline-flex;width:14px;height:14px;margin-top:1px;color:var(--muted)}
+.notebooks-icon .icon{width:14px;height:14px}
+.notebooks-title{grid-area:title;font-size:var(--fs-lg);font-weight:400;color:var(--fg);overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35}
+.notebooks-meta{grid-area:meta;font-size:var(--fs-sm);color:var(--faint);overflow-wrap:anywhere;line-height:1.4}
+.notebooks-meta[hidden]{display:none}
+.notebooks-format{grid-area:format;align-self:start;margin-top:1px;padding:0 var(--space-1);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--raised);font-size:var(--fs-2xs);font-weight:600;line-height:1.4;color:var(--muted);white-space:nowrap}
+.notebooks-empty{margin:0;padding:var(--space-6) var(--space-3);font-size:var(--fs-lg);line-height:1.4;color:var(--muted)}
+/* A busca é a mesma do Guia (`.guide-search`): 40px, lupa à esquerda, campo
+   preenchido e sem borda. O seletor com #notebooks-pop vence o `.guide-search
+   {margin:0}` do help-about.css, que entra depois e zerava a margem lateral. */
+#notebooks-pop .notebooks-search-field{margin:0 var(--space-5) var(--space-3)}
+#notebooks-search{padding-right:calc(var(--space-7) + var(--space-5));background:var(--stage);font-size:var(--fs-lg)}
+#notebooks-search::placeholder{color:var(--faint)}
+.notebooks-search-input::-webkit-search-cancel-button,.notebooks-search-input::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.notebooks-search-clear{position:absolute;right:var(--space-0);top:50%;display:inline-flex;align-items:center;justify-content:center;width:var(--space-7);height:var(--space-7);padding:0;border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;color:var(--muted);transform:translateY(-50%)}
+.notebooks-search-clear[hidden]{display:none}
+.notebooks-search-clear:hover{background:var(--hover);color:var(--fg)}
+.notebooks-search-clear:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.notebooks-search-clear .icon{width:14px;height:14px}
+.notebooks-search-row{
+ display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;
+ background:transparent;border:1px solid transparent;box-shadow:none;padding:var(--space-2);border-radius:var(--r-sm);
+}
+.notebooks-search-row:hover{background:var(--hover)}
+.notebooks-search-row:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.notebooks-search-row:hover .notebooks-excerpt,.notebooks-search-row:focus-visible .notebooks-excerpt{color:var(--fg)}
+.notebooks-search-row:hover .notebooks-meta,.notebooks-search-row:focus-visible .notebooks-meta{color:var(--fg)}
+.notebooks-excerpt{font-size:var(--fs-lg);color:var(--muted);overflow-wrap:anywhere;line-height:1.45}
+.notebooks-excerpt mark{background:var(--highlight);color:var(--fg);font-weight:600;border-radius:var(--r-sm);padding:0 var(--space-0)}
+.notebooks-search-status{margin:var(--space-2) var(--space-2) 0;font-size:var(--fs-sm);color:var(--muted)}
+.notebooks-search-status:empty{display:none}
+@media(prefers-reduced-motion:reduce){.notebooks-search-status .ts-dots span{animation:none}}
+.notebooks-search-empty{margin:0;padding:var(--space-6) var(--space-3);font-size:var(--fs-lg);line-height:1.4;color:var(--muted)}
+/* Leitura da tinta (#158, opt-in): uma linha no pé, depois de um fio, sem caixa
+   nem fundo próprios. O nome fica em peso normal, a descrição em 12px e
+   --faint, e o interruptor 40×20 à direita; o estado e o erro seguem abaixo. */
+.notebooks-ink{margin:0;padding:var(--space-3) var(--space-5) var(--space-5);background:transparent;border:0;border-top:1px solid var(--border);border-radius:0}
+.notebooks-ink-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-5)}
+.notebooks-ink-copy{min-width:0}
+.notebooks-ink-switch-text{display:block;font-size:var(--fs-lg);font-weight:400;line-height:1.4;color:var(--fg)}
+.notebooks-ink-switch{flex:none;display:inline-flex;align-items:center;justify-content:center;width:var(--toggle-w);height:var(--toggle-h);padding:0;background:transparent;border:0;border-radius:var(--r-round);box-shadow:none;cursor:pointer}
+.notebooks-ink-switch:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+/* #158, rodada 5: o desligado continua no trilho --faint, sem a opacidade
+   global de `button:disabled` (.45). */
+.notebooks-ink-switch:hover,.notebooks-ink-switch:focus-visible{background:transparent}
+.notebooks-ink-switch:disabled{cursor:default;opacity:1}
+.notebooks-ink-track{flex:0 0 auto;display:inline-flex;align-items:center;width:var(--toggle-w);height:var(--toggle-h);padding:var(--toggle-inset);border:var(--space-hairline) solid var(--border-strong);border-radius:var(--r-round);background:var(--border-strong);transition:background var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out)}
+.notebooks-ink-thumb{width:var(--toggle-knob);height:var(--toggle-knob);border-radius:var(--r-round);background:var(--bg);transition:transform var(--t-fast) var(--ease-out),background var(--t-fast) var(--ease-out)}
+.notebooks-ink-switch[aria-checked="true"] .notebooks-ink-track{background:var(--accent-fill);border-color:var(--accent-fill)}
+.notebooks-ink-switch[aria-checked="true"] .notebooks-ink-thumb{transform:translateX(var(--toggle-shift));background:var(--accent-fg)}
+.notebooks-ink-desc{margin:var(--space-1) 0 0;font-size:var(--fs-sm);line-height:1.45;color:var(--faint)}
+.notebooks-ink-status{display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-2);margin:var(--space-1) 0 0;font-size:var(--fs-sm);color:var(--muted)}
+.notebooks-ink-status[hidden]{display:none}
+.notebooks-ink-state[hidden],.notebooks-ink-count[hidden]{display:none}
+.notebooks-ink-state-error{color:var(--danger-text)}
+.notebooks-ink-count{color:var(--fg);font-weight:600}
+.notebooks-ink-error{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1) var(--space-2);margin:var(--space-1) 0 0;font-size:var(--fs-sm);color:var(--danger-text)}
+.notebooks-ink-error[hidden]{display:none}
+.notebooks-ink-retry,.notebooks-ink-read-retry{height:var(--space-7);padding:0 var(--space-2);border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-xs)}
+.notebooks-ink-retry:hover,.notebooks-ink-read-retry:hover{background:var(--hover)}
+@media(prefers-reduced-motion:reduce){.notebooks-ink-track,.notebooks-ink-thumb{transition:none}}
+
+/* ---------- Caderno no cabeçalho ---------- */
+#course-tabs #review-tab{display:inline-flex;gap:var(--space-1);align-items:center}
+#review-tab #review-count{
+ font-size:var(--fs-2xs);font-variant-numeric:tabular-nums;color:var(--muted);
+ background:var(--hover);border-radius:var(--r-sm);padding:0 6px;line-height:14px;
+}
+#review-tab.has-items{color:var(--fg-strong)}
+#review-tab.has-items #review-count{background:var(--selected);color:var(--fg-strong);font-weight:600}
+
+/* ---------- Divisórias: a linha de 1px basta; a pegada só aparece no hover e no foco ---------- */
+#divider::before,.pdf-divider::before,#calc-divider::before{
+ content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ background:transparent;border-radius:var(--r-sm);pointer-events:none;
+}
+#divider::before,.pdf-divider::before{width:3px;height:30px}
+#calc-divider::before{width:30px;height:3px}
+#divider:hover::before,#divider:focus-visible::before,
+.pdf-divider:hover::before,.pdf-divider:focus-visible::before,
+#calc-divider:hover::before,#calc-divider:focus-visible::before{background:var(--muted)}
+
+/* 900x650 e telas apertadas: a área de apoio quebra e os textos longos encolhem. */
+@media(max-width:1000px){
+ #sidechat-context-pop{max-height:50%}
+ #conversations-pop{width:min(340px,96%)}
+ /* Cabeçalho: a lista de matérias cede espaço para as ações (nenhuma ação some). */
+ header{gap:var(--space-3)}
+ /* A busca vira só o ícone (#27 B10); o nome acessível e o ⌘K seguem. */
+ .header-actions > #palette-field{width:var(--ctl);padding:0;justify-content:center}
+ #palette-field kbd,#palette-field .palette-field-text{display:none}
+}
+@media(max-height:700px){
+ #sidechat-context-pop{max-height:36%}
+ /* Altura curta: o conteúdo da conversa (estudo, mensagens, anexos) pode
+    exceder a coluna. O #chat vira o scroller e o Enviar fica colado embaixo
+    (sticky), em vez de o conteúdo vazar por cima da calculadora ou empurrar o
+    composer para fora da janela. O #messages cresce com o conteúdo
+    (`contain:none`) — sem scroller aninhado. */
+ #chat{overflow-y:auto;overflow-x:hidden}
+ #messages{flex:1 0 auto;min-height:0;overflow:visible;contain:none}
+ #composer{position:sticky;bottom:0;z-index:3;background:var(--side);padding:var(--space-2) var(--pad) var(--space-3)}
+ /* O campo do tutor mantém as três linhas e o piso de duas; a altura do aluno
+    continua valendo pelo fio de cima. O lateral segue crescendo como antes. */
+ /* O mesmo aperto vertical vale para a casca dos estados, que divide a
+    coluna com o composer; o respiro entre texto e ações continua. */
+ /* A caixa do tutor reserva 24px no topo para alinhar com o escopo do
+    lateral (#123). Na janela baixa a reserva encolhe a área do estado e os
+    botões encostavam sob o composer; o respiro menor entre as linhas devolve
+    o que os botões precisam, sem mexer no composer. */
+ .tutor-state{padding:var(--space-3) var(--pad) var(--space-2);gap:var(--space-2)}
+ /* As três saídas do estado cabem numa linha só na janela baixa; assim a
+    terceira não fica sob a caixa de mensagem. */
+ .tutor-state .ts-actions{gap:var(--space-1)}
+ .tutor-state .ts-actions button{padding:0 var(--space-2)}
+}
+/* Coluna apertada com a janela ainda alta (calculadora grande, anexos/fila no
+   composer): o host liga `body.chat-scroll` (state.mjs#syncChatScrollMode) e a
+   conversa entra no mesmo modo da media acima — o #chat vira o scroller e o
+   #messages cresce com o conteúdo, sem nada sticky por cima: o composer é o
+   fim do conteúdo e o `followBottom` o mantém à vista quando a conversa está
+   no fim. A decisão é medida, não presumida pela altura da janela. */
+body.chat-scroll #chat{overflow-y:auto;overflow-x:hidden}
+body.chat-scroll #messages{flex:1 0 auto;min-height:0;overflow:visible;contain:none}
+
+/* ---------- Contexto encaixado (r2) ----------
+   Mesmo encaixe dos Cadernos: largura da coluna, no fluxo, abaixo do
+   cabeçalho, sem sombra e sem cantos; só o fio de baixo separa. O conteúdo
+   segue a ordem do mock: o que vai com a mensagem, a questão ativa, o rascunho
+   e o uso do contexto com "Resumir agora" no pé. */
+#context-dock{
+ position:relative;z-index:auto;display:flex;flex-direction:column;flex:0 1 auto;min-height:0;
+ width:auto;max-height:70%;overflow:hidden;
+ background:var(--bg);border:0;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;padding:0;
+}
+#context-dock[hidden]{display:none}
+#context-dock .dock-head strong{font-size:var(--fs-lg);line-height:1.3;font-weight:600}
+#context-dock .dock-body{overflow:auto;padding:0 var(--space-5) var(--space-5)}
+#context-dock .dock-group{margin:var(--space-3) 0 var(--space-1);font-size:var(--fs-sm);line-height:1.3;font-weight:600;color:var(--muted)}
+#context-dock .dock-group[hidden]{display:none}
+#context-dock-items[hidden]{display:none}
+#context-dock .ctx-row{display:grid;grid-template-columns:var(--space-6) minmax(0,1fr);column-gap:var(--space-3);padding:var(--space-3) 0}
+#context-dock .ctx-icon{display:inline-flex;margin-top:var(--space-0);color:var(--muted)}
+#context-dock .ctx-icon .icon{width:var(--space-6);height:var(--space-6)}
+#context-dock .ctx-name{font-size:var(--fs-lg);line-height:1.3;color:var(--fg);overflow-wrap:anywhere}
+#context-dock .ctx-meta{grid-column:2;font-size:var(--fs-sm);line-height:1.3;color:var(--faint);overflow-wrap:anywhere}
+#context-dock .field-label{display:block;margin:var(--space-6) 0 var(--space-1);font-size:var(--fs-sm);line-height:1.3;font-weight:600;color:var(--muted)}
+#context-dock #study-context{display:flex;flex-direction:column;gap:0}
+#context-dock #study-context[hidden]{display:none}
+#context-dock #exercise-title{
+ width:100%;height:var(--control-md);min-height:var(--control-md);padding:0 var(--space-5);border:0;border-radius:var(--r-sm);
+ background:var(--code);color:var(--fg);font-size:var(--fs-lg);line-height:1.3;
+}
+#context-dock #exercise-title::placeholder{color:var(--faint)}
+#context-dock #pick-xopp{
+ display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+ width:100%;max-width:none;height:var(--control-md);min-height:var(--control-md);padding:0 var(--space-5);border:0;border-radius:var(--r-sm);
+ background:var(--code);color:var(--fg);font-size:var(--fs-lg);text-align:left;
+}
+#context-dock #pick-xopp:hover{background:var(--hover)}
+#context-dock #pick-xopp .pick-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#context-dock #pick-xopp[data-empty] .pick-label{color:var(--faint)}
+#context-dock #pick-xopp .pick-caret{display:inline-flex;flex:none;color:var(--muted)}
+#context-dock #pick-xopp .pick-caret .icon{width:var(--space-5);height:var(--space-5)}
+#context-dock .context-usage{
+ display:flex;align-items:center;gap:var(--space-5);margin-top:var(--space-6);
+ padding-top:var(--space-3);border-top:1px solid var(--border);
+}
+#context-dock .context-usage-copy{flex:1;min-width:0;font-size:var(--fs-sm);line-height:1.3;color:var(--muted)}
+#context-dock #context-usage-text{display:block}
+#context-dock #ctx-meter{display:flex;flex-direction:column;gap:var(--space-0);width:100%;margin-top:var(--space-1);color:var(--muted);font-size:var(--fs-sm)}
+#context-dock #ctx-meter[hidden]{display:none}
+#context-dock #ctx-meter .bar{width:100%;height:var(--space-1);border-radius:var(--r-sm);background:var(--border);overflow:hidden}
+#context-dock #ctx-meter .bar i{display:block;height:100%;width:100%;transform:scaleX(var(--meter,0));transform-origin:left}
+#context-dock #ctx-meter em{display:none}
+#context-dock #context-summarize{flex:none;height:var(--ctl);padding:0 var(--space-5);font-size:var(--fs-lg)}
+
+/* Contrato do tutor (#180): a linha do arquivo usada e a leitura no mesmo
+   painel. O desenho é o do mock `carbon-r2/contrato.html`, opção A. */
+#context-dock .contract-row{display:grid;grid-template-columns:var(--space-6) minmax(0,1fr) auto;align-content:start;align-items:start;row-gap:0;width:100%;height:auto;min-height:0;padding:var(--space-3) 0;border:0;background:transparent;box-shadow:none;color:var(--fg);text-align:left;border-radius:var(--r-sm)}
+#context-dock .contract-row:hover{background:var(--hover)}
+#context-dock .contract-row .ctx-name,#context-dock .contract-row .ctx-meta{grid-column:2}
+#context-dock .contract-open{grid-column:3;grid-row:1 / span 2;align-self:center;margin-top:0;color:var(--faint)}
+#context-dock .contract-empty{margin:0;padding:var(--space-3) 0;font-size:var(--fs-lg);line-height:1.3;color:var(--muted)}
+#context-dock .contract-back{display:inline-flex;align-items:center;gap:var(--space-1);height:var(--ctl);padding:0 var(--space-1);border:0;background:transparent;box-shadow:none;border-radius:var(--r-sm);font-size:var(--fs-sm);line-height:1.3;color:var(--muted)}
+#context-dock .contract-back:hover{background:var(--hover);color:var(--fg)}
+#context-dock .contract-origin{margin:0 0 var(--space-5);font-size:var(--fs-sm);line-height:1.3;color:var(--faint)}
+#context-dock .contract-read{font-family:var(--serif);font-size:var(--fs-xl);line-height:26px;color:var(--fg)}
+#context-dock .contract-read p{margin:0 0 var(--space-5);white-space:pre-wrap}
+#context-dock .contract-read p:last-child{margin-bottom:0}
+#context-dock .contract-back[hidden],#context-dock #context-dock-list[hidden],#context-dock #context-contract-read[hidden],#context-dock #context-contract-items[hidden]{display:none}

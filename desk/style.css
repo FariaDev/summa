@@ -1,0 +1,269 @@
+/* Mesa de Estudos — sistema visual do Conversa (T3 Code, MIT), adaptado à Mesa.
+   Tokens, estados, profundidade, movimento e componentes numa linguagem só.
+   O JS lê --chat, --calc, --pdf-left e --pdf-other: não renomeie esses. */
+
+/* ---------- Tokens ---------- */
+
+:root{
+ color-scheme:light dark;
+ /* Cor */
+ /* Papéis: --bg é o fundo do app, --surface os leitores e barras, --side a
+    coluna do tutor, --stage o palco atrás das páginas do PDF e --raised o que
+    flutua sobre elas (caixa de mensagem, diálogos e popovers).
+    Cinzas sempre neutros (r=g=b): o branco da página não pode destoar. */
+ --bg:light-dark(#ffffff,#161616);
+ --surface:light-dark(#ffffff,#161616);
+ --side:light-dark(#ffffff,#161616);
+ --stage:light-dark(#f4f4f4,#262626);
+ --fg:light-dark(#161616,#f4f4f4);
+ --fg-strong:light-dark(#0e0e0e,#ffffff);
+ --muted:light-dark(#525252,#c6c6c6);
+ --faint:light-dark(#6f6f6f,#a8a8a8);
+ --border:light-dark(#e0e0e0,#393939);
+ --border-strong:light-dark(#8d8d8d,#6f6f6f);
+ --raised:light-dark(#ffffff,#393939);
+ /* Acento (ticket #9): seis opções, cada uma com tom próprio no claro e no
+    escuro. `--accent-fill` pinta a ação principal e o alternador; `--accent-text`
+    é o tom de link e de glifo (no escuro é mais claro que o preenchimento, para
+    ler sobre as superfícies escuras); `--accent-fg` é o texto sobre o
+    preenchimento (grafite no escuro: texto escuro sobre o fill claro) e
+    `--accent-paper` o tom de link sobre folha branca, que não depende do tema.
+    A escolha entra por `data-accent` no `<html>` (src/state.mjs#applyAccent);
+    azul é o padrão de quem nunca escolheu. */
+ --acc-blue:light-dark(#2d5fdc,#4663dd);--acc-blue-text:light-dark(#2d5fdc,#88acf5);
+ --acc-violet:light-dark(#8044ca,#8957d0);--acc-violet-text:light-dark(#8044ca,#b89cea);
+ --acc-green:light-dark(#028053,#068758);--acc-green-text:light-dark(#028053,#66c394);
+ --acc-orange:light-dark(#af4700,#c14f00);--acc-orange-text:light-dark(#af4700,#e8956f);
+ --acc-pink:light-dark(#bd1c67,#c63a73);--acc-pink-text:light-dark(#bd1c67,#e78eaa);
+ --acc-graphite:light-dark(#303030,#e6e6e6);--acc-graphite-text:light-dark(#303030,#e6e6e6);
+ --accent-fill:var(--acc-blue);--accent-text:var(--acc-blue-text);--accent-fg:#ffffff;--accent-paper:#2d5fdc;
+ /* Trio (#100): o corpo, o claro, o membro, o sinal e a tinta de cada mascote
+    seguem o acento. As cores são as da tabela do ticket; três valores do tema
+    escuro (e o claro do verde no claro) subiram o mínimo para 3:1 de desenho e
+    4,5:1 dos sinais, medido em tests/contrast.test.mjs. O membro do escuro usa
+    o tom claro: o da tabela sumia no fundo. */
+ --trio-blue-corpo:light-dark(#3760df,#3760df);
+ --trio-blue-claro:light-dark(#5a83f3,#5a83f3);
+ --trio-blue-membro:light-dark(#2a4eca,#5a83f3);
+ --trio-blue-sinal:light-dark(#1a36a2,#5a83f3);
+ --trio-blue-tinta:light-dark(#0a1536,#0a1536);
+ --trio-violet-corpo:light-dark(#6d4fd8,#7053d9);
+ --trio-violet-claro:light-dark(#8b74ec,#8b74ec);
+ --trio-violet-membro:light-dark(#5a3fc4,#8b74ec);
+ --trio-violet-sinal:light-dark(#3f2a9e,#8b74ec);
+ --trio-violet-tinta:light-dark(#1a1033,#1a1033);
+ --trio-green-corpo:light-dark(#078259,#078259);
+ --trio-green-claro:light-dark(#0d9e6f,#0ea472);
+ --trio-green-membro:light-dark(#046f4c,#0ea472);
+ --trio-green-sinal:light-dark(#015337,#0ea472);
+ --trio-green-tinta:light-dark(#001f11,#001f11);
+ --trio-orange-corpo:light-dark(#bb3d05,#bc410a);
+ --trio-orange-claro:light-dark(#df5c30,#e05f34);
+ --trio-orange-membro:light-dark(#a13303,#e05f34);
+ --trio-orange-sinal:light-dark(#7a2401,#e05f34);
+ --trio-orange-tinta:light-dark(#300900,#300900);
+ --trio-pink-corpo:light-dark(#c11f66,#c42a6e);
+ --trio-pink-claro:light-dark(#db5484,#dc5988);
+ --trio-pink-membro:light-dark(#aa0856,#dc5988);
+ --trio-pink-sinal:light-dark(#810340,#dc5988);
+ --trio-pink-tinta:light-dark(#2f0716,#2f0716);
+ --trio-graphite-corpo:light-dark(#55555c,#a8a8b0);
+ --trio-graphite-claro:light-dark(#7c7c84,#c8c8ce);
+ --trio-graphite-membro:light-dark(#44444a,#8e8e96);
+ --trio-graphite-sinal:light-dark(#2c2c30,#d4d4d8);
+ --trio-graphite-tinta:light-dark(#18181a,#18181a);
+ --trio-corpo:var(--trio-blue-corpo);--trio-claro:var(--trio-blue-claro);
+ --trio-membro:var(--trio-blue-membro);--trio-sinal:var(--trio-blue-sinal);
+ --trio-tinta:var(--trio-blue-tinta);
+ --primary:var(--accent-fill);
+ --primary-hover:light-dark(color-mix(in oklab,var(--accent-fill) 78%,black),color-mix(in oklab,var(--accent-fill) 82%,white));
+ --primary-fg:var(--accent-fg);
+ --ring:var(--accent-text);
+ --danger:light-dark(#dc2626,#e2483d);
+ --success:light-dark(#24a148,#42be65);
+ --warn:light-dark(#d97706,#fbbf24);
+ /* #67: as três acima pintam ícone, borda e fundo; como cor de texto elas
+    ficavam abaixo de 4,5:1 (o verde e o âmbar no claro, o vermelho nos dois).
+    Texto de status usa as versões -text, que passam AA em --bg, --surface e
+    --side; tests/contrast.test.mjs confere. O erro é o rosa aprovado do
+    Carbon r2 (docs/design/DECISOES.md, 2026-11-11). */
+ --danger-text:light-dark(#bd1c67,#e78eaa);
+ --success-text:light-dark(#1a7f37,#42be65);
+ --warn-text:light-dark(#9a5508,#fbbf24);
+ --user:light-dark(#f4f4f4,#262626);
+ --code:light-dark(#f4f4f4,#262626);
+ --code-str:light-dark(#0f766e,#5eead4);
+ --code-num:light-dark(#a16207,#fbbf24);
+ --code-kw:light-dark(#a626a4,#c678dd);
+ --code-fn:light-dark(#3b6ea5,#61afef);
+ --code-type:light-dark(#8a6f00,#e5c07b);
+ /* Séries das figuras do tutor (#60): escuras no claro, claras no escuro. */
+ --plot-1:light-dark(#2548c7,#8fa8ff);--plot-2:light-dark(#c2410c,#fb923c);--plot-3:light-dark(#0f7b55,#34d399);
+ --plot-4:light-dark(#a21caf,#e879f9);--plot-5:light-dark(#6d28d9,#a78bfa);--plot-6:light-dark(#a16207,#facc15);--plot-bg:var(--surface);
+ --scrim:light-dark(rgb(0 0 0/.28),rgb(0 0 0/.55));
+ /* Estados: --hover < --active; --selected é a escolha atual, em cinza neutro;
+    --tint é o alternador ligado (o acento fica na ação principal, em links e
+    em alternadores ligados); foco é sempre --ring. */
+ --hover:light-dark(#e8e8e8,#333333);
+ --active:light-dark(#d4d4d4,#454545);
+ --selected:light-dark(#dedede,#393939);
+ /* Linha sob o mouse fica MAIS CLARA que a selecionada nos dois temas
+    (seletor de modelos, ticket de polimento visual). No escuro, mais branco é
+    mais claro: o --hover comum (.06) ficaria abaixo da seleção (.09). */
+ --hover-row:light-dark(#f4f4f4,#454545);
+ --tint:color-mix(in oklab,var(--primary) 11%,transparent);
+ --mark:color-mix(in oklab,var(--fg) 16%,transparent);
+ --selection:color-mix(in oklab,var(--ring) 26%,transparent);
+ /* Achados da busca no material ficam sobre a página, sempre branca: âmbar fixo
+    lê nos dois temas com qualquer acento (o acento no escuro pode ser claro). */
+ --find-mark:rgb(250 204 21/.42);
+ /* O realce da busca nos cadernos deriva do acento sobre a camada flutuante
+    (Carbon r2, 2026-11-11): sai o âmbar fixo. */
+ --highlight:color-mix(in oklch,var(--accent-fill) 18%,var(--raised));
+ /* Papéis fixos fora do par claro/escuro: a página branca do PDF, a seleção
+    dela e a cena da primeira abertura não seguem o tema. */
+ --pdf-page-num:#525252;
+ /* Chevron do seletor de documento do leitor (desenho do Lucide, em máscara:
+    a cor vem de --muted, então acompanha os dois temas). */
+ --reader-caret:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+ --pdf-select:rgb(0 0 255/.25);
+ --sheet-line:light-dark(#9a9aa6,#6f6f6f);
+ --search-mark:#ffe58a;
+ --active-strong:light-dark(#d4d4d4,#454545);
+ --mix-black:#000;--mix-white:#fff;
+ --trio-spark:#e8862a;
+ /* Profundidade: sombra só no que flutua (menus, diálogos, avisos), discreta.
+    (light-dark só em posição de cor: a sombra inteira não pode ser envolvida) */
+ --shadow-pop:0 8px 24px -10px light-dark(rgb(0 0 0/.18),rgb(0 0 0/.8));
+ --shadow-dialog:0 16px 48px -16px light-dark(rgb(0 0 0/.22),rgb(0 0 0/.85));
+ --ring-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 16%,transparent);
+ --ring-shadow-inset:inset 0 0 0 2px color-mix(in oklab,var(--ring) 30%,transparent);
+ /* Raios: dois cantos de uso (controle/cartão pequeno e superfície flutuante)
+    e o círculo por natureza. O portão tests/radius-tokens.test.mjs recusa
+    qualquer outro token ou px literal nas folhas. */
+ --r-sm:4px;--r-md:8px;--r-round:50%;
+ /* Tipografia (piso de legibilidade em 11px: auditoria de UI/UX, rodada 1, D2;
+    escala única sem meios pixels: 11, 12, 13, 14, 15, 18 e 22) */
+ --fs-2xs:11px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:15px;--fs-2xl:18px;--fs-3xl:22px;--fs-display:30px;
+ /* Espaçamento (ritmo de 2px; a escala de 4 a 24 cobre o dia a dia) */
+ --space-hairline:1px;--space-0:2px;--space-1:4px;--space-2:6px;--space-3:8px;--space-4:10px;--space-5:12px;--space-6:16px;--space-7:24px;
+ /* Interruptor do Carbon r2: 40×20, botão de 14px com 2px de folga. O deslocamento
+    desconta a borda de 1px para o botão encostar no canto oposto, como o das
+    Configurações (usado também no painel de cadernos). */
+ --toggle-w:40px;--toggle-h:20px;--toggle-knob:14px;--toggle-inset:2px;
+ --toggle-shift:calc(var(--toggle-w) - var(--toggle-knob) - var(--toggle-inset) * 2 - var(--space-hairline) * 2);
+ /* Movimento (docs/design/movimento.md, #63): 3 durações, 2 curvas, o ritmo
+    dos laços e o ponto de partida de cada entrada. O portão
+    tests/motion-tokens.test.mjs recusa valor escrito fora daqui. */
+ --t-fast:120ms;--t-base:180ms;--t-slow:320ms;--t-loop:1.2s;
+ --ease-out:cubic-bezier(.22,.61,.36,1);--ease-move:cubic-bezier(.4,0,.2,1);
+ --from-drop:translateY(-3px) scale(.995);--from-rise:translateY(4px);--from-zoom:scale(.985);
+ /* Layout: painéis colados, separados só por linhas de 1px. --header é a
+    barra superior; --bar é a altura de cada linha de barra de painel (leitor,
+    tutor, chat lateral); --ctl é a altura dos controles dentro dela e --bar-y
+    o que sobra em cima e embaixo; --pad é o recuo interno dos painéis. Um
+    botão de ícone (--ctl, desenho de 16px) na ponta de uma barra traz folga
+    própria: --bar-end a desconta para o desenho alinhar no recuo. */
+ --reading-size:var(--fs-xl);
+ /* Leitura do chat (#106): o padrão resolve nos mesmos 15px/720px de antes e os
+    degraus só trocam `--reading-size`/`--reading-column`; a tabela e os títulos
+    acompanham pela conta abaixo. `--reading-column` também é a coluna da tela
+    inteira (#98), que continua em 720px no padrão. Código e fórmulas têm degrau
+    próprio (#206): o padrão é "igual ao texto" — o código usa o tamanho do
+    texto e a fórmula mantém a proporção 1.21 do KaTeX. */
+ --reading-column:720px;
+ --reading-h1-size:calc(var(--reading-size) + 2px);
+ --reading-h2-size:calc(var(--reading-size) + 1px);
+ --reading-code-size:var(--reading-size);
+ --reading-math-size:1.21em;
+ --reading-table-size:calc(var(--reading-size) - 3px);
+ /* Página escura do PDF (#107): o padrão é o inverter da #42, pixel a pixel.
+    O tom Suave levanta o papel para cinza escuro e baixa o brilho do texto. */
+ --pdf-dark-filter:invert(1) hue-rotate(180deg);
+ --pdf-dark-paper:#000;
+ --chat:390px;--calc:220px;--header:44px;--bar:40px;--ctl:28px;--control-md:40px;--pad:12px;
+ --strip:34px;
+ --bar-y:calc((var(--bar) - var(--ctl)) / 2);--bar-end:calc(var(--pad) - (var(--ctl) - 16px) / 2);
+ font-family:var(--font-sans);
+ font-size:var(--fs-md);color:var(--fg);background:var(--bg);-webkit-font-smoothing:antialiased;
+}
+/* Degraus de leitura: pequenos e nomeados, sem slider. Quem não escolheu não
+   tem atributo e cai nos valores acima. */
+:root[data-reading-size=small]{--reading-size:14px}
+:root[data-reading-size=large]{--reading-size:16px}
+:root[data-reading-size=larger]{--reading-size:17px}
+:root[data-reading-width=narrow]{--reading-column:560px}
+:root[data-reading-width=wide]{--reading-column:880px}
+/* Código e fórmulas (#206): o degrau é próprio, mas o padrão acompanha o
+   texto; "menor" e "maior" desviam 2px e a fórmula escala junto. */
+:root[data-code-size=small]{--reading-code-size:calc(var(--reading-size) - 2px);--reading-math-size:1.09em}
+:root[data-code-size=large]{--reading-code-size:calc(var(--reading-size) + 2px);--reading-math-size:1.33em}
+:root[data-pdf-dark=soft]{--pdf-dark-filter:invert(.85) hue-rotate(180deg) brightness(.92);--pdf-dark-paper:#232323}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+:root[data-accent=violet]{--accent-fill:var(--acc-violet);--accent-text:var(--acc-violet-text);--accent-paper:#8044ca;--trio-corpo:var(--trio-violet-corpo);--trio-claro:var(--trio-violet-claro);--trio-membro:var(--trio-violet-membro);--trio-sinal:var(--trio-violet-sinal);--trio-tinta:var(--trio-violet-tinta)}
+:root[data-accent=green]{--accent-fill:var(--acc-green);--accent-text:var(--acc-green-text);--accent-paper:#028053;--trio-corpo:var(--trio-green-corpo);--trio-claro:var(--trio-green-claro);--trio-membro:var(--trio-green-membro);--trio-sinal:var(--trio-green-sinal);--trio-tinta:var(--trio-green-tinta)}
+:root[data-accent=orange]{--accent-fill:var(--acc-orange);--accent-text:var(--acc-orange-text);--accent-paper:#af4700;--trio-corpo:var(--trio-orange-corpo);--trio-claro:var(--trio-orange-claro);--trio-membro:var(--trio-orange-membro);--trio-sinal:var(--trio-orange-sinal);--trio-tinta:var(--trio-orange-tinta)}
+:root[data-accent=pink]{--accent-fill:var(--acc-pink);--accent-text:var(--acc-pink-text);--accent-paper:#bd1c67;--trio-corpo:var(--trio-pink-corpo);--trio-claro:var(--trio-pink-claro);--trio-membro:var(--trio-pink-membro);--trio-sinal:var(--trio-pink-sinal);--trio-tinta:var(--trio-pink-tinta)}
+:root[data-accent=graphite]{--accent-fill:var(--acc-graphite);--accent-text:var(--acc-graphite-text);--accent-fg:light-dark(#ffffff,#161616);--accent-paper:#303030;--trio-corpo:var(--trio-graphite-corpo);--trio-claro:var(--trio-graphite-claro);--trio-membro:var(--trio-graphite-membro);--trio-sinal:var(--trio-graphite-sinal);--trio-tinta:var(--trio-graphite-tinta)}
+
+*{box-sizing:border-box;corner-shape:squircle}
+/* Círculos e pílulas continuam redondos: o squircle é para os cantos comuns.
+   Pílula nova (raio 999px ou 50%) entra nesta lista, mesmo morando noutra folha. */
+#status-dot,.step-spin,.pulse,.attachment .attachment-remove,#chat-restore,#quote-btn,
+.msg-copy,.code-copy,.img-wrap .img-copy,.sidechat-engine,
+.activity-badge,.accent-dot{corner-shape:round}
+body{margin:0;height:100vh;overflow:hidden;background:var(--bg)}
+::selection{background:var(--selection)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{
+ cursor:pointer;background:var(--surface);border:1px solid var(--border);
+ border-radius:var(--r-sm);padding:6px 10px;
+ display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);
+ transition:background var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out);
+}
+button:hover{background:var(--hover)}
+button:active{background:var(--active)}
+button:disabled{cursor:default;opacity:.45;box-shadow:none}
+/* Botão de camada (Carbon r2, 2026-11-11): ação secundária sem fio, no fundo da
+   camada, texto --fg. É o Cancelar das Configurações e o que mais usar a classe. */
+.btn-layer{background:var(--code);border:0;color:var(--fg)}
+.btn-layer:hover{background:var(--hover)}
+.btn-layer:active{background:var(--active)}
+/* Só para leitor de tela (o status "N resultados" dos Cadernos). */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+/* Travado durante a resposta (#42): as abas de matéria e o Conferir não apagam —
+   o rótulo fica em --muted, sem opacidade, e a dica (do núcleo) diz por quê. */
+#course-tabs button[role="tab"]:disabled,#course-pop button:disabled,.composer-actions #check.waiting:disabled{opacity:1}
+#course-tabs button[role="tab"]:disabled:not(.active),#course-pop button:disabled,.composer-actions #check.waiting:disabled{color:var(--muted)}
+#course-tabs button[role="tab"]:disabled:not(.active):hover{background:transparent}
+:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.icon{width:16px;height:16px;flex-shrink:0}
+.icon-btn{
+ width:var(--ctl);height:var(--ctl);padding:0;border-color:transparent;background:transparent;
+ color:var(--muted);box-shadow:none;
+}
+.icon-btn:hover{background:var(--hover);border-color:transparent;color:var(--fg)}
+.icon-btn:active{background:var(--active)}
+
+/* Citação do material dentro da resposta (pdfref.bend): abre a página no leitor. */
+.pdf-ref{
+ display:inline;padding:0 2px;margin:0;border:0;background:transparent;
+ color:var(--ring);font:inherit;cursor:pointer;text-decoration:underline dotted;
+ text-underline-offset:2px;
+}
+.pdf-ref:hover{background:var(--hover)}
+.pdf-ref:active{background:var(--active)}
+.pdf-ref:disabled{cursor:default;opacity:1;color:var(--muted)}
+
+/* Linha de contexto do cabeçalho do tutor (r2): botão de uma linha que abre o
+   painel Contexto; vazia, some. O grid do cabeçalho mora em tutor-chat.css. */
+#context-line{
+ display:flex;align-items:center;justify-content:flex-start;gap:var(--space-1);grid-column:1;grid-row:2;
+ min-width:0;max-width:100%;height:auto;padding:0 var(--space-2);overflow:hidden;
+ border:0;background:transparent;box-shadow:none;color:var(--muted);
+ font-size:var(--fs-sm);font-weight:400;line-height:1.3;text-align:left;white-space:nowrap;text-decoration:none;
+}
+#context-line:hover{background:transparent;color:var(--fg);text-decoration:none}
+#context-line[hidden]{display:none}
+#context-line #context-summary{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

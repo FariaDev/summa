@@ -1,0 +1,90 @@
+// @ts-check
+'use strict';
+
+/* Motor padrão quando a conversa ainda não tem um (#93): o OpenCode é o
+   caminho do release e vem primeiro; sem ele, a Mesa usa o Claude Code que a
+   pessoa já instalou. A escolha é só presença de executável — login, versão e
+   modelo continuam sendo conferidos depois, pelo adaptador de cada motor. Sem
+   nenhum motor, o padrão é o OpenCode: a primeira abertura instala e o erro de
+   conexão fala dele. */
+
+const fs = require('node:fs');
+const {findClaudeLauncher} = require('./src/agents/claude-environment.cjs');
+const {findOpenCodeLauncher} = require('./src/agents/opencode-process.cjs');
+const {findOpenCodeInLoginShell} = require('./src/agents/opencode-shell.cjs');
+const {oldOpenCode, readOpenCodeVersionSync} = require('./src/agents/opencode-version.cjs');
+
+/** Ordem de preferência do release. */
+const ENGINE_ORDER = Object.freeze(['opencode', 'claude']);
+const ENGINE_NAMES = Object.freeze({claude: 'Claude Code', opencode: 'OpenCode'});
+
+/** @param {unknown} file @returns {string} */
+function existingFile(file) {
+  if (typeof file !== 'string' || !file) return '';
+  try { return fs.statSync(file).isFile() ? file : ''; } catch { return ''; }
+}
+
+/**
+ * O primeiro motor instalado, na ordem de preferência; sem nenhum, `opencode`.
+ * @param {{claude?: string, opencode?: string}} detected
+ * @returns {'claude'|'opencode'}
+ * @example defaultEngineFrom({claude: '/bin/claude'}) // 'claude'
+ */
+function defaultEngineFrom(detected = {}) {
+  return /** @type {'claude'|'opencode'} */ (ENGINE_ORDER.find((engine) => !!detected[engine]) || 'opencode');
+}
+
+/**
+ * Detecta os motores instalados sem executá-los nem pedir login.
+ * Em `testMode` só contam os fakes apontados pelo teste — o binário real do
+ * usuário nunca decide o motor de uma janela de teste (#93). Fora dos testes,
+ * caminhos configurados, instaladores usuais e PATH valem como sempre.
+ * @param {{config?: {claudePath?: string, opencodePath?: string, runtimePath?: string}, deskDir?: string,
+ *   runtime?: string, env?: NodeJS.ProcessEnv, home?: string, platform?: NodeJS.Platform,
+ *   testMode?: boolean}} [options]
+ * @returns {{claude: string, opencode: string, opencodeOld?: string}}
+ * @example detectTutorEngines({env: {LEARNING_DESK_OPENCODE: '/bin/opencode'}}).opencode // '/bin/opencode'
+ */
+function detectTutorEngines({config = {}, env = process.env, home = '', platform = process.platform, runtime = '', testMode = false} = {}) {
+  /* A cópia da Mesa mora no runtime (#94); sem o caminho explícito do app, o
+     `runtimePath` da config é a mesma resposta que o doctor e o setup têm. */
+  const runtimeDir = runtime || String(config.runtimePath || '');
+  const claude = testMode
+    ? (env.LEARNING_DESK_CLAUDE_SDK_FACTORY || env.LEARNING_DESK_CLAUDE
+      ? findClaudeLauncher({configuredPath: env.LEARNING_DESK_CLAUDE || config.claudePath || '',
+        ...(env.LEARNING_DESK_CLAUDE_HOME ? {home: env.LEARNING_DESK_CLAUDE_HOME} : {}), platform})
+      : '')
+    : findClaudeLauncher({configuredPath: config.claudePath || '', ...(home ? {home} : {}), platform});
+  const opencodePath = testMode
+    ? existingFile(env.LEARNING_DESK_OPENCODE) || existingFile(config.opencodePath)
+    || (env.LEARNING_DESK_OPENCODE_SHELL ? findOpenCodeInLoginShell({shellPath: env.LEARNING_DESK_OPENCODE_SHELL, env, platform}) : '')
+    : findOpenCodeLauncher({envPath: env.LEARNING_DESK_OPENCODE || '', configuredPath: config.opencodePath || '', ...(runtimeDir ? {runtime: runtimeDir} : {}), ...(home ? {home} : {}), platform});
+  /* A 1.x tem o `serve` v2 incompleto: não conta como motor pronto (#93).
+     Versão ilegível não bloqueia; só o 1.x confirmado sai da fila. */
+  const opencodeOld = opencodePath && !testMode ? oldOpenCode(readOpenCodeVersionSync(opencodePath)) : null;
+  return {...(opencodeOld ? {opencode: '', opencodeOld: opencodeOld.text} : {opencode: opencodePath}), claude};
+}
+
+/**
+ * O motor padrão de uma Mesa com esta configuração e este ambiente.
+ * @param {{config?: {claudePath?: string, opencodePath?: string, runtimePath?: string}, deskDir?: string,
+ *   runtime?: string, env?: NodeJS.ProcessEnv, home?: string, platform?: NodeJS.Platform,
+ *   testMode?: boolean}} [options]
+ * @returns {'claude'|'opencode'}
+ * @example defaultTutorEngine({config: {}, env: {LEARNING_DESK_OPENCODE: '/bin/opencode'}}) // 'opencode'
+ */
+function defaultTutorEngine(options = {}) {
+  return defaultEngineFrom(detectTutorEngines(options));
+}
+
+/**
+ * Os nomes legíveis dos motores achados, para a primeira abertura e o setup.
+ * @param {{claude?: string, opencode?: string}} detected
+ * @returns {string[]}
+ * @example engineNames({claude: '/bin/claude'}) // ['Claude Code']
+ */
+function engineNames(detected = {}) {
+  return ENGINE_ORDER.filter((engine) => !!detected[engine]).map((engine) => ENGINE_NAMES[engine]);
+}
+
+module.exports = {ENGINE_ORDER, ENGINE_NAMES, defaultEngineFrom, detectTutorEngines, defaultTutorEngine, engineNames};

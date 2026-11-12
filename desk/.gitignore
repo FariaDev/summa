@@ -1,0 +1,14 @@
+node_modules/
+.runtime/
+.pi-local/
+.update-manifest.json
+.test-runtime/
+.test-runtime-*/
+.design-test-*/
+.installed-test-*/
+.live-runtime*/
+.help-shot*/
+.commandcode/
+ui-*.png
+design-*.png
+help-dialog.png

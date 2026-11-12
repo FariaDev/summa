@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Integral iluminada como ícone</title>
+<style>
+body{margin:0;font:13px system-ui;color:#aaa}
+h2{font-size:14px;color:#eee;margin:14px 0 6px}
+.row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+figure{margin:0;text-align:center;font-size:11px}
+.ic{position:relative;display:block}
+.ic canvas{display:block;width:100%;height:100%;border-radius:22.4%;box-shadow:0 4px 10px #0007}
+.pad{padding:9.8%}
+.dock{display:flex;flex-direction:column;gap:2px;padding:6px 4px;border-radius:16px;background:#4a4a4c;border:1px solid #fff2}
+.dock .ic{width:60px;height:60px}
+.nb{width:60px;height:60px;padding:9.8%;box-sizing:border-box}
+.nb div{width:100%;height:100%;border-radius:22.4%;background:#1c1c1e;display:grid;place-items:center;color:#fff;font:600 20px system-ui}
+#src{display:none}
+</style></head><body>
+<img id="src" src="integral-chatgpt-v1.png">
+<div id="out"></div>
+<script>
+// acentos: matiz alvo (HSV) e força da saturação; grafite tira a cor do fundo
+const ACC=[['Azul',null],['Violeta',272],['Verde',160],['Laranja',22],['Rosa',334],['Grafite','gray']];
+function hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,mx?d/mx:0,mx]}
+function rgb(h,s,v){const c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c;let[r,g,b]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];return[r+m,g+m,b+m]}
+function draw(img,crop,hue,size){
+ const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d');
+ g.imageSmoothingQuality='high';g.drawImage(img,crop[0],crop[1],crop[2],crop[3],0,0,size,size);
+ if(hue===null)return c;
+ const d=g.getImageData(0,0,size,size),p=d.data;
+ for(let i=0;i<p.length;i+=4){const[h,s,v]=hsv(p[i]/255,p[i+1]/255,p[i+2]/255);
+  if(h<185||h>260||s<.1)continue; // só o fundo azul; o ouro e o pergaminho ficam
+  const[r,gg,b]=hue==='gray'?rgb(0,0,v*.8):rgb(hue,Math.min(1,s*1.05),v);
+  p[i]=r*255;p[i+1]=gg*255;p[i+2]=b*255}
+ g.putImageData(d,0,0);return c;
+}
+const W=1254;
+const CROPS={quadro:[60,56,1134,1138],inteiro:[0,0,W,W]};
+function ic(img,crop,hue,px,cls=''){const f=document.createElement('div');f.className='ic pad';f.style.width=f.style.height=px+'px';f.style.boxSizing='border-box';f.append(draw(img,CROPS[crop],hue,Math.min(1024,px*2)));return f}
+const src=document.getElementById('src');
+src.onload=()=>{
+ const out=document.getElementById('out');
+ const sec=(t)=>{const h=document.createElement('h2');h.textContent=t;out.append(h);const r=document.createElement('div');r.className='row';out.append(r);return r};
+ let r=sec('Recorte: só o quadro (esq.) ou com o pergaminho (dir.)');
+ for(const k of ['quadro','inteiro']){const f=document.createElement('figure');f.append(ic(src,k,null,220));f.append(k==='quadro'?'só o quadro':'com pergaminho');r.append(f)}
+ const dock=document.createElement('div');dock.className='dock';
+ const nb=t=>{const n=document.createElement('div');n.className='nb';n.innerHTML='<div>'+t+'</div>';return n};
+ dock.append(nb('♪'),nb('✉'),ic(src,'quadro',null,60),nb('◉'),nb('⚙'));r.append(dock);
+ r=sec('Tamanhos pequenos (só o quadro)');
+ for(const px of [64,32,16]){const f=document.createElement('figure');f.append(ic(src,'quadro',null,px));f.append(px+'');r.append(f)}
+ r=sec('Seis cores de acento (só o fundo muda)');
+ for(const[n,h]of ACC){const f=document.createElement('figure');f.append(ic(src,'quadro',h,110));f.append(n);r.append(f)}
+};
+</script></body></html>

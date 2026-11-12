@@ -1,0 +1,140 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {withArtifacts,launchDesk,tinyPdf,statusOnline,screenshotDirectory,setTheme,freezeMotion,resizeWindow,reviewShot} from './helpers.mjs';
+import {createFakeTriageProfile} from './fake-triage-profile.mjs';
+
+/* "Relatar um problema" (#62) na janela real: Guia → o item do rodapé →
+   o diálogo com o relatório limpo e as saídas (Claude/Codex, OpenCode e a issue). A Mesa roda no perfil
+   falso (`fake-triage-profile.mjs`: casa, vault, matérias, PDFs, `auth.json`,
+   JSONL e chaves no `desk.log`), e o teste prova que nada disso aparece na
+   tela, no que é copiado nem no endereço da issue. A área de transferência é
+   um gravador na página (nada vai para a do sistema) e o navegador é o
+   `opened-links.jsonl` do modo de teste. O OpenCode falso só responde a
+   `--version` e `models`; qualquer outro subcomando fica registrado e reprova.
+   Imagens (claro/escuro, menu e diálogo) só com MESA_REVIEW_SHOTS. */
+
+if(process.platform==='win32'){console.log('SKIP: o perfil falso usa scripts sh');process.exit(0);}
+
+const SHOT_DIR=screenshotDirectory('relatar-problema');
+
+/** @param {string} text @param {string[]} secrets */
+function assertClean(text,secrets,where){
+ const lower=text.toLowerCase();
+ const leaks=secrets.filter(secret=>lower.includes(secret.toLowerCase()));
+ assert.deepEqual(leaks,[],`${where}: vazou do perfil falso ${JSON.stringify(leaks)}`);
+}
+
+/* Gravador no lugar de `navigator.clipboard.writeText`: o teste lê o que seria copiado. */
+async function installClipboardRecorder(page){
+ await page.evaluate(()=>{
+  window.__triageCopied=[];
+  Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__triageCopied.push(text);}}});
+ });
+}
+
+async function openTriageFromHelp(page){
+ await page.keyboard.press('ControlOrMeta+/');
+ await page.locator('#help-dialog[open]').waitFor();
+ await page.locator('#help-triage').click();
+ await page.locator('#triage-dialog[open]').waitFor();
+ await page.waitForFunction(()=>document.querySelector('#triage-report')?.textContent.includes('## Ambiente'),null,{timeout:60000});
+}
+
+function openedLinks(runtime){
+ const file=path.join(runtime,'opened-links.jsonl');
+ return fs.existsSync(file)?fs.readFileSync(file,'utf8').split('\n').filter(Boolean).map(line=>JSON.parse(line).url):[];
+}
+
+await withArtifacts('relatar-problema',async ctx=>{
+ const profile=createFakeTriageProfile();
+ try{
+  for(const pdf of fs.readdirSync(path.join(profile.vault),{recursive:true}).filter(name=>String(name).endsWith('.pdf')))fs.writeFileSync(path.join(profile.vault,String(pdf)),tinyPdf('Lista'));
+  ctx.runtime=profile.runtime;
+  ctx.app=await launchDesk({runtime:profile.runtime,env:{HOME:profile.home,USERPROFILE:profile.home,LEARNING_CANVAS_DIR:profile.env.LEARNING_CANVAS_DIR}});
+  const page=await ctx.app.firstWindow();
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await statusOnline(page);
+  await resizeWindow(ctx.app,page,1440,900);
+  await freezeMotion(page);
+  await installClipboardRecorder(page);
+
+  /* O item saiu do Mais opções do tutor e mora no rodapé do Guia (#90). */
+  await page.locator('#chat-more').click();
+  assert.equal(await page.locator('#chat-more-pop #more-triage').count(),0,'Relatar um problema não fica mais no Mais opções');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ControlOrMeta+/');
+  await page.locator('#help-dialog[open]').waitFor();
+  assert.equal((await page.locator('#help-triage').textContent()).trim(),'Relatar um problema');
+  for(const theme of ['light','dark']){await setTheme(page,theme);await reviewShot(page,SHOT_DIR,`guia-${theme}.png`);}
+  await page.keyboard.press('Escape');
+
+  /* O item também está no menu Ajustes: acha sem passar pelo Guia. */
+  await page.locator('#settings-trigger').click();
+  await page.locator('#settings-pop').waitFor({state:'visible'});
+  const reportItem=page.locator('#settings-pop #report-problem');
+  assert.equal((await reportItem.textContent()).trim(),'Relatar um problema');
+  for(const theme of ['light','dark']){await setTheme(page,theme);await reviewShot(page,SHOT_DIR,`menu-ajustes-${theme}.png`);}
+  await reportItem.click();
+  await page.locator('#triage-dialog[open]').waitFor();
+  await page.waitForFunction(()=>document.querySelector('#triage-report')?.textContent.includes('## Ambiente'),null,{timeout:60000});
+  await page.locator('#triage-dialog button[value="cancel"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#triage-dialog').open);
+
+  /* A paleta acha o mesmo comando pelo nome. */
+  await page.locator('#palette-field').click();
+  await page.waitForSelector('#command-palette:not([hidden])');
+  await page.locator('#command-palette .palette-input').fill('Relatar um problema');
+  await page.waitForFunction(()=>/Relatar um problema/.test(document.querySelector('#command-palette .palette-item.active')?.textContent||''),undefined,{timeout:5000});
+  await page.keyboard.press('Enter');
+  await page.locator('#triage-dialog[open]').waitFor();
+  await page.waitForFunction(()=>document.querySelector('#triage-report')?.textContent.includes('## Ambiente'),null,{timeout:60000});
+  await page.locator('#triage-dialog button[value="cancel"]').click();
+  await page.waitForFunction(()=>!document.querySelector('#triage-dialog').open);
+
+  await openTriageFromHelp(page);
+  const report=await page.locator('#triage-report').textContent();
+  assertClean(report,profile.secrets,'relatório na tela');
+  assertClean(await page.locator('#triage-dialog').textContent(),profile.secrets,'diálogo');
+  assert.match(report,/<matéria 1>/);
+  assert.match(report,/\[oculto\]/);
+  assert.match(await page.locator('#triage-opencode-note').textContent(),/Usa o modelo grátis opencode\/deepseek-v4\.1-flash-free\. Política de dados deste modelo/);
+  for(const theme of ['light','dark']){await setTheme(page,theme);await reviewShot(page,SHOT_DIR,`dialogo-${theme}.png`);}
+
+  /* Copiar prompt e comandos: o texto copiado também sai limpo. */
+  await page.locator('#triage-copy-agent').click();
+  await page.locator('#triage-copy-opencode').click();
+  await page.waitForFunction(()=>window.__triageCopied.length===2);
+  const [prompt,command]=await page.evaluate(()=>window.__triageCopied);
+  assert.match(prompt,/Faça nesta ordem/);
+  assert.match(command,/^\( d=\$\(mktemp -d "\$\{TMPDIR:-\/tmp\}\/mesa-triage-XXXXXX"\) && cd "\$d" && OPENCODE_CONFIG_CONTENT='[^']*' opencode run --standalone --model opencode\/deepseek-v4\.1-flash-free '/);
+  assertClean(prompt,profile.secrets,'prompt copiado');
+  assertClean(command,profile.secrets,'comando copiado');
+  assert.match(await page.locator('#triage-status').textContent(),/Copiado/);
+
+  /* Abrir issue: só o endereço da issue nova, com o relatório limpo. */
+  await page.locator('#triage-open-issue').click();
+  await page.waitForFunction(()=>/navegador/.test(document.querySelector('#triage-status')?.textContent||''));
+  const links=openedLinks(profile.runtime);
+  assert.equal(links.length,1,`links abertos: ${JSON.stringify(links)}`);
+  const url=new URL(links[0]);
+  assert.equal(`${url.origin}${url.pathname}`,'https://github.com/FariaDev/mesa-de-estudos/issues/new');
+  assertClean(`${url.searchParams.get('title')}\n${url.searchParams.get('body')}`,profile.secrets,'issue no navegador');
+  assert.equal(fs.existsSync(profile.forbiddenLog),false,'o OpenCode falso recebeu um subcomando além de --version/models');
+
+  /* Inglês: o item e o diálogo seguem o idioma da interface. */
+  await page.keyboard.press('Escape');
+  await page.evaluate(async()=>{const text=await import('./src/ui-text.mjs');await text.setUiLanguage('en');});
+  await page.keyboard.press('ControlOrMeta+/');
+  await page.locator('#help-dialog[open]').waitFor();
+  assert.equal((await page.locator('#help-triage').textContent()).trim(),'Report a problem');
+  await page.locator('#help-triage').click();
+  await page.waitForFunction(()=>document.querySelector('#triage-report')?.textContent.includes('## Ambiente'),null,{timeout:60000});
+  assert.equal((await page.locator('#triage-title').textContent()).trim(),'Report a problem');
+  assert.match(await page.locator('#triage-opencode-note').textContent(),/Data policy for this model/);
+  await reviewShot(page,SHOT_DIR,'dialogo-en-dark.png');
+
+  assert.deepEqual(errors,[],`erros na página: ${errors.join(' | ')}`);
+  console.log('PASS: Relatar um problema mostra o relatório limpo e as saídas (Claude/Codex, OpenCode, issue), sem vazar o perfil');
+ }finally{profile.cleanup();}
+});

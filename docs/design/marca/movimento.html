@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light" data-accent="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marca: "pensando" e primeira abertura sem a luminária</title>
+<link rel="stylesheet" href="../carbon-r2/tokens.css">
+<style>
+/* Opções para substituir a luminária no "pensando" do chat e na primeira
+   abertura (2026-11-11). Integral: o mesmo path de r1.html. */
+:root{--ink:#161616}
+:root[data-theme="dark"]{--ink:#f4f4f4}
+:root[data-accent="violet"]{--ink:#8044ca}
+:root[data-theme="dark"][data-accent="violet"]{--ink:#b89cea}
+body{margin:0;font-family:var(--font-ui);font-size:14px;line-height:20px}
+.board{background:var(--bg);color:var(--text);border-radius:8px;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:16px}
+.seg{display:inline-flex;border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:4px 10px;font-size:12px;color:var(--text-2)}
+.seg button[aria-pressed="true"]{background:var(--layer-hover);color:var(--text)}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--text-2);cursor:pointer}
+h2{font-size:16px;font-weight:600;margin:24px 0 12px}
+h2:first-of-type{margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.grid:has(> :only-child){max-width:520px}
+.card{border:1px solid var(--border-subtle);border-radius:4px;padding:12px;background:var(--layer-1)}
+.card h3{font-size:14px;font-weight:600;margin:0 0 8px}
+.card h3 small{font-weight:400;color:var(--text-3);margin-left:6px}
+svg{display:block}
+
+/* "pensando": o chat em miniatura */
+.chat{background:var(--bg);border-radius:4px;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:150px}
+.msg{align-self:flex-end;background:var(--layer-1);border-radius:8px;padding:6px 10px;font-size:13px;max-width:80%}
+.think{display:flex;align-items:center;gap:8px;height:22px;color:var(--text-3);font-size:13px}
+.big{display:flex;justify-content:center;padding:8px 0 0}
+.glyph{overflow:visible}
+.glyph .base{fill:var(--ink)}
+.glyph .faint{fill:var(--ink);opacity:.18}
+
+/* A: a integral se desenha */
+.draw .spine{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2s var(--ease-out,cubic-bezier(.2,0,.38,.9)) infinite}
+@keyframes draw{0%{stroke-dashoffset:1;opacity:1}60%{stroke-dashoffset:0;opacity:1}85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+/* C: um trecho de tinta corre pela integral */
+.drop .spine{stroke-dasharray:.16 .84;stroke-dashoffset:.16;animation:drop 1.6s linear infinite}
+@keyframes drop{to{stroke-dashoffset:-.84}}
+/* E: desenha e apaga, sem sumir */
+.erase .spine{stroke-dasharray:1 1;stroke-dashoffset:1;animation:erase 2.4s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes erase{0%{stroke-dashoffset:1}45%,55%{stroke-dashoffset:0}100%{stroke-dashoffset:-1}}
+/* G: três integrais como os pontinhos de digitação */
+.trio-dots{display:inline-flex;gap:2px}
+.trio-dots svg{animation:hop 1.2s ease-in-out infinite}
+.trio-dots svg:nth-child(2){animation-delay:.15s}.trio-dots svg:nth-child(3){animation-delay:.3s}
+@keyframes hop{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-2px)}}
+.reduced .erase .spine{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+.reduced .trio-dots svg{animation:none;opacity:.6}
+/* J: um ciclo só: a integral se desenha e, quando termina, o brilho corre pelo texto */
+.drawsync .spine{stroke-dasharray:1;stroke-dashoffset:1;animation:drawsync 2.6s cubic-bezier(.2,0,.38,.9) infinite}
+@keyframes drawsync{0%{stroke-dashoffset:1;opacity:1}40%{stroke-dashoffset:0;opacity:1}88%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.shine.sync{animation:shinesync 2.6s linear infinite}
+@keyframes shinesync{0%,40%{background-position:100% 0}88%,100%{background-position:0 0}}
+/* K: um brilho só atravessa a integral e o texto, como uma peça */
+.rowshine{display:inline-flex;align-items:center;gap:8px;color:var(--text);-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.3) 0 40%,#000 50%,rgba(0,0,0,.3) 60% 100%);mask-image:linear-gradient(90deg,rgba(0,0,0,.3) 0 40%,#000 50%,rgba(0,0,0,.3) 60% 100%);-webkit-mask-size:300% 100%;mask-size:300% 100%;animation:maskshine 1.8s linear infinite}
+@keyframes maskshine{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0 0;mask-position:0 0}}
+.reduced .drawsync .spine{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+.reduced .shine.sync{animation:breathe 2s ease-in-out infinite}
+.reduced .rowshine{animation:breathe 2s ease-in-out infinite;-webkit-mask-image:none;mask-image:none;color:var(--text-3)}
+/* B: texto com brilho */
+.shine{background:linear-gradient(90deg,var(--text-3) 0 35%,var(--text) 50%,var(--text-3) 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 1.8s linear infinite}
+@keyframes shine{from{background-position:100% 0}to{background-position:0 0}}
+/* movimento reduzido: tudo parado, só a opacidade respira */
+.reduced .draw .spine,.reduced .drop .spine{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+.reduced .glyph,.reduced .shine{animation:breathe 2s ease-in-out infinite}
+.reduced .shine{background:none;color:var(--text-3)}
+@keyframes breathe{50%{opacity:.4}}
+
+/* primeira abertura */
+.stepper{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2)}
+.stepper button{all:unset;cursor:pointer;border:1px solid var(--border-subtle);border-radius:4px;padding:2px 8px}
+.scene{background:var(--bg);border-radius:4px;padding:10px}
+.cap{font-family:var(--font-serif);font-size:16px;line-height:22px;text-align:center;margin:10px 0 2px;min-height:22px}
+.mini .win{fill:var(--layer-1);stroke:var(--border-subtle)}
+.mini .bar0{fill:var(--layer-hover)}
+.mini .page{fill:#fff;stroke:var(--border-subtle)}
+.mini .line{stroke:#c6c6c6;stroke-width:2;stroke-linecap:round}
+.mini .bub{fill:var(--layer-2)}
+.mini .bub.me{fill:var(--layer-hover)}
+.mini .hand{fill:none;stroke:var(--text-2);stroke-width:1.6;stroke-linecap:round}
+.mini .tab{fill:var(--layer-2)}
+.mini .tabt{font:9px var(--font-ui);fill:var(--text)}
+.mini .region{transition:opacity .35s}
+.mini.focus .region{opacity:.3}
+.mini.focus .region.on{opacity:1}
+.mini .ring{fill:none;stroke:var(--ink);stroke-width:2;rx:6;transition:all .4s cubic-bezier(.2,0,.38,.9)}
+.mini .brush{fill:none;stroke:var(--ink);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.mini .brush.go{animation:brush .7s cubic-bezier(.2,0,.38,.9) both}
+@keyframes brush{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.reduced .mini .brush.go{animation:none}
+.drawonce .spine{stroke-dasharray:1;stroke-dashoffset:1;animation:once 1.4s cubic-bezier(.2,0,.38,.9) .2s forwards}
+@keyframes once{to{stroke-dashoffset:0}}
+.reduced .drawonce .spine{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+.layer{transition:opacity .5s}
+/* Boas-vindas → passeio: a integral encolhe rumo à aba e a Mesa entra depois,
+   para a troca não ser um corte seco. */
+.layer.brand{transform-origin:260px 140px;transition:opacity .6s ease .15s,transform .9s cubic-bezier(.2,0,.38,.9)}
+.layer.brand.leaving{transform:translate(-215px,-126px) scale(.08)}
+.layer.app{transition:opacity .8s ease .35s}
+.caret{animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.reduced .layer.brand,.reduced .layer.app{transition:none}
+.reduced .caret{animation:none}
+.inkfill{fill:var(--ink);opacity:.16;transform-box:fill-box;transform-origin:50% 100%}
+.inkfill.go{animation:rise .8s cubic-bezier(.2,0,.38,.9) both}
+@keyframes rise{from{transform:scaleY(0)}to{transform:none}}
+.reduced .inkfill.go{animation:none}
+.riemann rect{fill:var(--ink);opacity:.22;transition:opacity .4s}
+.riemann rect.off{opacity:0}
+.reduced .layer,.reduced .riemann rect{transition:none}
+.reduced .mini .ring,.reduced .area-clip{transition:none}
+.area{fill:var(--ink);opacity:.22}
+.curve{fill:none;stroke:var(--ink);stroke-width:2}
+.axis{stroke:var(--border-strong);stroke-width:1}
+.area-clip{transition:width .6s cubic-bezier(.2,0,.38,.9)}
+</style>
+</head>
+<body>
+<div class="board" id="board">
+  <div class="bar">
+    <span class="seg" data-key="theme"><button data-v="light">Claro</button><button data-v="dark">Escuro</button></span>
+    <span class="seg" data-key="accent"><button data-v="graphite">Grafite</button><button data-v="violet">Violeta</button></span>
+    <label class="chk"><input type="checkbox" id="reduced"> Movimento reduzido</label>
+  </div>
+
+  <h2>"Pensando" no chat</h2>
+  <div class="grid" id="thinking"></div>
+
+  <h2>Primeira abertura</h2>
+  <div class="bar">
+    <span class="stepper"><button id="prev">←</button><span id="stepname"></span><button id="next">→</button></span>
+    <label class="chk"><input type="checkbox" id="auto" checked> Passar sozinho</label>
+  </div>
+  <div class="grid" id="setup"></div>
+</div>
+<script>
+const D="M 800.500 166.419 C 799.950 166.646, 795.232 168.019, 790.016 169.470 C 744.006 182.270, 703.646 214.434, 675.789 260.500 C 658.982 288.293, 644.491 321.376, 635.433 352.636 C 629.407 373.430, 625.123 389.837, 624.502 394.500 C 622.644 408.446, 620.640 417.915, 618.439 423.145 C 617.097 426.332, 615.993 430.866, 615.984 433.220 C 615.976 435.574, 615.065 441.775, 613.961 447 C 612.857 452.225, 610.610 464.375, 608.968 474 C 607.326 483.625, 605.086 495.527, 603.991 500.449 C 602.896 505.371, 601.995 511.446, 601.988 513.949 C 601.982 516.452, 601.090 522.100, 600.006 526.500 C 598.201 533.826, 596.857 542.368, 592.372 575 C 591.503 581.325, 590.160 589.055, 589.388 592.177 C 588.615 595.300, 587.744 600.475, 587.453 603.677 C 586.597 613.084, 584.963 625.685, 583.001 638 C 581.993 644.325, 580.419 657.375, 579.503 667 C 578.586 676.625, 577.263 687.512, 576.561 691.192 C 575.859 694.873, 575.199 701.418, 575.095 705.736 C 574.991 710.054, 574.719 715.367, 574.490 717.543 C 574.262 719.719, 573.407 727.800, 572.592 735.500 C 571.776 743.200, 570.605 757.150, 569.991 766.500 C 569.376 775.850, 568.203 788.216, 567.384 793.980 C 565.715 805.734, 562.929 833.352, 562.491 842.500 C 560.072 892.946, 536.484 966.120, 510.962 1002.344 C 500.851 1016.695, 485.487 1031.601, 473.973 1038.229 C 451.408 1051.220, 420.902 1049.709, 407.010 1034.912 C 397.581 1024.869, 396.778 1014.630, 404.025 996.880 C 411.081 979.602, 411.240 979.012, 410.705 972.130 C 410.086 964.144, 408.620 962.118, 398.156 954.778 C 385.715 946.051, 378.291 944.612, 362 947.772 C 353.362 949.447, 345.156 956.040, 337.398 967.538 C 329.878 978.683, 330.006 1004.267, 337.658 1019.754 C 351.301 1047.365, 377.906 1069.204, 405.254 1075.239 C 418.021 1078.056, 442.837 1078.201, 458 1075.546 C 508.291 1066.740, 554.660 1028.375, 596.444 961 C 599.684 955.775, 603.123 950.600, 604.085 949.500 C 606.378 946.880, 632.311 894.796, 634.429 888.558 C 635.788 884.554, 642.575 868.145, 646.034 860.500 C 647.252 857.807, 655.859 831.673, 661.020 815 C 663.318 807.575, 666.091 799.025, 667.182 796 C 668.855 791.361, 674.078 770.044, 679.554 745.500 C 680.291 742.200, 681.840 736.575, 682.998 733 C 684.155 729.425, 686.624 715.873, 688.484 702.884 C 690.344 689.896, 692.557 676.846, 693.401 673.884 C 694.246 670.923, 694.903 666.700, 694.863 664.500 C 694.762 659.057, 696.731 642.046, 698.451 633.500 C 699.226 629.650, 700.389 620.200, 701.036 612.500 C 702.258 597.945, 702.695 593.479, 705.342 568.500 C 707.366 549.392, 708.668 532.012, 710.495 499.691 C 711.298 485.497, 712.194 473.495, 712.487 473.021 C 712.780 472.547, 713.231 461.210, 713.490 447.829 C 714.967 371.274, 721.307 306.129, 729.882 279.392 C 748.666 220.824, 788.369 186.454, 826.781 195.511 C 847.859 200.480, 854.550 213.255, 849.129 238.177 C 844.843 257.882, 851.100 269.391, 870.102 276.754 C 879.686 280.467, 881.917 280.630, 892.127 278.363 C 913.624 273.589, 922.505 258.896, 917.509 236.371 C 914.826 224.275, 910.637 217.096, 896.404 200.207 C 884.567 186.162, 862.147 173.635, 840.500 168.972 C 832.265 167.198, 803.119 165.338, 800.500 166.419";
+const VB="155 150 940 940";
+/* Linha central da integral, de cima (gota do topo) até a gota de baixo,
+   feita à mão sobre o path; serve de máscara para o traço aparecer. */
+const SPINE=[[888,252],[872,205],[822,180],[760,200],[712,262],[684,370],[664,500],[648,640],[630,770],[602,880],[556,975],[492,1045],[425,1062],[372,1040],[352,1000],[368,968]];
+function smooth(points){
+  let d=`M${points[0]}`;
+  for(let i=0;i<points.length-1;i++){
+    const p0=points[i-1]||points[i],p1=points[i],p2=points[i+1],p3=points[i+2]||p2;
+    const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6],c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+    d+=` C${c1} ${c2} ${p2}`;
+  }
+  return d;
+}
+const SPINE_D=smooth(SPINE);
+let uid=0;
+function glyph(size,kind){
+  const id='m'+(uid++);
+  if(kind==='shine')return `<svg class="glyph" width="${size}" height="${size}" viewBox="${VB}"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="155" y1="0" x2="1095" y2="0">
+<stop offset="0" style="stop-color:var(--ink);stop-opacity:.3"/><stop offset=".42" style="stop-color:var(--ink);stop-opacity:.3"/><stop offset=".5" style="stop-color:var(--ink);stop-opacity:1"/><stop offset=".58" style="stop-color:var(--ink);stop-opacity:.3"/><stop offset="1" style="stop-color:var(--ink);stop-opacity:.3"/>
+<animateTransform attributeName="gradientTransform" type="translate" from="-900 0" to="900 0" dur="1.8s" repeatCount="indefinite"/></linearGradient></defs><path d="${D}" fill="url(#${id})"/></svg>`;
+  if(kind==='still')return `<svg class="glyph" width="${size}" height="${size}" viewBox="${VB}"><path class="base" d="${D}"/></svg>`;
+  return `<svg class="glyph ${kind}" width="${size}" height="${size}" viewBox="${VB}">
+<mask id="${id}" maskUnits="userSpaceOnUse" x="155" y="150" width="940" height="940"><path class="spine" pathLength="1" d="${SPINE_D}" fill="none" stroke="#fff" stroke-width="130" stroke-linecap="round" stroke-linejoin="round"/></mask>
+${kind==='drop'?`<path class="faint" d="${D}"/>`:''}<path class="base" d="${D}" mask="url(#${id})"/></svg>`;
+}
+const THINKING=[
+  ['A','A integral se desenhando','sua escolha',()=>glyph(18,'draw'),()=>glyph(96,'draw')],
+  ['B','Texto com brilho','sua escolha',()=>'<span class="shine">Pensando…</span>',()=>'<span class="shine" style="font-size:28px;line-height:96px">Pensando…</span>'],
+  ['D','A e B juntas','sua escolha',()=>glyph(18,'draw')+'<span class="shine">Pensando…</span>',()=>`<span style="display:inline-flex;align-items:center;gap:14px">${glyph(44,'draw')}<span class="shine" style="font-size:28px;line-height:44px">Pensando…</span></span>`],
+  ['E','Desenha e apaga, sem sumir','nova',()=>glyph(18,'erase'),()=>glyph(96,'erase')],
+  ['F','O brilho do B passando pela integral','',()=>glyph(18,'shine'),()=>glyph(96,'shine')],
+  ['H','D com o brilho da F: integral e texto brilham juntos','nova',()=>glyph(18,'shine')+'<span class="shine">Pensando…</span>',()=>glyph(96,'shine')],
+  ['J','D sincronizada: desenha, depois o brilho corre pelo texto','nova',()=>glyph(18,'drawsync')+'<span class="shine sync">Pensando…</span>',()=>`<span style="display:inline-flex;align-items:center;gap:14px">${glyph(44,'drawsync')}<span class="shine sync" style="font-size:28px;line-height:44px">Pensando…</span></span>`],
+  ['K','Um brilho só atravessa a integral e o texto','escolhida',()=>`<span class="rowshine">${glyph(18,'still')}<span>Pensando…</span></span>`,()=>`<span class="rowshine" style="gap:14px">${glyph(44,'still')}<span style="font-size:28px;line-height:44px">Pensando…</span></span>`],
+  ['G','Três integrais, como os pontinhos de digitação','nova',()=>`<span class="trio-dots">${glyph(14,'still')}${glyph(14,'still')}${glyph(14,'still')}</span>`,()=>`<span class="trio-dots" style="gap:12px">${glyph(56,'still')}${glyph(56,'still')}${glyph(56,'still')}</span>`],
+];
+const ALL=new URLSearchParams(location.search).has('todas');
+const PICK_T=['K'],PICK_S=['I'];
+document.getElementById('thinking').innerHTML=THINKING.filter(([k])=>ALL||PICK_T.includes(k)).map(([k,t,note,small,big])=>`<div class="card"><h3>${k}. ${t}${note?`<small>${note}</small>`:''}</h3>
+<div class="chat"><div class="msg">Por que a derivada de x² é 2x?</div><div class="think">${small()}</div><div class="big">${big()}</div></div></div>`).join('');
+
+/* ---- primeira abertura ---- */
+const STEPS=[
+  ['Boas-vindas',null,'Seus PDFs, um tutor e o caderno ao lado.'],
+  ['Como funciona · leitores','readers','Os PDFs da matéria ficam aqui.'],
+  ['Como funciona · escrita','writing','Você resolve à mão, no caderno.'],
+  ['Como funciona · tutor','tutor','O tutor pergunta antes de responder.'],
+  ['Como funciona · topo','top','Cada matéria é uma aba.'],
+  ['Nome','top','Como se chama a matéria?'],
+  ['PDFs','readers','Escolha os PDFs da matéria.'],
+  ['Tutor','tutor','Chame o tutor, se quiser.'],
+  ['Pronto','all','Tudo pronto.'],
+];
+const BOX={top:[2,2,326,24],readers:[6,30,204,266],tutor:[214,30,112,266],writing:[340,2,178,296],all:[2,2,516,296]};
+function mesaMini(){
+  const lines=(x,y,w,n)=>Array.from({length:n},(_,i)=>`<line class="line" x1="${x}" y1="${y+i*9}" x2="${x+w*(i%3===2?.6:1)}" y2="${y+i*9}"/>`).join('');
+  return `<g class="region" data-r="top"><rect class="win" x="1" y="1" width="328" height="298" rx="6"/><rect class="bar0" x="1" y="1" width="328" height="24" rx="6"/>
+<rect class="tab" x="8" y="6" width="74" height="16" rx="3"/><text class="tabt" x="14" y="17" data-name>Cálculo I</text><text class="tabt" x="92" y="17" style="fill:var(--text-3)">Livre</text></g>
+<g class="region" data-r="readers"><rect class="page" x="12" y="36" width="92" height="124" rx="2"/>${lines(20,50,76,11)}<rect class="page" x="112" y="36" width="92" height="124" rx="2"/>${lines(120,50,76,11)}
+<rect class="page" x="12" y="168" width="92" height="124" rx="2"/>${lines(20,182,76,11)}<rect class="page" x="112" y="168" width="92" height="124" rx="2"/>${lines(120,182,76,11)}</g>
+<g class="region" data-r="tutor"><rect class="bub me" x="250" y="40" width="70" height="22" rx="6"/><rect class="bub" x="220" y="70" width="96" height="44" rx="6"/><rect class="bub me" x="262" y="122" width="58" height="18" rx="6"/>
+<rect class="bub" x="220" y="148" width="90" height="30" rx="6"/><rect class="bub" x="218" y="262" width="104" height="30" rx="6" style="stroke:var(--border-subtle);fill:var(--bg)"/></g>
+<g class="region" data-r="writing"><rect class="win" x="340" y="1" width="178" height="298" rx="6"/><rect class="bar0" x="340" y="1" width="178" height="20" rx="6"/>
+<rect class="page" x="352" y="30" width="154" height="258" rx="2"/>
+<path class="hand" d="M364 56c6-8 10 6 16-2s8-4 12 0m10-2h8m6 4c4-10 12-8 14 0s8 6 12-4M364 84c10-6 18 4 26-2m8 2c6-6 12-6 16 0M366 112c4 8 10-10 16 0s10-6 14 2m10-4h10m6-2c6 10 14-10 18 0"/></g>`;
+}
+function ringFor(r){const [x,y,w,h]=BOX[r]||BOX.all;return {x:x-2,y:y-2,w:w+4,h:h+4};}
+/* Elipse "a mão": começa um pouco antes do fim, como quem circula com pincel. */
+function brushAround(r){
+  const [x,y,w,h]=BOX[r];const cx=x+w/2,cy=y+h/2,rx=w/2+10,ry=h/2+10;
+  const pts=[];for(let i=0;i<=26;i++){const a=-2.2+i*(Math.PI*2.18/26);const j=1+(i%2?.025:-.02);pts.push([+(cx+Math.cos(a)*rx*j).toFixed(1),+(cy+Math.sin(a)*ry*j).toFixed(1)]);}
+  return smooth(pts);
+}
+function curveArea(w,h,pad){
+  const f=t=>h-pad-(h-2*pad)*(.35+.45*Math.sin(t*Math.PI*.9+.3)*(1-.25*t));
+  const pts=Array.from({length:41},(_,i)=>[pad+i*(w-2*pad)/40,f(i/40)]);
+  const top=pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join(' L');
+  return {curve:`M${top}`,area:`M${pad},${h-pad} L${top} L${w-pad},${h-pad}Z`,x0:pad,x1:w-pad};
+}
+const RECT_N=8;
+function riemann(w,h,pad){
+  const c=curveArea(w,h,pad);const step=(c.x1-c.x0)/RECT_N;
+  const f=t=>h-pad-(h-2*pad)*(.35+.45*Math.sin(t*Math.PI*.9+.3)*(1-.25*t));
+  return Array.from({length:RECT_N},(_,i)=>{const y=f((i+.5)/RECT_N);return `<rect data-i="${i}" x="${(c.x0+i*step+1).toFixed(1)}" y="${y.toFixed(1)}" width="${(step-2).toFixed(1)}" height="${(h-pad-y).toFixed(1)}"/>`;}).join('');
+}
+const OPTIONS=[
+  ['A','Área sob a curva como progresso','sua escolha',()=>{const c=curveArea(520,300,24);return `<svg viewBox="0 0 520 300" width="100%">
+${glyph(150,'still').replace('<svg','<svg x="14" y="70"')}
+<g transform="translate(150,0) scale(.71,1)"><defs><clipPath id="clipA"><rect class="area-clip" x="${c.x0}" y="0" width="0" height="300"/></clipPath></defs>
+<line class="axis" x1="${c.x0}" y1="276" x2="${c.x1}" y2="276"/><path class="area" d="${c.area}" clip-path="url(#clipA)"/><path class="curve" d="${c.curve}" vector-effect="non-scaling-stroke"/></g></svg>`;}],
+  ['B','A Mesa em miniatura','sua escolha (base)',()=>`<svg class="mini focus" viewBox="0 0 520 300" width="100%">${mesaMini()}<rect class="ring" x="0" y="0" width="0" height="0"/></svg>`],
+  ['D','Soma de Riemann: cada passo é um retângulo','nova',()=>{const c=curveArea(520,300,24);return `<svg viewBox="0 0 520 300" width="100%">
+${glyph(150,'still').replace('<svg','<svg x="14" y="70"')}
+<g transform="translate(150,0) scale(.71,1)"><line class="axis" x1="${c.x0}" y1="276" x2="${c.x1}" y2="276"/><g class="riemann">${riemann(520,300,24)}</g>
+<path class="area full" d="${c.area}" style="transition:opacity .5s"/><path class="curve" d="${c.curve}" vector-effect="non-scaling-stroke"/></g></svg>`;}],
+  ['E','Miniatura: a região enche de tinta','nova',()=>`<svg class="mini" viewBox="0 0 520 300" width="100%">${mesaMini()}<rect class="inkfill" x="0" y="300" width="0" height="0" rx="6"/></svg>`],
+  ['F','A integral se desenha e abre a Mesa','do final você gostou',()=>`<svg class="mini focus" viewBox="0 0 520 300" width="100%"><g class="layer app">${mesaMini()}<rect class="ring" x="0" y="0" width="0" height="0"/></g><g class="layer brand"></g></svg>`],
+  ['H','Miniatura, e a integral fecha no Pronto','nova',()=>`<svg class="mini focus" viewBox="0 0 520 300" width="100%"><g class="layer app">${mesaMini()}<rect class="ring" x="0" y="0" width="0" height="0"/></g><g class="layer brand"></g></svg>`],
+  ['I','Miniatura, com a integral abrindo e fechando','escolhida',()=>`<svg class="mini focus" viewBox="0 0 520 300" width="100%"><g class="layer app">${mesaMini()}<rect class="ring" x="0" y="0" width="0" height="0"/></g><g class="layer brand"></g></svg>`],
+  ['G','A área sob a curva revela a Mesa','nova',()=>{const c=curveArea(520,300,0);const top=c.curve.replace(/(\d+\.\d),(\d+\.\d)/g,(m,x,y)=>`${x},${(+y*.25).toFixed(1)}`);return `<svg class="mini" viewBox="0 0 520 300" width="100%">
+<defs><clipPath id="clipG1"><path d="${top} L520,300 L0,300Z"/></clipPath><clipPath id="clipG2"><rect class="area-clip" x="0" y="0" width="0" height="300"/></clipPath></defs>
+<g opacity=".12">${mesaMini()}</g><g clip-path="url(#clipG2)"><g clip-path="url(#clipG1)">${mesaMini()}</g><path class="curve" d="${top}"/></g></svg>`;}],
+];
+const setup=document.getElementById('setup');
+setup.innerHTML=OPTIONS.filter(([k])=>ALL||PICK_S.includes(k)).map(([k,t,note,scene])=>`<div class="card" data-opt="${k}"><h3>${k}. ${t}${note?`<small>${note}</small>`:''}</h3><div class="scene">${scene()}<p class="cap"></p></div></div>`).join('');
+
+/* Nome: "Cálculo I" digitado letra a letra, com o cursor piscando. */
+const NAME='Cálculo I';
+function typeName(el,at){
+  clearInterval(el.timer);
+  el.style.fill=at<5?'var(--text-3)':'';
+  if(at!==5){el.textContent=at<5?'Nova matéria':NAME;return;}
+  const caret='<tspan class="caret">|</tspan>';
+  if(document.getElementById('board').classList.contains('reduced')){el.innerHTML=NAME+caret;return;}
+  let n=0;el.innerHTML=caret;
+  el.timer=setInterval(()=>{n++;el.innerHTML=NAME.slice(0,n)+caret;if(n>=NAME.length)clearInterval(el.timer);},120);
+}
+let step=+(new URLSearchParams(location.search).get('step')||0);
+function render(){
+  const [name,region,cap]=STEPS[step];
+  document.getElementById('stepname').textContent=`${step+1}/${STEPS.length} · ${name}`;
+  const frac=step/(STEPS.length-1);
+  for(const card of setup.children){
+    card.querySelector('.cap').textContent=cap;
+    const full={A:520-48,G:520}[card.dataset.opt]||520-8;
+    for(const clip of card.querySelectorAll('.area-clip'))clip.setAttribute('width',(full*frac).toFixed(1));
+    for(const r of card.querySelectorAll('.riemann rect'))r.classList.toggle('off',+r.dataset.i>=step||step===STEPS.length-1);
+    const smoothArea=card.querySelector('.area.full');if(smoothArea)smoothArea.style.opacity=step===STEPS.length-1?.22:0;
+    const ink=card.querySelector('.inkfill');
+    if(ink){const b=region?BOX[region]:[0,0,0,0];ink.classList.remove('go');ink.setAttribute('x',b[0]);ink.setAttribute('y',b[1]);ink.setAttribute('width',b[2]);ink.setAttribute('height',b[3]);void ink.getBBox();ink.classList.add('go');}
+    const brand=card.querySelector('.layer.brand');
+    if(brand){const app=card.querySelector('.layer.app');const last=STEPS.length-1;
+      const at={F:[0],H:[last],I:[0,last]}[card.dataset.opt]||[];const show=at.includes(step);
+      clearTimeout(brand.timer);
+      if(show&&brand.dataset.on!==String(step)){brand.classList.remove('leaving');brand.innerHTML=glyph(170,'drawonce').replace('<svg','<svg x="175" y="55"');brand.dataset.on=String(step);}
+      if(!show&&brand.dataset.on){const fromWelcome=brand.dataset.on==='0'&&step===1;delete brand.dataset.on;
+        if(fromWelcome){brand.classList.add('leaving');brand.timer=setTimeout(()=>{brand.innerHTML='';brand.classList.remove('leaving');},1000);}else brand.innerHTML='';}
+      brand.style.opacity=show?1:0;app.style.opacity=!show?1:step===last?.15:0;}
+    const mini=card.querySelector('.mini');if(!mini)continue;
+    mini.classList.toggle('focus',['B','F','H','I'].includes(card.dataset.opt)&&!!region&&region!=='all');
+    for(const g of mini.querySelectorAll('.region'))g.classList.toggle('on',region===g.dataset.r);
+    for(const name of mini.querySelectorAll('[data-name]'))typeName(name,step);
+    const ring=mini.querySelector('.ring');
+    if(ring){const show=region&&region!=='all';const b=ringFor(region||'all');ring.setAttribute('x',b.x);ring.setAttribute('y',b.y);ring.setAttribute('width',b.w);ring.setAttribute('height',b.h);ring.style.opacity=show?1:0;}
+    const brush=mini.querySelector('.brush');
+    if(brush){brush.classList.remove('go');if(region){brush.setAttribute('d',brushAround(region));void brush.getBBox();brush.classList.add('go');brush.style.opacity=1;}else brush.style.opacity=0;}
+  }
+}
+document.getElementById('prev').onclick=()=>{step=(step+STEPS.length-1)%STEPS.length;render();};
+document.getElementById('next').onclick=()=>{step=(step+1)%STEPS.length;render();};
+/* Boas-vindas e Pronto ficam mais tempo, para a integral terminar de se desenhar. */
+function stepTime(at){return at===0||at===STEPS.length-1?3800:at===5?3200:2600;}
+(function tick(){setTimeout(()=>{if(document.getElementById('auto').checked){step=(step+1)%STEPS.length;render();}tick();},stepTime(step));})();
+
+const root=document.documentElement;
+for(const seg of document.querySelectorAll('.seg')){
+  const key=seg.dataset.key;
+  const sync=()=>{for(const b of seg.children)b.setAttribute('aria-pressed',String(root.dataset[key]===b.dataset.v));};
+  seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;root.dataset[key]=b.dataset.v;sync();};
+  sync();
+}
+document.getElementById('reduced').onchange=e=>{document.getElementById('board').classList.toggle('reduced',e.target.checked);for(const s of document.querySelectorAll('svg.glyph'))e.target.checked?s.pauseAnimations():s.unpauseAnimations();};
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {makeZip} from './zipkit.mjs';
+import {ptText} from './pt-text.mjs';
+import {tempDir} from './temp-dir.mjs';
+
+/* Checagem do updater com fetch falso (NUNCA rede de verdade): semver, cache
+   de 24 h, fallback em tags, "desconhecido" sem erro e a lista de caminhos
+   protegidos. O aplicação em si (git/zip/rollback) fica em updateflow.test.mjs. */
+const require = createRequire(import.meta.url);
+const updater = require('../updater.cjs');
+const files = require('../updater-files.cjs');
+
+const tmp = () => tempDir('mesa-updater-test');
+
+test('semver: comparação e isNewer', () => {
+  assert.equal(updater.semverCompare('0.4.1', '0.4.0'), 1);
+  assert.equal(updater.semverCompare('0.4.0', '0.4.1'), -1);
+  assert.equal(updater.semverCompare('v0.4.0', '0.4.0'), 0);
+  assert.equal(updater.semverCompare('0.4.0', 'lixo'), 0);
+  assert.equal(updater.isNewer('0.4.1', '0.4.0'), true);
+  assert.equal(updater.isNewer('0.4.0', '0.4.0'), false);
+  assert.equal(updater.isNewer('0.3.9', '0.4.0'), false);
+  assert.equal(updater.isNewer('', '0.4.0'), false);
+});
+
+/* C5: SemVer mais duro — prerelease/build nunca vira "versão estável mais nova". */
+test('semver: prerelease e build não são versão estável', () => {
+  assert.equal(updater.semverParse('0.4.1-rc.1'), null);
+  assert.equal(updater.semverParse('0.4.1+build.7'), null);
+  assert.equal(updater.semverParse('v0.4.1-beta'), null);
+  assert.equal(updater.isNewer('0.4.1-rc.1', '0.4.0'), false, 'prerelease não sugere atualização');
+  assert.deepEqual(updater.semverParse('v0.4.1'), [0, 4, 1]);
+  assert.deepEqual(updater.semverParse(' 0.4.2 '), [0, 4, 2]);
+});
+
+test('checkForUpdates: versão maior vira update com notas e link', async () => {
+  const visto = [];
+  const result = await updater.checkForUpdates({
+    current: '0.4.0',
+    cacheFile: '',
+    fetchJson: async (url) => {
+      visto.push(url);
+      return {tag_name: 'v0.4.1', body: 'o que mudou', html_url: 'https://github.com/x/releases/tag/v0.4.1'};
+    },
+  });
+  assert.deepEqual(visto, [updater.RELEASES_URL]);
+  assert.equal(result.status, 'update');
+  assert.equal(result.version, '0.4.1');
+  assert.equal(result.notes, 'o que mudou');
+  assert.equal(result.url, 'https://github.com/x/releases/tag/v0.4.1');
+});
+
+test('checkForUpdates: igual ou local mais novo é "current"', async () => {
+  const igual = await updater.checkForUpdates({current: '0.4.0', fetchJson: async () => ({tag_name: 'v0.4.0'})});
+  assert.equal(igual.status, 'current');
+  const frente = await updater.checkForUpdates({current: '0.5.0', fetchJson: async () => ({tag_name: 'v0.4.1'})});
+  assert.equal(frente.status, 'current');
+});
+
+test('checkForUpdates: releases/latest falha → fallback em tags', async () => {
+  const visto = [];
+  const result = await updater.checkForUpdates({
+    current: '0.4.0',
+    fetchJson: async (url) => {
+      visto.push(url);
+      if (url === updater.RELEASES_URL) throw Error('HTTP 404');
+      return [{name: 'v0.3.9'}, {name: 'v0.4.2'}, {name: 'v0.4.10'}];
+    },
+  });
+  assert.deepEqual(visto, [updater.RELEASES_URL, updater.TAGS_URL]);
+  assert.equal(result.status, 'update');
+  assert.equal(result.version, '0.4.10', 'a tags pega a maior semver da lista');
+});
+
+test('checkForUpdates: erro de rede vira "error" silencioso (sem exceção)', async () => {
+  const result = await updater.checkForUpdates({
+    current: '0.4.0',
+    fetchJson: async () => { throw Error('sem rede'); },
+  });
+  assert.equal(result.status, 'error');
+  assert.match(result.error, /sem rede/);
+  assert.equal(result.version, '');
+});
+
+test('checkForUpdates: cache de 24 h vale para a automática; o manual força', async () => {
+  const cacheFile = path.join(tmp(), 'update.json');
+  const agora = Date.now();
+  let chamadas = 0;
+  const fetchJson = async () => { chamadas++; return {tag_name: 'v0.4.1', body: 'notas', html_url: 'https://github.com/x'}; };
+
+  const primeiro = await updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson, now: agora});
+  assert.equal(chamadas, 1);
+  assert.equal(primeiro.status, 'update');
+  assert.equal(primeiro.cached, false);
+
+  const dentro = await updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson, now: agora + 23 * 60 * 60 * 1000});
+  assert.equal(chamadas, 1, 'cache de 24 h: a automática não vai à rede');
+  assert.equal(dentro.status, 'update');
+  assert.equal(dentro.cached, true);
+
+  const manual = await updater.checkForUpdates({current: '0.4.0', manual: true, cacheFile, fetchJson, now: agora + 60 * 1000});
+  assert.equal(chamadas, 2, 'o botão manual força a rede');
+  assert.equal(manual.cached, false);
+
+  const depois = await updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson, now: agora + 25 * 60 * 60 * 1000});
+  assert.equal(chamadas, 3, 'depois de 24 h a automática checa de novo');
+  assert.equal(depois.status, 'update');
+});
+
+test('checkForUpdates: sem cache válido e offline o erro é silencioso e não mente a versão', async () => {
+  const cacheFile = path.join(tmp(), 'update.json');
+  const agora = Date.now();
+  updater.writeCache(cacheFile, {release: {at: agora - 30 * 60 * 60 * 1000, version: '0.4.1', notes: 'velho', url: 'https://github.com/x'}});
+  const result = await updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson: async () => { throw Error('sem rede'); }});
+  assert.equal(result.status, 'error', 'sem cache válido o erro é silencioso e não mente a versão');
+});
+
+test('markToasted: um toast por versão (gravação serializada no cache)', async () => {
+  const cacheFile = path.join(tmp(), 'update.json');
+  assert.equal(await updater.markToasted(cacheFile, '0.4.1'), true);
+  assert.equal(await updater.markToasted(cacheFile, '0.4.1'), false);
+  assert.equal(await updater.markToasted(cacheFile, '0.4.2'), true);
+});
+
+/* D6/B4: respostas concorrentes em ordem inversa não perdem entrada do cache
+   (inclusive a marca de toast) — a leitura/mutação/gravação acontece dentro da
+   fila (cacheWrite), não "lê antes, escreve depois do await". */
+test('cache: duas respostas em ordem inversa não se sobrescrevem', async () => {
+  const cacheFile = path.join(tmp(), 'update.json');
+  const fetchJson = (url) => {
+    if (url === updater.RELEASES_URL) {
+      return new Promise((resolve) => setTimeout(() => resolve({tag_name: 'v0.4.1', body: 'lenta', html_url: 'https://github.com/x'}), 60));
+    }
+    if (url === updater.TAGS_URL) return Promise.resolve([{name: 'v0.4.9'}]);
+    throw Error('URL inesperada: ' + url);
+  };
+  /* A checagem lenta (release) e a rápida (tags) saem juntas; a rápida termina
+     primeiro e escreve v0.4.9; a lenta chega DEPOIS e não pode apagar o que a
+     rápida (nem a marca de toast, feita no meio) deixou. */
+  const [lenta, rapida] = await Promise.all([
+    updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson}),
+    updater.checkForUpdates({current: '0.4.0', cacheFile, fetchJson}),
+  ]);
+  assert.equal(await updater.markToasted(cacheFile, '0.4.1'), true);
+  const final = updater.readCache(cacheFile);
+  assert.equal(final.toasted, '0.4.1', 'a marca de toast sobrevive às escritas concorrentes');
+  assert.ok(final.release && /^\d+\.\d+\.\d+$/.test(final.release.version), 'a release fica no cache (lenta ou rápida, sem buraco)');
+  assert.ok(['0.4.1', '0.4.9'].includes(final.release.version), `versão coerente com uma das respostas: ${final.release && final.release.version}`);
+  assert.ok(lenta.status === 'update' && rapida.status === 'update');
+});
+
+test('xournalLatest: só informativo (tag v1.2.7 → 1.2.7)', async () => {
+  const ok = await updater.xournalLatest({manual: true, fetchJson: async () => ({tag_name: 'v1.2.7'})});
+  assert.deepEqual(ok, {version: '1.2.7', known: true});
+  const sem = await updater.xournalLatest({manual: true, fetchJson: async () => { throw Error('sem rede'); }});
+  assert.deepEqual(sem, {version: '', known: false});
+});
+
+test('readZip: store e deflate voltam com o mesmo conteúdo', () => {
+  for (const deflate of [false, true]) {
+    const zip = makeZip({'a.txt': 'um', 'dir/b.js': 'dois'}, {deflate});
+    const entries = updater.readZip(zip);
+    assert.deepEqual(entries.map((e) => e.name), ['a.txt', 'dir/b.js']);
+    assert.equal(entries[0].data.toString(), 'um');
+    assert.equal(entries[1].data.toString(), 'dois');
+  }
+});
+
+test('caminhos protegidos nunca são substituíveis', () => {
+  const protegidos = [
+    'config.json', 'desk/config.json', 'desk/desk.json', 'desk/install-source.json',
+    'desk/.update-manifest.json', '.update-manifest.json',
+    'desk/.runtime/desk.json', 'desk/.runtime/pi-1.jsonl', 'desk/node_modules/electron/index.js',
+    'sessao.jsonl', 'livro.pdf', 'rascunho.xopp', 'desk/atual.log',
+    'Mesa de Estudos.app/Contents/Info.plist', '', 'a/../b.txt', 'C:/x.txt',
+  ];
+  for (const rel of protegidos) {
+    assert.equal(updater.isProtected(rel), true, `protegido: ${rel}`);
+    assert.equal(updater.isReplaceable(rel), false, `não substituível: ${rel}`);
+  }
+});
+
+test('lista explícita do modo zip: o código entra (tests incluído), o resto fica de fora', () => {
+  const sim = [
+    'desk/main.cjs', 'desk/updater.mjs', 'desk/index.html', 'desk/style.css', 'desk/README.md',
+    'desk/package.json', 'desk/package-lock.json', 'desk/config.example.json',
+    'desk/src/main.mjs', 'desk/src/generated/dialogsview.core.js', 'desk/assets/mesa.svg',
+    'desk/templates/TUTOR.md', 'desk/locales/en.json', 'desk/scripts/install-app.mjs',
+    'desk/tests/updateflow.test.mjs', 'desk/tests/zipkit.mjs',
+    'core/dialogsview.bend', 'core/laws/dialogsview.bend', 'geogebra/x.html',
+    'desk/src/xournal-plugins/MesaPagina/main.lua', 'desk/src/xournal-plugins/MesaPagina/plugin.ini',
+    'visual-check/windows.swift', '.githooks/pre-push', 'README.md', 'AGENTS.md', 'LICENSE', '.gitignore',
+    'docs/agents/mapa.md', 'docs/agents/customizar.md',
+  ];
+  const nao = [
+    'desk/design-desktop.png', 'desk/debug2-layout.png', 'desk/atual.log',
+    'qualquer-coisa.txt', 'playground/x.mjs', 'docs/HISTORIA.md', 'docs/agents/sub/x.md', 'docs/agents/x.png', 'docs/reviews/x.md', 'chat/main.cjs',
+  ];
+  for (const rel of sim) assert.equal(updater.isReplaceable(rel), true, `substituível: ${rel}`);
+  for (const rel of nao) assert.equal(updater.isReplaceable(rel), false, `fora da lista: ${rel}`);
+});
+
+test('applyZip: confere a versão extraída e copia só a lista explícita', () => {
+  const rootDir = tmp();
+  fs.mkdirSync(path.join(rootDir, 'desk', '.runtime'), {recursive: true});
+  fs.writeFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'antigo');
+  fs.writeFileSync(path.join(rootDir, 'desk', '.runtime', 'desk.json'), '{"keep":true}');
+  const zip = makeZip({
+    'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'mesa-de-estudos-0.4.1/desk/main.cjs': 'novo',
+    'mesa-de-estudos-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
+  });
+  const logs = [];
+  const result = updater.applyZip(zip, {rootDir, announcedVersion: '0.4.1', log: (line) => logs.push(line)});
+  assert.equal(result.version, '0.4.1');
+  assert.equal(fs.readFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'utf8'), 'novo');
+  assert.equal(fs.readFileSync(path.join(rootDir, 'desk', '.runtime', 'desk.json'), 'utf8'), '{"keep":true}', 'caminho protegido intocado');
+  assert.ok(result.skipped >= 1);
+  assert.ok(logs.some((line) => /protegido/.test(line)), 'o pulado protegido é registrado');
+  assert.deepEqual(result.written, ['desk/package.json', 'desk/main.cjs'], 'o que foi escrito vira o manifesto da instalação');
+
+  const ruim = makeZip({'x/desk/package.json': '{"version":"0.4.0"}'});
+  assert.throws(() => updater.applyZip(ruim, {rootDir, announcedVersion: '0.4.1'}), /não bate/);
+
+  const tiro = makeZip({'x/desk/package.json': '{"version":"0.4.1"}', 'x/../evil.txt': 'fuga'});
+  assert.throws(() => updater.applyZip(tiro, {rootDir, announcedVersion: '0.4.1'}), /suspeito/);
+});
+
+test('applyZip: CRC errado recusa o zip antes de qualquer escrita (#82)', () => {
+  /* O leitor próprio do updater não conferia o CRC: um byte trocado no zip ia
+     parar na instalação. Troca-se um byte do conteúdo guardado (store) e o CRC
+     gravado fica como estava. */
+  const rootDir = tmp();
+  fs.mkdirSync(path.join(rootDir, 'desk'), {recursive: true});
+  fs.writeFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'antigo');
+  const zip = Buffer.from(makeZip({'x/desk/package.json': '{"version":"0.4.1"}', 'x/desk/main.cjs': 'novo'}));
+  zip.write('x', zip.indexOf('novo'));
+  assert.throws(() => updater.applyZip(zip, {rootDir, announcedVersion: '0.4.1'}), /zip corrompido \(CRC de x\/desk\/main\.cjs\)/);
+  assert.equal(fs.readFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'utf8'), 'antigo', 'nada foi escrito');
+});
+
+test('applyZip: entrada que descomprime além do tamanho declarado é recusada (#82)', () => {
+  /* Sem teto no inflate, um zip pequeno que declara 10 bytes virava 1 MiB de
+     conteúdo antes de qualquer conferência. Os tamanhos declarados (cabeçalho
+     local e diretório central) são reescritos para 10. */
+  const rootDir = tmp();
+  const bomba = Buffer.from(makeZip({'x/desk/main.cjs': 'a'.repeat(1 << 20)}, {deflate: true}));
+  bomba.writeUInt32LE(10, 22);
+  bomba.writeUInt32LE(10, bomba.readUInt32LE(bomba.length - 22 + 16) + 24);
+  assert.throws(() => updater.applyZip(bomba, {rootDir, announcedVersion: '0.4.1'}), /zip corrompido \(tamanho de x\/desk\/main\.cjs\)/);
+  assert.equal(fs.existsSync(path.join(rootDir, 'desk', 'main.cjs')), false, 'nada foi escrito');
+});
+
+test('applyZip: tamanho declarado acima do teto de descompressão é recusado antes do inflate (#82)', () => {
+  /* O zipkit barra a entrada pelo `maxEntryBytes` (256 MiB) antes de inflar:
+     um zip de 16 bytes que declara 256 MiB + 1 não chega a alocar a expansão. */
+  const rootDir = tmp();
+  const zip = Buffer.from(makeZip({'x/desk/main.cjs': 'a'.repeat(16)}));
+  const tooBig = 256 * 1024 * 1024 + 1;
+  zip.writeUInt32LE(tooBig, 22);
+  zip.writeUInt32LE(tooBig, zip.readUInt32LE(zip.length - 22 + 16) + 24);
+  assert.throws(() => updater.applyZip(zip, {rootDir, announcedVersion: '0.4.1'}), /entrada grande demais: x\/desk\/main\.cjs/);
+  assert.equal(fs.existsSync(path.join(rootDir, 'desk', 'main.cjs')), false, 'nada foi escrito');
+});
+
+/* #155/#190: o install-app imprime a troca do Electron; o updater repassa essa
+   saída ao `log` (o mesmo que vai para o desk.log do runtime). O bundle pode
+   ser o novo ou o antigo — este último é o de quem atualiza da versão anterior. */
+test('#155/#190: syncBundle acha o bundle novo e o antigo e repassa a saída do install-app ao log', async () => {
+  for (const bundleName of ['Summa.app', 'Mesa de Estudos.app']) {
+    const root = tmp();
+    fs.mkdirSync(path.join(root, bundleName));
+    const logs = [];
+    const chamadas = [];
+    await updater.syncBundle({
+      mode: 'git', sourceDir: root, platform: 'darwin',
+      run: async (cmd, args, opts) => {
+        chamadas.push({cmd, args, cwd: opts.cwd});
+        return {stdout: 'Electron do bundle: 44.7.2 → 45.2.0\nAtualizado: /tmp/Summa.app\n'};
+      },
+      log: (line) => logs.push(line),
+    });
+    assert.equal(chamadas.length, 1, `${bundleName}: o install-app roda`);
+    assert.equal(chamadas[0].cmd, 'node');
+    assert.match(chamadas[0].args[0], /scripts[\\/]install-app\.mjs$/);
+    assert.equal(chamadas[0].cwd, path.join(root, 'desk'));
+    assert.ok(logs.includes('Electron do bundle: 44.7.2 → 45.2.0'), `log recebido: ${logs.join(' | ')}`);
+    assert.ok(logs.includes('Atualizado: /tmp/Summa.app'), 'a saída do install-app é repassada inteira');
+  }
+});
+
+test('assertRealTarget: symlink num pai acima de pasta que ainda não existe é recusado', () => {
+  /* O alvo fundo em pasta nova não existe; antes, a checagem parava no ENOENT
+     do próprio alvo e o symlink `app` passava. O mkdir -p seguinte escreveria
+     em `outside/novo`, fora da raiz. */
+  const root = tmp();
+  const outside = tmp();
+  fs.symlinkSync(outside, path.join(root, 'app'), 'dir');
+  const abs = path.join(root, 'app', 'novo', 'arquivo.js');
+  assert.throws(() => files.assertRealTarget(root, abs, 'app/novo/arquivo.js'), /diretório pai é link simbólico/);
+  assert.equal(fs.existsSync(path.join(outside, 'novo')), false);
+  /* Sem symlink, o mesmo caminho novo segue livre. */
+  assert.doesNotThrow(() => files.assertRealTarget(root, path.join(root, 'livre', 'x.js'), 'livre/x.js'));
+});
+
+/* ---------- A4: worker com handshake, node resolvido e lock ---------- */
+
+test('A4/needsShell: shell só onde é inevitável (npm/npx no Windows)', () => {
+  const fake = {platform: 'win32'};
+  const real = process.platform;
+  Object.defineProperty(process, 'platform', {value: fake.platform, configurable: true});
+  try {
+    assert.equal(updater.needsShell('npm'), true);
+    assert.equal(updater.needsShell('npx.cmd'), true);
+    assert.equal(updater.needsShell('git'), false);
+    assert.equal(updater.needsShell('/tmp/com espaço/node'), false);
+    assert.equal(updater.needsShell('xournalpp.exe'), false);
+    Object.defineProperty(process, 'platform', {value: real, configurable: true});
+    assert.equal(updater.needsShell('npm'), process.platform === 'win32', 'fora do Windows nada precisa de shell');
+  } finally {
+    Object.defineProperty(process, 'platform', {value: real, configurable: true});
+  }
+});
+
+test('A4/resolveNode: acha o executável do node do sistema (e vazio sem candidato)', () => {
+  const dir = tmp();
+  /* O resolvedor procura `node.exe`/`node.cmd` no Windows e `node` no POSIX. */
+  const name = process.platform === 'win32' ? 'node.exe' : 'node';
+  fs.writeFileSync(path.join(dir, name), '#!/bin/sh\n');
+  fs.chmodSync(path.join(dir, name), 0o755);
+  assert.equal(updater.resolveNode(process.env, dir, {dirs: [dir]}), path.join(dir, name), 'o node de um PATH injetado é achado');
+  assert.equal(updater.resolveNode(process.env, dir, {dirs: [path.join(dir, 'vazio')]}), '', 'diretório sem node = vazio');
+});
+
+/* B5: caminhos com espaço/quase-comando na mão — o execFile NÃO passa por
+   shell, então `&` e espaços chegam inteiros ao processo. */
+test('B5: execução sem shell sobrevive a caminhos com espaço e &', async () => {
+  const dir = path.join(tmp(), 'pasta com espaço & cliques');
+  fs.mkdirSync(dir, {recursive: true});
+  const script = path.join(dir, 'echozinho.cjs');
+  fs.writeFileSync(script, 'process.stdout.write(JSON.stringify(process.argv.slice(1)));\n');
+  const r = await updater.defaultRun(process.execPath, [script, 'a&b', 'c d']);
+  const visto = JSON.parse(r.stdout);
+  assert.deepEqual(visto, [script, 'a&b', 'c d'], 'caminho com espaço, & e espaços chegam crus (sem shell no meio)');
+});
+
+test('A4/spawnWorker: sem node do sistema o worker NEM COMEÇA (mensagem, app de pé)', () => {
+  const vazio = tmp();
+  const worker = updater.spawnWorker({runtime: ''}, {env: {}, home: vazio, dirs: [path.join(vazio, 'nada')]});
+  assert.equal(worker.ok, false);
+  assert.match(ptText(worker.error), /Node do sistema/);
+});
+
+test('A4/worker: a cópia no tmpdir carrega sozinha, com o que ela requer ao lado (regressão da #43 fase 2)', async () => {
+  /* A #41 pôs `require('./src/i18n.mjs')` no updater e a cópia levava só o
+     pi.cjs: o worker morria com MODULE_NOT_FOUND antes do handshake. */
+  const dir = tmp();
+  const script = updater.stageWorkerFiles(dir);
+  assert.equal(path.dirname(script), dir);
+  const {execFileSync} = await import('node:child_process');
+  const out = execFileSync(process.execPath, ['-e', `require(${JSON.stringify(script)});process.stdout.write('carregou')`], {cwd: dir, encoding: 'utf8'});
+  assert.equal(out, 'carregou');
+});
+
+test('A4/handshake: status confirma o arranque; ausência no prazo falha', async () => {
+  const dir = tmp();
+  const file = path.join(dir, 'status.json');
+  assert.equal(await updater.waitForHandshake(file, 250, {pollMs: 40}), false, 'sem arquivo = sem handshake');
+  updater.writeHandshake(file, {pid: process.pid, phase: 'started', at: Date.now()});
+  assert.equal(await updater.waitForHandshake(file, 2000, {pollMs: 40}), true, 'arquivo escrito = handshake');
+});
+
+test('A4/lock: segunda aquisição recusa; lock velho (preso) é quebrado', () => {
+  const runtime = tmp();
+  const agora = Date.now();
+  const primeira = updater.acquireLock(runtime, {now: agora});
+  assert.equal(primeira.ok, true);
+  const segunda = updater.acquireLock(runtime, {now: agora + 1000});
+  assert.equal(segunda.ok, false, 'duas atualizações ao mesmo tempo não passam');
+  assert.match(segunda.reason, /em andamento/);
+  const presa = updater.acquireLock(runtime, {now: agora + updater.LOCK_STALE_MS + 1000});
+  assert.equal(presa.ok, true, 'lock sem dono há mais de 30 min é quebrado');
+  assert.equal(fs.existsSync(path.join(runtime, 'update.lock')), true);
+  presa.release();
+  assert.equal(fs.existsSync(path.join(runtime, 'update.lock')), false, 'o dono solta o lock');
+});
+
+/* Notas da release: o Sobre despeja texto puro (o Markdown bonito é do
+   navegador, pelo botão) e o corte de 2000 é na fronteira de palavra. */
+test('releaseFromGithub: notas viram texto puro e cortam na palavra', () => {
+  const r = updater.releaseFromGithub({tag_name: 'v0.4.4', html_url: 'https://github.com/x', body: '## O que mudou\n**Forte** e `código` com [link](https://x)\n- item um\n* item dois\n\n\n\nfim'});
+  assert.equal(r.notes, 'O que mudou\nForte e código com link\n• item um\n• item dois\n\nfim');
+  const longo = updater.releaseFromGithub({tag_name: 'v0.4.4', html_url: '', body: 'palavra '.repeat(400)});
+  assert.ok(longo.notes.length <= 2001, 'dentro do teto do Sobre');
+  assert.ok(longo.notes.endsWith('…'), 'reticências dizem que tem mais');
+  assert.equal(/[^\s…]$/.test(longo.notes.slice(0, -1)), true, 'o corte não parte palavra no meio');
+});
+
+// Exercise the default transport policy, including failures while reading JSON.
+test('GET de metadados repete uma vez falhas transitórias e respeita recusas definitivas', async t => {
+ let calls=0;
+ let replies=[];
+ t.mock.method(globalThis,'fetch',async()=>{
+  calls++;
+  const reply=replies.shift();
+  if(reply instanceof Error)throw reply;
+  return reply;
+ });
+ const json=()=>new Response('{"version":"1.0.0"}',{headers:{'content-type':'application/json'}});
+ for(const status of [408,429,502,503,504]){
+  calls=0;replies=[new Response('',{status,headers:{'retry-after':'0'}}),json()];
+  assert.deepEqual(await updater.defaultFetchJson('https://example.test/version'),{version:'1.0.0'});
+  assert.equal(calls,2);
+ }
+ calls=0;replies=[new TypeError('socket disconnected'),json()];
+ assert.deepEqual(await updater.defaultFetchJson('https://example.test/version'),{version:'1.0.0'});
+ assert.equal(calls,2);
+ for(const [response,pattern] of [[new Response('',{status:401}),/HTTP 401/],[new Response('',{status:429,headers:{'retry-after':'60'}}),/HTTP 429/],[new Response('invalid JSON'),/JSON/]]){
+  calls=0;replies=[response,json()];
+  await assert.rejects(updater.defaultFetchJson('https://example.test/version'),pattern);
+  assert.equal(calls,1,'não insiste em recusa, cooldown longo ou payload inválido');
+ }
+ calls=0;replies=[new Response('',{status:503,headers:{'retry-after':'0'}}),new Response('',{status:503})];
+ await assert.rejects(updater.defaultFetchJson('https://example.test/version'),/HTTP 503/);
+ assert.equal(calls,2,'orçamento esgota depois de uma repetição');
+});

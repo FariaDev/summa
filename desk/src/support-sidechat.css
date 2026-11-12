@@ -1,0 +1,144 @@
+/* Área de apoio (Formulário × Chat lateral) e chat lateral.
+   Saiu do style.css na #43 fase 2; o index.html liga os CSS na ordem original
+   (style.css primeiro, com os tokens), então a cascata não mudou. */
+/* ---------- Área de apoio: Formulário × Chat lateral (support.mjs) ----------
+   Sem barra de abas: o corpo recebe o painel 2 uma única vez (movido, não
+   recriado) e o chat lateral; recolhido, o slot vira a faixa de reabrir
+   (`#support-restore`, junto das regras do leitor recolhido). */
+#support-slot{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column}
+#support-body{flex:1;min-height:0;min-width:0;display:flex}
+#support-body>.pdf-panel{flex:1 1 0}
+#support-body.chat>.pdf-panel{display:none}
+#pdf-grid.single #support-slot{flex:1 1 0}
+/* Sem a divisória dos leitores (um leitor só, com o chat lateral ao lado), a
+   área de apoio traz a sua linha de 1px. */
+#pdf-grid.single #support-slot{border-left:1px solid var(--border-strong)}
+
+/* ---------- Chat lateral (sidechat.mjs) ----------
+   Mesma forma da coluna do tutor (ticket #19): fundo e papéis de cor da
+   coluna, cabeçalho de --bar (a forma vem da lista `.sidechat-head` junto do
+   `.chat-head`), a linha de escopo no lugar da "Vai junto" e a caixa de
+   mensagem compartilhada (`.composer-box`). O menu de Mais opções é o
+   `.chat-pop` do tutor, ancorado no cabeçalho. */
+#sidechat{
+ --hover:var(--selected);--active:var(--active-strong);--user:var(--surface);--code:var(--surface);
+ position:relative;flex:1;min-width:0;display:flex;flex-direction:column;
+ background:var(--side);overflow:hidden;
+}
+.sidechat-head-title{
+ display:flex;align-items:center;gap:var(--space-2);flex:1 1 auto;min-width:0;min-height:var(--ctl);margin:0;
+ font-size:var(--fs-lg);font-weight:600;color:var(--fg-strong);white-space:nowrap;
+}
+.sidechat-head-title>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sidechat-engine{flex:none;padding:0 var(--space-1);border:0;border-radius:var(--r-sm);background:var(--stage);font-family:var(--font-mono);font-size:var(--fs-sm);line-height:1.4;color:var(--muted);white-space:nowrap}
+/* O alfinete de "sempre por cima" é status, não botão (achado 7): ícone sem
+   chip, com classe própria para não sumir junto do selo do motor na coluna
+   estreita. */
+.sidechat-pin{flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.sidechat-pin[hidden]{display:none}
+.sidechat-pin .icon{width:14px;height:14px}
+/* Coluna estreita (auditoria de UI/UX, rodada 2, D4): o selo do motor espremia
+   o título até "Chat l…". Mede o cabeçalho, não a janela: arrastar o divisor
+   estreita a coluna em qualquer janela. A seção segue nomeada por `aria-label`. */
+.sidechat-head{container-type:inline-size;container-name:sidechat-head}
+@container sidechat-head (max-width:300px){.sidechat-engine{display:none}}
+#sidechat-more-pop{top:calc(var(--bar) - var(--space-1))}
+#sidechat-context-pop{
+ border-bottom:1px solid var(--border);background:var(--side);
+ padding:var(--space-3) var(--pad);max-height:42%;overflow:auto;
+}
+#sidechat-context-pop p{margin:0 0 var(--space-2)}
+#sidechat-context-pop .dialog-actions{padding:0}
+#sidechat-context-pop .dialog-actions button{font-size:var(--fs-xs)}
+#sidechat-messages{flex:1;min-height:0;overflow:auto;padding:var(--pad);display:flex;flex-direction:column}
+#sidechat-messages .message{margin-bottom:var(--space-4)}
+#sidechat-messages .message{font-size:var(--reading-size)}
+#sidechat-messages .message .body{max-width:100%}
+#sidechat-messages .sidechat-msg.user .body{background:var(--user);border-radius:var(--r-sm);padding:var(--space-2) var(--space-3);align-self:flex-end;max-width:85%}
+/* Ações de mensagem (rodada 1, achado 4): saíam a 3,92:1 no claro porque a
+   linha inteira levava opacity:.55. O repouso usa --muted em opacidade cheia
+   (6,69:1 no claro) e o realce fica na cor, não na transparência. */
+.sidechat-msg-actions{display:flex;gap:var(--space-2);margin-top:var(--space-2);color:var(--muted);transition:color var(--t-fast) var(--ease-out)}
+.sidechat-msg:hover .sidechat-msg-actions,.sidechat-msg:focus-within .sidechat-msg-actions{color:var(--fg)}
+.sidechat-msg-actions button{display:inline-flex;align-items:center;gap:var(--space-1);font-family:var(--font-sans);font-size:var(--fs-sm);padding:3px 7px;white-space:nowrap}
+.sidechat-msg-actions .icon{width:12px;height:12px}
+/* "Copiado" não desloca o "Levar" (chat solto, rodada 5, achado 2): o rótulo
+   de sucesso fica reservado, invisível, na mesma célula do "Copiar", e o botão
+   já nasce com a largura do estado que o `flashMark` troca em seguida. */
+.sidechat-copy-label{display:inline-grid}
+.sidechat-copy-label>*{grid-area:1/1}
+.sidechat-copy-label::after{content:attr(data-copied);grid-area:1/1;visibility:hidden}
+/* Ações de mensagem na coluna estreita (rodada 3, achado 5): com a barra de
+   rolagem a largura do texto cai e "Levar à sessão principal" quebrava em duas
+   linhas. Abaixo de 300px a ação troca pelo rótulo curto (o `data-short`), com
+   o title completo e o nowrap acima; o texto do botão e o nome acessível
+   seguem completos no DOM. */
+#sidechat-messages{container-type:inline-size;container-name:sidechat-messages}
+@container sidechat-messages (max-width:300px){
+ .sidechat-msg-actions .sidechat-to-main .label-full{display:none}
+ .sidechat-msg-actions .sidechat-to-main::after{content:attr(data-short)}
+}
+/* Falha do motor (achado 1): uma notícia por turno, com ícone de alerta e a
+   cor de erro; as ações de resposta ("Levar à sessão principal") não entram. */
+.sidechat-error-row{display:flex;align-items:flex-start;gap:var(--space-2)}
+.sidechat-error-icon{flex:none;display:inline-flex;padding-top:2px;color:var(--danger-text)}
+.sidechat-error-icon .icon{width:14px;height:14px}
+.sidechat-error .sidechat-body{color:var(--danger-text)}
+/* Enquanto o cartão ao vivo não tem texto (achado 6): três pontos discretos
+   sob o papel, no lugar do corpo vazio. */
+.sidechat-thinking{display:inline-flex;gap:3px;padding:var(--space-2) 0}
+.sidechat-thinking span{width:5px;height:5px;border-radius:var(--r-round);background:var(--muted);animation:sidechat-dot var(--t-loop) infinite var(--ease-move)}
+.sidechat-thinking span:nth-child(2){animation-delay:calc(var(--t-loop) / 8)}
+.sidechat-thinking span:nth-child(3){animation-delay:calc(var(--t-loop) / 4)}
+@keyframes sidechat-dot{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.sidechat-thinking span{animation:none;opacity:.6}}
+.sidechat-empty{margin:auto;text-align:center;font-size:var(--fs-sm);color:var(--faint);max-width:34ch}
+.sidechat-warn{margin:var(--space-2) 0;font-size:var(--fs-xs);color:var(--warn-text)}
+#sidechat-activity{min-height:18px;padding:0 var(--pad);font-size:var(--fs-xs);color:var(--muted)}
+/* O fio de cima coincide com o do tutor quando a coluna dele está ao lado:
+   `composer-align.mjs` mede o tutor. O lateral não tem calculadora, então o
+   composer ocupa essa altura a mais e o Enviar fica no pé da coluna. */
+#sidechat-composer{--composer-end:var(--space-4);position:relative;flex:none;display:flex;flex-direction:column;box-sizing:border-box;min-height:calc(var(--tutor-composer-h,0px) + var(--tutor-foot-h,0px));padding:var(--space-3) var(--pad) var(--composer-end);background:var(--side)}
+#sidechat-box{flex:1 1 auto;display:flex;flex-direction:column}
+/* Campo fixo de três linhas também no chat preso (rodada 3, achado 4): o mesmo
+   `calc(3lh + 14px)` da janela solta (composer.css). O respiro que sobra fica
+   fora do campo, entre ele e as ações; o Enviar continua colado no pé. */
+#sidechat-box>.composer-actions{margin-top:auto}
+#sidechat-box>#sidechat-prompt{
+ flex:none;field-sizing:fixed;
+ height:calc(3lh + 14px);min-height:calc(3lh + 14px);max-height:calc(3lh + 14px);
+ overflow:auto;
+}
+body.dense #sidechat-composer{--composer-end:var(--space-3);padding-top:var(--space-2)}
+/* Janela baixa: o mesmo aperto do composer do tutor, em conversations-dividers.css. */
+@media(max-height:700px){#sidechat-composer{--composer-end:var(--space-3);padding-top:var(--space-2)}}
+/* Pedidos/permissões do lateral: cartão no próprio canal, nunca no #pi-dialog. */
+.sidechat-request{
+ display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-3);
+ padding:var(--space-3);border:1px solid var(--warn);border-radius:var(--r-sm);background:var(--code);
+}
+.sidechat-request-title{margin:0;font-size:var(--fs-sm);font-weight:600;color:var(--warn-text)}
+.sidechat-request-text{margin:0;font-size:var(--fs-sm)}
+/* A confirmação do tutor (#78) traz o comando com quebras de linha: sem isto
+   elas colapsam numa linha só e o aluno não vê o que está aprovando. */
+.sidechat-request-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.sidechat-request-error{margin:0;color:var(--warn-text);font-size:var(--fs-sm)}
+.sidechat-request-actions{display:flex;gap:var(--space-2)}
+.sidechat-option,.sidechat-request-action,.sidechat-request-submit{font-size:var(--fs-xs);padding:4px 9px;align-self:flex-start}
+.sidechat-request-input{
+ width:100%;padding:var(--space-1) var(--space-2);border:1px solid var(--border);
+ border-radius:var(--r-sm);background:var(--surface);color:var(--fg);font-size:var(--fs-sm);
+}
+#sidechat-composer[hidden],#sidechat-new[hidden]{display:none}
+#sidechat[data-state="unavailable"] #sidechat-composer{opacity:.5}
+#sidechat[data-state="unavailable"] #sidechat-composer{pointer-events:none}
+/* Chat solto estreito (#157, Etapa 1): a janela solta tem 360–420px, bem menos
+   que os 900px da Mesa — a viewport estreita distingue o solto do preso sem
+   precisar de atributo novo (a fatia 1 não marca o nó). A linha de escopo fica
+   numa linha só com reticências (o `title` guarda o texto inteiro; achado 3),
+   e cartões/menus/popovers ficam contidos na largura da janela. */
+@media (max-width:500px){
+ #sidechat-messages .message,#sidechat-messages .quiz-card,#sidechat-messages .codeblock,#sidechat-messages .sidechat-request{min-width:0;max-width:100%}
+ .chat-pop{max-width:calc(100% - var(--space-5))}
+ #sidechat-context-pop{max-width:100%;overflow-wrap:anywhere}
+}

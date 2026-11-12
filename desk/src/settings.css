@@ -1,0 +1,266 @@
+/* Configurações em tela cheia (Carbon r2, aprovado em 2026-11-10).
+   Uma coluna de navegação com marca, busca e seções; à direita, a seção que
+   rola e um rodapé fixo com Cancelar/Salvar. O item da seção corrente usa a
+   camada de seleção e ganha o traço de 2px do acento à esquerda. As linhas
+   põem o rótulo e a descrição à esquerda e o controle à direita; os campos
+   ficam preenchidos com a camada, sem o fio de baixo do Carbon, e os
+   liga/desliga são interruptores. O casco é montado por `settings-chrome.mjs`
+   sobre os ids e o comportamento de sempre. */
+
+#settings-dialog{
+ width:100vw;max-width:none;height:100vh;max-height:none;margin:0;padding:0;
+ border:0;border-radius:0;box-shadow:none;background:var(--bg);
+}
+#settings-dialog[open]{display:flex;flex-direction:column}
+#settings-dialog form{
+ display:grid;grid-template-columns:288px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 64px;
+ flex:1;min-height:0;max-height:none;padding:0;
+}
+#settings-dialog ::selection{background:var(--selection)}
+
+/* ---------- lateral ---------- */
+
+.settings-nav{
+ grid-column:1;grid-row:1/-1;display:flex;flex-direction:column;gap:var(--space-6);
+ min-height:0;overflow:auto;padding:var(--space-7) var(--space-6);
+ border-right:1px solid var(--border);background:var(--code);
+}
+.settings-nav h2{margin:0;font-size:var(--fs-3xl);line-height:1.2;font-weight:600;color:var(--fg-strong)}
+.settings-search{position:relative;display:block;margin:0}
+.settings-search-icon{position:absolute;left:var(--space-4);top:50%;display:flex;color:var(--muted);transform:translateY(-50%);pointer-events:none}
+.settings-search-icon .icon{width:16px;height:16px}
+#settings-dialog .settings-search input{
+ width:100%;height:40px;padding:0 var(--space-5) 0 36px;border:0;border-radius:var(--r-sm);
+ background:var(--surface);color:var(--fg);font-size:var(--fs-lg);outline:none;
+}
+#settings-dialog .settings-search input::placeholder{color:var(--faint)}
+#settings-dialog .settings-search input:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.settings-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.settings-tabs{display:flex;flex-direction:column;gap:var(--space-0);min-height:0;overflow:auto}
+.settings-tab{
+ position:relative;display:flex;align-items:center;justify-content:flex-start;width:100%;height:40px;min-height:0;
+ padding:0 var(--space-5);border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;
+ color:var(--muted);font-size:var(--fs-lg);line-height:1.3;text-align:left;cursor:pointer;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.settings-tab:hover{background:var(--hover);color:var(--fg)}
+.settings-tab[aria-current="page"]{background:var(--selected);color:var(--fg-strong);font-weight:500}
+.settings-tab[aria-current="page"]::before{
+ content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;
+ border-radius:var(--r-round);background:var(--accent-fill);
+}
+
+/* ---------- corpo ---------- */
+
+#settings-dialog .settings-body{
+ grid-column:2;grid-row:1;display:block;min-width:0;min-height:0;max-height:none;overflow:auto;
+ padding:var(--space-7) 48px;border-top:0;background:var(--bg);
+}
+#settings-dialog .settings-body .help-lead{margin:0 0 var(--space-6)}
+#settings-dialog .settings-notices{margin-top:0}
+.settings-empty{max-width:720px;margin:0 auto;padding:var(--space-7) 0;font-size:var(--fs-lg);color:var(--muted)}
+.settings-content{max-width:720px;margin:0 auto}
+#settings-dialog .settings-notices{max-width:720px;margin:0 auto}
+#settings-form .set-sec{display:flex;flex-direction:column;width:100%;max-width:720px;margin:0 auto;padding:0;border:0}
+.set-head{margin:0 0 var(--space-6)}
+.set-head .set-link{margin-top:var(--space-2)}
+.set-head h3{margin:0;font-size:var(--fs-2xl);font-weight:600;letter-spacing:0;text-transform:none;color:var(--fg-strong)}
+.set-head p{margin:var(--space-1) 0 0}
+.set-link{
+ align-self:flex-start;height:auto;min-height:24px;padding:4px 0;border:0;background:transparent;box-shadow:none;
+ color:var(--accent-text);font-size:var(--fs-sm);cursor:pointer;
+}
+.set-link:hover{text-decoration:underline}
+.cfg-course.has-error{margin-bottom:var(--space-1)}
+#settings-dialog [aria-invalid="true"]{border-color:var(--danger)}
+.cfg-error{margin:0 0 var(--space-3);font-size:var(--fs-sm);line-height:1.4;color:var(--danger-text)}
+
+/* Grupos e linhas: título pequeno, fio entre grupos, rótulo e descrição à
+   esquerda, controle à direita. O interruptor fica no canto direito. */
+.set-group{display:flex;flex-direction:column;gap:0;margin:0}
+#settings-form .set-sec > .set-group{margin-top:var(--space-6);padding-top:var(--space-5);border-top:1px solid var(--border)}
+.set-group-label{font-size:var(--fs-sm);font-weight:600;color:var(--muted)}
+#settings-form .set-sec > .set-group > .set-group-label,
+#settings-form .set-sec > .set-group-label{display:block;margin:0 0 var(--space-1)}
+#settings-form .set-sec .cfg-free-models > .set-group-label{margin:0 0 var(--space-1)}
+#settings-form .set-row{
+ display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:var(--space-7);align-items:center;
+ width:100%;margin:0;padding:var(--space-3) 0;border-bottom:1px solid var(--border);
+ font-size:var(--fs-lg);color:var(--fg);
+}
+#settings-form .set-row:last-child{border-bottom:0}
+.set-row-block{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:var(--space-7);align-items:center;padding:var(--space-3) 0;border-bottom:1px solid var(--border)}
+#settings-form .set-text{display:flex;flex-direction:column;gap:var(--space-0);min-width:0}
+.set-text > span:first-child{font-size:var(--fs-lg);color:var(--fg)}
+#settings-form .set-desc{max-width:68ch;font-size:var(--fs-sm);line-height:1.4;color:var(--faint)}
+#settings-form .set-row > :is(input[type="text"],input[type="password"],input[type="search"],.set-select){justify-self:end;width:280px;max-width:100%}
+#settings-form .set-row > .path-row{justify-self:end;width:min(420px,100%)}
+#settings-form .set-row:has(> .path-row){grid-template-columns:minmax(180px,1fr) minmax(0,420px)}
+#settings-form .set-row > .set-switch{grid-column:2;justify-self:end;margin:0}
+#settings-form .set-row > .set-select{display:block}
+#settings-form .set-row .fine{margin:0;grid-column:1/-1}
+#settings-form .set-sec[data-sec] .cfg-free-models .set-row{padding:var(--space-2) 0;border-bottom:0}
+
+/* Campos: preenchidos com a camada, sem fio embaixo, canto de 4px. */
+#settings-form .set-row input[type="text"],
+#settings-form .set-row input[type="password"],
+#settings-form .set-row input[type="search"],
+#settings-form .set-select select,
+#settings-dialog .settings-search input{
+ border:0;border-radius:var(--r-sm);background:var(--code);color:var(--fg);
+ font-size:var(--fs-lg);outline:none;
+}
+#settings-form .set-row input[type="text"],
+#settings-form .set-row input[type="password"],
+#settings-form .set-row input[type="search"]{height:40px;padding:0 var(--space-5)}
+#settings-form .set-row input::placeholder{color:var(--faint)}
+.set-row input:focus-visible,
+.set-select select:focus-visible,
+#settings-dialog .settings-search input:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+.set-select{position:relative;display:block;min-width:0}
+#settings-form .set-select select{
+ appearance:none;-webkit-appearance:none;width:100%;height:40px;padding:0 36px 0 var(--space-5);
+ cursor:pointer;
+}
+.set-select-icon{position:absolute;right:var(--space-4);top:50%;display:flex;color:var(--muted);transform:translateY(-50%);pointer-events:none}
+.set-select-icon .icon{width:16px;height:16px}
+
+/* Liga/desliga: pílula com o botão redondo, como no protótipo r2. O input
+   continua o checkbox de sempre; o label inteiro alterna. */
+.set-check{display:flex;flex-direction:row;align-items:center;gap:var(--space-3);margin:0;min-height:24px;font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
+.settings-body .set-check{display:flex;flex-direction:row;align-items:center}
+.set-check input[type=checkbox]{
+ appearance:none;-webkit-appearance:none;position:relative;width:var(--toggle-w);height:var(--toggle-h);flex:none;margin:0;padding:0;
+ border:var(--space-hairline) solid var(--border-strong);border-radius:var(--r-round);background:var(--border-strong);
+ cursor:pointer;corner-shape:round;transition:background var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out);
+}
+.set-check input[type=checkbox]::before{
+ content:"";position:absolute;top:var(--toggle-inset);left:var(--toggle-inset);width:var(--toggle-knob);height:var(--toggle-knob);border-radius:var(--r-round);
+ background:var(--bg);corner-shape:round;transition:transform var(--t-fast) var(--ease-out),background var(--t-fast) var(--ease-out);
+}
+.set-check input[type=checkbox]:checked{background:var(--accent-fill);border-color:var(--accent-fill)}
+.set-check input[type=checkbox]:checked::before{transform:translateX(var(--toggle-shift));background:var(--accent-fg)}
+.set-check input[type=checkbox]:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+.set-check:hover{color:var(--fg)}
+#settings-form .set-row.set-check{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:var(--space-7);align-items:center;padding:var(--space-3) 0;border-bottom:1px solid var(--border);min-height:0;font-size:var(--fs-lg);color:var(--fg)}
+#settings-form .set-row.set-check:last-child{border-bottom:0}
+.set-check input[type=radio]{width:15px;height:15px;flex:none;margin:0;padding:0;accent-color:var(--primary);cursor:pointer}
+.fine{font-size:var(--fs-sm);color:var(--faint);margin:0 0 var(--space-4)}
+#settings-dialog .settings-body .fine{color:var(--muted)}
+
+/* Acento (Carbon r2, 2026-11-11): seis círculos de 24px com o nome embaixo em
+   12px; o escolhido leva o anel de 2px do acento, afastado 2px. Sem caixa em
+   volta da opção. */
+#accent-mode{display:grid;grid-template-columns:minmax(0,1fr) 280px;column-gap:var(--space-7);align-items:center;padding:var(--space-3) 0;border-bottom:1px solid var(--border)}
+#accent-mode > .set-group-label{font-size:var(--fs-lg);font-weight:400;color:var(--fg)}
+.accent-options{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-1);width:280px;max-width:100%}
+.accent-option{height:auto;min-height:0;padding:0;gap:var(--space-3);flex-direction:column;justify-content:flex-start;border:0;background:transparent;box-shadow:none;font-size:var(--fs-sm);line-height:1.3;color:var(--muted);white-space:nowrap}
+.accent-option:hover{background:transparent;color:var(--fg)}
+.accent-option[aria-checked="true"]{background:transparent;border-color:transparent;color:var(--fg);font-weight:400}
+.accent-dot{width:var(--space-7);height:var(--space-7);flex:none;border-radius:var(--r-round);outline:var(--space-0) solid transparent;outline-offset:var(--space-0);background:var(--acc-blue)}
+.accent-option[aria-checked="true"] .accent-dot{outline-color:var(--accent-fill)}
+.accent-option[data-accent="violet"] .accent-dot{background:var(--acc-violet)}
+.accent-option[data-accent="green"] .accent-dot{background:var(--acc-green)}
+.accent-option[data-accent="orange"] .accent-dot{background:var(--acc-orange)}
+.accent-option[data-accent="pink"] .accent-dot{background:var(--acc-pink)}
+.accent-option[data-accent="graphite"] .accent-dot{background:var(--acc-graphite);box-shadow:inset 0 0 0 1px var(--border-strong)}
+
+/* ---------- matérias (medidas do canvas) ---------- */
+
+#cfg-courses{margin:0}
+.cfg-course,.cfg-course-head{
+ display:grid;grid-template-columns:170px minmax(0,1fr) auto var(--ctl);gap:var(--space-3) var(--space-2);align-items:center;
+}
+.cfg-course{margin:0 0 var(--space-3)}
+.cfg-course-head{margin:0 0 var(--space-3);font-size:var(--fs-sm);color:var(--faint)}
+.cfg-course-head>span:nth-child(2){grid-column:2 / 5}
+#settings-dialog .cfg-course :is(input.cfg-name,input.cfg-path){
+ width:100%;height:30px;box-sizing:border-box;padding:0 var(--space-4);min-width:0;
+ border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);color:var(--fg);font-size:var(--fs-md);
+}
+#settings-dialog .cfg-course :is(input.cfg-name,input.cfg-path):focus{border-color:var(--ring);outline:none;box-shadow:var(--ring-shadow)}
+#settings-dialog .cfg-course .cfg-browse{
+ height:30px;padding:0 var(--space-5);border:1px solid var(--border-strong);border-radius:var(--r-sm);
+ background:transparent;box-shadow:none;color:var(--fg-strong);font-size:var(--fs-md);font-weight:600;white-space:nowrap;
+}
+#settings-dialog .cfg-course .cfg-browse:hover{background:var(--hover)}
+.cfg-course .cfg-remove{width:var(--ctl);height:var(--ctl);padding:0;font-size:var(--fs-2xl);font-weight:400;line-height:1;color:var(--muted)}
+.cfg-course .cfg-remove:hover{color:var(--danger-text)}
+#cfg-add-course{
+ display:inline-flex;align-items:center;gap:var(--space-3);height:30px;margin:0 0 var(--space-5) calc(-1 * var(--space-4));padding:0 var(--space-4);
+ border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;
+ color:var(--accent-text);font-size:var(--fs-md);font-weight:500;text-decoration:none;
+}
+#cfg-add-course::before{content:"+" / "";font-size:var(--fs-xl);font-weight:400;line-height:1}
+#cfg-add-course:hover{background:var(--hover);text-decoration:none}
+
+/* ---------- leitores (ritmo do ticket #23, preservado) ---------- */
+
+#settings-dialog #cfg-layout .layout-presets-open{
+ display:block;height:auto;min-height:24px;margin:0 0 var(--space-6);padding:4px 0;border:0;background:transparent;box-shadow:none;
+ color:var(--accent-text);font-size:var(--fs-sm);font-weight:400;cursor:pointer;text-align:left;
+}
+#settings-dialog #cfg-layout .layout-presets-open:hover{text-decoration:underline}
+#cfg-layout .set-sec{margin:0 0 var(--space-6);padding:0;border:0}
+#cfg-layout .set-sec>legend{display:block;margin:0 0 var(--space-3)!important;padding:0!important;font-size:var(--fs-sm)!important;color:var(--muted)}
+#cfg-layout .set-sec>.fine,#cfg-layout .set-sec>.cfg-layout-prefer>.fine{margin:var(--space-1) 0 var(--space-3)}
+#cfg-layout .cfg-layout-preview{margin:0!important}
+#settings-form #cfg-layout .cfg-layout-panel>label,#settings-form #cfg-layout .cfg-layout-prefer-title{display:block;margin:0 0 var(--space-2);font-size:var(--fs-sm);color:var(--muted)}
+#settings-form #cfg-layout .cfg-layout-panel>.fine,#settings-form #cfg-layout .cfg-layout-prefer>.fine{margin:var(--space-1) 0 var(--space-6)}
+#settings-form #cfg-layout .cfg-layout-panel>.fine:last-child{margin-bottom:0}
+#cfg-layout .cfg-layout-prefer{display:flex;flex-direction:column;margin-top:var(--space-6)}
+#cfg-layout .cfg-layout-prefer-list{display:flex;flex-direction:column;gap:var(--space-2)}
+#cfg-layout .cfg-layout-prefer-row{margin:0;align-items:center}
+#cfg-layout .cfg-layout-prefer-remove{width:var(--ctl);height:var(--ctl);flex:none;padding:0;border:0;background:transparent;box-shadow:none;font-size:var(--fs-2xl);font-weight:400;line-height:1;color:var(--muted)}
+#cfg-layout .cfg-layout-prefer-remove:hover{background:var(--hover);color:var(--danger-text)}
+#settings-dialog #cfg-layout .cfg-layout-prefer-add{
+ display:inline-flex;align-items:center;align-self:flex-start;gap:var(--space-3);height:30px;margin:var(--space-2) 0 0 calc(-1 * var(--space-4));padding:0 var(--space-4);
+ border:0;border-radius:var(--r-sm);background:transparent;box-shadow:none;color:var(--accent-text);font-size:var(--fs-md);font-weight:500;
+}
+#settings-dialog #cfg-layout .cfg-layout-prefer-add::before{content:"+" / "";font-size:var(--fs-xl);font-weight:400;line-height:1}
+#settings-dialog #cfg-layout .cfg-layout-prefer-add:hover{background:var(--hover)}
+#cfg-layout .cfg-layout-prefer-input,#cfg-layout .cfg-layout-label,#cfg-layout .cfg-layout-toggle{
+ height:30px;padding:0 var(--space-4);border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface);color:var(--fg);
+}
+#cfg-layout .cfg-layout-prefer-input{flex:1;min-width:0}
+
+/* ---------- pastas, motores e modelos ---------- */
+
+#cfg-layout .set-sec, .set-sec[data-sec] .cfg-conferir, .set-sec[data-sec] #cfg-free-models, .set-sec[data-sec] #cfg-opencode-providers{min-width:0}
+#settings-form .set-sec[data-sec] .cfg-conferir{
+ display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,420px);column-gap:var(--space-7);align-items:center;
+ padding:var(--space-3) 0;border-bottom:1px solid var(--border);
+}
+#settings-form .set-sec[data-sec] .cfg-conferir-label{font-size:var(--fs-lg);color:var(--fg)}
+#settings-form .set-sec[data-sec] .cfg-conferir-row{grid-column:2;gap:var(--space-3);margin:0;min-width:0}
+#settings-form .set-sec[data-sec] .cfg-conferir-hint{grid-column:1/-1;margin:var(--space-1) 0 0;color:var(--muted)}
+#settings-form .path-row{display:flex;align-items:center;justify-content:flex-end;gap:var(--space-3);width:100%;margin:0;min-width:0}
+#settings-form .path-row>input{flex:1 1 auto;min-width:0}
+#settings-form .path-row>button{height:40px}
+#settings-form .set-row .path-row>input{height:40px;padding:0 var(--space-5);border:0;border-radius:var(--r-sm);background:var(--code);color:var(--fg)}
+#settings-form .set-row .path-row>input:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
+#cfg-free-models{margin-top:var(--space-5)}
+#cfg-opencode-providers{margin-top:var(--space-5)}
+#cfg-opencode-providers .op-select{width:100%}
+
+/* ---------- rodapé ---------- */
+
+#settings-dialog .settings-actions{
+ grid-column:2;grid-row:2;display:flex;align-items:center;gap:var(--space-3);margin:0;
+ padding:0 48px;min-height:64px;border-top:1px solid var(--border);background:var(--bg);
+}
+#settings-dialog .settings-actions button{height:40px;padding:0 var(--space-6);border-radius:var(--r-sm);font-weight:600}
+.settings-hint{margin-right:auto;font-size:var(--fs-sm);color:var(--faint)}
+.settings-hint.waiting{color:var(--muted)}
+.settings-hint[hidden]{display:none}
+.settings-error{margin-right:auto;min-width:0;font-size:var(--fs-sm);line-height:1.4;color:var(--danger-text)}
+.settings-error[hidden]{display:none}
+
+/* ---------- busca ---------- */
+
+.settings-filtered{display:none!important}
+[hidden]{display:none!important}
+
+/* Nota de uma opção ainda fica junto da linha, com o fio embaixo. */
+#settings-form .set-sec[data-sec] > label:not(.set-check) + .fine,
+#settings-form .set-sec[data-sec] > .set-group > label:not(.set-check) + .fine{margin:0;padding:0 0 var(--space-5);border-bottom:1px solid var(--border)}

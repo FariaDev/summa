@@ -1,0 +1,24 @@
+Mesa de Estudos.app/
+# Conversa aposentada na #50: instalações antigas ainda têm esses restos no disco,
+# e eles continuam ignorados para não aparecerem como arquivo novo no git.
+Conversa.app/
+desk/node_modules/
+desk/.runtime/
+desk/.pi-local/
+desk/.update-manifest.json
+chat/node_modules/
+chat/.runtime/
+chat/.test-runtime-*/
+desk/.commandcode/
+/.commandcode/
+desk/.design-test-*/
+desk/.help-shot-*/
+desk/.installed-test-*/
+desk/.test-runtime-*/
+desk/*.png
+docs/archive/
+visual-check/windows
+.DS_Store
+.grok/
+# Medidas das capturas do ciclo de UI: geradas a cada rodada, ficam fora do git.
+docs/design-loop/**/*.json

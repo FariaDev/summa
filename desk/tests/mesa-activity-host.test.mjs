@@ -1,0 +1,106 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {ptMatches} from './pt-text.mjs';
+const require=createRequire(import.meta.url);
+const {createActivityHost}=require('../activity-host.cjs');
+const {createActivityStore}=require('../activity-store.cjs');
+const spec={title:'Sintético',objective:'Explorar',alternativeMarkdown:'Alternativa',html:'<p>teste</p>',css:'',js:''};
+function fixture({measure=null,resolvePreview=null,draftFor=null}={}){
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-host-activity-'));
+ let scope={courseId:'mesa-free',conversationId:path.join(root,'A.jsonl'),freeSessionId:'A',generation:1};
+ const store=createActivityStore({runtime:root}),events=[],remembered=[];
+ const host=createActivityHost({store,runtime:{remember:(...args)=>{remembered.push(args);return true;}},captureScope:()=>({...scope}),
+  scopeIsCurrent:s=>JSON.stringify(s)===JSON.stringify(scope),emit:e=>events.push(e),measure,resolvePreview,draftFor});
+ return {host,store,events,remembered,scope:()=>({...scope}),switch:()=>{scope={...scope,conversationId:path.join(root,'B.jsonl'),freeSessionId:'B',generation:2};host.invalidate();},cleanup:()=>fs.rmSync(root,{recursive:true,force:true})};
+}
+test('published metadata and all shell APIs are bound to original conversation scope',async()=>{
+ const f=fixture();try{
+  const item=await f.host.publish(f.scope(),spec,{toolCallId:'call-1'});
+  assert.equal(f.events[0].conversationId,f.scope().conversationId);
+  assert.equal(f.host.list().items[0].scopeRef,item.scopeRef);
+  const read=f.host.read(item);assert.equal(read.item.scopeRef,item.scopeRef);assert.equal(read.spec.title,spec.title);
+  await f.host.stateSave({...item,state:{attempt:'15 m'}});
+  assert.deepEqual(f.host.stateGet(item).state,{attempt:'15 m'});
+  /* Revisão pelo host: mesmo id, versão nova, versão anterior preservada. */
+  const revision=await f.host.publish(f.scope(),{...spec,activityId:item.id,title:'Sintético v2'},{toolCallId:'call-2'});
+  assert.equal(revision.id,item.id);assert.equal(revision.version,2);
+  assert.equal(f.store.read({...f.scope(),id:item.id,version:1}).spec.title,spec.title);
+  assert.equal(f.store.read({...f.scope(),id:item.id,version:2}).spec.title,'Sintético v2');
+  f.switch();assert.throws(()=>f.host.read(item),ptMatches(/sessão mudou/));
+  /* Revisão não atravessa conversa: id de outra conversa vira MISSING. */
+  await assert.rejects(()=>f.host.publish(f.scope(),{...spec,activityId:item.id},{toolCallId:'call-cross'}),ptMatches(/não encontrada/));
+  await assert.rejects(f.host.stateSave({...item,state:{attempt:'não deve cruzar'}}),ptMatches(/sessão mudou/));
+  assert.equal(f.host.list().items.length,0);
+ }finally{f.cleanup();}
+});
+test('stale publication and missing call identity never write or emit a document',async()=>{
+ const f=fixture();try{
+  const old=f.scope();f.switch();await assert.rejects(f.host.publish(old,spec,{toolCallId:'call-1'}),ptMatches(/sessão mudou/));
+  await assert.rejects(f.host.publish(f.scope(),spec,{}),/err\.activity\.callerMissing/);
+  assert.deepEqual(f.events,[]);assert.equal(f.store.list(f.scope()).length,0);
+ }finally{f.cleanup();}
+});
+
+/* ---------- M7: a publicação não engole erro de console nem de medição ---------- */
+
+test('M7: erro no console da medição recusa a publicação e não grava nem emite',async()=>{
+ const f=fixture({measure:async()=>({heights:[[320,400]],consoleMessages:[{level:'log',text:'ok'},{level:'error',text:'TypeError: x (linha 2)'}]})});
+ try{
+  await assert.rejects(()=>f.host.publish(f.scope(),spec,{toolCallId:'call-1'}),ptMatches(/1 erro\(s\) no console.*TypeError: x \(linha 2\)/));
+  assert.equal(f.store.list(f.scope()).length,0);
+  assert.deepEqual(f.events,[]);
+  assert.deepEqual(f.remembered,[]);
+ }finally{f.cleanup();}
+});
+
+test('M7: falha da medição publica com aviso inequívoco no resultado',async()=>{
+ const f=fixture({measure:async()=>{throw Error('janela não abriu');}});
+ try{
+  const item=await f.host.publish(f.scope(),spec,{toolCallId:'call-1'});
+  assert.equal(item.measureFailed,true);
+  assert.equal(f.store.list(f.scope()).length,1,'o quadro não some por falha de infraestrutura');
+  const guide=await import('../src/extensions/mesa-activity/guide.mjs');
+  assert.match(guide.publishedText(item,'atividade'),/não conseguiu medir o quadro/);
+ }finally{f.cleanup();}
+});
+
+/* ---------- A3: o host resolve o rascunho da prévia ---------- */
+
+test('A3: previaId resolve no host; id desconhecido não publica',async()=>{
+ const previewed={html:'<p>da prévia</p>',css:'',js:'mesa.ready();',kind:'visualizacao'};
+ const f=fixture({resolvePreview:(scope,raw)=>raw&&raw.previaId==='prv-0123456789ab'?{...raw,...previewed}:null});
+ try{
+  const item=await f.host.publish(f.scope(),{...spec,html:'',js:'',previaId:'prv-0123456789ab'},{toolCallId:'call-1'});
+  const read=f.store.read({...f.scope(),id:item.id,version:1});
+  assert.equal(read.spec.html,previewed.html);
+  assert.equal(read.spec.js,previewed.js);
+  assert.equal(item.view,'visualizacao','o tipo vem da prévia');
+  await assert.rejects(()=>f.host.publish(f.scope(),{...spec,html:'',js:'',previaId:'prv-ffffffffffff'},{toolCallId:'call-2'}),ptMatches(/não existe mais ou é de outra conversa/));
+  assert.equal(f.store.list(f.scope()).length,1);
+ }finally{f.cleanup();}
+});
+
+/* H4: o fim do turno publica o rascunho da prévia com id sintético
+   `previa:prv-…`; o quadro não fica preso a nenhum passo do diário. */
+test('H4: publishPreview grava o rascunho com id sintético e recusa id desconhecido',async()=>{
+ const draft={title:'Prévia',objective:'Objetivo',alternativeMarkdown:'Alternativa',html:'<p>prévia</p>',css:'',js:'',kind:'atividade'};
+ let asked='';
+ const f=fixture({draftFor:(scope,previaId)=>{asked=previaId;return previaId==='prv-0123456789ab'?draft:null;},resolvePreview:(scope,raw)=>raw});
+ try{
+  const item=await f.host.publishPreview({scopeRef:f.host.activeScope().scopeRef,previaId:'prv-0123456789ab'});
+  assert.equal(asked,'prv-0123456789ab');
+  assert.equal(item.toolCallId,'previa:prv-0123456789ab');
+  assert.equal(f.events.length,1,'a publicação emite o evento que hidrata o slot');
+  const read=f.store.read({...f.scope(),id:item.id,version:1});
+  assert.equal(read.spec.html,'<p>prévia</p>');
+  assert.equal(read.spec.title,'Prévia');
+  await assert.rejects(()=>f.host.publishPreview({scopeRef:f.host.activeScope().scopeRef,previaId:'prv-ffffffffffff'}),ptMatches(/não existe mais ou é de outra conversa/));
+  assert.equal(f.store.list(f.scope()).length,1);
+  f.switch();
+  await assert.rejects(()=>f.host.publishPreview({scopeRef:'scope-de-outra-conversa',previaId:'prv-0123456789ab'}),ptMatches(/sessão mudou/i));
+ }finally{f.cleanup();}
+});

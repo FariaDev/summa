@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Cabeçalho e contexto — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+<style>
+.page{max-width:var(--index-max);margin:0 auto;padding:var(--space-48) var(--space-32)}
+.page h1{margin:0 0 var(--space-32);font-family:var(--font-serif);font-size:var(--text-28);line-height:var(--lh-28);font-weight:var(--weight-regular)}
+.frames{display:flex;flex-wrap:wrap;gap:var(--space-32);align-items:flex-start}
+.frame-label{margin:0 0 var(--space-8);font-family:var(--font-mono);font-size:var(--text-12);color:var(--text-3)}
+.col{position:relative;display:flex;flex-direction:column;width:380px;height:640px;border:var(--stroke) solid var(--border-subtle);background:var(--bg);overflow:hidden}
+.chat{display:flex;flex-direction:column;flex:1;min-height:0}
+.chat-scroll{flex:1}
+.head-title{display:flex;align-items:center;gap:var(--space-4);min-width:0;padding:0;border:0;background:none;font-size:var(--text-14);line-height:var(--lh-14);font-weight:var(--weight-semibold);color:var(--text)}
+.head-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.head-title .icon{flex:none;color:var(--text-2)}
+.head-context{display:flex;align-items:center;gap:var(--space-4);max-width:100%;padding:0;border:0;background:none;font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.head-context:hover{color:var(--text);text-decoration:underline}
+.tutor-head{height:auto;min-height:var(--panel-head);padding-top:var(--space-4);padding-bottom:var(--space-4)}
+.panel-actions{display:flex;gap:var(--space-2)}
+.icon-btn.is-on{background:var(--layer-1);color:var(--text)}
+.dock{display:flex;flex-direction:column;flex:none;max-height:70%;border-bottom:var(--stroke) solid var(--border-subtle);background:var(--bg)}
+.dock-head{display:flex;align-items:center;justify-content:space-between;height:var(--control-md);padding:0 var(--space-8) 0 var(--space-12)}
+.dock-head h3{margin:0;font-size:var(--text-14);line-height:var(--lh-14);font-weight:var(--weight-semibold)}
+.dock-body{overflow:auto;padding:0 var(--space-12) var(--space-12)}
+.dock-group{margin:var(--space-8) 0 var(--space-4);font-size:var(--text-12);line-height:var(--lh-12);font-weight:var(--weight-semibold);color:var(--text-2)}
+.ctx-row{display:grid;grid-template-columns:var(--space-16) minmax(0,1fr);column-gap:var(--space-8);padding:var(--space-8) 0}
+.ctx-row .icon{margin-top:var(--space-2);color:var(--text-2)}
+.ctx-name{font-size:var(--text-14);line-height:var(--lh-14)}
+.ctx-meta{grid-column:2;font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+.dock label.field-label{display:block;margin:var(--space-16) 0 var(--space-4);font-size:var(--text-12);line-height:var(--lh-12);font-weight:var(--weight-semibold);color:var(--text-2)}
+.dock .field-control{background:var(--layer-1)}
+.pick{display:flex;align-items:center;justify-content:space-between;width:100%;height:var(--control-md);padding:0 var(--space-12);border:0;border-radius:var(--radius);background:var(--layer-1);font-size:var(--text-14);color:var(--text);text-align:left}
+.pick .muted{color:var(--text-3)}
+.usage{display:flex;align-items:center;gap:var(--space-12);margin-top:var(--space-16);padding-top:var(--space-12);border-top:var(--stroke) solid var(--border-subtle)}
+.usage-text{flex:1;font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-2)}
+.usage-bar{display:block;height:var(--space-4);margin-top:var(--space-4);background:var(--layer-1);border-radius:var(--radius)}
+.usage-bar i{display:block;width:38%;height:100%;background:var(--accent);border-radius:var(--radius)}
+.btn-layer{height:var(--control-sm);padding:0 var(--space-12);border:0;border-radius:var(--radius);background:var(--layer-1);font-size:var(--text-14);color:var(--text)}
+.menu-wrap{position:absolute;right:var(--space-8);top:calc(var(--panel-head) + var(--space-4))}
+.menu{width:260px;padding:var(--space-4)}
+.menu .icon{color:var(--text-2)}
+.notes{max-width:var(--measure);margin-top:var(--space-32);font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.notes li{margin-bottom:var(--space-8)}
+</style>
+</head>
+<body>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M12 3v18"/></symbol>
+  <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20"/><path d="M8 6h8"/><path d="M8 11h.01"/><path d="M12 11h.01"/><path d="M16 11v4"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M8 19h.01"/><path d="M12 19h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="m3 16 5-5 5 5 3-3 5 5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14A8 8 0 1 1 10 4a7 7 0 0 0 10 10z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5v3M16 3h3v3M3 16v3h3M21 16v3h-3"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+</svg>
+<main class="page">
+  <h1>Cabeçalho e contexto</h1>
+  <div class="frames">
+    <div>
+      <p class="frame-label">CABEÇALHO</p>
+      <div class="col">
+        <div class="tutor-head">
+          <div class="tutor-titles">
+            <button type="button" class="head-title" aria-haspopup="dialog"><span>Sessão de 11/11, 22:29</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+            <button type="button" class="head-context" aria-expanded="false">Limites.pdf, p. 1 · Lista 3, questão 2</button>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="icon-btn" aria-label="Chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-message"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Chat na tela inteira"><svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Sessão nova"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Mais opções"><svg class="icon" aria-hidden="true"><use href="#i-dots"/></svg></button>
+          </div>
+        </div>
+        <div class="chat"><div class="chat-scroll"></div>
+          <form class="composer"><textarea class="composer-input" rows="3" placeholder="Pergunte…"></textarea>
+            <div class="composer-foot"><button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon" aria-hidden="true"><use href="#i-paperclip"/></svg></button><span class="grow"></span><button type="button" class="model-pick"><span class="status-dot"></span>padrão<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button><button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg></button></div>
+          </form></div>
+      </div>
+    </div>
+    <div>
+      <p class="frame-label">CONTEXTO ABERTO</p>
+      <div class="col">
+        <div class="tutor-head">
+          <div class="tutor-titles">
+            <button type="button" class="head-title" aria-haspopup="dialog"><span>Sessão de 11/11, 22:29</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+            <button type="button" class="head-context" aria-expanded="true">Limites.pdf, p. 1 · Lista 3, questão 2</button>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="icon-btn" aria-label="Chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-message"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Chat na tela inteira"><svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Sessão nova"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Mais opções"><svg class="icon" aria-hidden="true"><use href="#i-dots"/></svg></button>
+          </div>
+        </div>
+        <section class="dock" aria-label="Contexto">
+          <div class="dock-head"><h3>Contexto</h3><button type="button" class="icon-btn" aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+          <div class="dock-body">
+            <p class="dock-group">Vai com a mensagem</p>
+            <div class="ctx-row"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><span class="ctx-name">Limites.pdf, p. 1</span><span class="ctx-meta">caminho e página; o PDF não vai</span></div>
+            <div class="ctx-row"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><span class="ctx-name">Captura do Xournal++</span><span class="ctx-meta">imagem, ao usar Conferir</span></div>
+            <label class="field-label" for="q">Questão ativa</label>
+            <input class="field-control" id="q" value="Lista 3, questão 2">
+            <label class="field-label">Rascunho</label>
+            <button type="button" class="pick"><span class="muted">Escolher arquivo .xopp</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+            <div class="usage"><div class="usage-text">Contexto em uso: 38%<span class="usage-bar"><i></i></span></div><button type="button" class="btn-layer">Resumir agora</button></div>
+          </div>
+        </section>
+        <div class="chat"><div class="chat-scroll"></div>
+          <form class="composer"><textarea class="composer-input" rows="3" placeholder="Pergunte…"></textarea>
+            <div class="composer-foot"><button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon" aria-hidden="true"><use href="#i-paperclip"/></svg></button><span class="grow"></span><button type="button" class="model-pick"><span class="status-dot"></span>padrão<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button><button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg></button></div>
+          </form></div>
+      </div>
+    </div>
+    <div>
+      <p class="frame-label">MAIS OPÇÕES</p>
+      <div class="col">
+        <div class="tutor-head">
+          <div class="tutor-titles">
+            <button type="button" class="head-title" aria-haspopup="dialog"><span>Sessão de 11/11, 22:29</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+            <button type="button" class="head-context" aria-expanded="false">Limites.pdf, p. 1 · Lista 3, questão 2</button>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="icon-btn" aria-label="Chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-message"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Chat na tela inteira"><svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg></button>
+            <button type="button" class="icon-btn" aria-label="Sessão nova"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn is-on" aria-label="Mais opções"><svg class="icon" aria-hidden="true"><use href="#i-dots"/></svg></button>
+          </div>
+        </div>
+        <div class="chat"><div class="chat-scroll"></div>
+          <form class="composer"><textarea class="composer-input" rows="3" placeholder="Pergunte…"></textarea>
+            <div class="composer-foot"><button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon" aria-hidden="true"><use href="#i-paperclip"/></svg></button><span class="grow"></span><button type="button" class="model-pick"><span class="status-dot"></span>padrão<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button><button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg></button></div>
+          </form></div>
+        <div class="menu-wrap"><div class="menu" role="menu">
+          <button type="button" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg>Contexto</button>
+          <button type="button" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Cadernos<kbd>⌘⇧K</kbd></button>
+          <div class="menu-sep"></div>
+          <button type="button" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Encerrar por hoje</button>
+          <button type="button" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Exportar sessão em Markdown</button>
+          <button type="button" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Recolher o tutor</button>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li>Cabeçalho: o nome da sessão abre a lista de sessões (como hoje). Embaixo, uma linha só com o que vai junto com a mensagem: o PDF e a página, e a questão ativa se houver. A matéria sai, porque a aba já diz. “1 referência” sai, porque o nome do PDF já diz.</li>
+    <li>Clicar na linha abre o Contexto, encaixado no alto da coluna como os Cadernos, em vez de uma sanfona dentro do menu.</li>
+    <li>No Contexto, cada coisa tem rótulo: o que vai junto (o aviso “o PDF não vai” vira a linha de baixo de cada item), a questão ativa num campo inteiro, o rascunho .xopp como seletor e o uso do contexto com “Resumir agora” no pé.</li>
+    <li>Mais opções fica plano: Contexto, Cadernos, e as ações da sessão. “Como funciona” sai do menu; o Guia já cobre.</li>
+  </ul>
+</main>
+</body>
+</html>

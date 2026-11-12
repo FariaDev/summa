@@ -1,0 +1,445 @@
+'use strict';
+
+/* Runtime de atividades: documento servido por origem própria, contenção e
+   observação de frames. Decide a superfície com o spike `hunt-activity-spike.mjs`:
+ *
+ *   - iframe `sandbox="allow-scripts"` + protocolo `mesa-activity:` dedicado;
+ *   - o Chromium isola o frame em OUTRO processo (OOPIF) mesmo com a janela
+ *     escondida: um laço no artefato trava só o próprio frame — o spike mediu
+ *     "frame executeJavaScript = BLOCKED" com o host respondendo e o frame
+ *     podendo ser removido;
+ *   - CSP `default-src 'none'` + `connect-src 'none'` zerou TODOS os canais HTTP
+ *     (fetch/XHR/WS/ES/beacon/img/ping/frame/arquivo);
+ *   - WebRTC/STUN escapa da CSP: o prelude do wrapper (`LOCKDOWN_SCRIPT`) retira
+ *     RTCPeerConnection/WebTransport/mediaDevices ANTES do js do modelo e zerou
+ *     os datagramas UDP no spike;
+ *   - `will-frame-navigate` autoriza só a PRIMEIRA carga do artefato exato e
+ *     nega qualquer navegação posterior do frame (aba do host já nega o topo);
+ *   - `installSessionGuards` cancela http(s)/ws(s)/ftp com origem em frame
+ *     `mesa-activity:` como barreira de sessão complementar.
+ *
+ * O documento é montado pelo host (html/css/js do modelo, nunca um documento
+ * completo); nenhum preload é injetado, nenhum arquivo é lido de caminho
+ * escolhido pelo modelo e nada é servido fora do registro publicado. */
+
+const fs = require('node:fs');
+const path = require('node:path');
+const {specHash, normalizeSpec} = require('./activity-store.cjs');
+const {invalidValue} = require('./src/error-detail.mjs');
+const {ACTIVITY_SCHEME, DETACHED_RETRY_MS, KATEX_DIST, KATEX_HOST, LIB_FILES, LIB_HOST, MAX_REGISTRY, activityArtifactUrl, activityFramesOtherThan, canTerminateActivityProcess, canTerminateSharedStalledProcess, collectActivityFrames, detachedActivityDecision, katexFile, parseActivityUrl, trackedActivityEntry} = require('./activity-protocol.cjs');
+const {DANGEROUS_TAGS, LOCKDOWN_SCRIPT} = require('./activity-lockdown-script.cjs');
+const {HOST_CSS, RUNTIME_SCRIPT} = require('./activity-page-script.cjs');
+const {buildActivityDocument, cspFor} = require('./activity-document.cjs');
+
+/* Caminho de um `file:` como o sistema o vê, ou `null` se não dá para dizer.
+   Moram em `file-guard.cjs` (fonte só da decisão `file:`); aqui ficam
+   reexportadas para compatibilidade dos testes e dos hosts. */
+const {filePathForUrl, isFileUrl, isPathUnderRoot, staticAppEntries, fileSubresourceBlocked, fileGuardOptions} = require('./file-guard.cjs');
+
+function createActivityRuntime({onWatchdog} = {}) {
+  const registry = new Map();
+  const watchdogEvent = (event) => {
+    try { if (typeof onWatchdog === 'function') onWatchdog(event); } catch { /* log é observabilidade */ }
+    return event;
+  };
+  const keyOf = (id, version) => `${id}@${version}`;
+
+  const remember = (item, spec) => {
+    if (!item || typeof item.id !== 'string') return null;
+    const version = Number(item.version);
+    if (!Number.isInteger(version) || version < 1) return null;
+    let normalized;
+    try {
+      normalized = normalizeSpec(spec);
+    } catch {
+      return null;
+    }
+    const hash = specHash(normalized);
+    if (item.hash && item.hash !== hash) return null;
+    const key = keyOf(item.id, version);
+    if (registry.has(key)) registry.delete(key);
+    registry.set(key, {id: item.id, version, hash, spec: normalized, conversationId: item.conversationId || ''});
+    while (registry.size > MAX_REGISTRY) registry.delete(registry.keys().next().value);
+    return {id: item.id, version, hash};
+  };
+
+  const has = (id, version) => registry.has(keyOf(id, version));
+  /* A prévia do tutor registra um documento temporário e o tira depois (#42):
+     nada vai para o disco. */
+  const forget = (id, version) => registry.delete(keyOf(id, Number(version)));
+  const get = (id, version) => registry.get(keyOf(id, version)) || null;
+  const forgetConversation = (conversationId) => {
+    for (const [key, entry] of registry) {
+      if (entry.conversationId === conversationId) registry.delete(key);
+    }
+  };
+
+  const artifactResponse = (parsed) => {
+    const entry = get(parsed.id, parsed.version);
+    if (!entry) return new Response('atividade não publicada', {status: 404, headers: {'content-type': 'text/plain; charset=utf-8'}});
+    const theme = parsed.theme || 'system';
+    const html = buildActivityDocument(entry.spec, {id: entry.id, version: entry.version, hash: entry.hash, theme, accent: parsed.accent || 'blue'});
+    return new Response(html, {status: 200, headers: {'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store'}});
+  };
+
+  const katexResponse = (parsed) => {
+    const file = katexFile(parsed.relative);
+    if (!file) return new Response('não encontrado', {status: 404});
+    let resolved;
+    try {
+      resolved = fs.realpathSync(file);
+    } catch {
+      return new Response('não encontrado', {status: 404});
+    }
+    if (!resolved.startsWith(fs.realpathSync(KATEX_DIST) + path.sep) || !fs.statSync(resolved).isFile()) {
+      return new Response('não encontrado', {status: 404});
+    }
+    const extension = path.extname(resolved).toLowerCase();
+    const type = extension === '.css' ? 'text/css' : extension === '.js' ? 'text/javascript' : extension === '.woff2' ? 'font/woff2' : extension === '.woff' ? 'font/woff' : 'font/ttf';
+    return new Response(fs.readFileSync(resolved), {status: 200, headers: {'content-type': `${type}; charset=utf-8`, 'cache-control': 'no-store'}});
+  };
+
+  const libResponse = (parsed) => {
+    const file = LIB_FILES.get(parsed.relative);
+    if (!file || !fs.existsSync(file)) return new Response('não encontrado', {status: 404});
+    return new Response(fs.readFileSync(file), {status: 200, headers: {'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store'}});
+  };
+
+  const protocolHandler = (request) => {
+    const parsed = parseActivityUrl(request && request.url);
+    if (!parsed) return new Response('não encontrado', {status: 404});
+    if (parsed.kind === 'artifact') return artifactResponse(parsed);
+    if (parsed.kind === 'lib') return libResponse(parsed);
+    return katexResponse(parsed);
+  };
+
+  const installProtocol = (session) => {
+    if (!session || !session.protocol || typeof session.protocol.handle !== 'function') throw new Error(invalidValue('session', session, '{protocol: {handle}}'));
+    session.protocol.handle(ACTIVITY_SCHEME, protocolHandler);
+  };
+
+  /* Primeira navegação do frame só vale para o artefato exato publicado;
+     depois disso o frame é imutável. A checagem é SEM estado (URL atual do
+     frame ainda vazia/about:blank) justamente porque o Chromium pode reusar a
+     instância/routing do frame depois de removido — um WeakSet por frame
+     negava a carga legítima de uma montagem nova. `about:blank` inicial é
+     ignorado. */
+  /* Watchdog de contenção: um laço/JS travado no artefato bloqueia a thread do
+     PRÓPRIO processo OOPIF. Desde a #89 cada REVISÃO tem site e processo
+     próprios (host = id + versão); só a mesma revisão remontada divide
+     processo. O runtime faz ping por `executeJavaScript` com timeout, e MATA o
+     processo do frame depois de 3 falhas seguidas — e também quando um frame
+     some da árvore tendo ficado >1,5 s sem responder. Um processo de atividade
+     que ficou sem NENHUM frame é encerrado mesmo sem travamento confirmado
+     (`detached-frameless`): o Parar cedo demais não pode deixar o laço vivo.
+     Nunca mata o processo do renderer principal da janela. */
+  const attachWindow = (win, {watchdog = true} = {}) => {
+    if (!win || (!win.webContents && !win)) return;
+    const wc = win.webContents || win;
+    const tracked = new Map();
+    const killed = new WeakSet();
+    let timer = null;
+    let busy = false;
+    const mainPid = () => {
+      try { return typeof wc.getOSProcessId === 'function' ? wc.getOSProcessId() : 0; } catch { return 0; }
+    };
+    const processMetric = (pid) => {
+      try { return require('electron').app.getAppMetrics().find(metric=>metric.pid===pid&&metric.type==='Tab')||null; }
+      catch { return null; }
+    };
+    const identifyProcess = (entry,pid) => {
+      if(entry.pid===pid&&entry.creationTime>0)return;
+      entry.pid=pid;
+      entry.creationTime=processMetric(pid)?.creationTime||0;
+    };
+    /* Duas confirmações de travamento: 3 pings seguidos sem resposta E pelo
+       menos 2,5 s desde o último sucesso. Um timeout transitório isolado não
+       mata nada. */
+    const confirmedStall = (entry, at) => !!entry && entry.misses >= 3 && at - entry.lastOk >= 2500;
+    const detachedStall = (entry, at) => !!entry && entry.misses >= 2 && at - entry.lastOk >= 2500;
+    const framesOn = (pid) => collectActivityFrames(pid, () => require('electron').webContents.getAllWebContents());
+    /* Decide e executa a terminação. O caminho destacado continua exigindo a
+       guarda de PID; o caminho compartilhado exige que todos os outros frames
+       do pid estejam confirmados travados. `detachedReason` só vale quando o
+       pid não tem outros frames: o frame que sumiu sem nunca ter travado
+       (Parar cedo) sai como `detached-frameless` (#88). */
+    const terminateEntry = (entry, at, detachedReason = 'detached-unresponsive') => {
+      try {
+        const metric = processMetric(entry && entry.pid);
+        const guardMainPid = mainPid();
+        if (!canTerminateActivityProcess({entry, mainPid: guardMainPid, metric, livePids: []})) return {ok: false, reason: 'guard'};
+        /* A prova de "não há outro frame no pid" só vale com enumeração
+           completa; qualquer exceção/PID desconhecido nega o kill. */
+        const snapshot = framesOn(entry.pid);
+        if (!snapshot.complete) return {ok: false, reason: 'enumeration'};
+        const others = activityFramesOtherThan(snapshot.frames, entry);
+        if (others.length > 0) {
+          const stalledOthers = others.map((frame) => ({stalled: confirmedStall(tracked.get(frame), at)}));
+          if (!canTerminateSharedStalledProcess({entry, mainPid: guardMainPid, metric, others: stalledOthers})) return {ok: false, reason: 'shared-live'};
+        }
+        process.kill(entry.pid, 'SIGKILL');
+        return {ok: true, reason: others.length > 0 ? 'shared-stalled' : detachedReason};
+      } catch { return {ok: false, reason: 'error'}; }
+    };
+    /* Lista os frames de atividade da janela e diz se a enumeração foi
+       completa. Uma leitura parcial NÃO pode fazer um frame vivo parecer
+       destacado — o watchdog só decide "sumiu" com a árvore inteira legível. */
+    const liveArtifactFrames = () => {
+      let frames;
+      try {
+        const rootFrame = wc.mainFrame;
+        if (!rootFrame) return {frames: [], complete: false};
+        frames = [...(rootFrame.framesInSubtree || rootFrame.frames || [])];
+      } catch { return {frames: [], complete: false}; }
+      const artifacts = [];
+      let complete = true;
+      for (const frame of frames) {
+        let url;
+        try { url = String(frame.url || ''); } catch { complete = false; continue; }
+        /* Só o artefato conta como frame de atividade (#88); KaTeX/lib são
+           recursos, nunca frames, e um host fora do formato não entra no
+           watchdog. */
+        if (parseActivityUrl(url)?.kind === 'artifact') artifacts.push(frame);
+      }
+      return {frames: artifacts, complete};
+    };
+    const tick = async () => {
+      if (busy) return;
+      busy = true;
+      try {
+        const liveSnapshot = liveArtifactFrames();
+        const live = liveSnapshot.frames;
+        const nowAt = Date.now();
+        const frameFacts = (frame) => {
+          try {
+            const url = String(frame.url || '');
+            const osPid = typeof frame.osProcessId === 'number' && frame.osProcessId > 0 ? frame.osProcessId : 0;
+            return {url, osPid};
+          } catch { return {url: '', osPid: 0}; }
+        };
+        for (const [frame, entry] of [...tracked]) {
+          const facts = frameFacts(frame);
+          if (facts.osPid) identifyProcess(entry,facts.osPid);
+          if (live.includes(frame)) {
+            if (entry.detachedAt) entry.detachedAt = 0;
+            continue;
+          }
+          /* Árvore ilegível: não dá para afirmar que este frame sumiu; segura
+             a entrada e tenta de novo no próximo tick. */
+          if (!liveSnapshot.complete) continue;
+          /* O frame sumiu da árvore (#88): se o pid não tem outro frame, o
+             processo é inútil e sai mesmo sem travamento (Parar cedo). Com
+             outros frames, vale o caminho de travamento de sempre. Sem pid
+             identificado ou enumeração incompleta, guarda a entrada por até
+             3 s — o timer não pode parar com uma pendência. */
+          if (!entry.detachedAt) entry.detachedAt = nowAt;
+          const snapshot = entry.pid > 0 ? framesOn(entry.pid) : {complete: false, frames: []};
+          const alone = snapshot.complete && Array.isArray(snapshot.frames) && activityFramesOtherThan(snapshot.frames, entry).length === 0;
+          if (!alone) entry.framelessAt = 0;
+          else if (!entry.framelessAt) entry.framelessAt = nowAt;
+          const decision = detachedActivityDecision({
+            pid: entry.pid,
+            complete: snapshot.complete,
+            frames: snapshot.frames,
+            frame,
+            stalled: detachedStall(entry, nowAt),
+            waitedMs: nowAt - entry.detachedAt,
+            framelessMs: entry.framelessAt ? nowAt - entry.framelessAt : 0,
+          });
+          if (decision === 'retry') continue;
+          if (decision === 'drop') {
+            tracked.delete(frame);
+            continue;
+          }
+          const reason = decision === 'frameless' ? 'detached-frameless' : 'detached-unresponsive';
+          const result = terminateEntry(entry, nowAt, reason);
+          watchdogEvent(result.ok
+            ? {type: 'kill', pid: entry.pid, mainPid: mainPid(), reason: result.reason, url: facts.url}
+            : {type: 'kill-failed', pid: entry.pid, reason: result.reason, url: facts.url});
+          /* No caminho frameless, guarda/creationTime pode só amadurecer no
+             próximo tick: retenta até o prazo antes de desistir. */
+          if (result.ok || decision === 'stalled' || nowAt - entry.detachedAt >= DETACHED_RETRY_MS) tracked.delete(frame);
+        }
+        for (const frame of live) {
+          if (killed.has(frame)) continue;
+          const facts = frameFacts(frame);
+          let entry = tracked.get(frame);
+          if (!entry) {
+            /* `processId` do WebFrameMain é o id interno do Chromium; o que se
+               pode matar é o pid do SO (`osProcessId`), que pode só aparecer
+               depois do commit — daí a atualização a cada tick. A entrada
+               guarda o PRÓPRIO frame (identidade) para separar `shared-stalled`
+               de `detached-unresponsive` (#88). */
+            entry = trackedActivityEntry(frame, 0, 0);
+            identifyProcess(entry,facts.osPid);
+            tracked.set(frame, entry);
+          } else if (facts.osPid && facts.osPid !== entry.pid) {
+            identifyProcess(entry,facts.osPid);
+          }
+          if (nowAt - entry.lastOk < 2000) continue;
+          const ok = await Promise.race([
+            Promise.resolve()
+              .then(() => frame.executeJavaScript('1', false))
+              .then(() => true)
+              .catch(() => false),
+            new Promise((resolve) => setTimeout(() => resolve(false), 900)),
+          ]);
+          if (ok) {
+            entry.lastOk = Date.now();
+            entry.misses = 0;
+          } else {
+            entry.misses += 1;
+            if (entry.misses === 3) {
+              /* Um frame vivo e sem resposta é sinalizado; quando todos os
+                 frames do processo estão confirmados travados, o kill é
+                 liberado (nenhum host/saudável/desconhecido no pid). */
+              watchdogEvent({type: 'stalled', pid: entry.pid, url: String(frame.url || '')});
+            }
+          }
+          if (confirmedStall(entry, Date.now())) {
+            const result = terminateEntry(entry, Date.now());
+            if (result.ok) {
+              killed.add(frame);
+              watchdogEvent({type: 'kill', pid: entry.pid, mainPid: mainPid(), reason: result.reason, url: facts.url});
+              tracked.delete(frame);
+            }
+          }
+        }
+        if (!tracked.size && live.length === 0 && liveSnapshot.complete && timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      } finally {
+        busy = false;
+      }
+    };
+    const ensureWatchdog = () => {
+      if (!watchdog || timer) return;
+      watchdogEvent({type: 'ensure'});
+      timer = setInterval(() => { tick().catch(() => {}); }, 1200);
+      /* Um tick imediato registra o frame antes do primeiro intervalo: o
+         Parar em menos de 1 s ainda encontra uma entrada rastreada para
+         encerrar o processo sem frames (#88). */
+      tick().catch(() => {});
+    };
+    const stopWatchdog = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      tracked.clear();
+    };
+    wc.on('did-frame-navigate', (_event, _url, _code, _text, isMainFrame) => {
+      if (!isMainFrame) ensureWatchdog();
+    });
+    wc.on('destroyed', stopWatchdog);
+    if (typeof win.on === 'function') win.on('closed', stopWatchdog);
+    wc.on('will-frame-navigate', (details) => {
+      if (details.isMainFrame) return;
+      const target = String(details.url || '');
+      if (target === 'about:blank') return;
+      const frame = details.frame || null;
+      if (!frame) {
+        details.preventDefault();
+        return;
+      }
+      const current = String(frame.url || '');
+      if (current && current !== 'about:blank') {
+        details.preventDefault();
+        return;
+      }
+      const parsed = parseActivityUrl(target);
+      if (!parsed || parsed.kind !== 'artifact' || !has(parsed.id, parsed.version)) {
+        details.preventDefault();
+      }
+    });
+  };
+
+  /* Barreira de sessão: nenhum http(s)/ws(s)/ftp sai de um frame de atividade.
+     A CSP do documento é a primeira barreira; esta cobre inclusive o que
+     viesse a ser acrescentado fora do wrapper.
+     Defesa `file://` (rodada 2026-11): nega por padrão e aceita só os
+     arquivos estáticos do app (`staticAppEntries`); o runtime da instância
+     e os dados do aluno são negados mesmo sob a raiz do app. Documento
+     principal segue. `options.recordFileUrls` liga o modo registro (observa
+     sem cancelar, para mapear fluxos legítimos). Um registro posterior de
+     `onBeforeRequest` na MESMA sessão substituiria esta guarda (o Electron
+     guarda um só por evento): o main registra uma vez por sessão e nada mais
+     registra depois (verificado em `main.cjs`, `material-pdf.cjs`,
+     `figure-preview.cjs` e `geogebra-host.cjs`: cada um tranca a própria
+     partição). */
+  const installSessionGuards = (session, options = {}) => {
+    if (!session || !session.webRequest || typeof session.webRequest.onBeforeRequest !== 'function') return false;
+    const appRoot = typeof options.appRoot === 'string' && options.appRoot ? options.appRoot : null;
+    const runtimeRoot = typeof options.runtimeRoot === 'string' && options.runtimeRoot ? options.runtimeRoot : null;
+    const {dataRoots = [], staticEntries = null} = options;
+    const guardEntries = staticEntries || (appRoot ? staticAppEntries(appRoot) : null);
+    const record = Array.isArray(options.recordFileUrls) ? options.recordFileUrls : null;
+    session.webRequest.onBeforeRequest(
+      {urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*', 'ftp://*/*', 'file://*/*']},
+      (details, callback) => {
+        let block = false;
+        try {
+          const frame = details && details.frame;
+          if (frame && String(frame.url || '').startsWith(`${ACTIVITY_SCHEME}://`)) block = true;
+        } catch { /* sem frame: deixa passar */ }
+        try {
+          const url = String((details && details.url) || '');
+          if (isFileUrl(url) && !block) {
+            const resourceType = String((details && details.resourceType) || '');
+            if (record) {
+              record.push({url, resourceType});
+            } else {
+              const decision = fileSubresourceBlocked({url, resourceType, appRoot, runtimeRoot, dataRoots, staticEntries: guardEntries});
+              if (decision.cancel) block = true;
+            }
+          }
+        } catch { /* dúvida: não cancela o documento principal por erro de parse */ }
+        callback({cancel: block});
+      },
+    );
+    return true;
+  };
+
+  return {
+    scheme: ACTIVITY_SCHEME,
+    remember,
+    has,
+    get,
+    forgetConversation,
+    forget,
+    size: () => registry.size,
+    protocolHandler,
+    installProtocol,
+    attachWindow,
+    installSessionGuards,
+    buildDocument: buildActivityDocument,
+    listIds: () => [...registry.values()].map((entry) => ({id: entry.id, version: entry.version})),
+  };
+}
+
+module.exports = {
+  ACTIVITY_SCHEME,
+  KATEX_HOST,
+  LIB_HOST,
+  activityArtifactUrl,
+  parseActivityUrl,
+  buildActivityDocument,
+  createActivityRuntime,
+  fileSubresourceBlocked,
+  staticAppEntries,
+  fileGuardOptions,
+  isPathUnderRoot,
+  filePathForUrl,
+  cspFor,
+  LOCKDOWN_SCRIPT,
+  DANGEROUS_TAGS,
+  RUNTIME_SCRIPT,
+  HOST_CSS,
+  canTerminateActivityProcess,
+  canTerminateSharedStalledProcess,
+  collectActivityFrames,
+  trackedActivityEntry,
+  activityFramesOtherThan,
+  detachedActivityDecision,
+};

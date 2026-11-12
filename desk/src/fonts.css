@@ -1,0 +1,25 @@
+/* Fontes da Mesa (ticket #61; Carbon r1): a interface usa IBM Plex Sans, o
+   monoespaçado IBM Plex Mono (hora, números, contadores, nomes de ferramenta e
+   atalhos) e a serifa STIX Two Text nos títulos de exibição, na Lista 0, nos
+   títulos do Caderno e nos modelos de PDF. Os woff2 são embutidos (sem CDN)
+   com as licenças OFL na mesma pasta. Mora em src/ porque a janela de PDF só
+   pode ler src/ e node_modules/ (material-pdf.cjs#lockSession); desk-areas.css
+   e materials/print.html carregam este mesmo arquivo. A STIX é variável: um
+   só woff2 cobre os pesos 400 a 700. */
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-Medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Sans";src:url("fonts/IBMPlexSans-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/IBMPlexMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("fonts/IBMPlexMono-Medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"STIX Two Text";src:url("fonts/STIXTwoText.woff2") format("woff2");font-weight:400 700;font-style:normal;font-display:block}
+@font-face{font-family:"STIX Two Text";src:url("fonts/STIXTwoText-Italic.woff2") format("woff2");font-weight:400 700;font-style:italic;font-display:block}
+:root{
+ --font-sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+ --serif:"STIX Two Text","Iowan Old Style",Charter,Georgia,"Times New Roman",serif;
+ /* Código e números: o IBM Plex Mono vem primeiro; "Cascadia Mono" e Consolas
+    são as do Windows caso o woff2 não carregue. --mono já é a cor do monograma
+    do provedor (model-picker.css), por isso o nome --font-mono. Os materiais de
+    PDF mantêm a pilha antiga em --font-mono-pdf: o paginado não pode mudar. */
+ --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+ --font-mono-pdf:ui-monospace,SFMono-Regular,Menlo,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+}

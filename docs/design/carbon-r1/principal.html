@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Principal — Carbon r1</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><path d="M12 3v18"/></symbol>
+  <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20"/><path d="M8 6h8"/><path d="M8 11h.01"/><path d="M12 11h.01"/><path d="M16 11v4"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M8 19h.01"/><path d="M12 19h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+<div class="screen">
+  <header class="app-bar">
+    <nav class="tabs" role="tablist" aria-label="Matérias">
+      <button type="button" class="tab" role="tab" aria-selected="false">Livre</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Alemão</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Algoritmos II</button>
+      <button type="button" class="tab" role="tab" aria-selected="true">Cálculo I</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Matemática Discreta</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Física I</button>
+      <button type="button" class="icon-btn tab-add" aria-label="Nova matéria"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+    </nav>
+    <span class="bar-divider"></span>
+    <button type="button" class="bar-item"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>Caderno 0</button>
+    <button type="button" class="bar-item"><svg class="icon" aria-hidden="true"><use href="#i-cube"/></svg>GeoGebra</button>
+    <div class="bar-actions">
+      <button type="button" class="bar-item">Estudo<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+      <button type="button" class="bar-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>Buscar<kbd>⌘K</kbd></button>
+      <button type="button" class="icon-btn" aria-label="Ajustes"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></button>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="reader" aria-label="Leitor Problemas">
+      <div class="panel-head">
+        <span class="panel-role">Problemas</span>
+        <button type="button" class="doc-select"><span class="doc-name">M03 · Cálculo Aplicado</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+        <span class="page-count">58 / 64</span>
+        <div class="panel-actions">
+          <button type="button" class="icon-btn" aria-label="Buscar no documento"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button type="button" class="icon-btn" aria-label="Mais opções do leitor"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        </div>
+      </div>
+      <div class="reader-body">
+        <article class="paper">
+          <p class="paper-kicker">APOSTILA · CÁLCULO I · M03</p>
+          <h2>Frações parciais</h2>
+          <p>Quando o denominador tem um fator do 2º grau sem raízes reais, o numerador da parcela precisa de grau 1.</p>
+          <h3>3º caso — fator quadrático irredutível</h3>
+          <p>Para um fator <span class="math"><i>ax</i>² + <i>bx</i> + <i>c</i></span> que não se decompõe em fatores lineares reais, escrevemos:</p>
+          <p class="formula"><span class="frac"><span class="frac-num"><i>Ax</i> + <i>B</i></span><span class="frac-den"><i>ax</i>² + <i>bx</i> + <i>c</i></span></span></p>
+          <p>Somando as parcelas:</p>
+          <p class="formula formula-sm"><span class="frac"><span class="frac-num"><i>D</i>(x)</span><span class="frac-den"><i>d</i>(x)</span></span> = <span class="frac"><span class="frac-num"><i>A</i>₁<i>x</i> + <i>B</i>₁</span><span class="frac-den"><i>a</i>₁<i>x</i>² + <i>b</i>₁<i>x</i> + <i>c</i>₁</span></span> + … + <span class="frac"><span class="frac-num"><i>A</i>ₙ<i>x</i> + <i>B</i>ₙ</span><span class="frac-den"><i>a</i>ₙ<i>x</i>² + <i>b</i>ₙ<i>x</i> + <i>c</i>ₙ</span></span></p>
+          <h3>Exemplo 20</h3>
+          <p>Para a função a seguir, pede-se:</p>
+          <p class="formula formula-sm"><i>f</i>(x) = <span class="frac"><span class="frac-num">2x³ + 1</span><span class="frac-den">(x − 1)(x² + 1)(x² + 4)</span></span></p>
+          <ol type="a">
+            <li>Quantos fatores do 2º grau tem o denominador?</li>
+            <li>Quais são as raízes reais do denominador?</li>
+            <li>Qual é o formato da decomposição em frações parciais?</li>
+            <li>Escreva todas as parcelas, sem calcular as constantes.</li>
+          </ol>
+          <div class="folio">58</div>
+        </article>
+      </div>
+    </section>
+    <section class="reader" aria-label="Leitor Formulário">
+      <div class="panel-head">
+        <span class="panel-role">Formulário</span>
+        <button type="button" class="doc-select"><span class="doc-name">Formulário · Derivadas</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+        <span class="page-count">1 / 2</span>
+        <div class="panel-actions">
+          <button type="button" class="icon-btn" aria-label="Buscar no documento"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+          <button type="button" class="icon-btn" aria-label="Mais opções do leitor"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        </div>
+      </div>
+      <div class="reader-body">
+        <article class="paper">
+          <p class="paper-kicker">FORMULÁRIO · CÁLCULO I</p>
+          <h2>Derivadas</h2>
+          <p class="paper-note">Regras de derivação e identidades trigonométricas.</p>
+          <ol class="formula-list">
+            <li><span class="n">01</span><span class="math">(xⁿ)′ = n xⁿ⁻¹</span></li>
+            <li><span class="n">02</span><span class="math">(fg)′ = f′g + fg′</span></li>
+            <li><span class="n">03</span><span class="math">(f/g)′ = (f′g − fg′)/g²</span></li>
+            <li><span class="n">04</span><span class="math">(eˣ)′ = eˣ</span></li>
+            <li><span class="n">05</span><span class="math">(ln x)′ = 1/x</span></li>
+            <li><span class="n">06</span><span class="math">(sin x)′ = cos x</span></li>
+            <li><span class="n">07</span><span class="math">(cos x)′ = −sin x</span></li>
+            <li><span class="n">08</span><span class="math">(tan x)′ = sec² x</span></li>
+            <li><span class="n">09</span><span class="math">(arcsin x)′ = 1/√(1 − x²)</span></li>
+            <li><span class="n">10</span><span class="math">(arctan x)′ = 1/(1 + x²)</span></li>
+          </ol>
+          <h3>Identidades trigonométricas</h3>
+          <ol class="formula-list">
+            <li><span class="n">01</span><span class="math">sin²x + cos²x = 1</span></li>
+            <li><span class="n">02</span><span class="math">1 + tan²x = sec²x</span></li>
+            <li><span class="n">03</span><span class="math">sin 2x = 2 sin x cos x</span></li>
+            <li><span class="n">04</span><span class="math">cos 2x = cos²x − sin²x</span></li>
+            <li><span class="n">05</span><span class="math">sin²x = (1 − cos 2x)/2</span></li>
+            <li><span class="n">06</span><span class="math">cos²x = (1 + cos 2x)/2</span></li>
+            <li><span class="n">07</span><span class="math">sin(a ± b) = sin a cos b ± cos a sin b</span></li>
+            <li><span class="n">08</span><span class="math">cos(a ± b) = cos a cos b ∓ sin a sin b</span></li>
+          </ol>
+          <div class="folio">1</div>
+        </article>
+      </div>
+    </section>
+    <aside class="tutor" aria-label="Tutor">
+      <div class="tutor-head">
+        <div class="tutor-titles">
+          <div class="tutor-title">Frações parciais</div>
+          <div class="tutor-context">Cálculo I · p. 58 · 2 referências</div>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Abrir o chat lateral"><svg class="icon" aria-hidden="true"><use href="#i-columns"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Chat na tela inteira"><svg class="icon" aria-hidden="true"><use href="#i-maximize"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Mais opções do tutor"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      </div>
+      <div class="chat">
+        <div class="chat-scroll">
+          <div class="sys-line">Hoje</div>
+          <div class="sys-line">Contexto: Apostila p. 58 · Formulário p. 1</div>
+          <div class="msg-student">Por que o caso 3 usa <span class="math"><i>Ax</i> + <i>B</i></span> no numerador? Não bastaria uma constante?</div>
+          <div class="msg-tutor">
+            <details class="tools" open>
+              <summary>2 leituras<svg class="icon chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+              <div class="tool-row"><svg class="icon tool-ok" aria-hidden="true"><use href="#i-check"/></svg><span class="tool-name">ler_pdf</span><span>apostila.pdf · p. 58</span><span class="tool-time">120 ms</span></div>
+              <div class="tool-row"><svg class="icon tool-ok" aria-hidden="true"><use href="#i-check"/></svg><span class="tool-name">ler_pdf</span><span>formulario.pdf · p. 1</span><span class="tool-time">86 ms</span></div>
+            </details>
+            <p>Porque o denominador é um quadrático irredutível. Em <span class="math"><i>A</i>/(<i>x</i> − 1)</span>, o resto é constante porque o divisor tem grau 1; já um divisor de grau 2 deixa um resto de grau 1.</p>
+            <p class="formula"><span class="frac"><span class="frac-num"><i>x</i>² + 3</span><span class="frac-den">(<i>x</i> − 1)(<i>x</i>² + 1)</span></span> = <span class="frac"><span class="frac-num"><i>A</i></span><span class="frac-den"><i>x</i> − 1</span></span> + <span class="frac"><span class="frac-num"><i>Bx</i> + <i>C</i></span><span class="frac-den"><i>x</i>² + 1</span></span></p>
+            <p>O termo <span class="math"><i>Bx</i> + <i>C</i></span> cobre todos os restos possíveis. Se <span class="math"><i>B</i> = 0</span>, ele se reduz ao caso constante; por isso o formato geral é o do primeiro grau.</p>
+            <div class="msg-meta"><span>14:32</span><span class="sep">·</span><span>deepseek</span><span class="sep">·</span><button type="button">copiar</button><span class="sep">·</span><button type="button">tentar de novo</button></div>
+          </div>
+          <div class="msg-student">Entendi. Então o grau do numerador é sempre um a menos?</div>
+          <div class="msg-tutor">
+            <p>Quando o fator é um quadrático irredutível, sim. Se ele se repete, entra uma parcela para cada potência.</p>
+          </div>
+        </div>
+        <form class="composer">
+          <label class="sr-only" for="composer-input">Mensagem para o tutor</label>
+          <textarea class="composer-input" id="composer-input" rows="2" placeholder="Pergunte ao tutor…"></textarea>
+          <div class="composer-foot">
+            <button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
+            <button type="button" class="model-pick"><span class="status-dot"></span>deepseek · v4.1<svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+            <span class="grow"></span>
+            <button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg></button>
+          </div>
+        </form>
+        <div class="calc-line">
+          <svg class="icon" aria-hidden="true"><use href="#i-calculator"/></svg>
+          <span>sqrt(16) + sin(pi/2)</span>
+          <span class="calc-result">= 5</span>
+          <span class="grow"></span>
+          <span class="calc-unit">RAD</span>
+          <button type="button" class="icon-btn" aria-label="Abrir o histórico da calculadora"><svg class="icon" aria-hidden="true"><use href="#i-chevron-up"/></svg></button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+</body>
+</html>

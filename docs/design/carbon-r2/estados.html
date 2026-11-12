@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Estados — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+<style>
+.estados{max-width:var(--index-max);margin:0 auto;padding:var(--space-48) var(--space-32)}
+.estados-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-24);padding-bottom:var(--space-32);border-bottom:var(--stroke) solid var(--border-subtle)}
+.estados-head h1{margin:0 0 var(--space-8);font-family:var(--font-serif);font-size:var(--text-28);line-height:var(--lh-28);font-weight:var(--weight-regular)}
+.estados-head p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.estado-block{padding:var(--space-32) 0;border-top:var(--stroke) solid var(--border-subtle)}
+.estado-block h2{margin:0 0 var(--space-4);font-size:var(--text-20);line-height:var(--lh-20);font-weight:var(--weight-semibold)}
+.estado-block>p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.state-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:var(--space-24);border-top:var(--stroke) solid var(--border-subtle);border-left:var(--stroke) solid var(--border-subtle)}
+.state-grid--field{grid-template-columns:repeat(6,minmax(0,1fr))}
+.state-cell{display:flex;flex-direction:column;gap:var(--space-12);min-height:var(--brand-128);padding:var(--space-16);border-right:var(--stroke) solid var(--border-subtle);border-bottom:var(--stroke) solid var(--border-subtle)}
+.state-name{font-family:var(--font-mono);font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+.state-demo{display:flex;align-items:center;justify-content:center;flex:1;min-width:0}
+.state-demo--field{align-items:stretch}
+.state-demo .field{width:100%}
+.state-tabs{width:100%;height:var(--control-md);border-bottom:var(--stroke) solid var(--border-subtle)}
+.field-error{display:flex;align-items:flex-start;gap:var(--space-4);margin:0;font-size:var(--text-12);line-height:var(--lh-12);color:var(--danger-text)}
+.field-error .icon{width:var(--space-16);height:var(--space-16)}
+.has-error .field-control{outline:var(--stroke-strong) solid var(--danger-text);outline-offset:calc(var(--stroke-strong) * -1)}
+.is-hover.btn-primary{background:var(--accent-hover);border-color:var(--accent-hover)}
+.is-hover.btn-layer,.is-hover.field-control,.is-hover.notebook-row{background:var(--layer-hover)}
+.is-hover.tab{background:var(--layer-hover);color:var(--text)}
+.is-hover.toggle input:checked+.toggle-track{background:var(--accent-hover);border-color:var(--accent-hover)}
+.is-focus{outline:var(--focus-width) solid var(--accent);outline-offset:var(--space-2)}
+.tab.is-focus{outline-offset:calc(var(--focus-width) * -1)}
+.is-pressed.btn-primary{background:var(--accent-hover);border-color:var(--on-accent)}
+.is-pressed.btn-layer,.is-pressed.tab,.is-pressed.notebook-row{background:var(--border-subtle)}
+.is-pressed.field-control{background:var(--layer-hover)}
+.is-pressed.toggle input:checked+.toggle-track{background:var(--accent-hover);border-color:var(--on-accent)}
+.field-control:disabled{background:var(--layer-1);color:var(--text-3);cursor:not-allowed}
+.notebook-row:disabled{color:var(--text-3);cursor:not-allowed}
+.notebook-row:disabled .notebook-icon{color:var(--text-3)}
+.tab:disabled{color:var(--text-3);cursor:not-allowed}
+.estado-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-24);margin-top:var(--space-24)}
+.estado-panel{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-12);min-height:var(--brand-128);padding:var(--space-24);border:var(--stroke) solid var(--border-subtle);background:var(--bg)}
+.status-line{display:flex;align-items:center;gap:var(--space-8);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.status-dots{display:inline-flex;gap:var(--space-2)}
+.status-dots span{width:var(--space-4);height:var(--space-4);border-radius:var(--radius-dot);background:var(--text-3)}
+.empty-line{margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+@media (max-width:900px){.state-grid,.state-grid--field,.estado-extra{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+</svg>
+<main class="estados">
+  <header class="estados-head">
+    <div>
+      <h1>Estados dos controles</h1>
+      <p>O mesmo controle em repouso, hover, foco, pressionado e desabilitado. O anel de foco é o do r2: <span class="mono">--focus-width</span> no acento. O campo mostra ainda o erro com a mensagem abaixo.</p>
+    </div>
+    <a class="btn btn-ghost" href="index.html"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Índice</a>
+  </header>
+
+  <section class="estado-block">
+    <h2>Botão cheio</h2>
+    <p>“Salvar” no acento, com o ícone de confirmação. O foco desenha o anel para fora, visível nos dois temas.</p>
+    <div class="state-grid">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo"><button type="button" class="btn btn-primary"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo"><button type="button" class="btn btn-primary is-hover"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo"><button type="button" class="btn btn-primary is-focus"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo"><button type="button" class="btn btn-primary is-pressed"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo"><button type="button" class="btn btn-primary" disabled><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Botão de camada</h2>
+    <p>“Cancelar” sem borda, com o fundo da camada e o texto em <span class="mono">--text</span>.</p>
+    <div class="state-grid">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo"><button type="button" class="btn btn-layer">Cancelar</button></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo"><button type="button" class="btn btn-layer is-hover">Cancelar</button></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo"><button type="button" class="btn btn-layer is-focus">Cancelar</button></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo"><button type="button" class="btn btn-layer is-pressed">Cancelar</button></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo"><button type="button" class="btn btn-layer" disabled>Cancelar</button></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Campo</h2>
+    <p>O campo preenchido, sem o fio de baixo. No erro, a borda muda e a mensagem fica logo abaixo.</p>
+    <div class="state-grid state-grid--field">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo state-demo--field"><div class="field"><label class="field-label" for="estado-nome-normal">Nome da matéria</label><input class="field-control" id="estado-nome-normal" type="text" value="Cálculo I"></div></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo state-demo--field"><div class="field"><label class="field-label" for="estado-nome-hover">Nome da matéria</label><input class="field-control is-hover" id="estado-nome-hover" type="text" value="Cálculo I"></div></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo state-demo--field"><div class="field"><label class="field-label" for="estado-nome-foco">Nome da matéria</label><input class="field-control is-focus" id="estado-nome-foco" type="text" value="Cálculo I"></div></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo state-demo--field"><div class="field"><label class="field-label" for="estado-nome-pressionado">Nome da matéria</label><input class="field-control is-pressed" id="estado-nome-pressionado" type="text" value="Cálculo I"></div></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo state-demo--field"><div class="field"><label class="field-label" for="estado-nome-desabilitado">Nome da matéria</label><input class="field-control" id="estado-nome-desabilitado" type="text" value="Cálculo I" disabled></div></div></div>
+      <div class="state-cell"><span class="state-name">ERRO</span><div class="state-demo state-demo--field"><div class="field has-error"><label class="field-label" for="estado-nome-erro">Nome da matéria</label><input class="field-control" id="estado-nome-erro" type="text" value="Cálculo I" aria-invalid="true" aria-describedby="estado-nome-erro-msg"><p class="field-error" id="estado-nome-erro-msg"><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>Já existe outra matéria com este nome.</p></div></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Interruptor</h2>
+    <p>O interruptor das Configurações, 40×20, com o rótulo ao lado.</p>
+    <div class="state-grid">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span>Calculadora</label></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo"><label class="toggle is-hover"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span>Calculadora</label></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo"><label class="toggle"><input type="checkbox" checked><span class="toggle-track is-focus"><span class="toggle-knob"></span></span>Calculadora</label></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo"><label class="toggle is-pressed"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span>Calculadora</label></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo"><label class="toggle"><input type="checkbox" checked disabled><span class="toggle-track"><span class="toggle-knob"></span></span>Calculadora</label></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Item de lista</h2>
+    <p>O caderno na lista dos Cadernos, com o ícone em <span class="mono">--text-2</span>.</p>
+    <div class="state-grid">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo"><button type="button" class="notebook-row"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo"><button type="button" class="notebook-row is-hover"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo"><button type="button" class="notebook-row is-focus"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo"><button type="button" class="notebook-row is-pressed"><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo"><button type="button" class="notebook-row" disabled><span class="notebook-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="notebook-title">aula.xopp</span><span class="notebook-meta">sub · 09:14</span></button></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Aba</h2>
+    <p>A matéria ativa com o sublinhado de 2 px no acento.</p>
+    <div class="state-grid">
+      <div class="state-cell"><span class="state-name">NORMAL</span><div class="state-demo"><div class="tabs state-tabs" role="tablist" aria-label="Aba"><button type="button" class="tab" role="tab" aria-selected="true">Cálculo I</button></div></div></div>
+      <div class="state-cell"><span class="state-name">HOVER</span><div class="state-demo"><div class="tabs state-tabs" role="tablist" aria-label="Aba"><button type="button" class="tab is-hover" role="tab" aria-selected="true">Cálculo I</button></div></div></div>
+      <div class="state-cell"><span class="state-name">FOCO</span><div class="state-demo"><div class="tabs state-tabs" role="tablist" aria-label="Aba"><button type="button" class="tab is-focus" role="tab" aria-selected="true">Cálculo I</button></div></div></div>
+      <div class="state-cell"><span class="state-name">PRESSIONADO</span><div class="state-demo"><div class="tabs state-tabs" role="tablist" aria-label="Aba"><button type="button" class="tab is-pressed" role="tab" aria-selected="true">Cálculo I</button></div></div></div>
+      <div class="state-cell"><span class="state-name">DESABILITADO</span><div class="state-demo"><div class="tabs state-tabs" role="tablist" aria-label="Aba"><button type="button" class="tab" role="tab" aria-selected="false" disabled>Cálculo I</button></div></div></div>
+    </div>
+  </section>
+
+  <section class="estado-block">
+    <h2>Carregando e vazio</h2>
+    <p>Uma linha de status, sem spinner grande, e o vazio com uma frase e uma ação.</p>
+    <div class="estado-extra">
+      <div class="estado-panel">
+        <span class="state-name">CARREGANDO</span>
+        <p class="status-line" role="status"><span class="status-dots" aria-hidden="true"><span></span><span></span><span></span></span>Buscando…</p>
+      </div>
+      <div class="estado-panel">
+        <span class="state-name">VAZIO</span>
+        <p class="empty-line">Nenhum resultado. Tente outro termo.</p>
+        <button type="button" class="btn btn-layer btn-sm">Limpar busca</button>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Configurações — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp" viewBox="0 0 32 32">
+    <rect width="32" height="32" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M17.6 17.4 27 14 34 27H15Z" opacity=".32"/>
+      <rect x="11" y="27" width="21" height="1.5"/>
+      <circle cx="9.5" cy="16.5" r="2.2"/>
+      <path d="M17.3 15.7a5 5 0 0 1 10 0Z" transform="rotate(-20 22.3 15.7)"/>
+    </g>
+    <path d="M4.5 28.5 9.5 16.5l9-5" fill="none" style="stroke:var(--on-accent)" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+<div class="settings">
+  <aside class="settings-side">
+    <h1 class="settings-title">Configurações</h1>
+    <div class="field field-wrap">
+      <label class="sr-only" for="settings-search">Buscar configurações</label>
+      <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input class="field-control" id="settings-search" type="search" placeholder="Buscar configurações" autocomplete="off" spellcheck="false">
+    </div>
+    <nav class="settings-nav" id="settings-nav" aria-label="Seções das configurações">
+      <button type="button" data-settings-nav="materias">Matérias</button>
+      <button type="button" data-settings-nav="leitores">Leitores</button>
+      <button type="button" data-settings-nav="mesa">Recursos da mesa</button>
+      <button type="button" data-settings-nav="avisos" aria-current="page">Aparência e avisos</button>
+      <button type="button" data-settings-nav="pastas">Pastas e programas</button>
+    </nav>
+  </aside>
+  <div class="settings-main">
+    <div class="settings-scroll" id="settings-scroll">
+      <section class="settings-content" data-settings-section="materias" hidden>
+        <h2>Matérias</h2>
+        <div class="set-group">
+          <div class="set-row"><div class="set-label"><strong>Cálculo I</strong><span>Pasta dos PDFs · ~/Mesa/Cálculo I</span></div><div class="set-control"><button type="button" class="btn btn-secondary btn-sm">Escolher…</button></div></div>
+          <div class="set-row"><div class="set-label"><strong>Alemão</strong><span>Pasta dos PDFs · ~/Mesa/Alemão</span></div><div class="set-control"><button type="button" class="btn btn-secondary btn-sm">Escolher…</button></div></div>
+          <div class="set-row"><div class="set-label"><strong>Algoritmos II</strong><span>Pasta dos PDFs · ~/Mesa/Algoritmos II</span></div><div class="set-control"><button type="button" class="btn btn-secondary btn-sm">Escolher…</button></div></div>
+        </div>
+        <p class="field-help">Remover não apaga PDFs nem sessões.</p>
+        <button type="button" class="btn btn-ghost"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Adicionar matéria</button>
+      </section>
+      <section class="settings-content" data-settings-section="leitores" hidden>
+        <h2>Leitores</h2>
+        <div class="set-group">
+          <h3>Layout</h3>
+          <div class="set-row"><div class="set-label"><strong>Leitores de PDF</strong><span>Um leitor esconde o segundo painel.</span></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Dois leitores</option><option>Um leitor</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+        </div>
+        <div class="set-group">
+          <h3>Nomes e termos</h3>
+          <div class="set-row"><div class="set-label"><strong>Leitor 1</strong><span>Trechos do nome; vazio herda o padrão.</span></div><div class="set-control"><input class="field-control" type="text" value="Problemas" aria-label="Nome do leitor 1"></div></div>
+          <div class="set-row"><div class="set-label"><strong>Termos do leitor 1</strong></div><div class="set-control"><input class="field-control" type="text" value="Problemas, Lista, Exercícios" aria-label="Termos do leitor 1"></div></div>
+          <div class="set-row"><div class="set-label"><strong>Leitor 2</strong><span>Trechos do nome; vazio herda o padrão.</span></div><div class="set-control"><input class="field-control" type="text" value="Formulário" aria-label="Nome do leitor 2"></div></div>
+          <div class="set-row"><div class="set-label"><strong>Termos do leitor 2</strong></div><div class="set-control"><input class="field-control" type="text" value="Formulário, Fórmulas, Resumo" aria-label="Termos do leitor 2"></div></div>
+          <div class="set-row"><div class="set-label"><strong>Botão do 2º painel</strong><span>Nome usado para reabrir o segundo leitor.</span></div><div class="set-control"><input class="field-control" type="text" value="Formulário" aria-label="Botão do segundo painel"></div></div>
+        </div>
+        <div class="set-group">
+          <h3>Leitura</h3>
+          <div class="set-row"><div class="set-label"><strong>Página escura do PDF</strong><span>Só a exibição muda; o PDF nunca é alterado.</span></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Inverter (padrão)</option><option>Suave</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Numeração impressa</strong></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Numeração impressa</span></label></div></div>
+        </div>
+      </section>
+      <section class="settings-content" data-settings-section="mesa" hidden>
+        <h2>Recursos da mesa</h2>
+        <div class="set-group">
+          <div class="set-row"><div class="set-label"><strong>Nome da mesa</strong><span>Aparece no topo da janela.</span></div><div class="set-control"><input class="field-control" type="text" value="Mesa de Estudos" aria-label="Nome da mesa"></div></div>
+        </div>
+        <div class="set-group">
+          <div class="set-row"><div class="set-label"><strong>Encerrar por hoje e retomada</strong><span>Guarda onde você parou para a próxima abertura.</span></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Encerrar por hoje e retomada</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Lista/questão ativa e rascunho .xopp</strong><span>Desligado, a matéria, a lista/questão e o rascunho não vão.</span></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Lista/questão ativa e rascunho .xopp</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Calculadora</strong><span>Linha de conta no pé da coluna do tutor.</span></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Calculadora</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Botão para abrir o Xournal++</strong></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Botão para abrir o Xournal++</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Conferir Xournal++</strong><span>Captura a janela e põe a imagem na bandeja de anexos.</span></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Conferir Xournal++</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Botão para incluir referências no tutor</strong><span>Esconder o botão não tira os PDFs das mensagens.</span></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Botão para incluir referências no tutor</span></label></div></div>
+        </div>
+      </section>
+      <section class="settings-content" data-settings-section="avisos">
+        <h2>Aparência e avisos</h2>
+        <div class="set-group">
+          <h3>Interface</h3>
+          <div class="set-row"><div class="set-label"><strong>Idioma</strong></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Português</option><option>English</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Idioma do tutor</strong><span>Vale quando o tutor ligar.</span></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Acompanhar minhas mensagens</option><option>Português</option><option>English</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Tema</strong></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Sistema</option><option>Claro</option><option>Escuro</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Cor de acento</strong></div><div class="set-control"><div class="accent-grid" role="radiogroup" aria-label="Cor de acento">
+            <button type="button" class="accent-swatch" role="radio" aria-checked="true"><span class="accent-chip chip-blue"></span>Azul</button>
+            <button type="button" class="accent-swatch" role="radio" aria-checked="false"><span class="accent-chip chip-violet"></span>Violeta</button>
+            <button type="button" class="accent-swatch" role="radio" aria-checked="false"><span class="accent-chip chip-green"></span>Verde</button>
+            <button type="button" class="accent-swatch" role="radio" aria-checked="false"><span class="accent-chip chip-orange"></span>Laranja</button>
+            <button type="button" class="accent-swatch" role="radio" aria-checked="false"><span class="accent-chip chip-pink"></span>Rosa</button>
+            <button type="button" class="accent-swatch" role="radio" aria-checked="false"><span class="accent-chip chip-graphite"></span>Grafite</button>
+          </div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Densidade</strong></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Padrão</option><option>Compacta</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+        </div>
+        <div class="set-group">
+          <h3>Leitura</h3>
+          <div class="set-row"><div class="set-label"><strong>Tamanho do texto do chat</strong></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Normal</option><option>Pequeno</option><option>Grande</option><option>Maior</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Largura da coluna de leitura</strong></div><div class="set-control"><div class="select-wrap"><select class="field-control"><option>Normal</option><option>Estreita</option><option>Larga</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div></div>
+        </div>
+        <div class="set-group">
+          <h3>Avisos de conclusão</h3>
+          <div class="set-row"><div class="set-label"><strong>Som</strong></div><div class="set-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Som</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Notificação</strong><span>Avisa fora da janela da Mesa.</span></div><div class="set-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Notificação</span></label></div></div>
+          <div class="set-row"><div class="set-label"><strong>Avisar mesmo com a janela em foco</strong><span>Não esconde o aviso quando você está na Mesa.</span></div><div class="set-control"><label class="toggle"><input type="checkbox"><span class="toggle-track"><span class="toggle-knob"></span></span><span class="sr-only">Avisar mesmo com a janela em foco</span></label></div></div>
+        </div>
+      </section>
+      <section class="settings-content" data-settings-section="pastas" hidden>
+        <h2>Pastas e programas</h2>
+        <div class="set-group">
+          <h3>Caminhos</h3>
+          <div class="set-row"><div class="set-label"><strong>Pasta do vault / dados</strong><span>Materiais, sessões e registros locais.</span></div><div class="set-control"><div class="path-row"><input class="field-control" type="text" value="~/Mesa" aria-label="Pasta do vault"><button type="button" class="btn btn-secondary btn-sm">Escolher</button></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Executável do Claude Code</strong><span>Detectado automaticamente.</span></div><div class="set-control"><div class="path-row"><input class="field-control" type="text" value="/opt/homebrew/bin/claude" aria-label="Executável do Claude Code"><button type="button" class="btn btn-secondary btn-sm">Escolher</button><button type="button" class="btn btn-ghost btn-sm">Limpar</button></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Xournal++</strong></div><div class="set-control"><div class="path-row"><input class="field-control" type="text" value="/Applications/Xournal++.app" aria-label="Xournal++"><button type="button" class="btn btn-secondary btn-sm">Escolher</button><button type="button" class="btn btn-ghost btn-sm">Limpar</button></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Programa de escrita</strong><span>Lista as janelas abertas; vale na hora.</span></div><div class="set-control"><div class="path-row"><div class="select-wrap"><select class="field-control"><option>Xournal++</option><option>Outra janela…</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div><button type="button" class="btn btn-secondary btn-sm">Escolher…</button></div></div></div>
+        </div>
+        <div class="set-group">
+          <h3>Motores do tutor</h3>
+          <div class="set-row"><div class="set-label"><strong>OpenCode</strong><span>Executável já instalado; a conta fica no motor.</span></div><div class="set-control"><div class="engine-row"><span class="status-dot"></span><span>conectado</span><span class="mono">v2</span></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Claude Code</strong><span>Usa o login feito no próprio Claude Code.</span></div><div class="set-control"><div class="engine-row"><span class="status-dot"></span><span>detectado</span><span class="mono">2.1</span></div></div></div>
+          <div class="set-row"><div class="set-label"><strong>Chave do OpenCode Zen</strong><span>Modelos gratuitos; a chave fica no cofre do sistema.</span></div><div class="set-control"><div class="path-row"><input class="field-control" type="password" value="sk-opencode-zen" aria-label="Chave do OpenCode Zen"><button type="button" class="btn btn-secondary btn-sm">Testar e guardar</button><button type="button" class="btn btn-ghost btn-sm">Criar uma chave</button></div></div></div>
+        </div>
+      </section>
+    </div>
+    <footer class="settings-foot">
+      <span class="hint" id="settings-hint">Tudo nesta seção vale na hora.</span>
+      <button type="button" class="btn btn-ghost">Cancelar</button>
+      <button type="button" class="btn btn-primary"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button>
+    </footer>
+  </div>
+</div>
+<script>
+(() => {
+  const nav = [...document.querySelectorAll('[data-settings-nav]')];
+  const sections = [...document.querySelectorAll('[data-settings-section]')];
+  const hint = document.getElementById('settings-hint');
+  const scroll = document.getElementById('settings-scroll');
+  const hints = {
+    avisos: 'Tudo nesta seção vale na hora.',
+    pastas: 'Os caminhos só valem depois de salvar. O programa de escrita vale na hora.',
+  };
+  const show = (id) => {
+    sections.forEach((section) => { section.hidden = section.dataset.settingsSection !== id; });
+    nav.forEach((button) => {
+      if (button.dataset.settingsNav === id) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    hint.textContent = hints[id] || 'As escolhas valem depois de salvar.';
+    scroll.scrollTop = 0;
+  };
+  nav.forEach((button) => button.addEventListener('click', () => show(button.dataset.settingsNav)));
+  document.getElementById('settings-search').addEventListener('input', (event) => {
+    const query = event.target.value.trim().toLowerCase();
+    nav.forEach((button) => { button.hidden = !!query && !button.textContent.toLowerCase().includes(query); });
+  });
+  show('avisos');
+})();
+</script>
+</body>
+</html>

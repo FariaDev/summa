@@ -1,0 +1,32 @@
+{
+  "vaultPath": "",
+  "xournalPath": "",
+  "courses": [
+    {
+      "id": "calculo-1",
+      "name": "Cálculo I",
+      "path": "/caminho/para/pasta/de/pdfs",
+      "color": "#c02667"
+    }
+  ],
+  "desk": {
+    "title": "Summa",
+    "calculator": true,
+    "xournal": true,
+    "conferir": true,
+    "refsToggle": true,
+    "endDay": true,
+    "studyContext": true,
+    "panels": [
+      {
+        "label": "Enunciado",
+        "prefer": ["Limites"]
+      },
+      {
+        "label": "Formulário & apoio",
+        "prefer": ["Formul"],
+        "toggle": "Formulário"
+      }
+    ]
+  }
+}

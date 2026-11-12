@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Revisão — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  root.dataset.theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  root.dataset.accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+})();
+</script>
+<style>
+.revisao{max-width:var(--index-max);margin:0 auto;padding:var(--space-48) var(--space-32)}
+.revisao-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-24);padding-bottom:var(--space-32);border-bottom:var(--stroke) solid var(--border-subtle)}
+.revisao-head h1{margin:0 0 var(--space-8);font-family:var(--font-serif);font-size:var(--text-28);line-height:var(--lh-28);font-weight:var(--weight-regular)}
+.revisao-head p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.revisao-item{padding:var(--space-32) 0;border-bottom:var(--stroke) solid var(--border-subtle)}
+.revisao-item:last-child{border-bottom:0;padding-bottom:0}
+.revisao-item-head{display:grid;grid-template-columns:var(--space-32) minmax(0,1fr);gap:var(--space-8);align-items:baseline}
+.revisao-num{font-family:var(--font-mono);font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+.revisao-item h2{margin:0 0 var(--space-4);font-size:var(--text-20);line-height:var(--lh-20);font-weight:var(--weight-semibold)}
+.revisao-item-head p{max-width:var(--measure);margin:0;font-size:var(--text-14);line-height:var(--lh-14);color:var(--text-2)}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-24);margin-top:var(--space-24)}
+.compare-panel{min-width:0}
+.compare-label{display:flex;align-items:center;gap:var(--space-8);margin:0 0 var(--space-8);font-family:var(--font-mono);font-size:var(--text-12);line-height:var(--lh-12);color:var(--text-3)}
+.compare-label::after{content:"";flex:1;height:var(--stroke);background:var(--border-subtle)}
+.compare-stage{display:flex;align-items:flex-start;justify-content:center;min-height:var(--component-cell-min);padding:var(--space-24);border:var(--stroke) solid var(--border-subtle);background:var(--bg)}
+.panel-center{align-items:center}
+.panel-bottom{align-items:flex-end}
+.demo-settings{width:100%;padding:var(--space-16) var(--space-24);background:var(--bg)}
+.demo-settings .set-group{margin-top:0;padding-top:0;border-top:0}
+.demo-settings .set-row:last-child{border-bottom:0}
+.demo-foot{width:100%;padding:0 var(--space-24)}
+.accent-today{width:var(--field-w);max-width:100%}
+.accent-today .accent-swatch{border-color:var(--border-subtle)}
+.accent-today .accent-swatch[aria-pressed="true"]{background:var(--layer-hover);color:var(--text);font-weight:var(--weight-semibold)}
+.accent-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--space-4);width:var(--field-w);max-width:100%}
+.demo-guide{width:var(--settings-nav);max-width:100%;border:var(--stroke) solid var(--border-subtle)}
+.guide-nav-today button{grid-template-columns:var(--space-24) var(--space-16) minmax(0,1fr)}
+.guide-nav-today .icon{color:var(--text-3)}
+.demo-foot-guide{width:100%}
+.demo-guide-next{width:100%;padding:var(--space-32);background:var(--bg)}
+@media (max-width:900px){.compare{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp" viewBox="0 0 32 32">
+    <rect width="32" height="32" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M17.6 17.4 27 14 34 27H15Z" opacity=".32"/>
+      <rect x="11" y="27" width="21" height="1.5"/>
+      <circle cx="9.5" cy="16.5" r="2.2"/>
+      <path d="M17.3 15.7a5 5 0 0 1 10 0Z" transform="rotate(-20 22.3 15.7)"/>
+    </g>
+    <path d="M4.5 28.5 9.5 16.5l9-5" fill="none" style="stroke:var(--on-accent)" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M12 4v16"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12"/><path d="M6 10h1M10 10h1M14 10h1M18 10h1M7 14h10"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></symbol>
+</svg>
+<main class="revisao">
+  <header class="revisao-head">
+    <div>
+      <h1>Cinco ajustes no r2</h1>
+      <p>Cada item mostra o desenho de hoje e a proposta, com os mesmos textos e as mesmas larguras das telas. As caixas são só o palco da comparação.</p>
+    </div>
+    <a class="btn btn-ghost" href="index.html"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>Índice</a>
+  </header>
+
+  <section class="revisao-item">
+    <div class="revisao-item-head">
+      <span class="revisao-num">01</span>
+      <div>
+        <h2>Cor de acento nas Configurações</h2>
+        <p>Seis cores, o nome embaixo e o escolhido com anel no acento, sem a caixa em volta.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-panel">
+        <p class="compare-label">HOJE</p>
+        <div class="compare-stage">
+          <div class="field">
+            <span class="field-label">Cor de acento</span>
+            <div class="accent-today accent-grid" role="group" aria-label="Cor de acento (hoje)">
+              <button type="button" class="accent-swatch" data-accent-option="blue" aria-pressed="true"><span class="accent-chip chip-blue"></span>Azul</button>
+              <button type="button" class="accent-swatch" data-accent-option="violet" aria-pressed="false"><span class="accent-chip chip-violet"></span>Violeta</button>
+              <button type="button" class="accent-swatch" data-accent-option="green" aria-pressed="false"><span class="accent-chip chip-green"></span>Verde</button>
+              <button type="button" class="accent-swatch" data-accent-option="orange" aria-pressed="false"><span class="accent-chip chip-orange"></span>Laranja</button>
+              <button type="button" class="accent-swatch" data-accent-option="pink" aria-pressed="false"><span class="accent-chip chip-pink"></span>Rosa</button>
+              <button type="button" class="accent-swatch" data-accent-option="graphite" aria-pressed="false"><span class="accent-chip chip-graphite"></span>Grafite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="compare-panel">
+        <p class="compare-label">PROPOSTA</p>
+        <div class="compare-stage">
+          <div class="field">
+            <span class="field-label" id="accent-proposal-label">Cor de acento</span>
+            <div class="accent-row" role="radiogroup" aria-labelledby="accent-proposal-label">
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="blue" data-accent-option="blue" checked><span class="accent-chip chip-blue"></span><span class="accent-name">Azul</span></label>
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="violet" data-accent-option="violet"><span class="accent-chip chip-violet"></span><span class="accent-name">Violeta</span></label>
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="green" data-accent-option="green"><span class="accent-chip chip-green"></span><span class="accent-name">Verde</span></label>
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="orange" data-accent-option="orange"><span class="accent-chip chip-orange"></span><span class="accent-name">Laranja</span></label>
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="pink" data-accent-option="pink"><span class="accent-chip chip-pink"></span><span class="accent-name">Rosa</span></label>
+              <label class="accent-choice"><input type="radio" name="accent-proposal" value="graphite" data-accent-option="graphite"><span class="accent-chip chip-graphite"></span><span class="accent-name">Grafite</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="revisao-item">
+    <div class="revisao-item-head">
+      <span class="revisao-num">02</span>
+      <div>
+        <h2>Rodapé das Configurações</h2>
+        <p>Cancelar deixa o fio e passa a usar o fundo da camada; Salvar continua cheio no acento.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-panel">
+        <p class="compare-label">HOJE</p>
+        <div class="compare-stage panel-center">
+          <footer class="settings-foot demo-foot">
+            <span class="hint">Tudo nesta seção vale na hora.</span>
+            <button type="button" class="btn btn-secondary">Cancelar</button>
+            <button type="button" class="btn btn-primary"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button>
+          </footer>
+        </div>
+      </div>
+      <div class="compare-panel">
+        <p class="compare-label">PROPOSTA</p>
+        <div class="compare-stage panel-center">
+          <footer class="settings-foot demo-foot">
+            <span class="hint">Tudo nesta seção vale na hora.</span>
+            <button type="button" class="btn btn-layer">Cancelar</button>
+            <button type="button" class="btn btn-primary"><span>Salvar</span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="revisao-item">
+    <div class="revisao-item-head">
+      <span class="revisao-num">03</span>
+      <div>
+        <h2>Lateral do Guia</h2>
+        <p>Sem o ícone: fica o número em mono e o nome. O item atual leva o número no acento e o nome em semibold.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-panel">
+        <p class="compare-label">HOJE</p>
+        <div class="compare-stage">
+          <aside class="guide-side demo-guide">
+            <div class="guide-brand">
+              <svg class="brand-mark brand-32" aria-hidden="true"><use href="#i-lamp"/></svg>
+              <div><div class="guide-title">Guia da Mesa</div><div class="guide-sub">Como a Mesa funciona</div></div>
+            </div>
+            <nav class="guide-nav guide-nav-today" aria-label="Seções do guia (hoje)">
+              <button type="button" aria-current="page"><span class="num">01</span><svg class="icon" aria-hidden="true"><use href="#i-flag"/></svg><span class="guide-name">Começar</span></button>
+              <button type="button"><span class="num">02</span><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span class="guide-name">O tutor</span></button>
+              <button type="button"><span class="num">03</span><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><span class="guide-name">Leitores de PDF</span></button>
+              <button type="button"><span class="num">04</span><svg class="icon" aria-hidden="true"><use href="#i-columns"/></svg><span class="guide-name">Chat lateral</span></button>
+              <button type="button"><span class="num">05</span><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span class="guide-name">Revisão</span></button>
+              <button type="button"><span class="num">06</span><svg class="icon" aria-hidden="true"><use href="#i-calc"/></svg><span class="guide-name">Calculadora</span></button>
+              <button type="button"><span class="num">07</span><svg class="icon" aria-hidden="true"><use href="#i-keyboard"/></svg><span class="guide-name">Atalhos</span></button>
+            </nav>
+            <p class="field-help">Abre com <kbd>⌘</kbd> <kbd>/</kbd> em qualquer lugar.</p>
+          </aside>
+        </div>
+      </div>
+      <div class="compare-panel">
+        <p class="compare-label">PROPOSTA</p>
+        <div class="compare-stage">
+          <aside class="guide-side demo-guide">
+            <div class="guide-brand">
+              <svg class="brand-mark brand-32" aria-hidden="true"><use href="#i-lamp"/></svg>
+              <div><div class="guide-title">Guia da Mesa</div><div class="guide-sub">Como a Mesa funciona</div></div>
+            </div>
+            <nav class="guide-nav guide-nav-r2" aria-label="Seções do guia">
+              <button type="button" aria-current="page"><span class="num">01</span><span class="guide-name">Começar</span></button>
+              <button type="button"><span class="num">02</span><span class="guide-name">O tutor</span></button>
+              <button type="button"><span class="num">03</span><span class="guide-name">Leitores de PDF</span></button>
+              <button type="button"><span class="num">04</span><span class="guide-name">Chat lateral</span></button>
+              <button type="button"><span class="num">05</span><span class="guide-name">Revisão</span></button>
+              <button type="button"><span class="num">06</span><span class="guide-name">Calculadora</span></button>
+              <button type="button"><span class="num">07</span><span class="guide-name">Atalhos</span></button>
+            </nav>
+            <p class="field-help">Abre com <kbd>⌘</kbd> <kbd>/</kbd> em qualquer lugar.</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="revisao-item">
+    <div class="revisao-item-head">
+      <span class="revisao-num">04</span>
+      <div>
+        <h2>Rodapé do Guia</h2>
+        <p>A faixa some. O próximo passo vira um link no fim da seção, depois de um fio, com o título em STIX.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-panel">
+        <p class="compare-label">HOJE</p>
+        <div class="compare-stage panel-bottom">
+          <footer class="guide-foot demo-foot-guide">
+            <button type="button" class="btn btn-ghost next">Próximo: O tutor<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          </footer>
+        </div>
+      </div>
+      <div class="compare-panel">
+        <p class="compare-label">PROPOSTA</p>
+        <div class="compare-stage">
+          <div class="demo-guide-next">
+            <div class="guide-body">
+              <p>A aba <strong>GeoGebra</strong> traz o applet embutido. Com ela aberta, o tutor pode comandar o applet e ler a construção, e <kbd>⌘</kbd><kbd>⇧</kbd><kbd>G</kbd> manda um print para ele conferir (o modelo precisa aceitar imagens). A construção é lembrada por matéria.</p>
+              <p class="guide-next"><a href="#">Próximo: <span class="serif">O tutor</span></a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="revisao-item">
+    <div class="revisao-item-head">
+      <span class="revisao-num">05</span>
+      <div>
+        <h2>Rótulo de grupo nas Configurações</h2>
+        <p>O mesmo 12 px, agora semibold em <span class="mono">--text-2</span>, para o grupo se separar sem sumir.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-panel">
+        <p class="compare-label">HOJE</p>
+        <div class="compare-stage">
+          <div class="settings-content demo-settings">
+            <div class="set-group">
+              <h3>Interface</h3>
+              <div class="set-row">
+                <div class="set-label"><strong>Idioma</strong><span>Texto da interface.</span></div>
+                <div class="set-control"><div class="select-wrap"><select class="field-control"><option>Português</option><option>English</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="compare-panel">
+        <p class="compare-label">PROPOSTA</p>
+        <div class="compare-stage">
+          <div class="settings-content demo-settings">
+            <div class="set-group">
+              <h3 class="group-label">Interface</h3>
+              <div class="set-row">
+                <div class="set-label"><strong>Idioma</strong><span>Texto da interface.</span></div>
+                <div class="set-control"><div class="select-wrap"><select class="field-control"><option>Português</option><option>English</option></select><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const accent = document.documentElement.dataset.accent || 'blue';
+  document.querySelectorAll('[data-accent-option]').forEach((option) => {
+    const on = option.dataset.accentOption === accent;
+    if (option.matches('input[type="radio"]')) option.checked = on;
+    else option.setAttribute('aria-pressed', String(on));
+  });
+})();
+</script>
+</body>
+</html>

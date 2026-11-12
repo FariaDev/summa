@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesa de Estudos — Carbon r2</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true" focusable="false">
+  <symbol id="i-lamp" viewBox="0 0 32 32">
+    <rect width="32" height="32" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M17.6 17.4 27 14 34 27H15Z" opacity=".32"/>
+      <rect x="11" y="27" width="21" height="1.5"/>
+      <circle cx="9.5" cy="16.5" r="2.2"/>
+      <path d="M17.3 15.7a5 5 0 0 1 10 0Z" transform="rotate(-20 22.3 15.7)"/>
+    </g>
+    <path d="M4.5 28.5 9.5 16.5l9-5" fill="none" style="stroke:var(--on-accent)" stroke-width="2.4"/>
+  </symbol>
+  <symbol id="i-lamp-16" viewBox="0 0 16 16">
+    <rect width="16" height="16" fill="currentColor"/>
+    <g style="fill:var(--on-accent)">
+      <path d="M5 9h6l3 5H2Z" opacity=".35"/>
+      <rect x="1" y="14" width="14" height="1"/>
+      <path d="M3.5 9a4.5 4.5 0 0 1 9 0Z"/>
+    </g>
+  </symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+</svg>
+<div class="index">
+  <div class="index-bar">
+    <a class="index-brand" href="index.html"><svg class="brand-mark brand-16"><use href="#i-lamp-16"/></svg>Mesa de Estudos · Carbon r2</a>
+    <nav class="index-nav" aria-label="Telas do protótipo">
+      <a href="principal.html" data-screen="principal.html">Principal</a>
+      <a href="configuracoes.html" data-screen="configuracoes.html">Configurações</a>
+      <a href="guia.html" data-screen="guia.html">Guia</a>
+      <a href="componentes.html" data-screen="componentes.html">Componentes</a>
+      <a href="revisao.html" data-screen="revisao.html">Revisão</a>
+      <a href="cadernos.html" data-screen="cadernos.html">Cadernos</a>
+      <a href="estados.html" data-screen="estados.html">Estados</a>
+    </nav>
+    <div class="index-actions">
+      <span class="index-label">Tema</span>
+      <div class="segmented" role="group" aria-label="Tema">
+        <button type="button" data-theme-set="light" aria-pressed="true">Claro</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">Escuro</button>
+      </div>
+      <span class="index-label">Acento</span>
+      <div class="accent-list" role="group" aria-label="Cor de acento">
+        <button type="button" class="accent-btn" data-accent-set="blue" aria-pressed="true" aria-label="Azul" title="Azul"><span class="accent-chip chip-blue"></span></button>
+        <button type="button" class="accent-btn" data-accent-set="violet" aria-pressed="false" aria-label="Violeta" title="Violeta"><span class="accent-chip chip-violet"></span></button>
+        <button type="button" class="accent-btn" data-accent-set="green" aria-pressed="false" aria-label="Verde" title="Verde"><span class="accent-chip chip-green"></span></button>
+        <button type="button" class="accent-btn" data-accent-set="orange" aria-pressed="false" aria-label="Laranja" title="Laranja"><span class="accent-chip chip-orange"></span></button>
+        <button type="button" class="accent-btn" data-accent-set="pink" aria-pressed="false" aria-label="Rosa" title="Rosa"><span class="accent-chip chip-pink"></span></button>
+        <button type="button" class="accent-btn" data-accent-set="graphite" aria-pressed="false" aria-label="Grafite" title="Grafite"><span class="accent-chip chip-graphite"></span></button>
+      </div>
+    </div>
+  </div>
+  <main class="index-main">
+    <section class="index-hero">
+      <div>
+        <p class="index-kicker">RODADA 1 · PROPOSTA ESTÁTICA</p>
+        <h1>Mesa com sistema, não com enfeites.</h1>
+        <p>Quatro telas e uma folha de componentes com a disciplina do IBM Carbon: escala curta, camadas de fundo, fio de 1 px e canto reto. A conversa pega a anatomia do sistema da Meta — metadados, mensagem de sistema e leituras recolhíveis — e veste a pele Carbon. Nada do app foi alterado.</p>
+      </div>
+      <svg class="brand-mark brand-128" aria-hidden="true"><use href="#i-lamp"/></svg>
+    </section>
+    <div class="index-cards">
+      <a class="index-card" href="principal.html" data-screen="principal.html">
+        <span class="num">01</span>
+        <h2>Principal</h2>
+        <p>As três colunas de estudo: dois leitores e o tutor. Cabeçalho de painel único, conversa com metadados e composer colado.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="configuracoes.html" data-screen="configuracoes.html">
+        <span class="num">02</span>
+        <h2>Configurações</h2>
+        <p>Preferências em tela cheia: lateral de seções, opções reais da Mesa e rodapé fixo com Cancelar e Salvar.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="guia.html" data-screen="guia.html">
+        <span class="num">03</span>
+        <h2>Guia</h2>
+        <p>O guia em página editorial, com sumário, texto real e atalhos numa tabela de dados Carbon.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="componentes.html" data-screen="componentes.html">
+        <span class="num">04</span>
+        <h2>Componentes</h2>
+        <p>A folha de componentes: botões, campos, mensagens, composer e a proposta de marca da luminária.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="revisao.html" data-screen="revisao.html">
+        <span class="num">05</span>
+        <h2>Revisão</h2>
+        <p>Cinco ajustes do r2 nas Configurações e no Guia, cada um com Hoje e Proposta lado a lado.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="cadernos.html" data-screen="cadernos.html">
+        <span class="num">06</span>
+        <h2>Cadernos</h2>
+        <p>O popover Cadernos e o chat solto no r2: lista, busca, leitura da tinta, vazio e a janela do lateral.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+      <a class="index-card" href="estados.html" data-screen="estados.html">
+        <span class="num">07</span>
+        <h2>Estados</h2>
+        <p>A folha de estados dos controles: repouso, hover, foco, pressionado, desabilitado e erro.</p>
+        <span class="open">Abrir a tela <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+      </a>
+    </div>
+    <p class="index-note">IBM Plex Sans, IBM Plex Mono e STIX Two embarcadas (SIL OFL). Protótipo offline: abra este arquivo direto pelo <span class="mono">file://</span>. O tema e o acento valem para as quatro telas; as capturas ficam em <span class="mono">capturas/</span>.</p>
+  </main>
+</div>
+<script>
+(() => {
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  const write = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+  const theme = params.get('theme') || read('mesa-carbon-theme') || 'light';
+  const accent = params.get('accent') || read('mesa-carbon-accent') || 'blue';
+  root.dataset.theme = theme;
+  root.dataset.accent = accent;
+  const sync = () => {
+    write('mesa-carbon-theme', root.dataset.theme);
+    write('mesa-carbon-accent', root.dataset.accent);
+    document.querySelectorAll('[data-theme-set]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.themeSet === root.dataset.theme));
+    });
+    document.querySelectorAll('[data-accent-set]').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.accentSet === root.dataset.accent));
+    });
+    const suffix = `?theme=${root.dataset.theme}&accent=${root.dataset.accent}`;
+    document.querySelectorAll('a[data-screen]').forEach((link) => {
+      link.href = link.dataset.screen + suffix;
+    });
+  };
+  document.querySelectorAll('[data-theme-set]').forEach((button) => {
+    button.addEventListener('click', () => { root.dataset.theme = button.dataset.themeSet; sync(); });
+  });
+  document.querySelectorAll('[data-accent-set]').forEach((button) => {
+    button.addEventListener('click', () => { root.dataset.accent = button.dataset.accentSet; sync(); });
+  });
+  sync();
+})();
+</script>
+</body>
+</html>
