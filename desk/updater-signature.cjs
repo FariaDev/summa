@@ -20,7 +20,7 @@ const PLACEHOLDER_MARK='PLACEHOLDER';
 const MANIFEST_MAX_BYTES=64*1024;
 const SIGNATURE_MAX_BYTES=8*1024;
 const ZIP_MAX_BYTES=64*1024*1024;
-const RELEASE_ASSET_BASE='https://github.com/FariaDev/mesa-de-estudos/releases/download/v';
+const RELEASE_ASSET_BASE='https://github.com/FariaDev/summa/releases/download/v';
 
 /**
  * A versão estável sem `v` (o nome dos assets e o manifesto usam `X.Y.Z`).

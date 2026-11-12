@@ -49,15 +49,11 @@ npm run update:keygen -- --private-key ~/mesa-update-signing.pem
 
 ### Cada release `vX.Y.Z`
 
-1. snapshot no repositório público `FariaDev/mesa-de-estudos` e push na `main` dele.
-   Ficam fora do snapshot os caminhos de [`snapshot-fora.txt`](snapshot-fora.txt);
-   confira que o resultado não tem caminho pessoal, chave nem material de curso.
-   O snapshot não tem `chat/`: o app Conversa foi aposentado na #50 e saiu do
-   `main`, e o `verify:bend` só gera `desk/src/generated`, então a árvore pública
-   fecha o portão sem `--no-verify` por causa do app irmão (o `--no-verify`
-   segue sendo só a saída de emergência);
-2. tag `vX.Y.Z` no público (a chave pública já tem de estar commitada nela);
-3. monte e assine os assets, numa cópia **completa** do público (clone raso não
+1. tag `vX.Y.Z` no próprio `FariaDev/summa` (a chave pública já tem de estar
+   commitada nela). Até a #130 as versões saíam como snapshot no repositório
+   público `FariaDev/mesa-de-estudos`; esse fluxo saiu de uso, e
+   [`snapshot-fora.txt`](snapshot-fora.txt) fica só como referência histórica;
+2. monte e assine os assets, numa cópia **completa** do repositório (clone raso não
    enxerga a versão anterior e o `sign` recusa). O `sign` roda antes o ensaio
    `npm run update:rehearsal`: o updater da versão publicada anterior aplica o zip
    candidato, e a assinatura é recusada se faltar arquivo, se um dado do usuário
@@ -80,7 +76,7 @@ npm run update:keygen -- --private-key ~/mesa-update-signing.pem
    O `sign` recusa se a pública ainda for `PLACEHOLDER` ou se a privada não
    corresponder a ela. Ele gera `mesa-estudos-X.Y.Z.zip`,
    `mesa-manifest-vX.Y.Z.json` e `mesa-manifest-vX.Y.Z.sig`;
-4. crie a Release e anexe **os três** assets:
+3. crie a Release e anexe **os três** assets:
 
    ```sh
    cd ..

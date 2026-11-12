@@ -51,7 +51,7 @@ export function buildReleaseZip({repoRoot, version, outDir}) {
     fs.writeFileSync(manifestFile, JSON.stringify({version, at: new Date().toISOString(), files}, null, 2) + '\n');
     /* `--add-file` põe o manifesto sob o mesmo prefixo do zip; o updater o
        ignora ao aplicar (caminho protegido), mas a extração manual o leva. */
-    git(repoRoot, ['archive', '--format=zip', `--prefix=mesa-de-estudos-${version}/`, `--add-file=${manifestFile}`, `--output=${zipFile}`, `v${version}`]);
+    git(repoRoot, ['archive', '--format=zip', `--prefix=summa-${version}/`, `--add-file=${manifestFile}`, `--output=${zipFile}`, `v${version}`]);
   } finally {
     fs.rmSync(manifestDir, {recursive: true, force: true});
   }

@@ -210,9 +210,9 @@ test('applyZip: confere a versão extraída e copia só a lista explícita', () 
   fs.writeFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'antigo');
   fs.writeFileSync(path.join(rootDir, 'desk', '.runtime', 'desk.json'), '{"keep":true}');
   const zip = makeZip({
-    'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-    'mesa-de-estudos-0.4.1/desk/main.cjs': 'novo',
-    'mesa-de-estudos-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'novo',
+    'summa-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
   });
   const logs = [];
   const result = updater.applyZip(zip, {rootDir, announcedVersion: '0.4.1', log: (line) => logs.push(line)});

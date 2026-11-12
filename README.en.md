@@ -55,7 +55,7 @@ For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portu
 
 ## Updating
 
-**About → Update and restart** (from 0.4.0 on), or `npm run update` in `desk/`. Your `config.json` keeps working as it is. What changed in each version is in the [Releases](https://github.com/FariaDev/mesa-de-estudos/releases).
+**About → Update and restart** (from 0.4.0 on), or `npm run update` in `desk/`. Your `config.json` keeps working as it is. What changed in each version is in the [Releases](https://github.com/FariaDev/summa/releases).
 
 ## Settings
 
@@ -63,7 +63,7 @@ For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portu
 
 ## Problems
 
-**Report a problem** (the tutor's More options) or `npm run triage` builds a clean report, with no keys, sessions, course names or PDF names, and offers a ready prompt for an agent and a prefilled issue in the public repository [`FariaDev/mesa-de-estudos`](https://github.com/FariaDev/mesa-de-estudos) for you to review. The app log opens from About.
+**Report a problem** (the tutor's More options) or `npm run triage` builds a clean report, with no keys, sessions, course names or PDF names, and offers a ready prompt for an agent and a prefilled issue in the public repository [`FariaDev/summa`](https://github.com/FariaDev/summa) for you to review. The app log opens from About.
 
 ## Development
 
