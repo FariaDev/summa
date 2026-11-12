@@ -85,10 +85,14 @@ test('updateOrigin: bundle ligado a um clone é pasta de desenvolvimento',()=>{
 test('updateOrigin: clone do repositório público é a Release oficial; fork e privado, não',()=>{
  const root=tmp();
  const cases=[
+  ['https://github.com/FariaDev/summa.git','normal'],
+  ['git@github.com:FariaDev/summa.git','normal'],
+  ['https://github.com/FariaDev/summa','normal'],
   ['https://github.com/FariaDev/mesa-de-estudos.git','normal'],
   ['git@github.com:FariaDev/mesa-de-estudos.git','normal'],
   ['https://github.com/FariaDev/mesa-de-estudos','normal'],
   ['https://github.com/FariaDev/mesa-e-conversa.git','development'],
+  ['https://github.com/outra-pessoa/summa.git','development'],
   ['https://github.com/outra-pessoa/mesa-de-estudos.git','development'],
  ];
  cases.forEach(([url,kind],index)=>{

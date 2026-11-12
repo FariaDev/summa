@@ -19,7 +19,7 @@ async function defaultFetchJson(url){
  for(let attempt=0;attempt<2;attempt++){
   let res;
   try{
-   res=await timedFetch(url,{timeout:10000,headers:{'user-agent':'mesa-de-estudos',accept:'application/json'}});
+   res=await timedFetch(url,{timeout:10000,headers:{'user-agent':'summa',accept:'application/json'}});
    if(!res.ok){const error=Error('HTTP '+res.status);error.status=res.status;throw error;}
    return await res.json();
   }catch(error){
@@ -39,7 +39,7 @@ async function defaultFetchJson(url){
    aborta antes de ler; sem ele, o stream é lido em pedaços e cancelado assim
    que passa do limite (um corpo mentiroso não enche a memória). */
 async function defaultFetchBuffer(url,{timeout=120000,maxBytes=0}={}){
- const res=await timedFetch(url,{timeout,headers:{'user-agent':'mesa-de-estudos'}});
+ const res=await timedFetch(url,{timeout,headers:{'user-agent':'summa'}});
  if(!res.ok)throw Error('HTTP '+res.status);
  const declared=Number(res.headers.get('content-length'));
  if(maxBytes&&Number.isFinite(declared)&&declared>maxBytes){

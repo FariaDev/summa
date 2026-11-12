@@ -14,7 +14,7 @@ import {SAFE_MODEL_ID} from './triage-free-model.mjs';
 const require=createRequire(import.meta.url);
 const {READ_SENTINEL}=require('./src/agents/opencode-serve-config.cjs');
 
-export const ISSUE_REPO='FariaDev/mesa-de-estudos';
+export const ISSUE_REPO='FariaDev/summa';
 const ISSUE_NEW=`https://github.com/${ISSUE_REPO}/issues/new`;
 /* O GitHub recusa endereço muito longo; 7500 caracteres cabem com folga nos navegadores. */
 const ISSUE_URL_MAX=7500;
@@ -325,7 +325,7 @@ export function opencodeCommand(facts,report,platform){
  * relatório é cortado com um aviso para a pessoa colar o resto.
  * @param {string} report
  * @returns {{url: string, truncated: boolean}}
- * @example issueUrl('## Ambiente').url.startsWith('https://github.com/FariaDev/mesa-de-estudos/issues/new?') // true
+ * @example issueUrl('## Ambiente').url.startsWith('https://github.com/FariaDev/summa/issues/new?') // true
  */
 export function issueUrl(report){
  const build=body=>`${ISSUE_NEW}?${new URLSearchParams({title:ISSUE_TITLE,body:[...ISSUE_FORM,body].join('\n')})}`;

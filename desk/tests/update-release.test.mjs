@@ -115,9 +115,9 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   signature.assertZipMatchesManifest(fs.readFileSync(zipFile), manifest);
   const entries = updater.readZip(fs.readFileSync(zipFile));
   assert.ok(entries.length > 0);
-  assert.ok(entries.every((entry) => entry.name.startsWith('mesa-de-estudos-0.1.0/')), 'prefixo que o updater-files.cjs descarta');
+  assert.ok(entries.every((entry) => entry.name.startsWith('summa-0.1.0/')), 'prefixo que o updater-files.cjs descarta');
   /* #153: quem instala extraindo o zip já nasce com a lista gerenciada. */
-  const installation = entries.find((entry) => entry.name === 'mesa-de-estudos-0.1.0/.update-manifest.json');
+  const installation = entries.find((entry) => entry.name === 'summa-0.1.0/.update-manifest.json');
   assert.ok(installation, 'o zip publicado leva o .update-manifest.json');
   const managed = JSON.parse(installation.data.toString('utf8'));
   assert.equal(managed.version, '0.1.0');

@@ -118,7 +118,7 @@ await withArtifacts('relatar-problema',async ctx=>{
   const links=openedLinks(profile.runtime);
   assert.equal(links.length,1,`links abertos: ${JSON.stringify(links)}`);
   const url=new URL(links[0]);
-  assert.equal(`${url.origin}${url.pathname}`,'https://github.com/FariaDev/mesa-de-estudos/issues/new');
+  assert.equal(`${url.origin}${url.pathname}`,'https://github.com/FariaDev/summa/issues/new');
   assertClean(`${url.searchParams.get('title')}\n${url.searchParams.get('body')}`,profile.secrets,'issue no navegador');
   assert.equal(fs.existsSync(profile.forbiddenLog),false,'o OpenCode falso recebeu um subcomando além de --version/models');
 

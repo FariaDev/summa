@@ -17,7 +17,9 @@ const path=require('node:path');
    - `unavailable`: o bundle aponta para uma origem que sumiu ou não é clone —
      o updater não consegue aplicar, então o Sobre não pode dizer "atualizada". */
 
-const OFFICIAL_REMOTE=/github\.com[:/]FariaDev\/mesa-de-estudos(\.git)?\/?\s*$/i;
+/* O repositório público virou `FariaDev/summa` (#130); o `mesa-de-estudos`
+   continua aceito porque quem clonou o endereço antigo tem de ser reconhecido. */
+const OFFICIAL_REMOTE=/github\.com[:/]FariaDev\/(summa|mesa-de-estudos)(\.git)?\/?\s*$/i;
 
 /**
  * O clone é do repositório público? Só o `origin` conta: um fork ou o repositório
@@ -25,7 +27,7 @@ const OFFICIAL_REMOTE=/github\.com[:/]FariaDev\/mesa-de-estudos(\.git)?\/?\s*$/i
  * @param {string} sourcePath raiz do clone
  * @param {(file: string, encoding: 'utf8') => string} readFileSync
  * @returns {boolean}
- * @example isOfficialClone('/Users/ana/Developer/mesa-de-estudos') // true
+ * @example isOfficialClone('/Users/ana/Developer/summa') // true
  */
 function isOfficialClone(sourcePath,readFileSync=fs.readFileSync){
  let config;

@@ -47,24 +47,24 @@ const PROTEGIDOS = [
 ];
 
 const NOVO = {
-  'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-  'mesa-de-estudos-0.4.1/desk/package-lock.json': '{"lock":"novo"}',
-  'mesa-de-estudos-0.4.1/desk/main.cjs': 'main novo',
-  'mesa-de-estudos-0.4.1/desk/index.html': 'index novo',
-  'mesa-de-estudos-0.4.1/desk/src/foo.mjs': 'foo novo',
-  'mesa-de-estudos-0.4.1/desk/src/novo.mjs': 'criado pelo update',
-  'mesa-de-estudos-0.4.1/desk/templates/TUTOR.md': 'tutor novo',
-  'mesa-de-estudos-0.4.1/core/view.bend': 'core novo',
+  'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+  'summa-0.4.1/desk/package-lock.json': '{"lock":"novo"}',
+  'summa-0.4.1/desk/main.cjs': 'main novo',
+  'summa-0.4.1/desk/index.html': 'index novo',
+  'summa-0.4.1/desk/src/foo.mjs': 'foo novo',
+  'summa-0.4.1/desk/src/novo.mjs': 'criado pelo update',
+  'summa-0.4.1/desk/templates/TUTOR.md': 'tutor novo',
+  'summa-0.4.1/core/view.bend': 'core novo',
   /* Entradas que o zip NUNCA pode pousar: dados do usuário e o que está fora
      da lista explícita (inclusive um install-source.json forjado). */
-  'mesa-de-estudos-0.4.1/config.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/aula.pdf': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/rascunho.xopp': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/.runtime/pi-9.jsonl': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/node_modules/evil.js': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/install-source.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/docs/HISTORIA.md': 'fora da lista',
+  'summa-0.4.1/config.json': 'ATAQUE',
+  'summa-0.4.1/aula.pdf': 'ATAQUE',
+  'summa-0.4.1/rascunho.xopp': 'ATAQUE',
+  'summa-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
+  'summa-0.4.1/desk/.runtime/pi-9.jsonl': 'ATAQUE',
+  'summa-0.4.1/desk/node_modules/evil.js': 'ATAQUE',
+  'summa-0.4.1/desk/install-source.json': 'ATAQUE',
+  'summa-0.4.1/docs/HISTORIA.md': 'fora da lista',
 };
 
 function fakeRun(script = () => ({stdout: ''})) {
@@ -183,7 +183,7 @@ test('modo zip: falha no meio → rollback devolve a versão antiga inteira e re
   fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
   const zip = makeZip({
     ...NOVO,
-    'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+    'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
   });
   const reopens = [];
   const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
@@ -389,8 +389,8 @@ test('#153: instalação sem manifesto não apaga arquivo local e o manifesto re
   assert.equal(fs.existsSync(path.join(root, '.update-manifest.json')), false, 'o caso é instalação sem manifesto');
 
   const zip = makeZip({
-    'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-    'mesa-de-estudos-0.4.1/desk/main.cjs': 'main novo',
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'main novo',
   });
   const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
   const result = await updater.applyUpdate({
@@ -491,7 +491,7 @@ test('D4/A5: recuperação que falha PRESERVA o backup e diz o caminho no log', 
      no lugar (nunca apagado em cima de um rollback incompleto). */
   const zip = makeZip({
     ...NOVO,
-    'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+    'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
   });
   fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
   let backupInjetado = null;
@@ -537,7 +537,7 @@ test('rollback completo não deixa mesa-update-backup para trás', async () => {
     fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
     const zip = makeZip({
       ...NOVO,
-      'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+      'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
     });
     const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
     const result = await updater.applyUpdate({

@@ -151,16 +151,16 @@ test('o modelo do comando é citado quando precisa, e segue legível no comum',(
 
 test('os prompts levam o relatório e mandam rascunhar sem criar',()=>{
  assert.match(agentPrompt('RELATORIO','abc123'),/commit abc123[\s\S]*Não crie a issue[\s\S]*RELATORIO$/);
- assert.match(agentPrompt('RELATORIO','abc123'),/gh issue list --repo FariaDev\/mesa-de-estudos /);
+ assert.match(agentPrompt('RELATORIO','abc123'),/gh issue list --repo FariaDev\/summa /);
  assert.match(freePrompt('RELATORIO'),/Não crie a issue e não altere nenhum arquivo[\s\S]*RELATORIO[\s\S]*fim do relatório/);
- assert.match(freePrompt('RELATORIO'),/gh issue list --repo FariaDev\/mesa-de-estudos /);
+ assert.match(freePrompt('RELATORIO'),/gh issue list --repo FariaDev\/summa /);
  assert.doesNotMatch(freePrompt('RELATORIO'),/FariaDev\/mesa-e-conversa/);
 });
 
 test('o endereço da issue cabe no limite e só ele é aceito pelo host',()=>{
  const short=issueUrl('## Ambiente');
  assert.equal(short.truncated,false);
- assert.match(short.url,/^https:\/\/github\.com\/FariaDev\/mesa-de-estudos\/issues\/new\?/);
+ assert.match(short.url,/^https:\/\/github\.com\/FariaDev\/summa\/issues\/new\?/);
  assert.equal(new URL(short.url).searchParams.get('body')?.endsWith('## Ambiente'),true);
  const long=issueUrl('linha longa\n'.repeat(2000));
  assert.equal(long.truncated,true);
@@ -169,7 +169,7 @@ test('o endereço da issue cabe no limite e só ele é aceito pelo host',()=>{
  assert.equal(isIssueUrl(short.url),true);
  assert.equal(isIssueUrl('https://evil.example/?x'),false);
  assert.equal(isIssueUrl('https://github.com/FariaDev/mesa-e-conversa/issues/new?title=a&body=b'),false,'o repositório privado não é aceito');
- assert.equal(isIssueUrl('https://github.com/FariaDev/mesa-de-estudos/issues/new'),false);
+ assert.equal(isIssueUrl('https://github.com/FariaDev/summa/issues/new'),false);
 });
 
 test('o comando do OpenCode leva a config que nega escrita e shell fora da lista (#126)',()=>{

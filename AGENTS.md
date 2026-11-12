@@ -66,7 +66,7 @@ Antes de mexer numa feature, procure a linha dela com `rg -n "termo" docs/agents
 
 ### Issue tracker
 
-Issues vivem no GitHub Issues de `FariaDev/mesa-e-conversa` (remote `origin`), via `gh`. See `docs/agents/issue-tracker.md`.
+Issues vivem no GitHub Issues de `FariaDev/summa` (remote `origin`), via `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
