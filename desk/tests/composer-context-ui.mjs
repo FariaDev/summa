@@ -48,7 +48,7 @@ await withArtifacts('composer-context',async ctx=>{
  await page.waitForSelector('#composer');
  await page.waitForFunction(()=>document.querySelector('#context-summary')?.textContent.includes('Limites.pdf'));
  await resizeWindow(app,page,1440,900);
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.S.panels[0].page=3;state.updateContextSummary();});
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.S.panels[0].goto(3);state.updateContextSummary();});
  await freezeMotion(page);
 
  /* 1. Vários PDFs: o primeiro e "+1" na linha; matéria e contagem saem. */
@@ -56,7 +56,9 @@ await withArtifacts('composer-context',async ctx=>{
  assert.doesNotMatch(await summaryText(page),/Cálculo I|referência/,'a matéria e a contagem de referências saíram da linha');
 
  /* 2. A linha acompanha a página do leitor. */
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.S.panels[0].page=5;state.updateContextSummary();});
+ /* `goto` move o leitor de verdade: com `page=5` só no estado, o primeiro
+    render do toggle no Windows ressincronizava a página pelo centro da vista. */
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.S.panels[0].goto(5);state.updateContextSummary();});
  assert.match(await summaryText(page),/Limites\.pdf, p\. 5 \+1/,'a linha acompanha a página do PDF');
 
  /* 3. Referências desligadas: nenhum PDF vai, e a linha não lista material. */

@@ -329,7 +329,8 @@ await withArtifacts('modelos-gratis-arquivo',async ctx=>{
  await toTutorStep(ctx,page,runtime);
  await page.evaluate(async()=>{const mod=await import('./src/free-models.mjs');await mod.openFreeModelsFlow();});
  await page.locator('#free-models-authfile').waitFor({state:'visible'});
- assert.ok((await page.locator('#free-models-authnote').textContent()).includes('~/.local/share/opencode/auth.json'),'diz qual arquivo vai ler');
+ const authNote=await page.locator('#free-models-authnote').textContent();
+ assert.ok(authNote.includes(path.join('~','.local','share','opencode','auth.json')),`diz qual arquivo vai ler (${authNote})`);
  assert.equal(fs.existsSync(path.join(runtime,'opencode-key.bin')),false,'nada lido nem guardado antes do clique');
  await page.locator('#free-models-authfile').click();
  await page.waitForSelector('#free-models-done:not(:empty)',{timeout:30000});

@@ -729,6 +729,8 @@ await withArtifacts('tabs',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')},{id:'B',name:'Matéria B',path:path.join(runtime,'learning','Courses','B')}]});
  const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  page.on('console',m=>{if(m.text().startsWith('[dbg]'))console.log('[page]',m.text());});
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  const tabs=page.locator('#course-tabs button[role="tab"]:not(#review-tab)');
@@ -1097,6 +1099,8 @@ await withArtifacts('welcome',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')},{id:'B',name:'Matéria B',path:path.join(runtime,'learning','Courses','B')}]});
  const app=ctx.app=await launchDesk({runtime});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  await statusOnline(page);
  await page.locator('#course-tabs button[data-id="B"]').click();
@@ -1117,7 +1121,10 @@ await withArtifacts('ipc-error-once',async ctx=>{
  writeDeskJson(runtime,{courseId:'A'});
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')}]});
  /* Sem Pi: o motor é o OpenCode; quebrar o serve prova a mesma via única. */
- const app=ctx.app=await launchDesk({runtime,env:{LEARNING_DESK_OPENCODE:'/usr/bin/false'}});
+ /* O node que roda o teste existe nos três sistemas e falha ao receber `serve`
+    como script: no Windows o `/usr/bin/false` não existe e a conexão ficava
+    presa em "connecting" (rodada 43140194010). */
+ const app=ctx.app=await launchDesk({runtime,env:{LEARNING_DESK_OPENCODE:process.execPath}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  /* A falha de conexão aparece UMA vez, escrita na coluna do tutor (#23): sem
     aviso flutuante repetindo o mesmo texto e sem o embrulho do Electron. */
@@ -1210,6 +1217,8 @@ await withArtifacts('atualizacao',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Upd',name:'Upd',path:path.join(runtime,'learning','Courses','Upd')}]});
  const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  await app.evaluate(({ipcMain})=>{
   ipcMain.removeHandler('update-check');

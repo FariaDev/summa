@@ -162,7 +162,7 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   /* O toBottom acima passou por `followBottom` e a marca de 500 ms ainda está
      viva; cair em cima dela religa o seguir só no papel, e a figura seguinte
      denunciaria como falso negativo (Mac rodada 4b). */
-  await page.waitForTimeout(600);// espera fixa: marca OWN_SCROLL_MS de 500 ms
+  await page.waitForTimeout(1200);// espera fixa: marca OWN_SCROLL_MS de 500 ms, com folga para o evento de scroll atrasar no Windows
 
   /* 5. Figura tardia de 571px no fim, sem gesto, não desliga: acompanha. */
   await page.evaluate(() => {
@@ -171,8 +171,15 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
     figure.style.height = '571px';
     document.querySelector('#messages').append(figure);
   });
-  await nextFrames(page, 3);
-  const figured = await streamPull(page);
+  /* Sob duas janelas no Windows o ResizeObserver da figura chega depois dos
+     três quadros: repete o pull até o seguir alcançar o fim (#165). */
+  let figured;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await nextFrames(page, 3);
+    figured = await streamPull(page);
+    if (figured.distance <= 2) break;
+    await page.waitForTimeout(100);// espera fixa: dá tempo ao ResizeObserver da figura tardia
+  }
   assert.ok(figured.distance <= 2, `a figura tardia acompanha (${JSON.stringify(figured)})`);
   await page.evaluate(() => document.querySelector('#late-figure')?.remove());
 

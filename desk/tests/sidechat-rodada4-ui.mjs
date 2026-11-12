@@ -14,6 +14,7 @@ import {bootCourse,openSidechat,detachSidechat,fitWindow} from './capture-ciclo2
 import {layoutStable} from './waits.mjs';
 
 const near=(a,b,tolerance=1)=>Math.abs(a-b)<=tolerance;
+const sameRow=(a,b)=>a.top<b.bottom&&a.bottom>b.top;
 
 /* Contexto salvo com os dois materiais da fixture (Limites e Formulario): o
    caso do achado. `openSavedSidechat` pinta o escopo como a restauração. */
@@ -91,22 +92,24 @@ await withArtifacts('rodada4-escopo',async ctx=>{
     legenda; o campo não muda e o Enviar fica no pé. */
  const child=await detachSidechat(page,app);
  for(const [width,height] of [[380,800],[420,1000]]){
-  const size=await fitWindow(app,child,width,height);
+  const size=await fitWindow(app,child,width,height,{content:true});
   await layoutStable(child,'#sidechat');
   const facts=await factsOf(child);
   const content=contentWidth(facts);
   const label=`${width}×${height}`;
   assert.ok(content<480,`${label}: o composer solto tem ${facts.composer.width.toFixed(1)}px de largura (conteúdo ${content.toFixed(1)}px); a coluna estreita vale abaixo de 480px`);
-  if(width===420){
-   /* No r2 a IBM Plex Sans é mais estreita que a fonte do sistema: com dois
-      materiais a linha inteira cabe a 420px e o escopo fica na mesma linha da
-      legenda, sem cortar o texto. O título completo continua no `title`. */
-   assert.ok(facts.text.bottom>facts.note.top&&facts.text.top<facts.note.bottom,`${label}: com a fonte do r2 o escopo divide a linha com a legenda (texto ${facts.text.top.toFixed(1)}–${facts.text.bottom.toFixed(1)}, legenda ${facts.note.top.toFixed(1)}–${facts.note.bottom.toFixed(1)})`);
-   assert.ok(facts.text.bottom>facts.lock.top&&facts.text.top<facts.lock.bottom,`${label}: o escopo divide a linha com o cadeado (texto ${facts.text.top.toFixed(1)}–${facts.text.bottom.toFixed(1)}, cadeado ${facts.lock.top.toFixed(1)}–${facts.lock.bottom.toFixed(1)})`);
-  }else{
+  /* A 420px o escopo cabe ao lado do cadeado: no r2 a IBM Plex Sans é mais
+     estreita que a fonte do sistema, e no Windows a fonte do sistema também é
+     estreita o bastante. Aí a linha única é o certo; o que não pode é cortar
+     (`scrollWidth`) nem encostar no cadeado (#165). */
+  const wrapped=facts.text.bottom<=facts.note.top+0.5&&facts.text.bottom<=facts.lock.top+0.5;
+  if(wrapped){
    assert.ok(facts.text.width>=content-4,`${label}: o escopo mede ${facts.text.width.toFixed(1)}px; a linha inteira do composer tem ${content.toFixed(1)}px (esperado ≥ ${(content-4).toFixed(1)})`);
    assert.ok(facts.text.bottom<=facts.note.top+0.5,`${label}: o escopo fica numa linha acima da legenda (texto termina em ${facts.text.bottom.toFixed(1)}, legenda começa em ${facts.note.top.toFixed(1)})`);
    assert.ok(facts.text.bottom<=facts.lock.top+0.5,`${label}: o escopo fica acima do cadeado (texto termina em ${facts.text.bottom.toFixed(1)}, cadeado começa em ${facts.lock.top.toFixed(1)})`);
+  }else{
+   assert.ok(sameRow(facts.text,facts.note),`${label}: na linha única o escopo divide a linha com a legenda`);
+   assert.ok(facts.text.right<=facts.lock.left+0.5,`${label}: na linha única o escopo não encosta no cadeado (${facts.text.right.toFixed(1)} > ${facts.lock.left.toFixed(1)})`);
   }
   assert.equal(facts.note.visible,true,`${label}: a legenda "Só aqui" segue visível (veio "${facts.note.text}")`);
   assert.ok(near(facts.field.height,86,1),`${label}: campo com ${facts.field.height.toFixed(1)}px (esperado 86px ±1 = 3 linhas de ${facts.field.lineHeight}px + respiro)`);

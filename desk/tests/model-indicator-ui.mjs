@@ -17,7 +17,9 @@ import {
 import {layoutStable} from './waits.mjs';
 
 const out=screenshotDirectory('model-indicator');
-const size=(app,page,width,height)=>resizeWindow(app,page,width,height);
+/* Tamanho de CONTEÚDO: no Windows a moldura come ~16px de largura e ~39px
+   de altura, e as medidas abaixo são do viewport (#165, como o model-picker-catalog). */
+const size=(app,page,width,height)=>resizeWindow(app,page,width,height,{content:true});
 const rect=(page,selector)=>page.evaluate(sel=>{const el=document.querySelector(sel);if(!el)return null;const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right,width:b.width,height:b.height};},selector);
 const inside=(box,width,height,note)=>{
  assert.ok(box,`${note}: medido`);
@@ -225,6 +227,10 @@ await withArtifacts('model-indicator',async ctx=>{
     do núcleo (`rowFit`): o esforço sai, depois o modelo vira ícone — nunca o
     contrário. ---- */
  await size(app,page,1440,900);
+ /* A fonte do indicador chega depois do primeiro desenho no Windows; medir a
+    escada antes dela lia o nome com a fonte de reserva e o `data-fit` ficava
+    velho quando a fonte real alargava o texto (rodada 43140194010). */
+ await page.evaluate(()=>document.fonts?.ready);
  await layoutStable(page,'#messages');
  const seen=[];
  for(const w of [720,560,420,360,320,280,240,210]){

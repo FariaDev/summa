@@ -1,4 +1,5 @@
 import {reviewShot,screenshotDirectory,resizeWindow} from './helpers.mjs';
+import {closeApp} from './proc-tree.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -62,7 +63,7 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#chat-library-dialog').open);
  assert.equal(await page.locator('#prompt').inputValue(),'rascunho A que precisa continuar');
  const labels=JSON.parse(fs.readFileSync(path.join(runtime,'chat-library.json'),'utf8'));assert.ok(Object.values(labels.items).some(x=>x.topic==='Limites'&&x.favorite));
- await app.close();app=null;
+ await closeApp(app,{ledgerDir:runtime});app=null;
  app=await launchDesk({runtime});const reopened=await app.firstWindow();
  await statusOnline(reopened);await openSessionLibrary(reopened);
  await reopened.locator('#chat-library-favorites').check();assert.equal(await reopened.locator('.chat-library-row').count(),1);
@@ -73,4 +74,4 @@ try{
  const bounds=await reopened.locator('#chat-library-dialog').boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=900&&bounds.y+bounds.height<=650);
  assert.deepEqual(errors,[]);
   console.log('CHAT LIBRARY UI PASSED: conversa de um ano, título/assunto/favoritos, filtros, retomada, rascunhos por conversa, reabertura e 900x650. Provider fake-OpenCode; dados sintéticos.');
-}finally{if(app)await app.close();fs.rmSync(runtime,{recursive:true,force:true});}
+}finally{if(app)await closeApp(app,{ledgerDir:runtime}).catch(()=>{});fs.rmSync(runtime,{recursive:true,force:true});}

@@ -24,9 +24,11 @@ const NAMED=new Set(['study-backup-e2e.mjs','sidechat-draft-reload.mjs','sidecha
 const uiPicks=f=>!f.startsWith('hunt-')&&(/(-ui|-ipc-smoke)\.mjs$/.test(f)||f==='ui-smoke.mjs'||NAMED.has(f));
 const matches=(file,match)=>match.split(',').some(m=>file.includes(m));
 
-/** Testes de janela de `npm run ui`; `match` filtra por trecho do nome (vírgula separa). */
-export function uiFiles(match=''){
- return fs.readdirSync(here).filter(f=>uiPicks(f)&&!OWN_RUNNER.has(f)&&!OPT_IN.has(f)&&matches(f,match)).sort();
+/** Testes de janela de `npm run ui`; `match` filtra por trecho do nome (vírgula separa)
+ * e `exclude` tira os que rodam em passo próprio (motores pesados, um por vez).
+ * @param {string} [match] @param {string} [exclude] @returns {string[]} */
+export function uiFiles(match='',exclude=''){
+ return fs.readdirSync(here).filter(f=>uiPicks(f)&&!OWN_RUNNER.has(f)&&!OPT_IN.has(f)&&matches(f,match)&&!(exclude&&matches(f,exclude))).sort();
 }
 
 /** Hunts de `npm run hunts`; `match` filtra como em `uiFiles`. */

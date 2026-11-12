@@ -215,7 +215,11 @@ export function writeConfigJson(runtime,data){fs.writeFileSync(path.join(runtime
    `LEARNING_DESK_OPENCODE`; um teste que precisa de outro motor passa o
    próprio `LEARNING_DESK_OPENCODE` (ou `opencode:false`). */
 export function deskEnv(runtime,extra={},opencode=true){
- const base={LEARNING_DESK_RUNTIME:runtime,HOME:runtime,USERPROFILE:runtime};
+ /* `XDG_CONFIG_HOME` absoluto vale nos três sistemas e mantém o que o app
+    grava em ~/.config dentro do runtime do teste. No Windows, sem ele, a pasta
+    do plugin do Xournal++ cai no LOCALAPPDATA real (fora do temporário) e a
+    asserção do caminho não fecha (#165). */
+ const base={LEARNING_DESK_RUNTIME:runtime,HOME:runtime,USERPROFILE:runtime,XDG_CONFIG_HOME:path.join(runtime,'.config')};
  if(opencode&&!Object.hasOwn(extra,'LEARNING_DESK_OPENCODE'))base.LEARNING_DESK_OPENCODE=fakeEngineLauncher(FAKE_OPENCODE);
  return testEnv({...base,...extra});
 }
@@ -334,6 +338,10 @@ async function resizeWindowOnce(app,page,width,height,{content=false,timeout=100
   await page.waitForFunction(([w,h])=>innerWidth===w&&innerHeight===h,got.inner,{timeout,polling:50});
  }catch(error){
   const actual=await page.evaluate(()=>[innerWidth,innerHeight]).catch(()=>null);
+  /* A janela pode ter voltado ao tamanho de abertura por um quadro e já ter
+     assentado no pedido; a leitura confirma antes de reprovar (rodada
+     43152141386). */
+  if(actual?.[0]===got.inner[0]&&actual?.[1]===got.inner[1])return {width:got.inner[0],height:got.inner[1]};
   throw Error(`redimensionar para ${width}×${height}${content?' (conteúdo)':''}: o renderer ficou em ${JSON.stringify(actual)}; esperado ${JSON.stringify(got.inner)} (${error.message})`);
  }
  /* Redimensionar uma janela escondida devolve o compositor ao ritmo de 1 fps:

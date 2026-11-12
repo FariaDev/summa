@@ -87,7 +87,12 @@ jobs:
     name: janelas (windows-latest)
     if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
-    timeout-minutes: 60
+    # 3 por vez no runner Windows estourava o fechamento e o prazo de 600 s:
+    # run 43110682784, 135 ok e 38 falhas (17 "não fechou em 15 s" e quatro
+    # arquivos nos 600 s) em 2659 s. Dois por vez dá CPU a cada Electron. Os
+    # quatro arquivos de motores falsos com portão sobem um por vez, em passo
+    # próprio: juntos eles ficavam 600 s presos mesmo com 2 por vez (#165).
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: desk
@@ -111,8 +116,13 @@ jobs:
           git config --global user.name "CI"
           git config --global user.email "ci@mesa.local"
 
+      # Motores falsos com portão que sobem vários apps no mesmo arquivo: um por
+      # vez e sozinhos para não disputar o runner com outro Electron (#165).
+      - name: Janelas de motores pesados (um por vez)
+        run: npm run ui -- i18n-en-leaks,pi-opcional,stream-motion,switch-engine --jobs 1
+
       - name: Testes de janela
-        run: npm run ui
+        run: npm run ui -- --jobs 2 --exclude i18n-en-leaks,pi-opcional,stream-motion,switch-engine
 
   bend:
     name: bend (toolchain fixada)
