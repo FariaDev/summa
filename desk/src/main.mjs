@@ -21,7 +21,7 @@ import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './free-mod
 import {mountTriageBoot,openTriage} from './triage-loader.mjs';
 import {initModelPicker,noteModelPicked} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
 import conferirCore from './generated/conferir.core.js';
-import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';
+import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings-ink.mjs';
 import resumeCore from './generated/resume.core.js';
 
 import {sendGgbRect,freezeGgbView,thawGgbView} from './ggb.mjs';
@@ -68,7 +68,8 @@ const syncFirstRun=(data,hooks)=>firstRunBoot.sync(data,hooks);
 const isFirstRun=()=>firstRunBoot.isActive();
 /* Idioma (#41): o texto estático e o <html lang> seguem antes do primeiro desenho; o catálogo ativo entra sob demanda (#desempenho) e é esperado aqui, antes de montar/pintar texto, para não haver chave crua nem idioma de fallback. O markup do #setup entra antes do primeiro `setUiLanguage` para ser traduzido junto. */
 await uiTextReady;
-mountSetupMarkup();mountAccentOptions();mountReadingSettings();
+mountSetupMarkup();mountAccentOptions();mountReadingSettings();mountInkSettings();
+const inkSettings=initInkSettings({status:()=>window.desk.ambitusInkStatus(),set:p=>window.desk.ambitusInkSet(p)});
 setUiLanguage(currentLanguage());
 initNavMenus();
 initHeaderTabs({openSettings:(...args)=>openSettings(...args),syncPaletteField:()=>syncPaletteField(),menu:{ToggleReference:toggleReference,OpenXournal:openXournal,OpenHelp:openHelp,OpenSettings:()=>openSettings(),OpenShortcuts:()=>openShortcuts().catch(err=>toast(err.message)),OpenAbout:openAbout,OpenReleaseNotes:()=>openReleaseNotes().catch(err=>toast(err.message)),OpenTriage:()=>openTriage().catch(error=>toast(error.message)),OpenEndDay:openEndDay}});
@@ -428,6 +429,7 @@ async function openSettings({section='',focus=''}={}){
  await fillSettingsForm(info.config||{});
  settingsBaseline=JSON.stringify(readSettingsForm());
  settings.prepareSettings({section});
+ void inkSettings.refresh();
  settings.setSettingsFooter({busy:!!S.busy,dirty:false});
  /* Dica do campo Claude: o caminho detectado quando o host manda um; senão o
     placeholder padrão continua. Nada de login/credencial na UI. */
