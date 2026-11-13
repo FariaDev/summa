@@ -1054,6 +1054,8 @@
   "err.update.signatureInvalid": "The manifest signature for v{version} does not match the public key — update refused.",
   "err.update.signingKeyInvalid": "The update public key is invalid ({detail}) — update refused.",
   "err.update.signingKeyMissing": "The update public key is not configured (update-signing-key.pub is still the placeholder) — update refused.",
+  "err.update.sourceGone": "The registered install source no longer exists or has no desk/ — update refused; the app was not changed. Install again from the zip.",
+  "err.update.sourceMissing": "This install has no registered source (install-source.json) — update refused; the app was not changed. Install again with npm run install-app from the source folder.",
   "err.update.startFail": "could not start the update script",
   "err.update.startFailWith": "could not start the update script ({error})",
   "err.update.tagMissing": "Tag {tag} does not exist in the clone — update refused.",
