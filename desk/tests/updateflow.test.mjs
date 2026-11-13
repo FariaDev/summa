@@ -896,3 +896,78 @@ test('anti-rollback no modo git: anunciada mais velha recusa antes de qualquer g
  assert.deepEqual(calls, [], 'nem o git rev-parse roda antes da trava');
  assert.equal(read(path.join(root, 'desk', 'main.cjs')), 'main antigo', 'nada aplicado');
 });
+
+/* #6: no Windows o `npm ci` morria com EPERM/EBUSY porque um processo do
+   Electron (MCP, chat lateral, filho do app) ainda usava o node_modules que o
+   ci apaga. O update espera esse processo sumir e, se a falha for trava de
+   arquivo, tenta de novo antes de cair no rollback. */
+test('#6: Windows espera o processo do Electron antes do npm ci e repete em EBUSY', async () => {
+  const root = fakeInstallRoot();
+  const runtime = tmp();
+  const listCalls = [];
+  const sleeps = [];
+  const npmCalls = [];
+  let failures = 1;
+  const run = async (cmd, args) => {
+    if (cmd === 'npm') {
+      npmCalls.push([cmd, ...args]);
+      if (failures-- > 0) {
+        const error = Error('Command failed: npm ci');
+        error.code = 1;
+        error.stderr = 'npm error code EBUSY\nnpm error syscall rmdir';
+        throw error;
+      }
+    }
+    return {stdout: ''};
+  };
+  const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip: makeZip(NOVO)});
+  const result = await updater.applyUpdate({
+    mode: 'zip', rootDir: root, deskDir: path.join(root, 'desk'), runtime, announcedVersion: '0.4.1',
+    publicKey: release.publicKey, fetchBuffer: release.fetchBuffer, run, reopen: () => {}, waitPid: 0,
+    platform: 'win32',
+    listElectronProcesses: async (dir) => {
+      listCalls.push(dir);
+      return listCalls.length === 1
+        ? [{pid: 4242, exe: path.join(dir, 'node_modules', 'electron', 'dist', 'electron.exe')}]
+        : [];
+    },
+    sleep: async (ms) => { sleeps.push(ms); },
+  });
+  assert.equal(result.ok, true);
+  assert.deepEqual(listCalls, [path.join(root, 'desk'), path.join(root, 'desk')], 'consulta o node_modules que o npm ci vai apagar (segura e depois livre)');
+  assert.deepEqual(npmCalls, [['npm', 'ci'], ['npm', 'ci']], 'a primeira trava e a segunda passa');
+  assert.deepEqual(sleeps, [500, 2000], 'espera entre as listagens e antes da nova tentativa');
+  assert.match(logOf(runtime), /pid 4242/, 'o processo que segurava vai para o log');
+  assert.match(logOf(runtime), /node_modules[\\/]electron[\\/]dist[\\/]electron\.exe/);
+  assert.match(logOf(runtime), /trava de arquivo \(EBUSY; tentativa 1\/4\)/);
+});
+
+test('#6: fora do Windows o update não lista processos nem repete o npm ci', async () => {
+  const root = fakeInstallRoot();
+  const runtime = tmp();
+  let listed = 0;
+  let slept = 0;
+  let npmCalls = 0;
+  const run = async (cmd) => {
+    if (cmd === 'npm') {
+      npmCalls++;
+      const error = Error('Command failed: npm ci\nnpm error code EBUSY');
+      error.stderr = 'npm error code EBUSY';
+      throw error;
+    }
+    return {stdout: ''};
+  };
+  const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip: makeZip(NOVO)});
+  const result = await updater.applyUpdate({
+    mode: 'zip', rootDir: root, deskDir: path.join(root, 'desk'), runtime, announcedVersion: '0.4.1',
+    publicKey: release.publicKey, fetchBuffer: release.fetchBuffer, run, reopen: () => {}, waitPid: 0,
+    platform: 'linux',
+    listElectronProcesses: async () => { listed++; return []; },
+    sleep: async () => { slept++; },
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /EBUSY/);
+  assert.equal(listed, 0, 'Linux não chama PowerShell');
+  assert.equal(slept, 0, 'Linux não espera nem repete');
+  assert.equal(npmCalls, 2, 'uma tentativa e o npm ci de recuperação do rollback — sem retry');
+});
