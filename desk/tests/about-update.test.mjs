@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {installDom} from './dom-shim.mjs';
 
 installDom();
-const {resultStateOf} = await import('../src/about-update.mjs');
+const {resultStateOf, updateStateOf} = await import('../src/about-update.mjs');
 
 test('#160: clone sujo recusado vira UpdateDirtyClone com a contagem', () => {
   assert.deepEqual(
@@ -19,5 +19,21 @@ test('#160: resultado recuperado continua no caso antigo', () => {
   assert.deepEqual(
     resultStateOf({status: 'recovered', version: '0.4.1', reason: 'npm ci morreu'}),
     {$: 'UpdateRecovered', version: '0.4.1', reason: 'npm ci morreu'},
+  );
+});
+
+/* #21: a checagem marca a instalação vinda do repositório antigo; o Sobre
+   mostra o aviso de reinstalar no lugar do botão que recusaria. */
+test('#21: versão nova em instalação do repositório antigo vira UpdateLegacyOrigin', () => {
+  assert.deepEqual(
+    updateStateOf({status: 'legacy-origin', version: '1.3.0'}),
+    {$: 'UpdateLegacyOrigin'},
+  );
+});
+
+test('#21: versão nova em instalação normal continua UpdateReady', () => {
+  assert.deepEqual(
+    updateStateOf({status: 'update', version: '1.3.0', notes: '', url: ''}),
+    {$: 'UpdateReady', version: '1.3.0', notes: '', url: ''},
   );
 });

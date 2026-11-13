@@ -12,7 +12,7 @@ import {tempDir} from './temp-dir.mjs';
    Origem normal, pasta de desenvolvimento, worktree e origem inválida; o
    caminho sai com `~` e nunca vai para log. */
 const require=createRequire(import.meta.url);
-const {readInstallSource,gitCheckout,homePathLabel,updateOrigin}=require('../update-origin.cjs');
+const {readInstallSource,gitCheckout,homePathLabel,updateOrigin,isOldRepositoryInstall}=require('../update-origin.cjs');
 const {registerUpdateHost}=require('../update-host.cjs');
 
 const tmp=()=>tempDir('mesa-origin-test');
@@ -101,6 +101,51 @@ test('updateOrigin: clone do repositório público é a Release oficial; fork e 
   writeSource(desk,clone);
   assert.equal(updateOrigin({packaged:true,deskDir:desk,home:root}).kind,kind,url);
  });
+});
+
+/* #21: o repositório antigo continua "oficial" para o updater (a ponte o
+   mantém), mas as tags do Summa não chegam ao clone dele. Reconhecer o caso
+   faz o clique recusar e o Sobre mandar reinstalar. */
+test('isOldRepositoryInstall: clone e bundle com origin no mesa-de-estudos; summa e zip, não',()=>{
+ const root=tmp();
+ const oldUrls=[
+  'https://github.com/FariaDev/mesa-de-estudos.git',
+  'git@github.com:FariaDev/mesa-de-estudos.git',
+  'https://github.com/FariaDev/mesa-de-estudos',
+  'ssh://git@github.com/FariaDev/mesa-de-estudos.git',
+ ];
+ oldUrls.forEach((url,index)=>{
+  const clone=newClone(path.join(root,`antigo${index}`));
+  fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = ${url}\n`);
+  const desk=path.join(clone,'desk');
+  fs.mkdirSync(desk,{recursive:true});
+  assert.equal(isOldRepositoryInstall({deskDir:desk}),true,url);
+ });
+ const newUrls=['https://github.com/FariaDev/summa.git','git@github.com:FariaDev/summa.git'];
+ newUrls.forEach((url,index)=>{
+  const clone=newClone(path.join(root,`novo${index}`));
+  fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = ${url}\n`);
+  const desk=path.join(clone,'desk');
+  fs.mkdirSync(desk,{recursive:true});
+  assert.equal(isOldRepositoryInstall({deskDir:desk}),false,url);
+ });
+ const zipDesk=path.join(root,'zip','desk');
+ fs.mkdirSync(zipDesk,{recursive:true});
+ assert.equal(isOldRepositoryInstall({deskDir:zipDesk}),false,'zip não tem origin');
+});
+
+test('isOldRepositoryInstall: no bundle o remote registrado manda',()=>{
+ const root=tmp();
+ const clone=newClone(path.join(root,'clone'));
+ fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = https://github.com/FariaDev/summa.git\n`);
+ const desk=path.join(root,'app','desk');
+ fs.mkdirSync(desk,{recursive:true});
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:'https://github.com/FariaDev/mesa-de-estudos.git'}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),true,'o registro do install-app vem antes do clone');
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:''}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),false,'sem remote registrado cai no origin do clone');
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:'https://github.com/FariaDev/summa.git'}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),false);
 });
 
 test('updateOrigin: worktree é rotulado como pasta de desenvolvimento (worktree)',()=>{

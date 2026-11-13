@@ -5,7 +5,7 @@ const {causeArg}=require('./src/error-detail.mjs');
 const {writeReadableLog}=require('./desk-log.cjs');
 const updater=require('./updater.cjs');
 const components=require('./components.cjs');
-const {readInstallSource,updateOrigin}=require('./update-origin.cjs');
+const {readInstallSource,updateOrigin,isOldRepositoryInstall}=require('./update-origin.cjs');
 const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 
@@ -27,6 +27,10 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  function originFacts(){
   return updateOrigin({packaged:!!app.isPackaged,deskDir,home:os.homedir()});
  }
+ /* #21: clone/bundle com `origin` no repositório antigo não recebe as tags do
+    Summa (histórico novo): o Sobre manda reinstalar e o clique recusa sem
+    abrir o worker. */
+ function oldRepository(){return isOldRepositoryInstall({deskDir});}
  function updateContext(){
   const root=path.join(deskDir,'..');
   const bundle=path.resolve(deskDir,'..','..','..');
@@ -39,12 +43,16 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   return {mode,rootDir:root,deskDir,runtime,sourceInfo:source,reopen,publicKey};
  }
  ipcMain.handle('update-origin',()=>originFacts());
- ipcMain.handle('update-check',(_e,opts)=>{
+ ipcMain.handle('update-check',async(_e,opts)=>{
   /* Origem que não recebe atualização não vira "Atualizada": o Sobre diz que
      não dá para verificar (#109). */
   if(originFacts().kind==='unavailable')return {status:'unverifiable',version:'',notes:'',url:'',current:app.getVersion()};
   if(TEST_MODE)return {status:'unknown',version:'',notes:'',url:'',current:app.getVersion()};
-  return updater.checkForUpdates({current:app.getVersion(),manual:!!opts?.manual,cacheFile:updateCacheFile});
+  const result=await updater.checkForUpdates({current:app.getVersion(),manual:!!opts?.manual,cacheFile:updateCacheFile});
+  /* #21: com versão nova anunciada, a instalação do repositório antigo vira o
+     aviso de reinstalar — nunca o "Atualizar e reiniciar" que recusaria. */
+  if(result.status==='update'&&oldRepository())return {...result,status:'legacy-origin'};
+  return result;
  });
  ipcMain.handle('update-apply',async()=>{
   if(TEST_MODE)throw Error(uiMsg('err.update.testMode'));
@@ -55,6 +63,10 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
      mais nova que a instalada. */
   const installed=app.getVersion();
   if(!updater.isNewer(target,installed))throw Error(uiMsg('err.update.notNewer',{announced:target,installed}));
+  /* #21: clone/bundle do repositório antigo não recebe a tag do Summa —
+     recusa antes do lock, do worker e de qualquer git/rede; reinstalar é o
+     caminho, e a pasta de dados não muda. */
+  if(oldRepository())throw Error(uiMsg('update.legacyOrigin'));
   /* A4: lock compartilhado entre Atualizar Mesa e o CLI — dois cliques (ou
      clique + terminal) não abrem dois workers concorrentes. */
   const lock=updater.acquireLock(runtime);

@@ -1159,6 +1159,9 @@ function $updateOfflineText() {
 function $updateUnverifiableText() {
   return $msg_msg("update.unverifiable");
 }
+function $updateLegacyOriginText() {
+  return $msg_msg("update.legacyOrigin");
+}
 function $updateDirtyCloneText(_files_0) {
   return $msg_msg1("update.dirtyClone", "files", _files_0);
 }
@@ -1250,6 +1253,8 @@ function $aboutUpdateChildren(_s_0) {
     return { $: "Con", head: $$updateIcon("warn", "!"), tail: { $: "Con", head: $$updateLineNode($$updateOfflineText()), tail: { $: "Con", head: $$checkUpdateButton(), tail: { $: "Nil" } } } };
   } else if (_s_0.$ === "UpdateUnverifiable") {
     return { $: "Con", head: $$updateIcon("warn", "!"), tail: { $: "Con", head: $$updateLineNode($$updateUnverifiableText()), tail: { $: "Con", head: $$checkUpdateButton(), tail: { $: "Nil" } } } };
+  } else if (_s_0.$ === "UpdateLegacyOrigin") {
+    return { $: "Con", head: $$updateIcon("warn", "!"), tail: { $: "Con", head: $$updateLineNode($$updateLegacyOriginText()), tail: { $: "Con", head: $$checkUpdateButton(), tail: { $: "Nil" } } } };
   } else if (_s_0.$ === "UpdateDirtyClone") {
     const _files_0 = _s_0["files"];
     return { $: "Con", head: $$updateIcon("warn", "!"), tail: { $: "Con", head: $$updateLineNode($$updateDirtyCloneText(_files_0)), tail: { $: "Con", head: $$checkUpdateButton(), tail: { $: "Nil" } } } };
@@ -1984,6 +1989,7 @@ var $$updateFailedText = $updateFailedText;
 var $$updateFailedRest = $updateFailedRest;
 var $$updateOfflineText = $updateOfflineText;
 var $$updateUnverifiableText = $updateUnverifiableText;
+var $$updateLegacyOriginText = $updateLegacyOriginText;
 var $$updateDirtyCloneText = $updateDirtyCloneText;
 var $$updateApplyingText = $updateApplyingText;
 var $$applyingUpdateButton = $applyingUpdateButton;
@@ -2271,6 +2277,7 @@ var dialogsview_default = {
   updateFailedRest: run_lib(() => str_out(run_loop($updateFailedRest())), 0),
   updateOfflineText: run_lib(() => str_out(run_loop($updateOfflineText())), 0),
   updateUnverifiableText: run_lib(() => str_out(run_loop($updateUnverifiableText())), 0),
+  updateLegacyOriginText: run_lib(() => str_out(run_loop($updateLegacyOriginText())), 0),
   updateDirtyCloneText: run_lib((a0) => str_out(run_loop($updateDirtyCloneText(str_in(a0)))), 1),
   updateReadyText: run_lib((a0) => str_out(run_loop($updateReadyText(str_in(a0)))), 1),
   updateNotesLabel: run_lib(() => str_out(run_loop($updateNotesLabel())), 0),

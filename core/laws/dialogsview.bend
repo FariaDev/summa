@@ -529,6 +529,20 @@ law dlg_upd_sem_origem:
     }
   } : List<&2, V.ViewNode>}
 
+# #21: instalação do repositório antigo não oferece o "Atualizar e reiniciar"
+# que recusaria; a linha manda reinstalar a partir do Summa.
+law dlg_upd_origem_antiga_texto:
+  {D.updateLegacyOriginText() == M.msg("update.legacyOrigin") : String}
+
+law dlg_upd_origem_antiga:
+  {D.aboutUpdateChildren(D.UpdateLegacyOrigin{}) == Con{
+    D.updateIcon("warn", "!"),
+    Con{
+      D.updateLineNode(M.msg("update.legacyOrigin")),
+      Con{D.checkUpdateButton(), Nil{}}
+    }
+  } : List<&2, V.ViewNode>}
+
 # #160: clone sujo é recusado ANTES de qualquer troca — o Sobre diz que nada
 # foi atualizado (não "a versão anterior voltou") e deixa verificar de novo.
 law dlg_upd_clone_sujo:
