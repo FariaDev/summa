@@ -187,6 +187,13 @@
  font-family:var(--font-sans);
  font-size:var(--fs-md);color:var(--fg);background:var(--bg);-webkit-font-smoothing:antialiased;
 }
+/* Primeira abertura: a fonte do setup sobe um degrau (pedido do dono,
+   2026-11-12). Só o `#setup` herda a escala; a Mesa atrás continua na padrão.
+   A fala da cena tem degrau próprio: o pedido é 16px, entre --fs-lg e --fs-xl. */
+body[data-first-run] #setup{
+ --fs-2xs:12px;--fs-xs:12px;--fs-sm:13px;--fs-md:14px;--fs-lg:15px;--fs-xl:16px;--fs-2xl:18px;--fs-3xl:22px;--fs-display:30px;
+ --fs-speech:16px;
+}
 /* Degraus de leitura: pequenos e nomeados, sem slider. Quem não escolheu não
    tem atributo e cai nos valores acima. */
 :root[data-reading-size=small]{--reading-size:14px}
