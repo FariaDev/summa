@@ -8,6 +8,7 @@ const {electronUserData}=require('./user-data.cjs');
 /* Bytecode da partida na pasta de dados do usuário; sem API/permissão, abre sem cache (#desempenho). */
 enableDeskCompileCache({dir:path.join(process.env.LEARNING_DESK_RUNTIME||defaultUserData(),'compile-cache')});
 const {placeWindow}=require('./lib.cjs');
+const {keepWindowOnDisplays}=require('./window-display-host.cjs');
 const {mergeCourses}=require('./courses.cjs');
 const {readConfig,needsSetup,normalize,installRoot}=require('./config.cjs');
 const firstRun=require('./first-run.cjs');
@@ -414,6 +415,7 @@ app.whenReady().then(async()=>{
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
  win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:path.join(__dirname,'assets',process.platform==='win32'?'mesa.ico':'mesa-1024.png'),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
+ keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line)});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));
  /* Recarregar a página fecha o popover da Foto do celular (#36) e derruba o
