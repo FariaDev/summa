@@ -119,7 +119,7 @@ function activityArtifactUrl(id, version, theme = 'system', accent = '') {
   const tone = accent ? `&accent=${activityView.accentOf(accent)}` : '';
   return `${ACTIVITY_SCHEME}://${activityHost(id, version)}/index.html?theme=${name}${tone}`;
 }
-/* Acento no query (#42): só um dos seis da Mesa; qualquer outro é recusado. */
+/* Acento no query (#42): só um dos dois da Mesa; qualquer outro é recusado. */
 function allowedAccent(url) {
   const value = url.searchParams.get('accent');
   if (value === null) return '';
@@ -154,7 +154,7 @@ function parseActivityUrl(value) {
     for (const key of url.searchParams.keys()) {
       if (key !== 'theme' && key !== 'accent') return null;
     }
-    return {kind: 'artifact', id: host.id, version: host.version, theme: theme || 'system', accent: accent || 'blue'};
+    return {kind: 'artifact', id: host.id, version: host.version, theme: theme || 'system', accent: accent || 'graphite'};
   }
   if (url.host === LIB_HOST) {
     if (url.search || url.hash || url.username || url.password || url.port) return null;

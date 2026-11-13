@@ -17,11 +17,8 @@ const NONE = {$: 'None'};
 const some = (value) => ({$: 'Some', value});
 const THEME_NAMES = {StateThemeAuto: 'auto', StateThemeLight: 'light', StateThemeDark: 'dark'};
 const themeName = (theme) => THEME_NAMES[theme?.$] || 'auto';
-const ACCENT_NAMES = {
-  AccentBlue: 'blue', AccentViolet: 'violet', AccentGreen: 'green',
-  AccentOrange: 'orange', AccentPink: 'pink', AccentGraphite: 'graphite',
-};
-const accentName = (accent) => ACCENT_NAMES[accent?.$] || 'blue';
+const ACCENT_NAMES = {AccentGraphite: 'graphite', AccentViolet: 'violet'};
+const accentName = (accent) => ACCENT_NAMES[accent?.$] || 'graphite';
 /* Preferências de leitura (#106/#107/#206): nomes fechados, como o acento. O
    módulo do renderer (`src/display-preferences.mjs`) tem as mesmas listas; o
    teste `display-preferences` compara as cópias e prova os padrões de hoje. */

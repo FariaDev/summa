@@ -365,11 +365,12 @@ try {
 
   /* 10c. Tema dark/light/system no MESMO iframe, com color-scheme coerente.
      #42: o fundo é o da coluna do tutor, no html (o body fica transparente), e
-     "system" chega já resolvido pelo host (claro ou escuro, com os tokens). */
+     "system" chega já resolvido pelo host (claro ou escuro, com os tokens).
+     O escuro é #161616 desde o Carbon r2 (#202). */
   await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
   await reopenedAgain.waitForFunction(() => document.documentElement.dataset.theme === 'dark', undefined, {timeout: 5000}).catch(() => {});
   const darkInfo = await reopenedAgain.evaluate(() => ({theme: document.documentElement.dataset.theme, scheme: getComputedStyle(document.documentElement).colorScheme, bg: getComputedStyle(document.documentElement).backgroundColor}));
-  check('tema dark chega ao artefato', darkInfo.theme === 'dark' && darkInfo.scheme === 'dark' && darkInfo.bg === 'rgb(25, 25, 25)', JSON.stringify(darkInfo));
+  check('tema dark chega ao artefato', darkInfo.theme === 'dark' && darkInfo.scheme === 'dark' && darkInfo.bg === 'rgb(22, 22, 22)', JSON.stringify(darkInfo));
   await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await reopenedAgain.waitForFunction(() => document.documentElement.dataset.theme === 'light', undefined, {timeout: 5000}).catch(() => {});
   const lightInfo = await reopenedAgain.evaluate(() => ({theme: document.documentElement.dataset.theme, scheme: getComputedStyle(document.documentElement).colorScheme, bg: getComputedStyle(document.documentElement).backgroundColor}));
@@ -379,7 +380,7 @@ try {
   const autoInfo = await reopenedAgain.evaluate(() => ({theme: document.documentElement.dataset.theme, scheme: getComputedStyle(document.documentElement).colorScheme, bg: getComputedStyle(document.documentElement).backgroundColor}));
   const systemDark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
   const resolved = systemDark ? 'dark' : 'light';
-  check('tema system chega ao artefato (resolvido pelo host)', autoInfo.theme === resolved && autoInfo.scheme === resolved && autoInfo.bg === (systemDark ? 'rgb(25, 25, 25)' : 'rgb(255, 255, 255)'), JSON.stringify(autoInfo));
+  check('tema system chega ao artefato (resolvido pelo host)', autoInfo.theme === resolved && autoInfo.scheme === resolved && autoInfo.bg === (systemDark ? 'rgb(22, 22, 22)' : 'rgb(255, 255, 255)'), JSON.stringify(autoInfo));
 
   /* 10. Evento atrasado de outra conversa é ignorado pelo renderer. */
   await page.evaluate(() => window.__addSlot('call-stale-1', 'done'));

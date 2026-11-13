@@ -19,12 +19,13 @@ test('o style.css tem os tokens que a página do celular usa, para cada acento',
 });
 
 test('tema fixo da Mesa vale no celular, sem seguir o tema do aparelho', () => {
-  const dark = phoneLookCss({theme: 'dark', accent: 'green', palette});
+  const dark = phoneLookCss({theme: 'dark', accent: 'violet', palette});
   assert.match(dark, /color-scheme:dark/);
-  assert.match(dark, new RegExp(`--accent:${palette['acc-green'].dark}`));
+  assert.match(dark, new RegExp(`--accent:${palette['acc-violet'].dark}`));
+  assert.match(dark, new RegExp(`--accent-text:${palette['acc-violet-text'].dark}`), 'a marca do topo usa o tom de texto do acento (P1)');
   assert.doesNotMatch(dark, /prefers-color-scheme/);
-  const light = phoneLookCss({theme: 'light', accent: 'pink', palette});
-  assert.match(light, new RegExp(`--accent:${palette['acc-pink'].light}`));
+  const light = phoneLookCss({theme: 'light', accent: 'graphite', palette});
+  assert.match(light, new RegExp(`--accent:${palette['acc-graphite'].light}`));
   assert.match(light, new RegExp(`--bg:${palette.bg.light}`));
 });
 
@@ -35,21 +36,21 @@ test('tema automático segue o aparelho, com os dois tons do acento', () => {
 });
 
 test('o trio do celular segue o acento escolhido (#100)', () => {
-  const css = phoneLookCss({theme: 'dark', accent: 'green', palette});
-  assert.match(css, new RegExp(`--trio-corpo:${palette['trio-green-corpo'].dark}`));
-  assert.match(css, new RegExp(`--trio-sinal:${palette['trio-green-sinal'].dark}`));
-  assert.match(phoneLookCss({theme: 'light', accent: 'pink', palette}), new RegExp(`--trio-claro:${palette['trio-pink-claro'].light}`));
+  const css = phoneLookCss({theme: 'dark', accent: 'violet', palette});
+  assert.match(css, new RegExp(`--trio-corpo:${palette['trio-violet-corpo'].dark}`));
+  assert.match(css, new RegExp(`--trio-sinal:${palette['trio-violet-sinal'].dark}`));
+  assert.match(phoneLookCss({theme: 'light', accent: 'graphite', palette}), new RegExp(`--trio-claro:${palette['trio-graphite-claro'].light}`));
 });
 
-test('grafite no escuro leva texto escuro sobre o botão; acento desconhecido vira azul', () => {
+test('grafite no escuro leva texto escuro sobre o botão; acento desconhecido vira grafite', () => {
   assert.match(phoneLookCss({theme: 'dark', accent: 'graphite', palette}), /--on-accent:#161616/);
-  assert.match(phoneLookCss({theme: 'light', accent: 'roxo-neon', palette}), new RegExp(`--accent:${palette['acc-blue'].light}`));
+  assert.match(phoneLookCss({theme: 'light', accent: 'roxo-neon', palette}), new RegExp(`--accent:${palette['acc-graphite'].light}`));
 });
 
 test('a página leva o :root da Mesa e o lugar das fotos enviadas', () => {
   const t = (key) => key;
-  const html = phonePageHtml({t, lang: 'pt-BR', nonce: 'n', maxMb: 15, lookCss: phoneLookCss({theme: 'dark', accent: 'orange', palette})});
-  assert.match(html, /<style nonce="n">:root\{color-scheme:dark;/);
+  const html = phonePageHtml({t, lang: 'pt-BR', nonce: 'n', maxMb: 15, lookCss: phoneLookCss({theme: 'dark', accent: 'graphite', palette})});
+  assert.match(html, /<style nonce="n">@font-face[^<]*:root\{color-scheme:dark;/);
   assert.match(html, /<div id="sent"/);
   assert.match(html, /URL\.createObjectURL\(item\.file\)/, 'a prévia é feita no celular, sem buscar a foto no servidor');
 });

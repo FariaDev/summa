@@ -205,9 +205,11 @@ export function initSettings() {
     event.stopPropagation();
   });
   /* Densidade e avisos redesenham as próprias linhas ao mudar; re-vestir
-     mantém o interruptor e a descrição no formato do r2 depois do render. */
+     mantém o interruptor e a descrição no formato do r2 depois do render.
+     O `wrapSelects` do re-vestir move o select focado para dentro da casca e
+     o blur perdia o foco (hunt-shell); o `preserveFocus` devolve pelo id. */
   $('#settings-form')?.addEventListener('change', () => {
-    mountSettingsChrome(document);
+    preserveFocus($('#settings-form'), () => mountSettingsChrome(document));
     paintSearch();
   });
   /* A Densidade redesenha o próprio `label` quando o diálogo abre; vestir de

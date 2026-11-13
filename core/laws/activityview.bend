@@ -128,29 +128,33 @@ law quadro_altura_inicial:
 
 # O fundo do quadro é o da coluna do tutor: some na conversa.
 law quadro_fundo_claro:
-  {A.valueOf("--mesa-bg", A.mesaTokens("light", "blue")) == "#ffffff" : String}
+  {A.valueOf("--mesa-bg", A.mesaTokens("light", "graphite")) == "#ffffff" : String}
 
 law quadro_fundo_escuro:
-  {A.valueOf("--mesa-bg", A.mesaTokens("dark", "blue")) == "#191919" : String}
+  {A.valueOf("--mesa-bg", A.mesaTokens("dark", "graphite")) == "#161616" : String}
 
 law quadro_serifa_dos_pdfs:
-  {A.valueOf("--mesa-font-serif", A.mesaTokens("light", "blue")) == A.fontSerif() : String}
+  {A.valueOf("--mesa-font-serif", A.mesaTokens("light", "graphite")) == A.fontSerif() : String}
 
 law quadro_raio:
-  {A.valueOf("--mesa-radius", A.mesaTokens("dark", "pink")) == "8px" : String}
+  {A.valueOf("--mesa-radius", A.mesaTokens("dark", "violet")) == "8px" : String}
 
-# O acento segue a escolha da Mesa; desconhecido cai no azul.
-law quadro_acento_verde_escuro:
-  {A.valueOf("--mesa-accent", A.mesaTokens("dark", "green")) == "#13865e" : String}
+# O acento segue a escolha da Mesa; desconhecido cai no grafite.
+law quadro_acento_violeta_escuro:
+  {A.valueOf("--mesa-accent", A.mesaTokens("dark", "violet")) == "#8c52ef" : String}
 
 law quadro_acento_desconhecido:
-  {A.accentOf("ciano") == "blue" : String}
+  {A.accentOf("ciano") == "graphite" : String}
+
+# As cores que saíram (blue/green/orange/pink) também caem no grafite.
+law quadro_acento_antigo_e_grafite:
+  {A.accentOf("green") == "graphite" : String}
 
 law quadro_grafite_texto_sobre_acento:
   {A.valueOf("--mesa-accent-fg", A.mesaTokens("dark", "graphite")) == "#181818" : String}
 
 # Paleta: a primeira cor é o acento (tom de texto) e nenhuma se repete, nos
-# dois temas e nos seis acentos.
+# dois temas e nos dois acentos.
 law quadro_paleta_comeca_no_acento:
   {A.valueOf("--mesa-chart-1", A.mesaTokens("dark", "violet")) == "#a78bfa" : String}
 
@@ -162,22 +166,22 @@ law quadro_paleta_seis_distintas_escuro:
 
 # A família do acento cede o lugar à reserva, sem mexer nos outros lugares.
 law quadro_paleta_reserva_no_lugar_do_acento:
-  {A.chartColors("light", "orange")
-    == ["#c2410c", "#0b9b8f", "#3b1782", "#e0508a", "#2f4a10", "#3d6fd0"] : List<&2, String>}
+  {A.chartColors("light", "violet")
+    == ["#6d28d9", "#c77700", "#13423e", "#e0508a", "#2f4a10", "#3d6fd0"] : List<&2, String>}
 
-law quadro_paleta_escuro_azul:
-  {A.chartColors("dark", "blue")
-    == ["#8fa8ff", "#d9480f", "#c4b5fd", "#db2777", "#a3e635", "#f59e0b"] : List<&2, String>}
+law quadro_paleta_escuro_grafite:
+  {A.chartColors("dark", "graphite")
+    == ["#ededed", "#d9480f", "#c4b5fd", "#db2777", "#a3e635", "#60a5fa"] : List<&2, String>}
 
 # Os nomes do MCP Apps espelham os da Mesa.
 law quadro_mcp_fundo:
-  {A.valueOf("--color-background-primary", A.themeTokens("dark", "green")) == "#191919" : String}
+  {A.valueOf("--color-background-primary", A.themeTokens("dark", "graphite")) == "#161616" : String}
 
 law quadro_mcp_texto:
-  {A.valueOf("--color-text-primary", A.themeTokens("light", "blue")) == "#191919" : String}
+  {A.valueOf("--color-text-primary", A.themeTokens("light", "graphite")) == "#191919" : String}
 
 law quadro_mcp_anel:
-  {A.valueOf("--color-ring-primary", A.themeTokens("dark", "pink")) == "#f783ac" : String}
+  {A.valueOf("--color-ring-primary", A.themeTokens("dark", "violet")) == "#a78bfa" : String}
 
 law quadro_css_comeca_pelo_esquema:
-  {String.starts_with(A.rootCss("dark", "blue"), ":root{color-scheme:dark;--mesa-bg:#191919;") == True{} : Bool}
+  {String.starts_with(A.rootCss("dark", "graphite"), ":root{color-scheme:dark;--mesa-bg:#161616;") == True{} : Bool}

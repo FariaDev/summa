@@ -553,8 +553,21 @@ export const currentSession=page=>page.locator('#session-title').getAttribute('d
 export const currentEngine=page=>page.locator('#session-title').getAttribute('data-engine');
 export async function openSessionList(page){
  const pop=page.locator('#conversations-pop');
- if(await insideHidden(pop))await page.locator('#session-title').click();
- await pop.waitFor({state:'visible',timeout:5000});
+ /* O clique no título pode cair antes de o cabeçalho estar ligado no boot e
+    não abrir nada (cards-leak-ui, #12). Clicar de novo só é seguro enquanto o
+    popover estiver fechado; a espera curta deixa o render do host terminar
+    antes de decidir que o clique se perdeu. */
+ const deadline=Date.now()+5000;
+ for(;;){
+  if(!(await insideHidden(pop)))break;
+  await page.locator('#session-title').click();
+  try{
+   await pop.waitFor({state:'visible',timeout:1000});
+   break;
+  }catch(error){
+   if(Date.now()>=deadline)throw error;
+  }
+ }
  return pop;
 }
 export async function closeSessionList(page){

@@ -19,7 +19,7 @@ test('as listas do renderer e do adaptador do main são a mesma fonte de nomes',
 });
 
 test('quem nunca escolheu fica no padrão de hoje: Normal, Normal, Igual ao texto e Inverter', () => {
-  assert.deepEqual(deskLayout({}), {...base, accent: 'blue', readingSize: 'normal', readingWidth: 'normal', codeSize: 'normal', pdfDark: 'invert'});
+  assert.deepEqual(deskLayout({}), {...base, accent: 'graphite', readingSize: 'normal', readingWidth: 'normal', codeSize: 'normal', pdfDark: 'invert'});
   assert.deepEqual(normalizeDisplayChoices(), {readingSize: 'normal', readingWidth: 'normal', codeSize: 'normal', pdfDark: 'invert'});
 });
 
@@ -42,8 +42,8 @@ test('valor desconhecido ou de tipo errado cai no padrão na carga', () => {
 test('salvar grava a escolha nova e mantém a corrente quando o campo falta', () => {
   const current = {...base, readingSize: 'large', readingWidth: 'narrow', codeSize: 'small', pdfDark: 'soft'};
   assert.deepEqual(saveState(current, {...base, readingSize: 'small', readingWidth: 'wide', codeSize: 'large', pdfDark: 'invert'}),
-    {...base, accent: 'blue', readingSize: 'small', readingWidth: 'wide', codeSize: 'large', pdfDark: 'invert'});
-  assert.deepEqual(saveState(current, {...base}), {...base, accent: 'blue', readingSize: 'large', readingWidth: 'narrow', codeSize: 'small', pdfDark: 'soft'});
+    {...base, accent: 'graphite', readingSize: 'small', readingWidth: 'wide', codeSize: 'large', pdfDark: 'invert'});
+  assert.deepEqual(saveState(current, {...base}), {...base, accent: 'graphite', readingSize: 'large', readingWidth: 'narrow', codeSize: 'small', pdfDark: 'soft'});
   for (const value of ['huge', '', 7, true, {}]) {
     const saved = saveState(current, {...base, readingSize: value, readingWidth: value, codeSize: value, pdfDark: value});
     assert.equal(saved.readingSize, 'large');

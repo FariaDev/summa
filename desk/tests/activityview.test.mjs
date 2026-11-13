@@ -6,7 +6,7 @@ import core from '../src/generated/activityview.core.js';
    Bend fixam os cenários; aqui fica o que só se mede com conta de cor: a
    paleta categórica lê sobre o fundo (contraste ≥ 3:1, o mínimo de objeto
    gráfico) e as vizinhas se separam em luminosidade (ΔL* ≥ 10), nos dois temas
-   e nos seis acentos — vale também para a impressão em cinza. */
+   e nos dois acentos — vale também para a impressão em cinza. */
 
 const list = (l) => {const out = []; for (let c = l; c && c.$ === 'Con'; c = c.tail) out.push(c.head); return out;};
 const tokens = (theme, accent) => Object.fromEntries(list(core.themeTokens(theme, accent)).map((t) => [t.name, t.value]));
@@ -17,7 +17,7 @@ const contrast = (a, b) => {const x = luminance(a), y = luminance(b); return (Ma
 const ACCENTS = list(core.accentIds());
 
 test('paleta: seis cores, legíveis sobre o fundo e separadas em luminosidade', () => {
-  assert.deepEqual(ACCENTS, ['blue', 'violet', 'green', 'orange', 'pink', 'graphite']);
+  assert.deepEqual(ACCENTS, ['graphite', 'violet']);
   for (const theme of ['light', 'dark']) {
     for (const accent of ACCENTS) {
       const t = tokens(theme, accent);
@@ -35,7 +35,7 @@ test('paleta: seis cores, legíveis sobre o fundo e separadas em luminosidade', 
 });
 
 test('tokens: os nomes do T3 adaptados à Mesa e o espelho MCP Apps', () => {
-  const t = tokens('dark', 'blue');
+  const t = tokens('dark', 'graphite');
   for (const name of ['--mesa-bg', '--mesa-fg', '--mesa-muted', '--mesa-card', '--mesa-border', '--mesa-input', '--mesa-ring',
     '--mesa-accent', '--mesa-accent-fg', '--mesa-good', '--mesa-good-surface', '--mesa-warn', '--mesa-warn-surface', '--mesa-bad',
     '--mesa-bad-surface', '--mesa-code-bg', '--mesa-code-fg', '--mesa-radius', '--mesa-font-sans', '--mesa-font-serif', '--mesa-font-mono',
@@ -54,7 +54,7 @@ test('tokens: os nomes do T3 adaptados à Mesa e o espelho MCP Apps', () => {
 });
 
 test('rootCss: regra :root pronta, com esquema de cor e sem caractere que quebre a folha', () => {
-  const css = core.rootCss('light', 'green');
+  const css = core.rootCss('light', 'graphite');
   assert.match(css, /^:root\{color-scheme:light;--mesa-bg:#ffffff;/);
   assert.ok(css.endsWith('}'));
   assert.equal(/[<>{]/.test(css.slice(6, -1)), false);

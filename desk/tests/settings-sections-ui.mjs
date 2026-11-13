@@ -128,7 +128,7 @@ await withArtifacts('configuracoes-secoes',async ctx=>{
    assert.equal(where,section,`${selector} mora em ${section}`);
   }
  }
- assert.equal(await page.locator('#accent-mode [data-accent]').count(),6,'seis acentos');
+ assert.equal(await page.locator('#accent-mode [data-accent]').count(),2,'dois acentos');
  assert.ok(await page.locator('#cfg-layout input').count()>=3,'o editor de leitores está montado');
  /* Nenhum controle novo escondido: tudo o que há no corpo (fora das linhas de
     matéria e do editor de leitores) está no inventário. */
