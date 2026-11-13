@@ -38,17 +38,32 @@ function overlaps(bounds,area){
  return bounds.x<area.x+area.width&&bounds.x+(bounds.width||0)>area.x&&bounds.y<area.y+area.height&&bounds.y+(bounds.height||0)>area.y;
 }
 
+/* Barra de título: 32 px cobrem o macOS (~28) e o Windows (~31), e é a faixa
+   que a pessoa agarra para mover a janela. Metade dela dentro da área útil já
+   deixa o arrasto; um ou outro pixel de encosto não (relato: o monitor externo
+   foi desconectado e a janela reabriu quase toda fora da tela). */
+const TITLEBAR_HEIGHT=32;
+
+function titleBarVisible(bounds,area){
+ const width=Math.max(0,bounds.width||0);
+ const height=Math.min(TITLEBAR_HEIGHT,Math.max(0,bounds.height||0));
+ const visibleWidth=Math.max(0,Math.min(bounds.x+width,area.x+area.width)-Math.max(bounds.x,area.x));
+ const visibleHeight=Math.max(0,Math.min(bounds.y+height,area.y+area.height)-Math.max(bounds.y,area.y));
+ return width*height>0&&visibleWidth*visibleHeight*2>=width*height;
+}
+
 /* Com monitor externo conectado, a Mesa vai para ele; sem externo, fica no
    interno. Os bounds salvos só mandam dentro da tela alvo — é onde a janela foi
-   ajustada; na outra tela vale só o tamanho, adaptado ao workArea. `internal` é
-   o sinal direto; `id !== primaryId` fica como reserva (o externo pode ser o
-   primário). */
+   ajustada; na outra tela vale só o tamanho, adaptado ao workArea. A janela só é
+   reaproveitada se a barra de título aparecer o bastante (metade) na tela alvo;
+   encostar alguns pixels não conta. `internal` é o sinal direto; `id !==
+   primaryId` fica como reserva (o externo pode ser o primário). */
 function placeWindow(displays,primaryId,savedBounds){
  const list=displays||[];
  const external=list.find(d=>d.internal===false)||list.find(d=>d.id!==primaryId);
  const target=external||list.find(d=>d.internal===true)||list.find(d=>d.id===primaryId)||list[0];
  if(!target?.workArea)return {width:Math.min(1600,savedBounds?.width||1200),height:Math.min(1020,savedBounds?.height||800)};
- if(savedBounds&&overlaps(savedBounds,target.workArea))return savedBounds;
+ if(savedBounds&&titleBarVisible(savedBounds,target.workArea))return savedBounds;
  const wa=target.workArea;
  return {
   x:wa.x+20,
@@ -161,4 +176,4 @@ const ENGINE_LABEL_PREFIX=Object.freeze({claude:'Claude Code · ',opencode:'Open
  */
 function engineLabelPrefix(engine){return typeof engine==='string'&&Object.hasOwn(ENGINE_LABEL_PREFIX,engine)?ENGINE_LABEL_PREFIX[engine]:'';}
 
-module.exports={placeWindow,overlaps,sessionStartedFromPath,formatSessionLabel,engineLabelPrefix,sessionPreviewFromJsonl,imageCandidates};
+module.exports={placeWindow,overlaps,titleBarVisible,sessionStartedFromPath,formatSessionLabel,engineLabelPrefix,sessionPreviewFromJsonl,imageCandidates};

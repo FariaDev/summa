@@ -63,6 +63,15 @@ function constrainSidechatBounds(bounds,workArea){
  return {x,y,width,height};
 }
 
+/* A filha salva continua utilizável se o topo está dentro da área útil e ao
+   menos 120 px da barra de título aparecem — a mesma folga que o
+   `constrainSidechatBounds` garante ao abrir. */
+function sidechatTitleVisible(bounds,workArea){
+ const visibleWidth=Math.min(120,workArea.width,bounds.width);
+ const horizontal=Math.min(bounds.x+bounds.width,workArea.x+workArea.width)-Math.max(bounds.x,workArea.x);
+ return bounds.y>=workArea.y&&bounds.y<workArea.y+workArea.height&&horizontal>=visibleWidth;
+}
+
 /** Posição/tamanho da janela solta (#157, fatia 2): salva limitada se sobrepõe
  * alguma tela (monitor com mais sobreposição, mesma lógica `overlaps` da Mesa);
  * fora de monitor volta à principal, e a primeira vez encosta à direita da tela onde está a Mesa.
@@ -203,6 +212,24 @@ function registerSidechatWindowGuard(win,getTheme,host={}){
  win.webContents.on('render-process-gone',onGone);
  win.webContents.on('destroyed',onGone);
  win.on('close',()=>{mainGone=true;closeChildren();});
+ /* Monitor desconectado (ou área útil encolhida) com o chat solto aberto: a
+    filha volta para a primária com a folga do `constrainSidechatBounds`. O
+    `setBounds` emite move/resize e o debounce acima grava o lugar novo. */
+ const rescueChildren=()=>{
+  let displays=[];try{displays=typeof host.screen?.getAllDisplays==='function'?host.screen.getAllDisplays()||[]:[];}catch{}
+  let primary=null;try{primary=typeof host.screen?.getPrimaryDisplay==='function'?host.screen.getPrimaryDisplay():null;}catch{}
+  if(!primary?.workArea)return;
+  for(const child of children){
+   if(child.isDestroyed?.())continue;
+   let bounds=null;try{bounds=asBounds(typeof child.getBounds==='function'?child.getBounds():null);}catch{}
+   if(!bounds||displays.some(display=>display?.workArea&&sidechatTitleVisible(bounds,display.workArea)))continue;
+   try{child.setBounds(constrainSidechatBounds(bounds,primary.workArea));}catch{/* a filha pode ter fechado no meio */}
+  }
+ };
+ if(typeof host.screen?.on==='function'){
+  host.screen.on('display-removed',rescueChildren);
+  host.screen.on('display-metrics-changed',rescueChildren);
+ }
  if(host.ipcMain&&typeof host.ipcMain.handle==='function')host.ipcMain.handle('sidechat-always-on-top',(event,payload)=>{
   const sender=event?.sender;
   const fromMain=sender===win.webContents;
