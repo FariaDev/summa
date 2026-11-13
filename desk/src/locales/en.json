@@ -1977,6 +1977,7 @@
   "queue.retriesExhausted": "The attempts ran out — the queue was kept.",
   "queue.retry": "Sending failed. Retry {count}/{max} in {seconds}s.",
   "queue.sendNow": "Send now",
+  "queue.sendNowBlocked": "The previous delivery is uncertain — the queue will not send again in this conversation. Start another session to continue; the queue stays here, and Clear discards it.",
   "queue.sendNowTitle": "Send the queue now, without waiting for the turn to end",
   "queue.steerNow": "Send now",
   "queue.steerNowTitle": "Interrupt the answer and send now (⌘⏎)",
