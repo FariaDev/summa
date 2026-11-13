@@ -1,36 +1,39 @@
 import Base
 import ../accent.bend as A
 
-# Contrato da cor de acento: seis nomes válidos, o azul como padrão, e qualquer
-# outra coisa (ausente, tipo errado, caixa diferente, espaço) cai no fallback.
-# Os nomes são concretos porque String.eq não reduz em String livre.
+# Contrato da cor de acento: dois nomes válidos, o grafite como padrão, e
+# qualquer outra coisa (ausente, tipo errado, caixa diferente, espaço, nome
+# desconhecido e as cores que saíram — blue, green, orange, pink) cai no
+# fallback. Os nomes são concretos porque String.eq não reduz em String livre.
 
-law accent_default_is_blue:
-  {A.accentDefault() == A.AccentBlue{} : A.Accent}
+law accent_default_is_graphite:
+  {A.accentDefault() == A.AccentGraphite{} : A.Accent}
 
-law accent_blue:
+law accent_graphite:
   for fallback: A.Accent
-  {A.parseAccent("blue", fallback) == A.AccentBlue{} : A.Accent}
+  {A.parseAccent("graphite", fallback) == A.AccentGraphite{} : A.Accent}
 
 law accent_violet:
   for fallback: A.Accent
   {A.parseAccent("violet", fallback) == A.AccentViolet{} : A.Accent}
 
-law accent_green:
+# As cores que saíram do app (azul, verde, laranja, rosa) não são mais nomes
+# válidos: caem no fallback.
+law accent_blue_falls_back:
   for fallback: A.Accent
-  {A.parseAccent("green", fallback) == A.AccentGreen{} : A.Accent}
+  {A.parseAccent("blue", fallback) == fallback : A.Accent}
 
-law accent_orange:
+law accent_green_falls_back:
   for fallback: A.Accent
-  {A.parseAccent("orange", fallback) == A.AccentOrange{} : A.Accent}
+  {A.parseAccent("green", fallback) == fallback : A.Accent}
 
-law accent_pink:
+law accent_orange_falls_back:
   for fallback: A.Accent
-  {A.parseAccent("pink", fallback) == A.AccentPink{} : A.Accent}
+  {A.parseAccent("orange", fallback) == fallback : A.Accent}
 
-law accent_graphite:
+law accent_pink_falls_back:
   for fallback: A.Accent
-  {A.parseAccent("graphite", fallback) == A.AccentGraphite{} : A.Accent}
+  {A.parseAccent("pink", fallback) == fallback : A.Accent}
 
 # Nome desconhecido, outra caixa e espaço sobrando: fallback.
 law accent_unknown_falls_back:
@@ -39,11 +42,11 @@ law accent_unknown_falls_back:
 
 law accent_case_sensitive:
   for fallback: A.Accent
-  {A.parseAccent("BLUE", fallback) == fallback : A.Accent}
+  {A.parseAccent("GRAPHITE", fallback) == fallback : A.Accent}
 
 law accent_padded_falls_back:
   for fallback: A.Accent
-  {A.parseAccent("pink ", fallback) == fallback : A.Accent}
+  {A.parseAccent("violet ", fallback) == fallback : A.Accent}
 
 law accent_empty_falls_back:
   for fallback: A.Accent
@@ -56,14 +59,24 @@ law accent_missing_uses_fallback:
 
 law accent_present_is_parsed:
   for fallback: A.Accent
-  {A.accentOrDefault(Some{"green"}, fallback) == A.AccentGreen{} : A.Accent}
+  {A.accentOrDefault(Some{"violet"}, fallback) == A.AccentViolet{} : A.Accent}
 
-# Quem nunca escolheu vê azul; quem escolheu, o que escolheu.
-law accent_never_chosen_is_blue:
-  {A.normalizeAccent(None{}) == A.AccentBlue{} : A.Accent}
+# Quem nunca escolheu vê grafite; quem escolheu, o que escolheu.
+law accent_never_chosen_is_graphite:
+  {A.normalizeAccent(None{}) == A.AccentGraphite{} : A.Accent}
 
-law accent_garbage_is_blue:
-  {A.normalizeAccent(Some{"roxo"}) == A.AccentBlue{} : A.Accent}
+law accent_garbage_is_graphite:
+  {A.normalizeAccent(Some{"roxo"}) == A.AccentGraphite{} : A.Accent}
+
+# Estado salvo com uma cor removida vira grafite, sem erro.
+law accent_saved_blue_is_graphite:
+  {A.normalizeAccent(Some{"blue"}) == A.AccentGraphite{} : A.Accent}
+
+law accent_saved_pink_is_graphite:
+  {A.normalizeAccent(Some{"pink"}) == A.AccentGraphite{} : A.Accent}
 
 law accent_choice_is_kept:
   {A.normalizeAccent(Some{"graphite"}) == A.AccentGraphite{} : A.Accent}
+
+law accent_violet_is_kept:
+  {A.normalizeAccent(Some{"violet"}) == A.AccentViolet{} : A.Accent}

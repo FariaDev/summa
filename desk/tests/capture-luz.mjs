@@ -10,7 +10,7 @@ import {nextFrames} from './waits.mjs';
 const OUT='/tmp/mesa-luz';
 fs.rmSync(OUT,{recursive:true,force:true});
 fs.mkdirSync(OUT,{recursive:true});
-const ACCENTS=['blue','violet','green','orange','pink','graphite'];
+const ACCENTS=['graphite','violet'];
 const THEMES=['light','dark'];
 const WIDE=[1440,900],MIN=[900,650];
 

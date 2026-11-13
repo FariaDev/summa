@@ -22,59 +22,36 @@
  --border:light-dark(#e0e0e0,#393939);
  --border-strong:light-dark(#8d8d8d,#6f6f6f);
  --raised:light-dark(#ffffff,#393939);
- /* Acento (ticket #9): seis opções, cada uma com tom próprio no claro e no
+ /* Acento (ticket #9): duas opções, cada uma com tom próprio no claro e no
     escuro. `--accent-fill` pinta a ação principal e o alternador; `--accent-text`
     é o tom de link e de glifo (no escuro é mais claro que o preenchimento, para
     ler sobre as superfícies escuras); `--accent-fg` é o texto sobre o
     preenchimento (grafite no escuro: texto escuro sobre o fill claro) e
     `--accent-paper` o tom de link sobre folha branca, que não depende do tema.
     A escolha entra por `data-accent` no `<html>` (src/state.mjs#applyAccent);
-    azul é o padrão de quem nunca escolheu. */
- --acc-blue:light-dark(#2d5fdc,#4663dd);--acc-blue-text:light-dark(#2d5fdc,#88acf5);
- --acc-violet:light-dark(#8044ca,#8957d0);--acc-violet-text:light-dark(#8044ca,#b89cea);
- --acc-green:light-dark(#028053,#068758);--acc-green-text:light-dark(#028053,#66c394);
- --acc-orange:light-dark(#af4700,#c14f00);--acc-orange-text:light-dark(#af4700,#e8956f);
- --acc-pink:light-dark(#bd1c67,#c63a73);--acc-pink-text:light-dark(#bd1c67,#e78eaa);
+    grafite é o padrão de quem nunca escolheu. Azul, verde, laranja e rosa
+    saíram (2026-11-12): quem tinha um deles salvo cai no grafite. */
  --acc-graphite:light-dark(#303030,#e6e6e6);--acc-graphite-text:light-dark(#303030,#e6e6e6);
- --accent-fill:var(--acc-blue);--accent-text:var(--acc-blue-text);--accent-fg:#ffffff;--accent-paper:#2d5fdc;
+ --acc-violet:light-dark(#8044ca,#8957d0);--acc-violet-text:light-dark(#8044ca,#b89cea);
+ --accent-fill:var(--acc-graphite);--accent-text:var(--acc-graphite-text);--accent-fg:light-dark(#ffffff,#161616);--accent-paper:#303030;
  /* Trio (#100): o corpo, o claro, o membro, o sinal e a tinta de cada mascote
-    seguem o acento. As cores são as da tabela do ticket; três valores do tema
-    escuro (e o claro do verde no claro) subiram o mínimo para 3:1 de desenho e
-    4,5:1 dos sinais, medido em tests/contrast.test.mjs. O membro do escuro usa
-    o tom claro: o da tabela sumia no fundo. */
- --trio-blue-corpo:light-dark(#3760df,#3760df);
- --trio-blue-claro:light-dark(#5a83f3,#5a83f3);
- --trio-blue-membro:light-dark(#2a4eca,#5a83f3);
- --trio-blue-sinal:light-dark(#1a36a2,#5a83f3);
- --trio-blue-tinta:light-dark(#0a1536,#0a1536);
- --trio-violet-corpo:light-dark(#6d4fd8,#7053d9);
- --trio-violet-claro:light-dark(#8b74ec,#8b74ec);
- --trio-violet-membro:light-dark(#5a3fc4,#8b74ec);
- --trio-violet-sinal:light-dark(#3f2a9e,#8b74ec);
- --trio-violet-tinta:light-dark(#1a1033,#1a1033);
- --trio-green-corpo:light-dark(#078259,#078259);
- --trio-green-claro:light-dark(#0d9e6f,#0ea472);
- --trio-green-membro:light-dark(#046f4c,#0ea472);
- --trio-green-sinal:light-dark(#015337,#0ea472);
- --trio-green-tinta:light-dark(#001f11,#001f11);
- --trio-orange-corpo:light-dark(#bb3d05,#bc410a);
- --trio-orange-claro:light-dark(#df5c30,#e05f34);
- --trio-orange-membro:light-dark(#a13303,#e05f34);
- --trio-orange-sinal:light-dark(#7a2401,#e05f34);
- --trio-orange-tinta:light-dark(#300900,#300900);
- --trio-pink-corpo:light-dark(#c11f66,#c42a6e);
- --trio-pink-claro:light-dark(#db5484,#dc5988);
- --trio-pink-membro:light-dark(#aa0856,#dc5988);
- --trio-pink-sinal:light-dark(#810340,#dc5988);
- --trio-pink-tinta:light-dark(#2f0716,#2f0716);
+    seguem o acento. As cores são as da tabela do ticket; os valores abaixo
+    sobem o mínimo para 3:1 de desenho e 4,5:1 dos sinais, medido em
+    tests/contrast.test.mjs. O membro do escuro usa o tom claro: o da tabela
+    sumia no fundo. */
  --trio-graphite-corpo:light-dark(#55555c,#a8a8b0);
  --trio-graphite-claro:light-dark(#7c7c84,#c8c8ce);
  --trio-graphite-membro:light-dark(#44444a,#8e8e96);
  --trio-graphite-sinal:light-dark(#2c2c30,#d4d4d8);
  --trio-graphite-tinta:light-dark(#18181a,#18181a);
- --trio-corpo:var(--trio-blue-corpo);--trio-claro:var(--trio-blue-claro);
- --trio-membro:var(--trio-blue-membro);--trio-sinal:var(--trio-blue-sinal);
- --trio-tinta:var(--trio-blue-tinta);
+ --trio-violet-corpo:light-dark(#6d4fd8,#7053d9);
+ --trio-violet-claro:light-dark(#8b74ec,#8b74ec);
+ --trio-violet-membro:light-dark(#5a3fc4,#8b74ec);
+ --trio-violet-sinal:light-dark(#3f2a9e,#8b74ec);
+ --trio-violet-tinta:light-dark(#1a1033,#1a1033);
+ --trio-corpo:var(--trio-graphite-corpo);--trio-claro:var(--trio-graphite-claro);
+ --trio-membro:var(--trio-graphite-membro);--trio-sinal:var(--trio-graphite-sinal);
+ --trio-tinta:var(--trio-graphite-tinta);
  --primary:var(--accent-fill);
  --primary-hover:light-dark(color-mix(in oklab,var(--accent-fill) 78%,black),color-mix(in oklab,var(--accent-fill) 82%,white));
  --primary-fg:var(--accent-fg);
@@ -208,10 +185,7 @@ body[data-first-run] #setup{
 :root[data-pdf-dark=soft]{--pdf-dark-filter:invert(.85) hue-rotate(180deg) brightness(.92);--pdf-dark-paper:#232323}
 :root[data-theme=light]{color-scheme:light}
 :root[data-theme=dark]{color-scheme:dark}
-:root[data-accent=violet]{--accent-fill:var(--acc-violet);--accent-text:var(--acc-violet-text);--accent-paper:#8044ca;--trio-corpo:var(--trio-violet-corpo);--trio-claro:var(--trio-violet-claro);--trio-membro:var(--trio-violet-membro);--trio-sinal:var(--trio-violet-sinal);--trio-tinta:var(--trio-violet-tinta)}
-:root[data-accent=green]{--accent-fill:var(--acc-green);--accent-text:var(--acc-green-text);--accent-paper:#028053;--trio-corpo:var(--trio-green-corpo);--trio-claro:var(--trio-green-claro);--trio-membro:var(--trio-green-membro);--trio-sinal:var(--trio-green-sinal);--trio-tinta:var(--trio-green-tinta)}
-:root[data-accent=orange]{--accent-fill:var(--acc-orange);--accent-text:var(--acc-orange-text);--accent-paper:#af4700;--trio-corpo:var(--trio-orange-corpo);--trio-claro:var(--trio-orange-claro);--trio-membro:var(--trio-orange-membro);--trio-sinal:var(--trio-orange-sinal);--trio-tinta:var(--trio-orange-tinta)}
-:root[data-accent=pink]{--accent-fill:var(--acc-pink);--accent-text:var(--acc-pink-text);--accent-paper:#bd1c67;--trio-corpo:var(--trio-pink-corpo);--trio-claro:var(--trio-pink-claro);--trio-membro:var(--trio-pink-membro);--trio-sinal:var(--trio-pink-sinal);--trio-tinta:var(--trio-pink-tinta)}
+:root[data-accent=violet]{--accent-fill:var(--acc-violet);--accent-text:var(--acc-violet-text);--accent-fg:#ffffff;--accent-paper:#8044ca;--trio-corpo:var(--trio-violet-corpo);--trio-claro:var(--trio-violet-claro);--trio-membro:var(--trio-violet-membro);--trio-sinal:var(--trio-violet-sinal);--trio-tinta:var(--trio-violet-tinta)}
 :root[data-accent=graphite]{--accent-fill:var(--acc-graphite);--accent-text:var(--acc-graphite-text);--accent-fg:light-dark(#ffffff,#161616);--accent-paper:#303030;--trio-corpo:var(--trio-graphite-corpo);--trio-claro:var(--trio-graphite-claro);--trio-membro:var(--trio-graphite-membro);--trio-sinal:var(--trio-graphite-sinal);--trio-tinta:var(--trio-graphite-tinta)}
 
 *{box-sizing:border-box;corner-shape:squircle}

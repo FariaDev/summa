@@ -89,10 +89,13 @@ def Laws.quadro_serifa_dos_pdfs():
 def Laws.quadro_raio():
   {==}
 
-def Laws.quadro_acento_verde_escuro():
+def Laws.quadro_acento_violeta_escuro():
   {==}
 
 def Laws.quadro_acento_desconhecido():
+  {==}
+
+def Laws.quadro_acento_antigo_e_grafite():
   {==}
 
 def Laws.quadro_grafite_texto_sobre_acento():
@@ -110,7 +113,7 @@ def Laws.quadro_paleta_seis_distintas_escuro():
 def Laws.quadro_paleta_reserva_no_lugar_do_acento():
   {==}
 
-def Laws.quadro_paleta_escuro_azul():
+def Laws.quadro_paleta_escuro_grafite():
   {==}
 
 def Laws.quadro_mcp_fundo():

@@ -74,9 +74,9 @@ test('A4: --faint escuro tem margem de AA sobre --raised, --surface e --selected
 });
 
 test('9: o texto do primário escuro passa 5:1 sobre o fundo do primário', () => {
-  assert.equal(plainToken('accent-fill'), 'var(--acc-blue)', 'o fundo do primário é o token compartilhado --accent-fill');
-  const fill = colorOf(themePair('acc-blue').dark);
-  const text = colorOf(plainToken('accent-fg'));
+  assert.equal(plainToken('accent-fill'), 'var(--acc-graphite)', 'o fundo do primário é o token compartilhado --accent-fill');
+  const fill = colorOf(themePair('acc-graphite').dark);
+  const text = colorOf(themePair('accent-fg').dark);
   const ratio = contrast(text, fill);
   assert.ok(ratio >= 5, `escuro: texto do primário sobre --accent-fill dá ${ratio.toFixed(2)}:1, esperado ≥ 5:1`);
 });

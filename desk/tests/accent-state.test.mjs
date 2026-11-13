@@ -4,57 +4,66 @@ import {createRequire} from 'node:module';
 import {applyBrandIcon, brandIconVariant} from '../src/accent-state.mjs';
 
 /* Cor de acento (ticket #9): estado de interface, como o tema. Pelo adaptador
-   real do app (o main.cjs usa este módulo): quem nunca escolheu vê azul, a
+   real do app (o main.cjs usa este módulo): quem nunca escolheu vê grafite, a
    escolha volta na abertura seguinte e valor inválido nunca vira acento. */
 const require = createRequire(import.meta.url);
 const {deskLayout, saveState} = require('../state-adapter.cjs');
 
-const ACCENTS = ['blue', 'violet', 'green', 'orange', 'pink', 'graphite'];
+const ACCENTS = ['graphite', 'violet'];
 const base = {draft: '', theme: 'auto', referenceVisible: true, chatWidth: 390, calcHeight: 220, pdfSplit: .5};
 
-test('quem nunca escolheu vê azul', () => {
-  assert.equal(deskLayout({}).accent, 'blue');
-  assert.equal(deskLayout(undefined).accent, 'blue');
-  assert.equal(deskLayout({theme: 'dark'}).accent, 'blue');
+test('quem nunca escolheu vê grafite', () => {
+  assert.equal(deskLayout({}).accent, 'graphite');
+  assert.equal(deskLayout(undefined).accent, 'graphite');
+  assert.equal(deskLayout({theme: 'dark'}).accent, 'graphite');
 });
 
-test('cada um dos seis acentos volta como foi gravado', () => {
+test('cada um dos dois acentos volta como foi gravado', () => {
   for (const accent of ACCENTS) assert.equal(deskLayout({accent}).accent, accent);
 });
 
-test('valor inválido ou de tipo errado volta ao padrão azul na carga', () => {
-  for (const accent of ['roxo', '', 'BLUE', 'blue ', 0, 1, true, null, {}, ['green']]) {
-    assert.equal(deskLayout({accent}).accent, 'blue', `carga com ${JSON.stringify(accent)}`);
+test('valor inválido ou de tipo errado volta ao padrão grafite na carga', () => {
+  for (const accent of ['roxo', '', 'GRAPHITE', 'graphite ', 0, 1, true, null, {}, ['violet']]) {
+    assert.equal(deskLayout({accent}).accent, 'graphite', `carga com ${JSON.stringify(accent)}`);
+  }
+});
+
+/* Regressão da decisão de 2026-11-12: quem tinha uma cor removida salva no
+   estado (blue/green/orange/pink) cai no grafite, sem erro e sem aviso. */
+test('estado salvo com uma cor removida vira grafite', () => {
+  for (const accent of ['blue', 'green', 'orange', 'pink']) {
+    assert.equal(deskLayout({accent}).accent, 'graphite', `carga com ${accent}`);
+    assert.equal(saveState({...base, accent}, {...base}).accent, 'graphite', `save com ${accent}`);
   }
 });
 
 test('salvar grava a escolha nova', () => {
-  for (const accent of ACCENTS) assert.equal(saveState({...base, accent: 'blue'}, {...base, accent}).accent, accent);
+  for (const accent of ACCENTS) assert.equal(saveState({...base, accent: 'graphite'}, {...base, accent}).accent, accent);
 });
 
 test('salvar sem acento, ou com acento inválido, mantém o corrente (como o tema)', () => {
-  const current = {...base, accent: 'pink'};
-  assert.equal(saveState(current, {...base}).accent, 'pink');
-  for (const accent of [null, 'roxo', '', 'PINK', 7, true, {}]) {
-    assert.equal(saveState(current, {...base, accent}).accent, 'pink', `salvar com ${JSON.stringify(accent)}`);
+  const current = {...base, accent: 'violet'};
+  assert.equal(saveState(current, {...base}).accent, 'violet');
+  for (const accent of [null, 'roxo', '', 'VIOLET', 7, true, {}]) {
+    assert.equal(saveState(current, {...base, accent}).accent, 'violet', `salvar com ${JSON.stringify(accent)}`);
   }
 });
 
 test('o acento não mexe nos outros campos do estado', () => {
-  const layout = saveState({...base, accent: 'blue', theme: 'dark'}, {...base, theme: 'dark', accent: 'green', chatWidth: 500});
+  const layout = saveState({...base, accent: 'graphite', theme: 'dark'}, {...base, theme: 'dark', accent: 'violet', chatWidth: 500});
   assert.equal(layout.theme, 'dark');
   assert.equal(layout.chatWidth, 500);
-  assert.equal(layout.accent, 'green');
+  assert.equal(layout.accent, 'violet');
 });
 
 
 test('desk.json antigo com mascot/appIcon não volta a gravar os campos (#101)', () => {
-  const old = {...base, accent: 'blue', mascot: 'nabla', appIcon: 'm-colorido'};
+  const old = {...base, accent: 'graphite', mascot: 'nabla', appIcon: 'm-colorido'};
   const layout = deskLayout(old);
   assert.equal('mascot' in layout, false, 'a carga não devolve mascote');
   assert.equal('appIcon' in layout, false, 'nem ícone');
-  const saved = saveState(old, {...base, accent: 'green', mascot: 'sigma', appIcon: 'm-refinado'});
-  assert.equal(saved.accent, 'green');
+  const saved = saveState(old, {...base, accent: 'violet', mascot: 'sigma', appIcon: 'm-refinado'});
+  assert.equal(saved.accent, 'violet');
   assert.equal('mascot' in saved, false, 'o save ignora o campo antigo');
   assert.equal('appIcon' in saved, false);
 });
@@ -88,7 +97,7 @@ test('tema auto segue o sistema; acento que não é violeta usa a tinta grafite'
   assert.equal(brandIconVariant('auto', 'violet', () => true), 'dark-violet');
   assert.equal(brandIconVariant('auto', 'violet', () => false), 'light-violet');
   assert.equal(brandIconVariant('system', 'graphite', () => true), 'dark-graphite');
-  for (const accent of ['blue', 'green', 'orange', 'pink', 'graphite', 'teal']) {
+  for (const accent of ['graphite', 'teal']) {
     assert.equal(brandIconVariant('light', accent, () => false), 'light-graphite', accent);
     assert.equal(brandIconVariant('dark', accent, () => false), 'dark-graphite', accent);
   }
