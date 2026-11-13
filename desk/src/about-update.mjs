@@ -2,7 +2,7 @@ import {$,S,toast} from './state.mjs';
 import {openGuide} from './guide-loader.mjs';
 import {message as uiMessage} from './i18n.mjs';
 import {t,formatDate} from './ui-text.mjs';
-import {renderAboutLead,renderAboutOrigin,renderAboutUpdate,renderComponentChecking,renderHelpVersion,setXournalPluginUi} from './dialogs.mjs';
+import {renderAboutLead,renderAboutOrigin,renderAboutUpdate,renderComponentChecking,renderHelpVersion} from './dialogs.mjs';
 import {noticesOpened,showRows,askUpdate} from './tool-notices.mjs';
 import {isOffline,onOfflineChange} from './offline-state.mjs';
 
@@ -113,23 +113,6 @@ async function refreshComponents(manual){
  try{showRows((await window.desk.components({manual:!!manual}))?.rows||[]);}
  catch(e){if(manual)toast(e.message);}
 }
-/* Plugin MesaPagina (#133): instala pela ação explícita do botão da linha do
-   Xournal++, confirma no toast curto e reconfere o estado; o aviso de reiniciar
-   fica na própria linha (N11). A falha só vive no erro inline com "Tentar de
-   novo" — o toast repetido saiu (N12). */
-window.addEventListener('desk-xournal-plugin-install',async()=>{
- setXournalPluginUi({busy:true,error:''});
- try{
-  await window.desk.xournalPluginInstall();
-  setXournalPluginUi({busy:false,error:''});
-  toast(t('component.plugin.done'));
-  await refreshComponents(false);
- }catch(e){
-  const message=e?.message?String(e.message):String(e);
-  setXournalPluginUi({busy:false,error:message});
-  try{await refreshComponents(false);}catch{}
- }
-});
 async function refreshMesaUpdate(manual){
  if(isOffline()){paintOfflineUpdate();return;}
  try{

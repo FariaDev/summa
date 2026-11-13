@@ -21,7 +21,7 @@
 .guide-search{position:relative;display:block;margin:0}
 .guide-search-icon{position:absolute;left:var(--space-4);top:50%;display:flex;color:var(--muted);transform:translateY(-50%);pointer-events:none}
 .guide-search-icon .icon{width:16px;height:16px}
-/* A busca do Guia é a mesma forma da busca dos Cadernos: 40px, sem borda e
+/* A busca do Guia: 40px, sem borda e
    preenchida. O seletor vale fora do diálogo para o painel reaproveitá-la. */
 .guide-search input{width:100%;height:40px;box-sizing:border-box;margin:0;padding:0 var(--space-5) 0 36px;border:0;border-radius:var(--r-sm);background:var(--surface)}
 .guide-search input:focus-visible{outline:2px solid var(--ring);outline-offset:-2px}
@@ -182,20 +182,6 @@
 .component-wait{flex-basis:100%;font-size:var(--fs-xs);color:var(--faint)}
 .component-update[disabled]{opacity:.55;cursor:not-allowed}
 .component-update[disabled]:hover{text-decoration:none}
-/* "Instalar plugin" desabilitado no erro (#133, achado 1 da rodada 6): a ação
-   ativa é o "Tentar de novo", mas o rótulo fica legível (≥4,5:1) com
-   `opacity:1` + `--faint`, como os desabilitados do composer. Vem antes da
-   regra do `aria-busy`, que vence no "Instalando…". */
-.component-plugin-install[disabled]{opacity:1;color:var(--faint)}
-/* O "Instalando…" do plugin (#133, rodada 5): em voo o botão segue `disabled`
-   + `aria-busy`, mas o rótulo é o único progresso na tela e a opacidade de
-   desabilitado o deixava a 2,59:1/2,81:1. O composer já mantém os seus
-   desabilitados legíveis com `opacity:1` + token. */
-.component-plugin-install[aria-busy="true"]{opacity:1;color:var(--accent-text)}
-.component-plugin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
-.component-plugin-state{font-size:var(--fs-xs);color:var(--muted)}
-.component-plugin-version{font-size:var(--fs-xs);color:var(--muted)}
-.component-plugin-restart,.component-plugin-next{flex-basis:100%;font-size:var(--fs-xs);line-height:1.45;color:var(--muted)}
 /* Confirmação e saída do "Atualizar": ocupa a largura da linha, embaixo. */
 .component-run{flex-basis:100%;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--code)}
 .run-line{margin:0;font-size:var(--fs-sm);color:var(--fg)}

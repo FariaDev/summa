@@ -2,7 +2,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nativeImage,nativeTheme,WebContentsView,Notification,powerMonitor,protocol,safeStorage,clipboard}=require('electron');
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
-const {promisify}=require('node:util');const {execFile,spawn}=require('node:child_process');
+const {promisify}=require('node:util');const {execFile}=require('node:child_process');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
 /* Bytecode da partida na pasta de dados do usuário; sem API/permissão, abre sem cache (#desempenho). */
@@ -465,7 +465,7 @@ ipcMain.handle('switch-course',async(_e,id)=>withHostNav(async()=>{
  persist();stopBridge();applyCourse(id);persist();return initialData();
 }));
 /* PDFs e imagens da mesa (open-pdf … open-image): pdf-host.cjs, mesma posição de registro. */
-registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const notebookHosts=require('./notebook-ink-wiring.cjs').registerNotebookInkWiring({ipcMain,courses:()=>courses,allowedXopp,config:()=>config,shell,spawn,platform:process.platform,app,runtime,allowSender:trustedMainSender,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,pdfAuthorize:authorizeNotebookPdf,openCodeTutor,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,log:line=>appendLog('tinta',line)});
+registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});
 ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
  assertNoNav();
  return chatPdfHost.attach(rawPath);
@@ -692,15 +692,13 @@ const toolHost={
  relink:()=>{persist();stopBridge();},
  fixtures:toolTestFixtures(TEST_MODE),
 };
-const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});require('./xournal-plugin-host.cjs').registerXournalPluginHost({ipcMain,deskDir,env:process.env,runtime,allowSender:trustedMainSender});
+const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
 ggb.register(ipcMain);
 
 app.on('window-all-closed',()=>app.quit());
 /* O `before-quit` espera o serve sair de verdade, com teto: no caso normal o
    SIGTERM o encerra em milissegundos; no teimoso, o stop escala para SIGKILL
-   e o ledger "encerrando" fica para a próxima abertura se o app sair antes (#105).
-   A ponte da tinta entra na mesma espera (#212): o arquivo de descoberta some
-   antes de o app sair, e o teto de 1 s dela cabe no de 3 s daqui. */
+   e o ledger "encerrando" fica para a próxima abertura se o app sair antes (#105). */
 let serveStopStarted=false;
 app.on('before-quit',(event)=>{quitting=true;
  if(serveStopStarted)return;
@@ -718,7 +716,7 @@ app.on('before-quit',(event)=>{quitting=true;
  for(const controller of freeJobs)try{controller.abort();}catch{/* encerrando: a geração já terminou */}bridge?.removeAllListeners();
  bridge?.stop();
  serveStopStarted=true;
- const stopping=Promise.all([Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */}),notebookHosts.stopInkConvert().catch(()=>{/* encerrando: a ponte já fechou */})]);
+ const stopping=Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */});
  ggb.close();
  persist();
  event.preventDefault();

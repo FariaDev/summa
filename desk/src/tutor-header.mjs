@@ -1,4 +1,4 @@
-import {$,S,labelBtn,paintSessionTitle,toast} from './state.mjs';
+import {$,S,labelBtn,paintSessionTitle} from './state.mjs';
 import {visibleEngines} from './visible-engines-ui.mjs';
 import {icon} from '../icons.mjs';
 import {choiceIcon} from './provider-icons.mjs';
@@ -12,7 +12,6 @@ import {t,text as translate,LANGUAGE_EVENT} from './ui-text.mjs';
 import {engineReady} from './engine-facts.mjs';
 import {initContextDock,openContextDock,closeContextDock,updateContextDock,syncContextDock} from './context-dock.mjs';
 import {createNewSessionMenu} from './new-session-menu.mjs';
-import {ensureNotebooks,bindNotebooksShortcut,closeNotebooks} from './notebooks-boot.mjs';
 import {initOfflineState,onOfflineChange,syncOfflineLive,paintOfflineIndicator} from './offline-state.mjs';
 
 /* ---------------------------------------------------------------------------
@@ -73,7 +72,7 @@ export function closeTutorPops({restoreFocus=false}={}){
  }
  if(restoreFocus&&focusTarget)focusTarget.focus();
 }
-/* O painel Cadernos é no fluxo: clique fora não fecha (Esc, × e o botão fecham). */
+/* O painel Contexto é no fluxo: clique fora não fecha (Esc, × e o botão fecham). */
 function tutorPopOpen(){return POPS.some(({pop})=>isOpen(pop));}
 function openPop(selector){
  const entry=POPS.find(item=>item.pop===selector);
@@ -85,7 +84,6 @@ function openPop(selector){
  const el=$(entry.pop);
  if(!el)return;
  closeContextDock();
- closeNotebooks();
  syncMore();
  el.hidden=false;
  $(entry.trigger)?.setAttribute('aria-expanded','true');
@@ -188,40 +186,18 @@ function newSessionMenu(){
  return sessionMenu;
 }
 
-/* O atalho de Cadernos aparece no item do menu (a tecla é fato vivo, remapeável
-   no editor de atalhos). */
-function paintNotebooksHint(item){
- if(!item)return;
- let hint=item.querySelector('.menu-kbd');
- if(!hint){hint=document.createElement('span');hint.className='menu-kbd';hint.setAttribute('aria-hidden','true');item.append(hint);}
- let text='';
- try{const keys=/** @type {any} */ (window).mesaKeys;const accel=keys?.effective?.('notebooks');text=accel&&keys?.format?keys.format(accel):'';}catch{}
- hint.textContent=text;
- hint.hidden=!text;
-}
-/* Cadernos abre pelo item do menu e pelo atalho, sempre com o Contexto fechado
-   (só um painel por vez). */
-function closePanelsForNotebooks(){closeTutorPops();closeContextDock();}
-function openNotebooksPanel(){
- closeTutorPops();
- closeContextDock();
- ensureNotebooks(closePanelsForNotebooks).then(module=>module.toggleNotebooks?.()).catch(error=>toast(error.message));
-}
-
 function renderMenus(){
  const handlers={
   ExportSession:()=>{closeTutorPops({restoreFocus:true});host.exportSession();},
   OpenEndDay:()=>{closeTutorPops({restoreFocus:true});host.openEndDay();},
   OpenContext:()=>{closeTutorPops();openContextDock({focusReturn:$('#chat-more'),focus:true});},
-  OpenNotebooks:()=>openNotebooksPanel(),
   ToggleTutor:()=>{closeTutorPops();host.toggleTutor();}
  };
-  const morePop=$('#chat-more-pop');
-  newSessionMenu().render($('#new-session-pop'), $('#new-session'));
+ const morePop=$('#chat-more-pop');
+ newSessionMenu().render($('#new-session-pop'), $('#new-session'));
  if(morePop){
   renderChildren(morePop,core.moreItems(host.endDayEnabled()),handlers);
   iconize(morePop);
-  paintNotebooksHint(morePop.querySelector('#more-notebooks'));
  }
  syncMore();
 }
@@ -410,7 +386,6 @@ export function initTutorHeader(hostApi){
  labelBtn($('#sidechat-toggle'),'messageSquare');labelBtn($('#chat-full'),'maximize');
  labelBtn($('#new-session'),'plus');
  labelBtn($('#chat-more'),'more');
- /* Cadernos (D2): o atalho global abre o mesmo painel do item do menu. */bindNotebooksShortcut(closePanelsForNotebooks,text=>toast(text));
  /* A seta do título é do host (asset do ícone), fora do texto. */
  const title=$('#session-title');
  if(title&&!title.querySelector('.icon'))title.insertAdjacentHTML('beforeend',icon('chevronDown'));
@@ -427,7 +402,7 @@ export function initTutorHeader(hostApi){
  syncIndicator();
  syncSidechatButton();
  syncChatFullButton();
- /* Cadernos (#133, #desempenho): a ligação às fontes da Mesa entra no primeiro uso do painel, em `notebooks-boot.mjs`. */window.addEventListener('desk-tutor-link',()=>{syncIndicator();syncMore();syncContextDock();});
+ window.addEventListener('desk-tutor-link',()=>{syncIndicator();syncMore();syncContextDock();});
  window.addEventListener('desk-support-changed',syncSidechatButton);
  window.addEventListener('desk-chat-full-changed',syncChatFullButton);
  /* O nome da sessão sem assunto traz a data no idioma da interface ("Sessão de…"/"Session of…"). */

@@ -137,7 +137,7 @@ await withArtifacts('model-indicator',async ctx=>{
  /* ---- "Contexto da sessão" mora em Mais opções (sem espaço fixo) ---- */
  await openTutorMore(page);
  const ids=await page.locator('#chat-more-pop > *').evaluateAll(list=>list.map(el=>el.id||el.className));
- assert.deepEqual(ids,['more-context','more-notebooks','menu-sep','end-day','export-chat','chat-collapse']);
+ assert.deepEqual(ids,['more-context','menu-sep','end-day','export-chat','chat-collapse']);
  await page.locator('#more-context').click();
  await page.waitForSelector('#context-dock:not([hidden])');
  assert.equal(await page.locator('#chat-more-pop').isHidden(),true,'escolher Contexto fecha o menu');

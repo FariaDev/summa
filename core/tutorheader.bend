@@ -14,9 +14,8 @@ import view.bend as V
 # monta no DOM:
 #   - o menu de sessão nova é interface pura (rótulo, ordem, "(atual)") e mora
 #     em JS desde a #87; com um motor só o "+" cria direto, sem menu;
-#   - `moreItems`: Contexto e Cadernos (abrem os painéis encaixados), Encerrar
-#     por hoje (some só pela flag `desk.endDay`), Exportar sessão e recolher o
-#     tutor;
+#   - `moreItems`: Contexto (abre o painel encaixado), Encerrar por hoje (some
+#     só pela flag `desk.endDay`), Exportar sessão e recolher o tutor;
 #   - `indicator` e `popNote` (ticket #14): o indicador de modelo e esforço e
 #     o aviso do popover que ele abre. Desde o #42 o indicador mora na fileira
 #     da caixa de mensagem, à esquerda do Enviar (a ordem e o degrau em coluna
@@ -67,18 +66,12 @@ def endDayItem(endDay: Bool) -> V.ViewNode:
     V.attrWhen(Bool.not(endDay), V.attr("hidden", ""))
   )
 
-# "Contexto" abre o painel encaixado abaixo do cabeçalho (o mesmo lugar dos
-# Cadernos); a sanfona saiu do menu. O painel é do host — o núcleo só nomeia a
-# ação.
+# "Contexto" abre o painel encaixado abaixo do cabeçalho; a sanfona saiu do
+# menu. O painel é do host — o núcleo só nomeia a ação.
 def contextItem() -> V.ViewNode:
   item("more-context", M.msg("header.context"), "layers", "OpenContext", Nil{})
 
-# Cadernos abre o mesmo painel da biblioteca .xopp, pelo item do menu e pelo
-# atalho. A dica da tecla é do host (o atalho é fato vivo, remapeável).
-def notebooksItem() -> V.ViewNode:
-  item("more-notebooks", M.msg("notebooks.button"), "book", "OpenNotebooks", Nil{})
-
-# Fio entre o que abre painel (Contexto, Cadernos) e as ações da sessão.
+# Fio entre o que abre painel (Contexto) e as ações da sessão.
 def menuSeparator() -> V.ViewNode:
   V.viewEl("div", [V.attrClass("menu-sep"), V.attr("role", "separator")], Nil{})
 
@@ -87,7 +80,7 @@ def collapseItem() -> V.ViewNode:
 
 def moreItems(endDay: Bool) -> List<&2, V.ViewNode>:
   [
-    contextItem(), notebooksItem(), menuSeparator(), endDayItem(endDay),
+    contextItem(), menuSeparator(), endDayItem(endDay),
     exportItem(), collapseItem()
   ]
 

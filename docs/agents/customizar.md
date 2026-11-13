@@ -53,7 +53,7 @@ Defaults (o jeito do autor — deixe assim se o usuário não pediu o contrário
 | `conferir` | `false` esconde Conferir Xournal++ |
 | `panels` | 1 ou 2 leitores. `label` é o título do painel. `prefer` são trechos do nome do PDF (sem acento importa; “Limites” pega `Limites.pdf`). O 1º painel pega o primeiro `prefer`; se não houver, um arquivo que não case com o outro painel. `toggle` é o texto do botão que recolhe o 2º painel. Um item só em `panels` = um PDF. |
 
-`courses` (já na Configurações): `id`, `name` (rótulo), `path` (pasta de PDFs, com ou sem `_state.md`) e o opcional `color`, em hex `#rrggbb`. A cor pinta o ícone do caderno na biblioteca; sem ela, o ícone fica no cinza neutro do tema, como antes. Valor inválido é ignorado com aviso no log, e a matéria continua sem cor (#166). O formato da página ("A4", "Carta") da etiqueta da biblioteca não se configura: a Mesa lê do próprio `.xopp`.
+`courses` (já na Configurações): `id`, `name` (rótulo), `path` (pasta de PDFs, com ou sem `_state.md`) e o opcional `color`, em hex `#rrggbb`. Valor inválido é ignorado com aviso no log, e a matéria continua sem cor (#166).
 
 O editor de leitores preserva campos extras ao salvar. Campos vazios de nome, preferência e botão herdam os defaults normalizados; não representam preferência vazia. O chat lateral abre pelo cabeçalho do tutor e pode abrir também com um leitor; o segundo leitor se recolhe pelo menu Estudar e reabre pela faixa que fica no lugar dele. Seu histórico/rascunho ficam em `runtime/sidechats/`, escopados à conversa principal e matéria. Retomar não deve renovar o contexto herdado: use a ação explícita de atualização. Não reutilize a ponte, fila, permissões ou estado de envio do principal.
 

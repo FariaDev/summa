@@ -118,7 +118,7 @@ test('desk.json round-trips through init/save-state/switch-course and ggbBase64 
     draft:'novo rascunho',study:{title:'Lista 3 · q8',xopp},
     pdfs:[{path:pdfA,page:3,zoom:1.2,rotation:90,scrollX:1,scrollY:2,invert:true,minimized:true},{path:pdfB,page:1,zoom:1,rotation:360,scrollX:0,scrollY:0,invert:false}],
     pdfRotations:{[pdfA]:90,[pdfB]:45,'':270},
-    referenceVisible:true,chatWidth:420,calcHeight:260,pdfSplit:.62,theme:'light',inkReading:true,
+    referenceVisible:true,chatWidth:420,calcHeight:260,pdfSplit:.62,theme:'light',
     modelRecents:{pi:[['xai','grok-4'],['lixo'],[7,8]],opencode:'ruim'},
     modelFavorites:{pi:[['xai','grok-4-fast'],['só um']],claude:7}
    });
@@ -133,7 +133,6 @@ test('desk.json round-trips through init/save-state/switch-course and ggbBase64 
    assert.deepEqual(desk.modelRecents,{pi:[['xai','grok-4']]},'os recentes do seletor (#59) guardam só pares de texto, por motor');
    assert.deepEqual(desk.modelFavorites,{pi:[['xai','grok-4-fast']]},'os favoritos do seletor guardam só pares de texto, por motor');
    assert.equal(desk.theme,'light');assert.equal(desk.chatWidth,420);assert.equal(desk.calcHeight,260);assert.equal(desk.pdfSplit,.62);
-   assert.equal(desk.inkReading,false,'save-state não liga a leitura da tinta; só notebooks-ink-set escreve inkReading (#158)');
    assert.equal(desk.session,init.session,'o save persiste a sessão OpenCode nova');assert.equal(desk.courseId,'A');
    assert.deepEqual(desk.courseStates.A.study,{title:'Lista 3 · q8',xopp},'course state carries the live study');
    assert.deepEqual(desk.courseStates.A.sessionStudies[init.session],{title:'Lista 3 · q8',xopp},'per-session study round-trips');

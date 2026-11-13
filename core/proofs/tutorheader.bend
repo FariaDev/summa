@@ -8,7 +8,7 @@ import ../view.bend as V
 # concretos fecham por computação (`{==}`); as leis sobre `endDay` abrem a
 # flag nos dois casos e fecham cada um por computação.
 
-def Laws.tutor_mais_cinco_acoes(endDay):
+def Laws.tutor_mais_quatro_acoes(endDay):
   match endDay:
     case True{}:
       {==}
@@ -35,18 +35,6 @@ def Laws.tutor_contexto_gatilho_clique():
   {==}
 
 def Laws.tutor_contexto_sem_sanfona():
-  {==}
-
-def Laws.tutor_cadernos_id():
-  {==}
-
-def Laws.tutor_cadernos_rotulo():
-  {==}
-
-def Laws.tutor_cadernos_clique():
-  {==}
-
-def Laws.tutor_cadernos_papel():
   {==}
 
 def Laws.tutor_separador_papel():

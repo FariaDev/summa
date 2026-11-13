@@ -109,8 +109,6 @@ function sanitizeState(value){
      estrito (só `true` vale) e limites pela mesma asBounds da Mesa. */
   sidechatDetached:source.sidechatDetached===true,
   sidechatAlwaysOnTop:source.sidechatAlwaysOnTop===true,
-  /* Leitura da tinta por opt-in (#158/#159): estado de interface, nunca no config.json. */
-  inkReading:source.inkReading===true,
   /* Ações do menu Anexar fixadas no composer (#99): estado de interface, até duas. */
   composerPins:normalizeComposerPins(source.composerPins),
   /* Novidades: a última versão cuja janela já abriu (`src/release-notes.mjs`). */
