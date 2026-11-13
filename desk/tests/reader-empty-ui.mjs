@@ -294,7 +294,8 @@ await withArtifacts('leitor-vazio-acoes',async ctx=>{
  assert.match(request,/lista de exerc[ií]cios/i,'o pedido já fala de uma lista de exercícios');
  assert.ok(request.includes(COURSE),'o pedido cita a matéria');
  await page.locator('#tutor-pdf-send').click();
- await page.waitForFunction(()=>/Prepare um PDF na Mesa/.test(document.querySelector('#messages')?.textContent||''),undefined,{timeout:15000});
+ /* A marca virou Summa (#190, 5914398b). */
+ await page.waitForFunction(()=>/Prepare um PDF na Summa/.test(document.querySelector('#messages')?.textContent||''),undefined,{timeout:15000});
  assert.equal(await page.locator('#tutor-pdf-dialog[open]').count(),0,'o diálogo fecha ao enviar');
 
  /* Abrir PDF…: o seletor de arquivos do sistema; o escolhido abre no leitor. */

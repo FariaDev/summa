@@ -259,7 +259,7 @@ def chartTokens(+theme: String, +accent: String) -> List<&2, Token>:
 # Os nomes antigos (`--mesa-surface`, `--mesa-hover`, `--mesa-good`,
 # `--mesa-bad`) continuam valendo para as atividades salvas.
 def baseTokens(+theme: String, +accent: String) -> List<&2, Token>:
-  [ Token{"--mesa-bg", byTheme(theme, "#ffffff", "#191919")}
+  [ Token{"--mesa-bg", byTheme(theme, "#ffffff", "#161616")}
   , Token{"--mesa-fg", byTheme(theme, "#191919", "#efefef")}
   , Token{"--mesa-muted", byTheme(theme, "#5c5c5c", "#a8a8a8")}
   , Token{"--mesa-card", byTheme(theme, "#ffffff", "#1f1f1f")}

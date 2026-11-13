@@ -188,7 +188,8 @@ await withArtifacts('phone-photo',async ctx=>{
   {name:'pagina-1.jpg',mimeType:'image/jpeg',buffer:withExif(syntheticJpeg(),{orientation:8})},
   {name:'pagina-2.png',mimeType:'image/png',buffer:syntheticPng({w:20,h:40})},
  ]);
- await phonePage.waitForFunction(()=>document.querySelector('#status').textContent==='Enviado para a Mesa (2 de 2)');
+ /* A marca virou Summa (#190, 5914398b). */
+ await phonePage.waitForFunction(()=>document.querySelector('#status').textContent==='Enviado para a Summa (2 de 2)');
  assert.equal(await phonePage.locator('#sent .thumb:not(.pending) .done').count(),2,'as duas enviadas com o ✓');
  assert.deepEqual(await phonePage.locator('label.button').evaluateAll(els=>els.map(el=>el.textContent.trim())),['Mais uma','Da galeria']);
  for(const theme of ['light','dark']){
@@ -208,7 +209,7 @@ await withArtifacts('phone-photo',async ctx=>{
  /* Sem conexão: a Mesa desligou o servidor; a próxima foto cai no ∇ e "Tentar de novo" continua lá. */
  await phonePage.setInputFiles('#camera',[{name:'pagina-3.png',mimeType:'image/png',buffer:syntheticPng({w:20,h:40})}]);
  await phonePage.waitForFunction(()=>document.querySelector('main').dataset.state==='offline');
- assert.equal(await phonePage.locator('#offline[role=alert] strong').textContent(),'Sem conexão com a Mesa.');
+ assert.equal(await phonePage.locator('#offline[role=alert] strong').textContent(),'Sem conexão com a Summa.');
  assert.equal(await phonePage.locator('#sent .thumb:not(.pending)').count(),2,'as que chegaram continuam na grade');
  assert.equal(await phonePage.locator('#sent .thumb.pending').count(),1,'a que não chegou fica pendente para o Tentar de novo');
  for(const theme of ['light','dark']){

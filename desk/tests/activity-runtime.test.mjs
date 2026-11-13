@@ -129,9 +129,9 @@ test('documento montado pelo host: CSP/Trusted Types, prelude ANTES do html e ht
   assert.match(systemDoc, /color-scheme:dark/);
   /* #42: os tokens vêm do núcleo, com o espelho MCP Apps e a paleta. */
   const dark = buildActivityDocument(SPEC, {id: 'act-abc12345', version: 1, hash: 'sha256:x', theme: 'dark', accent: 'violet'});
-  assert.match(dark, /--mesa-bg:#191919;/);
+  assert.match(dark, /--mesa-bg:#161616;/);
   assert.match(dark, /--mesa-chart-1:#a78bfa;/);
-  assert.match(dark, /--color-background-primary:#191919;/);
+  assert.match(dark, /--color-background-primary:#161616;/);
   assert.doesNotMatch(dark, /chart\.umd/, 'sem gráficos pedidos, a biblioteca não entra');
   const charts = buildActivityDocument({...SPEC, charts: true}, {id: 'act-abc12345', version: 1, hash: 'sha256:x'});
   assert.match(charts, /<script src="mesa-activity:\/\/lib\/chart\.umd\.min\.js"><\/script>/);

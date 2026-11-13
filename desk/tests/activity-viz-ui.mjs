@@ -132,7 +132,7 @@ await withArtifacts('activity-viz-ui',async ctx=>{
    for(const frame of frames()){
     const d=await docFacts(frame);
     assert.equal(d.bg,vf.column,`${tag}: o fundo do quadro é o da coluna do tutor (${d.bg} × ${vf.column})`);
-    assert.equal(d.mesaBg,theme==='dark'?'#191919':'#ffffff');
+    assert.equal(d.mesaBg,theme==='dark'?'#161616':'#ffffff');
     assert.equal(d.mcp,d.mesaBg,`${tag}: nome do MCP Apps espelhado`);
     assert.match(d.serif,/STIX Two Text/);
    }
