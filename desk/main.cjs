@@ -121,6 +121,7 @@ const learningRoot=path.join(runtime,'learning');
 
 const ggbCache=createGgbCache({dir:path.join(runtime,'ggb'),log:(area,line)=>appendLog(area,line)});
 const logFile=path.join(runtime,'desk.log');
+const {cleanNotebookLeftovers,xournalPluginDirs}=require('./notebook-leftovers.cjs');
 const appendLog=createDeskLog({logFile,logText:raw=>languageHost.logText(raw)});
 process.on('uncaughtException',e=>{try{appendLog('main',e&&(e.stack||e.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
 process.on('unhandledRejection',e=>{try{const error=/** @type {{stack?: string, message?: string}} */(e);appendLog('main',error&&(error.stack||error.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
@@ -400,6 +401,8 @@ app.whenReady().then(async()=>{
  await tutorMaterialBridge.start().catch(error=>appendLog('tutor-pdf',error.message));
  await activityBridge.start().catch(error=>appendLog('activity',error.message));
  if(quitting)return;
+ /* Cadernos saíram para o Xournal++: some uma vez o que a biblioteca, a tinta e o plugin deixaram (notebook-leftovers.cjs). Em teste, a pasta do Xournal++ da máquina não entra. */
+ setImmediate(()=>cleanNotebookLeftovers({fs,runtimeDir:runtime,pluginDirs:TEST_MODE?[]:xournalPluginDirs(),log:line=>appendLog('limpeza',line)}));
  /* #190: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás. */
  if(process.platform==='darwin'&&app.isPackaged&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,isPackaged:true,log:appendLog});
  /* #178: atalho do menu Iniciar leva o ícone e o AppUserModelId da Mesa; no teste, só com um APPDATA de teste. */
