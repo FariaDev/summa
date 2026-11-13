@@ -1159,6 +1159,9 @@ function $dialogsview_updateOfflineText() {
 function $dialogsview_updateUnverifiableText() {
   return $msg_msg("update.unverifiable");
 }
+function $dialogsview_updateLegacyOriginText() {
+  return $msg_msg("update.legacyOrigin");
+}
 function $dialogsview_updateDirtyCloneText(_files_0) {
   return $msg_msg1("update.dirtyClone", "files", _files_0);
 }
@@ -1250,6 +1253,8 @@ function $dialogsview_aboutUpdateChildren(_s_0) {
     return { $: "Con", head: $$dialogsview_updateIcon("warn", "!"), tail: { $: "Con", head: $$dialogsview_updateLineNode($$dialogsview_updateOfflineText()), tail: { $: "Con", head: $$dialogsview_checkUpdateButton(), tail: { $: "Nil" } } } };
   } else if (_s_0.$ === "UpdateUnverifiable") {
     return { $: "Con", head: $$dialogsview_updateIcon("warn", "!"), tail: { $: "Con", head: $$dialogsview_updateLineNode($$dialogsview_updateUnverifiableText()), tail: { $: "Con", head: $$dialogsview_checkUpdateButton(), tail: { $: "Nil" } } } };
+  } else if (_s_0.$ === "UpdateLegacyOrigin") {
+    return { $: "Con", head: $$dialogsview_updateIcon("warn", "!"), tail: { $: "Con", head: $$dialogsview_updateLineNode($$dialogsview_updateLegacyOriginText()), tail: { $: "Con", head: $$dialogsview_checkUpdateButton(), tail: { $: "Nil" } } } };
   } else if (_s_0.$ === "UpdateDirtyClone") {
     const _files_0 = _s_0["files"];
     return { $: "Con", head: $$dialogsview_updateIcon("warn", "!"), tail: { $: "Con", head: $$dialogsview_updateLineNode($$dialogsview_updateDirtyCloneText(_files_0)), tail: { $: "Con", head: $$dialogsview_checkUpdateButton(), tail: { $: "Nil" } } } };
@@ -2149,6 +2154,7 @@ var $$dialogsview_updateFailedText = $dialogsview_updateFailedText;
 var $$dialogsview_updateFailedRest = $dialogsview_updateFailedRest;
 var $$dialogsview_updateOfflineText = $dialogsview_updateOfflineText;
 var $$dialogsview_updateUnverifiableText = $dialogsview_updateUnverifiableText;
+var $$dialogsview_updateLegacyOriginText = $dialogsview_updateLegacyOriginText;
 var $$dialogsview_updateDirtyCloneText = $dialogsview_updateDirtyCloneText;
 var $$dialogsview_updateApplyingText = $dialogsview_updateApplyingText;
 var $$dialogsview_applyingUpdateButton = $dialogsview_applyingUpdateButton;
@@ -2461,6 +2467,7 @@ var settingsview_default = {
   "dialogsview:updateFailedRest": run_lib(() => str_out(run_loop($dialogsview_updateFailedRest())), 0),
   "dialogsview:updateOfflineText": run_lib(() => str_out(run_loop($dialogsview_updateOfflineText())), 0),
   "dialogsview:updateUnverifiableText": run_lib(() => str_out(run_loop($dialogsview_updateUnverifiableText())), 0),
+  "dialogsview:updateLegacyOriginText": run_lib(() => str_out(run_loop($dialogsview_updateLegacyOriginText())), 0),
   "dialogsview:updateDirtyCloneText": run_lib((a0) => str_out(run_loop($dialogsview_updateDirtyCloneText(str_in(a0)))), 1),
   "dialogsview:updateReadyText": run_lib((a0) => str_out(run_loop($dialogsview_updateReadyText(str_in(a0)))), 1),
   "dialogsview:updateNotesLabel": run_lib(() => str_out(run_loop($dialogsview_updateNotesLabel())), 0),
