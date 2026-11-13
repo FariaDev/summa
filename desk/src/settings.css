@@ -148,7 +148,7 @@
 .fine{font-size:var(--fs-sm);color:var(--faint);margin:0 0 var(--space-4)}
 #settings-dialog .settings-body .fine{color:var(--muted)}
 
-/* Acento (Carbon r2, 2026-11-11): seis círculos de 24px com o nome embaixo em
+/* Acento (Carbon r2, 2026-11-11): dois círculos de 24px com o nome embaixo em
    12px; o escolhido leva o anel de 2px do acento, afastado 2px. Sem caixa em
    volta da opção. */
 #accent-mode{display:grid;grid-template-columns:minmax(0,1fr) 280px;column-gap:var(--space-7);align-items:center;padding:var(--space-3) 0;border-bottom:1px solid var(--border)}
@@ -157,12 +157,9 @@
 .accent-option{height:auto;min-height:0;padding:0;gap:var(--space-3);flex-direction:column;justify-content:flex-start;border:0;background:transparent;box-shadow:none;font-size:var(--fs-sm);line-height:1.3;color:var(--muted);white-space:nowrap}
 .accent-option:hover{background:transparent;color:var(--fg)}
 .accent-option[aria-checked="true"]{background:transparent;border-color:transparent;color:var(--fg);font-weight:400}
-.accent-dot{width:var(--space-7);height:var(--space-7);flex:none;border-radius:var(--r-round);outline:var(--space-0) solid transparent;outline-offset:var(--space-0);background:var(--acc-blue)}
+.accent-dot{width:var(--space-7);height:var(--space-7);flex:none;border-radius:var(--r-round);outline:var(--space-0) solid transparent;outline-offset:var(--space-0);background:var(--acc-graphite)}
 .accent-option[aria-checked="true"] .accent-dot{outline-color:var(--accent-fill)}
 .accent-option[data-accent="violet"] .accent-dot{background:var(--acc-violet)}
-.accent-option[data-accent="green"] .accent-dot{background:var(--acc-green)}
-.accent-option[data-accent="orange"] .accent-dot{background:var(--acc-orange)}
-.accent-option[data-accent="pink"] .accent-dot{background:var(--acc-pink)}
 .accent-option[data-accent="graphite"] .accent-dot{background:var(--acc-graphite);box-shadow:inset 0 0 0 1px var(--border-strong)}
 
 /* ---------- matérias (medidas do canvas) ---------- */

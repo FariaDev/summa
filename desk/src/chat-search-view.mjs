@@ -298,14 +298,18 @@ function clearHighlight(){
 let revealToken=0,revealFrame=0;
 /* O rico e o `content-visibility` mudam a altura em quadros seguintes: mede de
    novo por alguns quadros até a ocorrência assentar na vista (nunca deixa a
-   busca cair num lugar que a pintura seguinte desfaz). */
+   busca cair num lugar que a pintura seguinte desfaz). No Windows a casca
+   longa assenta depois dos 5 quadros antigos; 20 dão folga sem rolar de novo
+   quando a ocorrência já está centrada. */
 function reveal(target){
   const token=++revealToken;
   if(revealFrame)cancelAnimationFrame(revealFrame);
   const step=attempt=>{
     if(token!==revealToken)return;
-    const moved=centerOn(target);
-    if(moved&&attempt<5)revealFrame=requestAnimationFrame(()=>step(attempt+1));
+    centerOn(target);
+    /* Mesmo parado, segue medindo: a casca pode crescer acima depois de já
+       estar centrada e empurrar a ocorrência para fora (Windows e casca longa). */
+    if(attempt<20)revealFrame=requestAnimationFrame(()=>step(attempt+1));
   };
   step(0);
 }

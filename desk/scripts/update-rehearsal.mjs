@@ -116,7 +116,7 @@ function applyAndAudit({repoRoot, fromTag, ref, version, workDir}) {
     zipFile = buildReleaseZip({repoRoot, version, outDir: workDir}).zipFile;
   } else {
     zipFile = path.join(workDir, 'candidata.zip');
-    git('archive', '--format=zip', `--prefix=mesa-de-estudos-${version}/`, `--output=${zipFile}`, ref);
+    git('archive', '--format=zip', `--prefix=summa-${version}/`, `--output=${zipFile}`, ref);
   }
   const node = (script, ...args) => execFileSync(process.execPath, ['-e', script, ...args], {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
   node(APPLY_WITH_PREVIOUS, path.join(previousDir, 'desk', 'updater.cjs'), zipFile, installDir, version);

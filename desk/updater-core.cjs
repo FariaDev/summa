@@ -9,8 +9,8 @@ const {logEntryLine}=require('./src/log-entry.mjs');
    Saiu de updater.cjs na #43 fase 2; o worker copia este arquivo junto
    (`WORKER_FILES`). */
 
-const RELEASES_URL='https://api.github.com/repos/FariaDev/mesa-de-estudos/releases/latest';
-const TAGS_URL='https://api.github.com/repos/FariaDev/mesa-de-estudos/tags';
+const RELEASES_URL='https://api.github.com/repos/FariaDev/summa/releases/latest';
+const TAGS_URL='https://api.github.com/repos/FariaDev/summa/tags';
 const CLAUDE_REGISTRY_URL='https://registry.npmjs.org/@anthropic-ai/claude-code/latest';
 const XOURNAL_RELEASES_URL='https://api.github.com/repos/xournalpp/xournalpp/releases/latest';
 const XOURNAL_SITE_URL='https://github.com/xournalpp/xournalpp/releases/latest';

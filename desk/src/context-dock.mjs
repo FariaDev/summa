@@ -3,11 +3,10 @@ import {$,S,refs,studySnapshot,supportsCapability} from './state.mjs';
 import {t} from './ui-text.mjs';
 import {icon} from '../icons.mjs';
 import {sessionContextLine,pdfGoesName} from './session-context.mjs';
-import {closeNotebooks} from './notebooks-boot.mjs';
 
 /* Painel Contexto encaixado (r2, "Cabeçalho e Contexto"): a linha de baixo do
-   cabeçalho abre, no fluxo da coluna e logo abaixo do cabeçalho, o mesmo tipo
-   de painel dos Cadernos. A sanfona dentro de Mais opções saiu. O conteúdo é o
+   cabeçalho abre, no fluxo da coluna e logo abaixo do cabeçalho, um painel
+   encaixado. A sanfona dentro de Mais opções saiu. O conteúdo é o
    que vai com a mensagem (PDF e página; captura do Conferir), a questão ativa,
    o rascunho .xopp e o uso do contexto com "Resumir agora". A matéria e a
    contagem de referências saíram da linha (a aba e o nome do PDF já dizem).
@@ -288,13 +287,12 @@ export function closeContextDock({restoreFocus=false}={}){
  ui.returnFocus=null;
 }
 
-/** Abre o painel Contexto (fecha os Cadernos: só um painel por vez). Veio de
- *  um clique no teclado ou do menu, o foco entra no × do painel.
+/** Abre o painel Contexto. Veio de um clique no teclado ou do menu, o foco
+ *  entra no × do painel.
  *  @param {{focusReturn?: HTMLElement | null, focus?: boolean}} [options]
  *  @returns {void} */
 export function openContextDock({focusReturn=null,focus=false}={}){
  if(!ui)return;
- closeNotebooks();
  if(!contextDockOpen()){
   ui.returnFocus=focusReturn;
   ui.dock.hidden=false;

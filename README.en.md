@@ -26,7 +26,7 @@ The app is called **Summa** in both languages; the repository keeps its old name
 - **PDF from the tutor:** problem list, handout, summary, mock exam and formula sheet, with an A4 preview and a review step before saving.
 - **Notebook** (Review today), study **Statistics**, the **Desk guide** (⌘/) and a numeric calculator.
 - **Free** tab for studying without a course; **Create a course** moves the conversation and its PDFs into a new tab.
-- Interface and tutor in **English or Portuguese**, light or dark theme (Graphite), and six accent colors.
+- Interface and tutor in **English or Portuguese**, light or dark theme (Graphite), and two accent colors (Graphite and Violet).
 
 **Not included:** ink canvas, PDF editing, telemetry, cloud account. Sign-in happens in the app and the provider account stays in OpenCode; the OpenCode Zen free-model key, when used, is encrypted with the system keychain.
 
@@ -55,7 +55,7 @@ For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portu
 
 ## Updating
 
-**About → Update and restart** (from 0.4.0 on), or `npm run update` in `desk/`. Your `config.json` keeps working as it is. What changed in each version is in the [Releases](https://github.com/FariaDev/mesa-de-estudos/releases).
+**About → Update and restart** (from 0.4.0 on), or `npm run update` in `desk/`. Your `config.json` keeps working as it is. What changed in each version is in the [Releases](https://github.com/FariaDev/summa/releases).
 
 ## Settings
 
@@ -63,7 +63,7 @@ For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portu
 
 ## Problems
 
-**Report a problem** (the tutor's More options) or `npm run triage` builds a clean report, with no keys, sessions, course names or PDF names, and offers a ready prompt for an agent and a prefilled issue in the public repository [`FariaDev/mesa-de-estudos`](https://github.com/FariaDev/mesa-de-estudos) for you to review. The app log opens from About.
+**Report a problem** (the tutor's More options) or `npm run triage` builds a clean report, with no keys, sessions, course names or PDF names, and offers a ready prompt for an agent and a prefilled issue in the public repository [`FariaDev/summa`](https://github.com/FariaDev/summa) for you to review. The app log opens from About.
 
 ## Development
 

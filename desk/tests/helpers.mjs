@@ -208,6 +208,39 @@ export function seedNativeSession(runtime,messages=[],{engine='opencode',courseI
 export function writeDeskJson(runtime,data){fs.writeFileSync(path.join(runtime,'desk.json'),JSON.stringify(data));}
 export function writeConfigJson(runtime,data){fs.writeFileSync(path.join(runtime,'config.json'),JSON.stringify(data));}
 
+/** PATH de teste com as pastas do sistema no Windows. Os testes escondem os
+ *  motores do usuário trocando o PATH por um mínimo, mas o app ainda precisa de
+ *  `taskkill` e `powershell` (System32) para encerrar o `serve` e provar a
+ *  identidade no ledger; sem elas o `.cmd` do motor deixa o `node` neto vivo e
+ *  o teste de janela não sai (#165).
+ *  @param {string} pathValue PATH mínimo do teste
+ *  @param {{platform?: NodeJS.Platform, systemRoot?: string}} [options]
+ *  @returns {string} o mesmo PATH com System32 e WindowsPowerShell no Windows
+ *  @example withWindowsTools('C:\\node;/usr/bin', {platform: 'win32', systemRoot: 'C:\\Windows'})
+ */
+export function withWindowsTools(pathValue,{platform=process.platform,systemRoot=process.env.SystemRoot}={}){
+ if(platform!=='win32'||!systemRoot)return pathValue;
+ const dirs=[path.win32.join(systemRoot,'System32'),path.win32.join(systemRoot,'System32','WindowsPowerShell','v1.0')];
+ const parts=String(pathValue).split(path.win32.delimiter).filter(Boolean);
+ for(const dir of dirs)if(!parts.some(part=>part.toLowerCase()===dir.toLowerCase()))parts.push(dir);
+ return parts.join(path.win32.delimiter);
+}
+
+/** Entry de teste que isola userData e appData no runtime antes do main.
+ *  No Windows, `app.getPath('appData')` falha antes do `ready` quando o app
+ *  não vem de um `package.json` (o entry é um arquivo): sem o appData
+ *  explícito, `electronUserData` cai no fallback e o `config.json` do teste
+ *  nunca é lido (#165). `setPath` funciona antes do `ready`.
+ *  @param {string} runtime pasta de dados do teste (já criada)
+ *  @returns {string} caminho do `entry.cjs` para passar ao `electron.launch`
+ *  @example const entry=writeUserDataEntry(runtime);
+ */
+export function writeUserDataEntry(runtime){
+ const entry=path.join(runtime,'entry.cjs');
+ fs.writeFileSync(entry,`const {app}=require('electron');app.setPath('appData',__dirname);app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ return entry;
+}
+
 /* `HOME`/`USERPROFILE` apontam para o runtime: sem config, o app não enxerga
    o vault de verdade da pessoa (e qualquer leitura de `~` cai na pasta de
    teste). O `main.cjs` já põe o `userData` em `<runtime>/electron`.
@@ -215,9 +248,15 @@ export function writeConfigJson(runtime,data){fs.writeFileSync(path.join(runtime
    `LEARNING_DESK_OPENCODE`; um teste que precisa de outro motor passa o
    próprio `LEARNING_DESK_OPENCODE` (ou `opencode:false`). */
 export function deskEnv(runtime,extra={},opencode=true){
- const base={LEARNING_DESK_RUNTIME:runtime,HOME:runtime,USERPROFILE:runtime};
- if(opencode&&!Object.hasOwn(extra,'LEARNING_DESK_OPENCODE'))base.LEARNING_DESK_OPENCODE=fakeEngineLauncher(FAKE_OPENCODE);
- return testEnv({...base,...extra});
+ /* `XDG_CONFIG_HOME` absoluto vale nos três sistemas e mantém o que o app
+    grava em ~/.config dentro do runtime do teste. No Windows, sem ele, a pasta
+    do plugin do Xournal++ cai no LOCALAPPDATA real (fora do temporário) e a
+    asserção do caminho não fecha (#165). */
+ const base={LEARNING_DESK_RUNTIME:runtime,HOME:runtime,USERPROFILE:runtime,XDG_CONFIG_HOME:path.join(runtime,'.config')};
+ const env={...base,...extra};
+ if(Object.hasOwn(extra,'PATH'))env.PATH=withWindowsTools(extra.PATH);
+ if(opencode&&!Object.hasOwn(extra,'LEARNING_DESK_OPENCODE'))env.LEARNING_DESK_OPENCODE=fakeEngineLauncher(FAKE_OPENCODE);
+ return testEnv(env);
 }
 /* O botão Conferir só habilita quando a captura de janela existe: o helper
    compilado do macOS (visual-check/windows, ignorado pelo git) ou, em modo de
@@ -334,6 +373,10 @@ async function resizeWindowOnce(app,page,width,height,{content=false,timeout=100
   await page.waitForFunction(([w,h])=>innerWidth===w&&innerHeight===h,got.inner,{timeout,polling:50});
  }catch(error){
   const actual=await page.evaluate(()=>[innerWidth,innerHeight]).catch(()=>null);
+  /* A janela pode ter voltado ao tamanho de abertura por um quadro e já ter
+     assentado no pedido; a leitura confirma antes de reprovar (rodada
+     43152141386). */
+  if(actual?.[0]===got.inner[0]&&actual?.[1]===got.inner[1])return {width:got.inner[0],height:got.inner[1]};
   throw Error(`redimensionar para ${width}×${height}${content?' (conteúdo)':''}: o renderer ficou em ${JSON.stringify(actual)}; esperado ${JSON.stringify(got.inner)} (${error.message})`);
  }
  /* Redimensionar uma janela escondida devolve o compositor ao ritmo de 1 fps:
@@ -510,8 +553,21 @@ export const currentSession=page=>page.locator('#session-title').getAttribute('d
 export const currentEngine=page=>page.locator('#session-title').getAttribute('data-engine');
 export async function openSessionList(page){
  const pop=page.locator('#conversations-pop');
- if(await insideHidden(pop))await page.locator('#session-title').click();
- await pop.waitFor({state:'visible',timeout:5000});
+ /* O clique no título pode cair antes de o cabeçalho estar ligado no boot e
+    não abrir nada (cards-leak-ui, #12). Clicar de novo só é seguro enquanto o
+    popover estiver fechado; a espera curta deixa o render do host terminar
+    antes de decidir que o clique se perdeu. */
+ const deadline=Date.now()+5000;
+ for(;;){
+  if(!(await insideHidden(pop)))break;
+  await page.locator('#session-title').click();
+  try{
+   await pop.waitFor({state:'visible',timeout:1000});
+   break;
+  }catch(error){
+   if(Date.now()>=deadline)throw error;
+  }
+ }
  return pop;
 }
 export async function closeSessionList(page){

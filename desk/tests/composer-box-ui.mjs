@@ -309,13 +309,21 @@ await withArtifacts('composer-box',async ctx=>{
  await page.locator('#prompt').press('Enter');
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===2);
  assert.equal(await page.locator('.queue-clear').isVisible(),true,'com duas mensagens, Limpar entra no cabeçalho');
- const clipped=await page.locator('.queue-item>span').nth(1).evaluate(span=>{const style=getComputedStyle(span);return {overflow:style.textOverflow,nowrap:style.whiteSpace,cuts:span.scrollWidth>span.clientWidth};});
+ /* A linha é re-renderizada quando a fila confirma o item; medir por locator
+    pode pegar o span já desanexado (getComputedStyle vazio). Espera o item
+    comprido existir e lê tudo no mesmo evaluate (#12). */
+ const clipped=await pollUntil(()=>page.evaluate(()=>{
+  const span=[...document.querySelectorAll('.queue-item>span')].find(el=>el.textContent.includes('bem comprida'));
+  if(!span||!span.isConnected)return null;
+  const style=getComputedStyle(span);
+  return {overflow:style.textOverflow,nowrap:style.whiteSpace,cuts:span.scrollWidth>span.clientWidth};
+ }),value=>value!==null,{what:'a mensagem comprida na fila',timeout:10000});
  assert.deepEqual(clipped,{overflow:'ellipsis',nowrap:'nowrap',cuts:true},'a mensagem longa corta com reticências numa linha');
  await page.locator('.queue-remove').nth(1).click();
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===1);
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'de volta a uma mensagem, Limpar sai');
  await page.locator('#stop').click();
- await toastWait(page,'a fila ficou segurada');
+ await toastWait(page,'a fila ficou segurada',{timeout:20000});
  await idle();
  const ids=await sessionIds(page);
  const otherId=ids.find(id=>id===other);

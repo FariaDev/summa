@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 import os from 'node:os';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
-const {runtimePackages,stageBundlePayload,installBundle,installWindowsBundle}=require('../bundle-runtime.cjs');
+const {runtimePackages,stageBundlePayload,installBundle,installWindowsBundle,recordInstallSource}=require('../bundle-runtime.cjs');
 const {userDataDirectory}=require('../user-data.cjs');
 
 test('payload resolve peers e versões aninhadas sem depender da fonte',()=>{
@@ -36,7 +36,6 @@ test('bundle usa Claude externo sem perder peers, codecs ou versões aninhadas',
  try{
   const source=path.join(root,'source'),nm=path.join(source,'node_modules'),dest=path.join(root,'payload');
     fs.mkdirSync(path.join(source,'scripts'),{recursive:true});
-    fs.mkdirSync(path.join(source,'src','xournal-plugins','MesaPagina'),{recursive:true});fs.writeFileSync(path.join(source,'src','xournal-plugins','MesaPagina','plugin.ini'),'version=1.0.0');
     fs.mkdirSync(path.join(source,'src','locales'),{recursive:true});fs.writeFileSync(path.join(source,'src','locales','en.json'),'{}');
   for(const name of ['index.html','ggb.html','pdf-render.html','style.css','package.json','config.example.json','free-models.json','update-signing-key.pub','scripts/install-app.mjs'])fs.writeFileSync(path.join(source,name),'{}');
   const pkg=(rel,json,js="module.exports=true")=>{const dir=path.join(nm,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:rel,main:'index.cjs',...json}));fs.writeFileSync(path.join(dir,'index.cjs'),js);};
@@ -59,7 +58,6 @@ test('bundle usa Claude externo sem perder peers, codecs ou versões aninhadas',
   /* `pdf-render.html` faltava no pacote da candidata 1.1.0: o `ler_pdf` em imagem falhava só no app instalado. */
   assert.ok(managed.includes('pdf-render.html')&&fs.existsSync(path.join(dest,'pdf-render.html')),'a página do render de PDF entra no payload');
    assert.ok(managed.includes('src')&&fs.existsSync(path.join(dest,'src','locales','en.json')),'os catálogos de idioma (#41, #72) entram no payload dentro de src/: sem eles o app instalado não abre');
-    assert.ok(fs.existsSync(path.join(dest,'src','xournal-plugins','MesaPagina','plugin.ini')),'o plugin MesaPagina (#133) entra no payload dentro de src/: sem ele a Mesa instalada não instala o plugin');
   assert.equal(fs.existsSync(path.join(dest,'node_modules','@anthropic-ai/claude-agent-sdk/node_modules',cli)),false,'a cópia do pai não reintroduz o CLI aninhado');
   assert.equal(fs.existsSync(path.join(dest,'node_modules','@napi-rs','canvas')),false,'o canvas nativo do pdf.js não entra no payload');
   fs.rmSync(source,{recursive:true});
@@ -129,19 +127,6 @@ test('doctor usa userData da plataforma e respeita os overrides',()=>{
  assert.equal(userDataDirectory({platform:'win32',env:{LEARNING_DESK_RUNTIME:'/runtime'}}),'/runtime');
 });
 
-test('payload recusa fonte ausente do plugin MesaPagina em vez de omitir em silêncio',()=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-bundle-no-plugin-'));
- try{
-  const source=path.join(root,'desk'),nm=path.join(source,'node_modules'),dest=path.join(root,'payload');
-  fs.mkdirSync(path.join(source,'scripts'),{recursive:true});
-  fs.mkdirSync(path.join(source,'src','locales'),{recursive:true});fs.writeFileSync(path.join(source,'src','locales','en.json'),'{}');
-  for(const name of ['index.html','ggb.html','pdf-render.html','style.css','package.json','config.example.json','free-models.json','update-signing-key.pub','scripts/install-app.mjs'])fs.writeFileSync(path.join(source,name),'{}');
-  const pkg=(rel,json={})=>{const dir=path.join(nm,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:rel,main:'index.cjs',...json}));};
-  for(const name of ['marked','katex','dompurify','pdfjs-dist','chart.js','@anthropic-ai/claude-agent-sdk'])pkg(name);
-  assert.throws(()=>stageBundlePayload(source,dest),/Fonte do plugin MesaPagina ausente/);
- }finally{fs.rmSync(root,{recursive:true,force:true});}
-});
-
 /* #181: o payload do Windows é o MESMO do `.app` — `installWindowsBundle` só
    muda o destino para `resources/app`. A lista gerenciada sai de
    `stageBundlePayload`, sem segunda lista de arquivos. */
@@ -151,7 +136,6 @@ test('installWindowsBundle: payload em resources/app igual ao do .app, com proce
   const source=path.join(root,'desk'),nm=path.join(source,'node_modules');
   fs.mkdirSync(path.join(source,'scripts'),{recursive:true});
   fs.mkdirSync(path.join(source,'src','locales'),{recursive:true});fs.writeFileSync(path.join(source,'src','locales','en.json'),'{}');
-  fs.mkdirSync(path.join(source,'src','xournal-plugins','MesaPagina'),{recursive:true});fs.writeFileSync(path.join(source,'src','xournal-plugins','MesaPagina','plugin.ini'),'version=1.0.0');
   for(const name of ['index.html','ggb.html','pdf-render.html','style.css','package.json','config.example.json','free-models.json','update-signing-key.pub','scripts/install-app.mjs','main.cjs'])fs.writeFileSync(path.join(source,name),'{}');
   const pkg=(rel)=>{const dir=path.join(nm,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:rel,main:'index.cjs'}));};
   for(const name of ['marked','katex','dompurify','pdfjs-dist','chart.js','@anthropic-ai/claude-agent-sdk'])pkg(name);
@@ -183,7 +167,6 @@ test('installBundle: versão no Info.plist, payload, manifesto e órfãos, sem b
   for(const name of ['index.html','ggb.html','pdf-render.html','style.css','package.json','config.example.json','free-models.json','update-signing-key.pub','scripts/install-app.mjs','main.cjs'])fs.writeFileSync(path.join(source,name),'{}');
   const pkg=(rel,json)=>{const dir=path.join(nm,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:rel,...json}));};
   for(const name of ['marked','katex','dompurify','pdfjs-dist','chart.js'])pkg(name,{});
-  fs.mkdirSync(path.join(source,'src','xournal-plugins','MesaPagina'),{recursive:true});fs.writeFileSync(path.join(source,'src','xournal-plugins','MesaPagina','plugin.ini'),'version=1.0.0');
   const cli='@anthropic-ai/claude-agent-sdk-darwin-arm64';
   pkg('@anthropic-ai/claude-agent-sdk',{optionalDependencies:{[cli]:'1'}});pkg(cli,{});
   fs.mkdirSync(path.join(source,'assets'),{recursive:true});
@@ -207,5 +190,20 @@ test('installBundle: versão no Info.plist, payload, manifesto e órfãos, sem b
   assert.equal(manifest.version,'9.8.7');assert.deepEqual(manifest.files,out.managed);
   assert.equal(fs.existsSync(path.join(dest,'node_modules',cli)),false,'sem binário do SDK: a Mesa usa o Claude Code do usuário');
   assert.throws(()=>installBundle({desk:source,root,app:path.join(root,'nada.app'),version:'1.0.0'}),/esperava um \.app com Contents\/Info\.plist, recebeu/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+/* #23: quem instala pelo zip não tem `.git` na pasta de origem. Sem o
+   registro, o modo bundle do updater não sabe onde aplicar a atualização e
+   cai no zip com a raiz do payload. O formato do JSON não muda: `remote`
+   fica vazio quando não há clone. */
+test('#23: recordInstallSource grava a origem sem .git (pasta extraída do zip)',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-bundle-install-source-'));
+ try{
+  const source=path.join(root,'summa-1.2.0'),dest=path.join(root,'payload');
+  fs.mkdirSync(source,{recursive:true});fs.mkdirSync(dest,{recursive:true});
+  assert.equal(fs.existsSync(path.join(source,'.git')),false,'cenário: pasta extraída do zip');
+  recordInstallSource(source,dest);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dest,'install-source.json'),'utf8')),{path:source,remote:''});
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

@@ -11,9 +11,9 @@ import ../view.bend as V
 # sessão nova e mais opções, com a linha de contexto embaixo. O título e os
 # botões são do `index.html`; o que o núcleo decide são os dois menus que abrem dali:
 #   - sessão nova: interface em JS desde a #87 (rótulo, ordem e "(atual)");
-#   - mais opções: Contexto e Cadernos (abrem os painéis encaixados), um
-#     separador, Encerrar por hoje, Exportar sessão e Recolher o tutor,
-#     nessa ordem. O Encerrar por hoje some só pela flag `desk.endDay`.
+#   - mais opções: Contexto (abre o painel encaixado), um separador, Encerrar
+#     por hoje, Exportar sessão e Recolher o tutor, nessa ordem. O Encerrar
+#     por hoje some só pela flag `desk.endDay`.
 #
 # O que não cabe aqui: medir, abrir, enviar. Cada item só nomeia o handler; o
 # host decide o que acontece e revalida a ação no IPC.
@@ -45,17 +45,16 @@ law tutor_cabecalho_seis_controles:
 
 # ---------- mais opções ----------
 
-# O menu plano tem cinco botões e um fio: os dois que abrem painel, o
-# separador e as três ações da sessão.
-law tutor_mais_cinco_acoes:
+# O menu plano tem quatro botões e um fio: o que abre painel, o separador e
+# as três ações da sessão.
+law tutor_mais_quatro_acoes:
   for endDay: Bool
-  {List.length(&2, V.ViewNode, [H.contextItem(), H.notebooksItem(), H.endDayItem(endDay), H.exportItem(), H.collapseItem()]) == 5n : Nat}
+  {List.length(&2, V.ViewNode, [H.contextItem(), H.endDayItem(endDay), H.exportItem(), H.collapseItem()]) == 4n : Nat}
 
 law tutor_mais_ordem:
   for endDay: Bool
   {H.moreItems(endDay)
     == [ H.contextItem()
-       , H.notebooksItem()
        , H.menuSeparator()
        , H.endDayItem(endDay)
        , H.exportItem()
@@ -76,18 +75,6 @@ law tutor_contexto_gatilho_clique:
 
 law tutor_contexto_sem_sanfona:
   {V.attrGet(V.attrsOf(H.contextItem()), "aria-haspopup") == None{} : Maybe<&2, String>}
-
-law tutor_cadernos_id:
-  {V.attrGet(V.attrsOf(H.notebooksItem()), "id") == Some{"more-notebooks"} : Maybe<&2, String>}
-
-law tutor_cadernos_rotulo:
-  {V.kidsOf(H.notebooksItem()) == [V.viewText(M.msg("notebooks.button"))] : List<&2, V.ViewNode>}
-
-law tutor_cadernos_clique:
-  {V.attrGet(V.attrsOf(H.notebooksItem()), "on:click") == Some{"OpenNotebooks"} : Maybe<&2, String>}
-
-law tutor_cadernos_papel:
-  {V.attrGet(V.attrsOf(H.notebooksItem()), "role") == Some{"menuitem"} : Maybe<&2, String>}
 
 law tutor_separador_papel:
   {V.attrGet(V.attrsOf(H.menuSeparator()), "role") == Some{"separator"} : Maybe<&2, String>}

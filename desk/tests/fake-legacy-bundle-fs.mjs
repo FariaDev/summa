@@ -1,15 +1,16 @@
 /* Fake nomeado do fs para o bundle antigo (#190). O teste o passa por
    parâmetro; ele registra as chamadas e nunca toca no disco.
    `kind`: 'absent' (não existe), 'bundle' (diretório antigo) ou 'symlink'
-   (link para `target`). */
+   (link para `target`). `appBundle`: o `Contents/Info.plist` existe (#27). */
+import path from 'node:path';
 
 function enoent(file) {
   return Object.assign(Error(`ENOENT: no such file or directory, lstat '${file}'`), {code: 'ENOENT'});
 }
 
 /**
- * @param {{app?: string, legacy?: string, kind?: 'absent'|'bundle'|'symlink', target?: string, failRemove?: boolean}} [options]
- * @returns {{calls: {lstat: string[], realpath: string[], rm: {file: string, options: object}[], symlink: {target: string, link: string}[]}, lstatSync: Function, realpathSync: Function, rmSync: Function, symlinkSync: Function}}
+ * @param {{app?: string, legacy?: string, kind?: 'absent'|'bundle'|'symlink', target?: string, failRemove?: boolean, appBundle?: boolean}} [options]
+ * @returns {{calls: {exists: string[], lstat: string[], realpath: string[], rm: {file: string, options: object}[], symlink: {target: string, link: string}[]}, existsSync: Function, lstatSync: Function, realpathSync: Function, rmSync: Function, symlinkSync: Function}}
  * @example fakeLegacyBundleFs({kind:'symlink',target:'/repo/Summa.app'})
  */
 export function fakeLegacyBundleFs({
@@ -18,8 +19,10 @@ export function fakeLegacyBundleFs({
   kind = 'absent',
   target = '',
   failRemove = false,
+  appBundle = false,
 } = {}) {
-  const calls = {lstat: [], realpath: [], rm: [], symlink: []};
+  const calls = {exists: [], lstat: [], realpath: [], rm: [], symlink: []};
+  const infoPlist = path.join(app, 'Contents', 'Info.plist');
   const realpath = (file) => {
     if (file === legacy) {
       if (kind === 'symlink') return target;
@@ -31,6 +34,10 @@ export function fakeLegacyBundleFs({
   };
   return {
     calls,
+    existsSync(file) {
+      calls.exists.push(file);
+      return file === infoPlist && appBundle;
+    },
     lstatSync(file) {
       calls.lstat.push(file);
       if (file === legacy && kind !== 'absent') return {isSymbolicLink: () => kind === 'symlink'};

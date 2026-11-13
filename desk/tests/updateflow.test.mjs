@@ -47,24 +47,24 @@ const PROTEGIDOS = [
 ];
 
 const NOVO = {
-  'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-  'mesa-de-estudos-0.4.1/desk/package-lock.json': '{"lock":"novo"}',
-  'mesa-de-estudos-0.4.1/desk/main.cjs': 'main novo',
-  'mesa-de-estudos-0.4.1/desk/index.html': 'index novo',
-  'mesa-de-estudos-0.4.1/desk/src/foo.mjs': 'foo novo',
-  'mesa-de-estudos-0.4.1/desk/src/novo.mjs': 'criado pelo update',
-  'mesa-de-estudos-0.4.1/desk/templates/TUTOR.md': 'tutor novo',
-  'mesa-de-estudos-0.4.1/core/view.bend': 'core novo',
+  'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+  'summa-0.4.1/desk/package-lock.json': '{"lock":"novo"}',
+  'summa-0.4.1/desk/main.cjs': 'main novo',
+  'summa-0.4.1/desk/index.html': 'index novo',
+  'summa-0.4.1/desk/src/foo.mjs': 'foo novo',
+  'summa-0.4.1/desk/src/novo.mjs': 'criado pelo update',
+  'summa-0.4.1/desk/templates/TUTOR.md': 'tutor novo',
+  'summa-0.4.1/core/view.bend': 'core novo',
   /* Entradas que o zip NUNCA pode pousar: dados do usuário e o que está fora
      da lista explícita (inclusive um install-source.json forjado). */
-  'mesa-de-estudos-0.4.1/config.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/aula.pdf': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/rascunho.xopp': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/.runtime/pi-9.jsonl': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/node_modules/evil.js': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/desk/install-source.json': 'ATAQUE',
-  'mesa-de-estudos-0.4.1/docs/HISTORIA.md': 'fora da lista',
+  'summa-0.4.1/config.json': 'ATAQUE',
+  'summa-0.4.1/aula.pdf': 'ATAQUE',
+  'summa-0.4.1/rascunho.xopp': 'ATAQUE',
+  'summa-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
+  'summa-0.4.1/desk/.runtime/pi-9.jsonl': 'ATAQUE',
+  'summa-0.4.1/desk/node_modules/evil.js': 'ATAQUE',
+  'summa-0.4.1/desk/install-source.json': 'ATAQUE',
+  'summa-0.4.1/docs/HISTORIA.md': 'fora da lista',
 };
 
 function fakeRun(script = () => ({stdout: ''})) {
@@ -183,7 +183,7 @@ test('modo zip: falha no meio → rollback devolve a versão antiga inteira e re
   fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
   const zip = makeZip({
     ...NOVO,
-    'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+    'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
   });
   const reopens = [];
   const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
@@ -389,8 +389,8 @@ test('#153: instalação sem manifesto não apaga arquivo local e o manifesto re
   assert.equal(fs.existsSync(path.join(root, '.update-manifest.json')), false, 'o caso é instalação sem manifesto');
 
   const zip = makeZip({
-    'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-    'mesa-de-estudos-0.4.1/desk/main.cjs': 'main novo',
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'main novo',
   });
   const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
   const result = await updater.applyUpdate({
@@ -491,7 +491,7 @@ test('D4/A5: recuperação que falha PRESERVA o backup e diz o caminho no log', 
      no lugar (nunca apagado em cima de um rollback incompleto). */
   const zip = makeZip({
     ...NOVO,
-    'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+    'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
   });
   fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
   let backupInjetado = null;
@@ -537,7 +537,7 @@ test('rollback completo não deixa mesa-update-backup para trás', async () => {
     fs.mkdirSync(path.join(root, 'desk', 'src', 'bloqueado.mjs'));
     const zip = makeZip({
       ...NOVO,
-      'mesa-de-estudos-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
+      'summa-0.4.1/desk/src/bloqueado.mjs': 'não vai entrar',
     });
     const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
     const result = await updater.applyUpdate({
@@ -815,6 +815,71 @@ test('anti-rollback: allowOlder aplica a mais velha; sem ele, a mesma recusa', a
   assert.equal(result.ok, allowOlder, `allowOlder=${allowOlder}`);
   assert.equal(read(path.join(root, 'desk', 'main.cjs')), allowOlder ? 'main da v0.4.0' : 'main antigo');
  }
+});
+
+/* #23: o bundle montado de uma pasta extraída do zip (sem `.git`) não pode
+   tentar `git merge` na fonte: o zip da Release é aplicado NA pasta de origem
+   e o install-app re-sincroniza o payload a partir dela. */
+test('#23: bundle com origem sem git aplica o zip na fonte e re-sincroniza', async () => {
+  const source = fakeInstallRoot();
+  const payload = tmp();
+  write(path.join(payload, 'package.json'), '{"version":"0.4.0"}');
+  write(path.join(payload, 'main.cjs'), 'main antigo (payload)');
+  const runtime = tmp();
+  const commands = [];
+  const run = async (cmd, args = [], opts = {}) => {
+    commands.push({cmd, args, opts});
+    return {stdout: ''};
+  };
+  const zip = makeZip({
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'main novo',
+  });
+  const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
+  const result = await updater.applyUpdate({
+    mode: 'bundle', rootDir: path.join(payload, '..'), deskDir: payload, runtime,
+    announcedVersion: '0.4.1', sourceInfo: {path: source, remote: ''},
+    publicKey: release.publicKey, fetchBuffer: release.fetchBuffer,
+    run, reopen: () => {}, waitPid: 0, platform: 'darwin',
+  });
+  assert.equal(result.ok, true);
+  assert.equal(read(path.join(source, 'desk', 'main.cjs')), 'main novo', 'o zip foi aplicado na pasta de origem');
+  assert.equal(JSON.parse(read(path.join(source, '.update-manifest.json'))).version, '0.4.1', 'o manifesto fica na fonte, que é o que o zip gerencia');
+  assert.equal(read(path.join(payload, 'main.cjs')), 'main antigo (payload)', 'o payload só muda pelo install-app');
+  const installApp = commands.find((command) => command.cmd === 'node');
+  assert.ok(installApp, 'o install-app roda para re-sincronizar o bundle');
+  assert.equal(installApp.args[0], path.join(source, 'desk', 'scripts', 'install-app.mjs'));
+  assert.equal(installApp.opts.cwd, path.join(source, 'desk'));
+  assert.ok(!commands.some((command) => command.cmd === 'git'), 'fonte sem .git não roda git');
+});
+
+/* #23: origem registrada que sumiu (ou não tem `desk/`) recusa ANTES de baixar
+   a Release e sem tocar no bundle. A recusa é o resultado, não um rollback: a
+   versão anterior nunca saiu do lugar. */
+test('#23: bundle com origem sumida recusa antes do download e sem tocar o payload', async () => {
+  for (const missing of ['sumiu', 'sem-desk']) {
+    const payload = tmp();
+    write(path.join(payload, 'package.json'), '{"version":"0.4.0"}');
+    write(path.join(payload, 'main.cjs'), 'main antigo (payload)');
+    const source = path.join(tmp(), missing);
+    if (missing === 'sem-desk') fs.mkdirSync(source, {recursive: true});
+    const runtime = tmp();
+    let downloads = 0;
+    const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip: makeZip(NOVO)});
+    const result = await updater.applyUpdate({
+      mode: 'bundle', rootDir: path.join(payload, '..'), deskDir: payload, runtime,
+      announcedVersion: '0.4.1', sourceInfo: {path: source, remote: ''},
+      publicKey: release.publicKey,
+      fetchBuffer: async (url) => { downloads++; return release.fetchBuffer(url); },
+      run: async () => ({stdout: ''}), reopen: () => {}, waitPid: 0, platform: 'darwin',
+    });
+    assert.equal(result.ok, false, missing);
+    assert.equal(result.refused, true, `${missing}: recusa, não rollback`);
+    assert.match(result.reason, /origem registrada/, missing);
+    assert.equal(downloads, 0, `${missing}: nada é baixado`);
+    assert.equal(read(path.join(payload, 'main.cjs')), 'main antigo (payload)', `${missing}: payload intacto`);
+    assert.equal(fs.existsSync(path.join(payload, '.update-manifest.json')), false, `${missing}: sem manifesto novo`);
+  }
 });
 
 test('anti-rollback no modo git: anunciada mais velha recusa antes de qualquer git', async () => {

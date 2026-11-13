@@ -214,9 +214,20 @@ test('ps estoura no stop: o handle vivo recebe o sinal e o ledger fica encerrand
   const server = await pending;
   psUp = false;
   await server.stop();
-  assert.deepEqual(signals, [], 'sem prova, o grupo do pid não é sinalizado');
-  assert.deepEqual(calls[0].child.kills, ['SIGTERM', 'SIGKILL'], 'o ChildProcess vivo recebe os sinais pelo handle');
+  /* No Windows o handle vivo é o cmd do shim: matar só ele deixa o node neto
+     com o pipe aberto (#165). O `taskkill /T` desce a árvore do cmd, que é o
+     processo que este handle prova; o grupo de um pid sem prova continua
+     intocado no POSIX. */
+  const win = process.platform === 'win32';
+  assert.deepEqual(signals, win ? ['SIGTERM', 'SIGKILL'] : [], win
+    ? 'no Windows o handle do cmd prova a árvore e o taskkill desce nela'
+    : 'sem prova, o grupo do pid não é sinalizado');
+  assert.deepEqual(calls[0].child.kills, win ? [] : ['SIGTERM', 'SIGKILL'], win
+    ? 'no Windows a árvore desce pelo cmd, não pelo ChildProcess sozinho'
+    : 'o ChildProcess vivo recebe os sinais pelo handle');
   assert.equal(readEntry(dir)?.stopping, true, 'sem prova de saída, o registro fica para a próxima abertura');
+  assert.equal(calls[0].child.stdout.destroyed, true, 'o stdout do filho é liberado no stop para o pipe não segurar o app (#165)');
+  assert.equal(calls[0].child.stderr.destroyed, true, 'o stderr do filho também é liberado no stop (#165)');
 });
 
 test('stop de uma Mesa não apaga o registro de outra no mesmo runtime', async () => {

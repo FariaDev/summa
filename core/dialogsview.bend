@@ -502,6 +502,9 @@ type UpdateState is Data:
   UpdateOffline{}
   # A origem não recebe atualização (pasta sumiu ou não é clone): sem "Atualizada".
   UpdateUnverifiable{}
+  # #21: instalação vinda do repositório antigo (mesa-de-estudos) não recebe as
+  # tags do Summa; o Sobre manda reinstalar em vez de oferecer o botão que falha.
+  UpdateLegacyOrigin{}
   # #160: clone com trabalho local é recusado ANTES de qualquer troca — o Sobre
   # diz que nada foi atualizado e deixa verificar de novo.
   UpdateDirtyClone{files: String}
@@ -545,6 +548,9 @@ def updateOfflineText() -> String:
 
 def updateUnverifiableText() -> String:
   M.msg("update.unverifiable")
+
+def updateLegacyOriginText() -> String:
+  M.msg("update.legacyOrigin")
 
 def updateDirtyCloneText(files: String) -> String:
   M.msg1("update.dirtyClone", "files", files)
@@ -705,6 +711,12 @@ def aboutUpdateChildren(s: UpdateState) -> List<&2, V.ViewNode>:
       [
         updateIcon("warn", "!"),
         updateLineNode(updateUnverifiableText()),
+        checkUpdateButton()
+      ]
+    case UpdateLegacyOrigin{}:
+      [
+        updateIcon("warn", "!"),
+        updateLineNode(updateLegacyOriginText()),
         checkUpdateButton()
       ]
     case UpdateDirtyClone{files}:

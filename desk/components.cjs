@@ -25,7 +25,6 @@ const path=require('node:path');
 const updater=require('./updater.cjs');
 const os=require('node:os');
 const toolFacts=require('./tool-facts.cjs');
-const xournalPlugin=require('./xournal-plugin-host.cjs');
 const claudeEnvironment=require('./src/agents/claude-environment.cjs');
 const noticeCore=require('./src/generated/updatenotice.core.js').default;
 const TESTED_VERSIONS=require('./src/tested-versions.json');
@@ -172,7 +171,6 @@ async function collect(opts={}){
   config={},cacheFile='',version='',manual=false,testMode=false,
   fetchJson=updater.defaultFetchJson,run=defaultRun,now=Date.now(),
   platform=process.platform,nodeVersion,nodeSource,
-  deskDir=__dirname,home=os.homedir(),env=process.env,pluginSourceDir,
  }=opts;
  const fetchNet=testMode?async()=>{throw Error('modo de teste');}:fetchJson;
  const cache=cacheFile?updater.readCache(cacheFile):{};
@@ -233,8 +231,6 @@ async function collect(opts={}){
    latest:latest.version,note:'',
    hint:target?'':message('component.hint.xournalUnset'),
    link:updater.XOURNAL_SITE_URL,linkLabel:message('component.openSite'),canUpdate:false,
-   /* Plugin MesaPagina (#133): estado local da cópia instalada, sem tocar no Xournal++. */
-   plugin:xournalPlugin.pluginStatus({platform,env,homedir:home,source:pluginSourceDir||xournalPlugin.resolvePluginSource({deskDir})}),
   };
  }
 

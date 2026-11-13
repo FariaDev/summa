@@ -51,6 +51,12 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {causeText,describeReceived}=require('./src/error-detail.mjs');
+const {createI18n}=require('./src/i18n.mjs');
+const ptCatalog=require('./src/locales/pt-BR.json');
+
+/* Motivo em texto puro, como os demais `reason` do updater: o worker só leva
+   o catálogo pt-BR (`WORKER_FILES`), então os dois idiomas apontam para ele. */
+const REFUSED=createI18n({catalogs:{'pt-BR':ptCatalog,en:ptCatalog},language:'pt-BR'}).t;
 const {CHECK_TTL,CLAUDE_REGISTRY_URL,RELEASES_URL,TAGS_URL,XOURNAL_RELEASES_URL,XOURNAL_SITE_URL,appendLog,cacheWrite,fresh,isNewer,markToasted,readCache,semverCompare,semverParse,writeCache}=require('./updater-core.cjs');
 const {LOCK_STALE_MS,acquireLock,defaultRun,doReopen,lockFileOf,needsShell,pidAlive,releaseLock,resolveNode,spawnReopen,spawnWorker,stageWorkerFiles,WORKER_FILES,waitForHandshake,waitForPid,workerEnv,writeHandshake}=require('./updater-worker.cjs');
 const {applyZip,assertRealTarget,assertSafeEntries,isProtected,isReplaceable,manifestFile,normalizeRel,readManifest,readZip,removeOrphans,restoreTree,snapshotTree,stripCommonRoot,writeManifest}=require('./updater-files.cjs');
@@ -72,6 +78,14 @@ function lockChangedSince(before,lockFile){
 
 function installedVersion(dir){
  try{return String(JSON.parse(fs.readFileSync(path.join(dir,'package.json'),'utf8')).version||'');}catch{return '';}
+}
+
+/* #23: sem `install-source.json` (bundle antigo) ou com a origem sumida/sem
+   `desk/`, o update recusa antes de qualquer download ou mutação. */
+function bundleSourceError(sourceDir){
+ if(!sourceDir)return REFUSED('err.update.sourceMissing');
+ if(fs.existsSync(sourceDir)&&fs.existsSync(path.join(sourceDir,'desk')))return '';
+ return REFUSED('err.update.sourceGone');
 }
 
 async function npmCi({deskDir,run}){
@@ -187,6 +201,7 @@ async function applyUpdate(opts={}){
   cacheFile='',lockFile='',pidTimeout=120000,
   manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES,
   snapshot=snapshotTree,restore=restoreTree, /* injeção de teste (mesma ideia do run) */
+  platform=process.platform, /* injeção de teste para o sync do bundle */
   allowOlder=false, /* só o CLI passa (`--versao` explícito): a chamada automática nunca */
  }=opts;
  const logFile=runtime?path.join(runtime,'desk.log'):'';
@@ -197,13 +212,31 @@ async function applyUpdate(opts={}){
   return result;
  };
  const sourceDir=mode==='zip'?rootDir:(mode==='bundle'?String(sourceInfo&&sourceInfo.path||''):rootDir);
+ /* #23: o bundle pode ter vindo de um clone (`git`) ou de uma pasta extraída
+    do zip (`zip`); a fonte sem `.git` aplica o zip NA própria fonte e o
+    install-app re-sincroniza o payload. */
+ const sourceMode=mode==='bundle'?(fs.existsSync(path.join(sourceDir,'.git'))?'git':'zip'):mode;
+ const zipTarget=sourceMode==='zip'?(mode==='bundle'?sourceDir:rootDir):'';
  /* Snapshot cobre só o que a atualização gerencia: o payload do bundle (que o
     install-app reescreve por inteiro, node_modules incluso) ou, em git/zip, a
-    lista explícita + o manifesto anterior — nunca a raiz toda. */
- const snapshotRoot=mode==='bundle'?deskDir:sourceDir;
+    lista explícita + o manifesto anterior — nunca a raiz toda. No bundle-zip a
+    fonte é que é gerida pelo zip; o payload é refeito pelo install-app. */
+ const snapshotRoot=mode==='bundle'&&sourceMode==='git'?deskDir:zipTarget||sourceDir;
  const npmCiDir=mode==='bundle'?path.join(sourceDir,'desk'):deskDir;
- if(!rootDir||!deskDir||!sourceDir)throw Error(`applyUpdate: caminhos incompletos: recebido rootDir ${describeReceived(rootDir)}, deskDir ${describeReceived(deskDir)}, sourceDir ${describeReceived(sourceDir)}; esperados os três`);
+ if(!rootDir||!deskDir)throw Error(`applyUpdate: caminhos incompletos: recebido rootDir ${describeReceived(rootDir)}, deskDir ${describeReceived(deskDir)}; esperados os dois`);
  log(`update: começando (${mode} → v${announcedVersion||'?'} em ${rootDir})`);
+ /* #23: bundle antigo sem `install-source.json` ou origem registrada que sumiu
+    (ou não tem `desk/`) recusa ANTES de baixar e de tocar no payload — o modo
+    `zip` sobre a raiz do bundle atualizaria `Contents/Resources`, fora do app. */
+ if(mode==='bundle'){
+  const sourceError=bundleSourceError(sourceDir);
+  if(sourceError){
+   log(`update: FALHOU (${sourceError})`);
+   persistResult(cacheFile,{status:'refused',reason:'source-missing',mode,version:announcedVersion});
+   return finish({ok:false,mode,version:announcedVersion,reason:sourceError,refused:true,code:'SOURCE_MISSING'});
+  }
+ }
+ if(!sourceDir)throw Error(`applyUpdate: caminhos incompletos: recebido sourceDir ${describeReceived(sourceDir)}; esperado o caminho da instalação ou da origem registrada`);
  /* Anti-rollback (auditoria de segurança): quem controla os metadados da
     Release pública, sem a chave, pode marcar uma versão assinada antiga como
     `latest`. A anunciada tem de ser mais nova que a instalada — antes de
@@ -235,29 +268,30 @@ async function applyUpdate(opts={}){
  const lockBefore=readFileSafe(path.join(npmCiDir,'package-lock.json'));
  let backup=null,created=[],written=[],head='',depsTouched=false,diverged=false,confirmedVersion=announcedVersion,cloneClean=false;
  try{
-  const manifestRoot=mode==='bundle'?deskDir:rootDir;
+  const manifestRoot=mode==='bundle'&&sourceMode==='git'?deskDir:zipTarget||rootDir;
   const previous=readManifest(manifestRoot);
   backup=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-update-backup-'));
-  const snapshotInclude=mode==='bundle'
+  const snapshotInclude=mode==='bundle'&&sourceMode==='git'
    ?null // o payload inteiro é gerenciado pelo install-app
    :rel=>isReplaceable(rel)||normalizeRel(rel)==='.update-manifest.json';
   snapshot(snapshotRoot,backup,snapshotInclude);
-  if(mode==='bundle'&&process.platform==='darwin'){
+  if(mode==='bundle'&&platform==='darwin'){
    /* O Info.plist mora fora do payload; entra no backup com nome reservado. */
    const plist=path.join(path.resolve(deskDir,'..','..','..'),'Contents','Info.plist');
    if(fs.existsSync(plist))fs.copyFileSync(plist,path.join(backup,'__Info.plist__'));
   }
   /* #80: nada é aplicado sem o manifesto assinado pela chave do autor. O zip
      baixado é o asset da Release (bytes estáveis), não o codeload. */
-  const release=await loadSignedRelease({version:announcedVersion,publicKey,fetchBuffer,needZip:mode==='zip',manifestMaxBytes,signatureMaxBytes,zipMaxBytes});
+  const release=await loadSignedRelease({version:announcedVersion,publicKey,fetchBuffer,needZip:sourceMode==='zip',manifestMaxBytes,signatureMaxBytes,zipMaxBytes});
   log(`update: release v${release.manifest.version} assinada conferida (commit ${release.manifest.commit.slice(0,12)}${release.zip?`, zip ${release.manifest.zipBytes} bytes`:''})`);
-  if(mode==='zip'){
+  if(sourceMode==='zip'){
    /* `created`/`written` são do chamador: se a cópia morrer no meio, o
       rollback ainda sabe o que apagar e o que era gerenciado. */
-   const result=applyZip(release.zip,{rootDir,announcedVersion:release.manifest.version,log,created,written});
+   const result=applyZip(release.zip,{rootDir:zipTarget,announcedVersion:release.manifest.version,log,created,written});
    log(`update: zip aplicado (${result.replaced} arquivo(s) de código, ${result.skipped} pulado(s))`);
    writeManifest(manifestRoot,release.manifest.version,written);
-   removeOrphans(rootDir,previous,written,log);
+   removeOrphans(zipTarget,previous,written,log);
+   if(mode==='bundle')log(`update: fonte atualizada por zip — re-sincronizando o bundle a partir de ${sourceDir}`);
   }else{
    head=(await run('git',['rev-parse','HEAD'],{cwd:sourceDir})).stdout.trim();
    await assertCleanClone(sourceDir,run);
@@ -298,7 +332,7 @@ async function applyUpdate(opts={}){
   }else if(finalVersion){
    confirmedVersion=finalVersion;
   }
-  await syncBundle({mode,sourceDir,run,log});
+  await syncBundle({mode,sourceDir,run,log,platform});
   /* O update já está aplicado e conferido: falha ao limpar o instantâneo não
      pode cair no catch e desfazer a versão nova com um backup meio apagado
      (revisão de segurança, 2026-11-05). */
@@ -347,22 +381,22 @@ async function applyUpdate(opts={}){
       e re-assina. Sem sync, o fallback re-assina a cópia devolvida e avisa
       que as dependências podem estar inconsistentes. No Windows (#181) o
       mesmo sync repõe a cópia instalada, sem código de assinatura. */
-   if(mode==='bundle'&&(process.platform==='darwin'||process.platform==='win32')){
+   if(mode==='bundle'&&(platform==='darwin'||platform==='win32')){
     try{
-     await syncBundle({mode,sourceDir,run,log});
+     await syncBundle({mode,sourceDir,run,log,platform});
      log('update: payload do bundle re-sincronizado após o rollback (dependências refeitas do clone restaurado)');
     }catch(err2){
      log('update: sync de recuperação falhou ('+String(err2&&err2.message||err2)+') — dependências do payload podem estar inconsistentes');
-     if(process.platform==='darwin'){
+     if(platform==='darwin'){
       const bundle=path.resolve(deskDir,'..','..','..');
       try{await run('codesign',['--force','--deep','--sign','-',bundle],{timeout:120000});log('update: bundle re-assinado (ad-hoc) após o rollback');}
       catch(err3){log('update: re-assinatura do bundle falhou ('+String(err3&&err3.message||err3)+')');}
      }
     }
-   }else if(process.platform==='darwin'){
+   }else if(platform==='darwin'){
     /* git/zip com bundle instalado do lado: melhor esforço — devolve o
        bundle à versão restaurada; falha não piora o rollback (só log). */
-    await syncBundle({mode,sourceDir,run,log});
+    await syncBundle({mode,sourceDir,run,log,platform});
    }
    /* Rollback COMPLETO dispensa o instantâneo: o A5 preserva o backup só no
       rollback incompleto. Sem este rm, cada update desfeito deixava uma cópia

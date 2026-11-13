@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {withArtifacts} from './helpers.mjs';
+import {closeApp} from './proc-tree.mjs';
 import {openLazyDesk} from './chat-history-lazy-seed.mjs';
 
 /* Núcleo da #118 em janela real, com o fake OpenCode: a conversa de 5.000
@@ -197,7 +198,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   assert.equal(deferDone, true, 'ao sair a seleção, a casca formata');
 
   assert.deepEqual(errors, [], `sem erro de página (${errors.join(' | ')})`);
-  await app.close(); ctx.app = null;
+  await closeApp(app,{ledgerDir:runtime}); ctx.app = null;
 
   /* Conversa curta (200 mensagens): direta, sem casca e sem observador. */
   const small = await openLazyDesk(50, {tag: 'curta'});
@@ -212,7 +213,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   const smallLive = await small.page.evaluate(() => [...document.querySelectorAll('#messages .message')].slice(0, 10).map((el) => el.getAttribute('aria-live')));
   assert.ok(smallLive.every((value) => value !== 'off'), 'curta, como hoje, sem aria-live off');
   assert.deepEqual(errors, [], `sem erro de página (${errors.join(' | ')})`);
-  await small.app.close(); ctx.app = null;
+  await closeApp(small.app,{ledgerDir:small.runtime}); ctx.app = null;
 
   /* A viva do stream nunca é adiada: enviar numa conversa longa formata na hora. */
   const live = await openLazyDesk(60, {tag: 'viva', env: {FAKE_OPENCODE_REPLY: 'Entendido $x=1$.'}});
@@ -230,5 +231,5 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   assert.ok(liveBubbles.every((bubble) => bubble.live !== 'off'), 'mensagem nova (envio e stream) continua anunciada');
   assert.ok(liveBubbles.some((bubble) => bubble.katex > 0), 'a resposta viva pinta o KaTeX na hora');
   assert.deepEqual(live.errors, [], `sem erro de página (${live.errors.join(' | ')})`);
-  await live.app.close(); ctx.app = null;
+  await closeApp(live.app,{ledgerDir:live.runtime}); ctx.app = null;
 });

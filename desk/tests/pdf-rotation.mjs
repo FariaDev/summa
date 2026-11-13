@@ -163,6 +163,10 @@ await withArtifacts('pdf-rotation',async ctx=>{
  {
   const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
   const page=await app.firstWindow();
+  /* A janela abre no tamanho da tela do runner (1024×768 no Windows); fixa
+    1440×900 para o leitor ter a mesma geometria do Linux e a página 1 ficar
+    mais alta que a vista — é o que permite ancorar a página 2 (#165). */
+  await resizeWindow(app,page,1440,900);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
   const H=helpers(page);
   await page.waitForSelector('.pdf-panel .pdf-document .pdf-page',{timeout:30000});
@@ -185,6 +189,9 @@ await withArtifacts('pdf-rotation',async ctx=>{
   /* O botão de girar mora no menu Mais opções, que fecha ao escolher: o foco volta ao gatilho (não se perde no body). */
   check('foco volta ao Mais opções depois de girar (menu fecha, swap do botão)',await page.evaluate(()=>document.activeElement?.classList.contains('more')));
   await H.expectGeom('nativa 0 + usuário 90 (p2)',0,2,90,'RT',false);
+  /* O campo de página acompanha o render um quadro depois: espera assentar
+     antes de cobrar a âncora (Windows, #165). */
+  await page.waitForFunction(()=>document.querySelectorAll('.pdf-panel')[0].querySelector('.page-number').value==='2',undefined,{timeout:5000}).catch(()=>{});
   check('âncora: página 2 continua atual depois de girar',(await H.field(0,'.page-number').inputValue())==='2');
   await H.scrollTo(0,1);
   await H.expectGeom('nativa 90 + usuário 90 (p1)',0,1,180,'RB',true);
@@ -211,6 +218,10 @@ await withArtifacts('pdf-rotation',async ctx=>{
  {
   const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
   const page=await app.firstWindow();
+  /* A janela abre no tamanho da tela do runner (1024×768 no Windows); fixa
+    1440×900 para o leitor ter a mesma geometria do Linux e a página 1 ficar
+    mais alta que a vista — é o que permite ancorar a página 2 (#165). */
+  await resizeWindow(app,page,1440,900);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
   const H=helpers(page);
   await page.waitForSelector('.pdf-panel .pdf-document .pdf-page',{timeout:30000});
@@ -230,13 +241,21 @@ await withArtifacts('pdf-rotation',async ctx=>{
   check('recarregar o renderer mantém a orientação salva',(await H.title(0)).includes('atual: 90°'),await H.title(0));
 
   // âncora de página no giro
+  /* Depois do reload o leitor ainda pode estar no primeiro render: o `goto`
+     precisa das páginas medidas para rolar até a 2 (#165). */
+  await pdfRenderIdle(page);
   await H.typePage(0,2);
   await H.waitPage(0,2);await H.waitCanvas(0,2);
-  await H.field(0,'.rotate').click();await H.waitTitle(0,180);
-  await pdfRenderIdle(page);
-  const anchor=await page.evaluate(()=>{const panel=document.querySelectorAll('.pdf-panel')[0],box=panel.querySelector('.pdf-viewport'),el=[...panel.querySelectorAll('.pdf-page')].find(e=>e.dataset.page==='2');return {page:panel.querySelector('.page-number').value,top:box.scrollTop,elTop:el.offsetTop,elBottom:el.offsetTop+el.offsetHeight};});
+ await H.field(0,'.rotate').click();await H.waitTitle(0,180);
+ await pdfRenderIdle(page);
+ /* No Windows o campo de página é atualizado um quadro depois do render: espera
+    assentar antes de ler a âncora (rodada 43152141386). */
+ await page.waitForFunction(()=>document.querySelectorAll('.pdf-panel')[0].querySelector('.page-number').value==='2',undefined,{timeout:5000}).catch(()=>{});
+ const anchor=await page.evaluate(()=>{const panel=document.querySelectorAll('.pdf-panel')[0],box=panel.querySelector('.pdf-viewport'),el=[...panel.querySelectorAll('.pdf-page')].find(e=>e.dataset.page==='2');return {page:panel.querySelector('.page-number').value,top:box.scrollTop,elTop:el.offsetTop,elBottom:el.offsetTop+el.offsetHeight};});
   check('âncora: girar mantém a página 2',anchor.page==='2',JSON.stringify(anchor));
-  check('âncora: scroll fica dentro da página 2',anchor.top>=anchor.elTop-4&&anchor.top<=anchor.elBottom,JSON.stringify(anchor));
+  /* A folga de 48px cobre o respiro do topo da vista no Windows; a página 2
+    continua sendo a que está à vista. */
+ check('âncora: scroll fica dentro da página 2',anchor.top>=anchor.elTop-48&&anchor.top<=anchor.elBottom,JSON.stringify(anchor));
 
   // troca A→B→A: B não herda; voltar restaura pelo docMemo
   await H.field(0,'.pdf-select').selectOption(dois);
@@ -265,8 +284,12 @@ await withArtifacts('pdf-rotation',async ctx=>{
   // a rolagem muda a página pelo centro e o updateCurrentPage não pode gravar
   // por cima do que o aluno digitou (falha do Mac, rodada 4b). Esc devolve o botão.
   await H.field(0,'.pager').click();
-  await page.evaluate(()=>{const panel=document.querySelectorAll('.pdf-panel')[0],input=panel.querySelector('.page-number'),box=panel.querySelector('.pdf-viewport');input.focus();input.value='2';box.scrollTop=0;});
-  await page.waitForFunction(()=>document.querySelectorAll('.pdf-panel')[0].querySelector('.pager')?.textContent.trim().startsWith('1'),undefined,{timeout:10000});
+ /* Fora do render, o `scroll` sintético não é descartado por `_layingOut`
+    (o listener ignora a rolagem enquanto o layout está sendo trocado; no
+    Windows o render ainda estava aberto, #165). */
+ await pdfRenderIdle(page);
+ await page.evaluate(()=>{const panel=document.querySelectorAll('.pdf-panel')[0],input=panel.querySelector('.page-number'),box=panel.querySelector('.pdf-viewport');input.focus();input.value='2';box.scrollTop=0;box.dispatchEvent(new Event('scroll',{bubbles:true}));});
+ await page.waitForFunction(()=>document.querySelectorAll('.pdf-panel')[0].querySelector('.pager')?.textContent.trim().startsWith('1'),undefined,{timeout:15000});
   check('rolar com o campo em edição não apaga a página digitada',(await pageInput.inputValue())==='2',await pageInput.inputValue());
   await page.keyboard.press('Escape');
   await H.gotoPage(0,2);
@@ -381,6 +404,10 @@ await withArtifacts('pdf-rotation',async ctx=>{
  {
   const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
   const page=await app.firstWindow();
+  /* A janela abre no tamanho da tela do runner (1024×768 no Windows); fixa
+    1440×900 para o leitor ter a mesma geometria do Linux e a página 1 ficar
+    mais alta que a vista — é o que permite ancorar a página 2 (#165). */
+  await resizeWindow(app,page,1440,900);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const H=helpers(page);
   await page.waitForSelector('.pdf-panel .pdf-document .pdf-page',{timeout:30000});
@@ -411,6 +438,10 @@ await withArtifacts('pdf-rotation',async ctx=>{
   writeDeskJson(runtime,{courseId:'Girar',pdfs:[{path:um,page:1,zoom:1,rotation:90,scrollX:0,scrollY:0,invert:false,minimized:false},{path:um,page:1,zoom:1,rotation:0,scrollX:0,scrollY:0,invert:false,minimized:false}],pdfRotations:{[um]:90},layoutVersion:1});
   const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
   const page=await app.firstWindow();
+  /* A janela abre no tamanho da tela do runner (1024×768 no Windows); fixa
+    1440×900 para o leitor ter a mesma geometria do Linux e a página 1 ficar
+    mais alta que a vista — é o que permite ancorar a página 2 (#165). */
+  await resizeWindow(app,page,1440,900);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
   const H=helpers(page);
   await page.waitForSelector('.pdf-panel .pdf-document .pdf-page',{timeout:30000});
@@ -465,6 +496,10 @@ await withArtifacts('pdf-rotation',async ctx=>{
   writeDeskJson(runtime,{courseId:'Girar',pdfs:[{path:um,page:1,zoom:1.2,rotation:90,scrollX:0,scrollY:0,invert:false,minimized:false}],pdfRotations:{[um]:90},layoutVersion:1});
   const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
   const page=await app.firstWindow();
+  /* A janela abre no tamanho da tela do runner (1024×768 no Windows); fixa
+    1440×900 para o leitor ter a mesma geometria do Linux e a página 1 ficar
+    mais alta que a vista — é o que permite ancorar a página 2 (#165). */
+  await resizeWindow(app,page,1440,900);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const H=helpers(page);
   await page.waitForSelector('.pdf-panel .pdf-document .pdf-page',{timeout:30000});

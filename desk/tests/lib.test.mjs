@@ -49,6 +49,21 @@ test('placeWindow falls back to the primary display alone',()=>{
  assert.equal(placed.y,20);
 });
 
+test('placeWindow recusa a janela que só encosta 20 px no notebook (monitor removido)',()=>{
+ const saved={x:-1900,y:100,width:1920,height:1020};
+ assert.deepEqual(placeWindow([INTERNA],1,saved),{x:20,y:20,width:1600,height:1020},'um encosto de 20 px não conta como janela visível');
+});
+
+test('placeWindow recusa a janela com a barra de título acima da área útil',()=>{
+ const saved={x:120,y:-40,width:1600,height:1020};
+ assert.deepEqual(placeWindow([INTERNA],1,saved),{x:20,y:20,width:1600,height:1020},'sem barra de título não há como agarrar a janela');
+});
+
+test('placeWindow mantém a janela inteira dentro da tela alvo',()=>{
+ const saved={x:120,y:0,width:1600,height:1020};
+ assert.deepEqual(placeWindow([INTERNA],1,saved),saved);
+});
+
 
 test('displayUserText hides conferir commands and reference appendices',()=>{
  assert.equal(displayUserText('/conferir Confira minha resolução e indique o primeiro erro relevante.'),'Conferir Xournal++');

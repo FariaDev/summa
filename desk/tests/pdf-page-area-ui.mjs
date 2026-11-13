@@ -41,7 +41,12 @@ await withArtifacts('pdf-page-area',async ctx=>{
   assert.equal(list.length,2,`${width}×${height}: dois leitores à vista`);
   for(const item of list){
    assert.ok(item.pageWidth>0,`${width}×${height} ${item.label}: a página foi medida`);
-   assert.ok(item.ratio>=MIN_RATIO[key],`${width}×${height} ${item.label}: a página ocupa a largura do painel (${item.ratio.toFixed(4)} de ${MIN_RATIO[key]} mínimo; página ${item.pageWidth}px, painel ${item.panelWidth}px)`);
+   /* A largura da página é um pixel inteiro e a do painel pode ser fracionária
+      (246,5px no Windows): o mínimo desce para o pixel inteiro do painel para
+      não reprovar por 1px de arredondamento — a regra (sem margem de cartão)
+      continua valendo (${item.ratio.toFixed(4)} de ${MIN_RATIO[key]} em ${item.panelWidth}px). */
+   const minimum=Math.floor(MIN_RATIO[key]*item.panelWidth);
+   assert.ok(item.pageWidth>=minimum,`${width}×${height} ${item.label}: a página ocupa a largura do painel (${item.ratio.toFixed(4)} de ${MIN_RATIO[key]} mínimo; página ${item.pageWidth}px, painel ${item.panelWidth}px)`);
   }
  }
  assert.deepEqual(errors,[],'sem erro de página');

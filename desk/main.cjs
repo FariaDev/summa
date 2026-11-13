@@ -2,12 +2,13 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nativeImage,nativeTheme,WebContentsView,Notification,powerMonitor,protocol,safeStorage,clipboard}=require('electron');
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
-const {promisify}=require('node:util');const {execFile,spawn}=require('node:child_process');
+const {promisify}=require('node:util');const {execFile}=require('node:child_process');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
 /* Bytecode da partida na pasta de dados do usuário; sem API/permissão, abre sem cache (#desempenho). */
 enableDeskCompileCache({dir:path.join(process.env.LEARNING_DESK_RUNTIME||defaultUserData(),'compile-cache')});
 const {placeWindow}=require('./lib.cjs');
+const {keepWindowOnDisplays}=require('./window-display-host.cjs');
 const {mergeCourses}=require('./courses.cjs');
 const {readConfig,needsSetup,normalize,installRoot}=require('./config.cjs');
 const firstRun=require('./first-run.cjs');
@@ -121,6 +122,7 @@ const learningRoot=path.join(runtime,'learning');
 
 const ggbCache=createGgbCache({dir:path.join(runtime,'ggb'),log:(area,line)=>appendLog(area,line)});
 const logFile=path.join(runtime,'desk.log');
+const {cleanNotebookLeftovers,xournalPluginDirs}=require('./notebook-leftovers.cjs');
 const appendLog=createDeskLog({logFile,logText:raw=>languageHost.logText(raw)});
 process.on('uncaughtException',e=>{try{appendLog('main',e&&(e.stack||e.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
 process.on('unhandledRejection',e=>{try{const error=/** @type {{stack?: string, message?: string}} */(e);appendLog('main',error&&(error.stack||error.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
@@ -400,8 +402,11 @@ app.whenReady().then(async()=>{
  await tutorMaterialBridge.start().catch(error=>appendLog('tutor-pdf',error.message));
  await activityBridge.start().catch(error=>appendLog('activity',error.message));
  if(quitting)return;
- /* #190: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás. */
- if(process.platform==='darwin'&&app.isPackaged&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,isPackaged:true,log:appendLog});
+ /* Cadernos saíram para o Xournal++: some uma vez o que a biblioteca, a tinta e o plugin deixaram (notebook-leftovers.cjs). Em teste, a pasta do Xournal++ da máquina não entra. */
+ setImmediate(()=>cleanNotebookLeftovers({fs,runtimeDir:runtime,pluginDirs:TEST_MODE?[]:xournalPluginDirs(),log:line=>appendLog('limpeza',line)}));
+ /* #190/#27: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás.
+    A limpeza reconhece o bundle pelo Info.plist, não por `app.isPackaged`: o install-app mantém o executável `Electron`. */
+ if(process.platform==='darwin'&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,log:appendLog});
  /* #178: atalho do menu Iniciar leva o ícone e o AppUserModelId da Mesa; no teste, só com um APPDATA de teste. */
  if(process.platform==='win32'&&(!TEST_MODE||process.env.LEARNING_DESK_APPDATA)&&typeof app.getAppPath==='function'&&typeof shell.writeShortcutLink==='function')ensureStartMenuShortcut({shell,platform:process.platform,env:{...process.env,APPDATA:process.env.LEARNING_DESK_APPDATA||process.env.APPDATA},execPath:process.execPath,appPath:app.getAppPath(),assetsDir:path.join(__dirname,'assets'),defaultApp:!!process.defaultApp,fs,log:appendLog});
  if(TEST_MODE&&process.platform==='darwin'){try{app.setActivationPolicy('accessory');}catch{/* só existe no macOS */}try{app.dock?.hide();}catch{/* só existe no macOS */}}
@@ -413,6 +418,7 @@ app.whenReady().then(async()=>{
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
  win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:path.join(__dirname,'assets',process.platform==='win32'?'mesa.ico':'mesa-1024.png'),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
+ keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line)});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));
  /* Recarregar a página fecha o popover da Foto do celular (#36) e derruba o
@@ -465,7 +471,7 @@ ipcMain.handle('switch-course',async(_e,id)=>withHostNav(async()=>{
  persist();stopBridge();applyCourse(id);persist();return initialData();
 }));
 /* PDFs e imagens da mesa (open-pdf … open-image): pdf-host.cjs, mesma posição de registro. */
-registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const notebookHosts=require('./notebook-ink-wiring.cjs').registerNotebookInkWiring({ipcMain,courses:()=>courses,allowedXopp,config:()=>config,shell,spawn,platform:process.platform,app,runtime,allowSender:trustedMainSender,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,pdfAuthorize:authorizeNotebookPdf,openCodeTutor,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,log:line=>appendLog('tinta',line)});
+registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});
 ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
  assertNoNav();
  return chatPdfHost.attach(rawPath);
@@ -692,15 +698,13 @@ const toolHost={
  relink:()=>{persist();stopBridge();},
  fixtures:toolTestFixtures(TEST_MODE),
 };
-const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});require('./xournal-plugin-host.cjs').registerXournalPluginHost({ipcMain,deskDir,env:process.env,runtime,allowSender:trustedMainSender});
+const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
 ggb.register(ipcMain);
 
 app.on('window-all-closed',()=>app.quit());
 /* O `before-quit` espera o serve sair de verdade, com teto: no caso normal o
    SIGTERM o encerra em milissegundos; no teimoso, o stop escala para SIGKILL
-   e o ledger "encerrando" fica para a próxima abertura se o app sair antes (#105).
-   A ponte da tinta entra na mesma espera (#212): o arquivo de descoberta some
-   antes de o app sair, e o teto de 1 s dela cabe no de 3 s daqui. */
+   e o ledger "encerrando" fica para a próxima abertura se o app sair antes (#105). */
 let serveStopStarted=false;
 app.on('before-quit',(event)=>{quitting=true;
  if(serveStopStarted)return;
@@ -718,7 +722,7 @@ app.on('before-quit',(event)=>{quitting=true;
  for(const controller of freeJobs)try{controller.abort();}catch{/* encerrando: a geração já terminou */}bridge?.removeAllListeners();
  bridge?.stop();
  serveStopStarted=true;
- const stopping=Promise.all([Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */}),notebookHosts.stopInkConvert().catch(()=>{/* encerrando: a ponte já fechou */})]);
+ const stopping=Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */});
  ggb.close();
  persist();
  event.preventDefault();

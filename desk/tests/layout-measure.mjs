@@ -90,6 +90,9 @@ export function measure(page){
   const sidechat=q('#sidechat');
   return {
    vw:innerWidth,vh:innerHeight,docScroll:document.documentElement.scrollWidth,bodyScroll:document.body.scrollWidth,
+   /* Barra de rolagem clássica da coluna do tutor (Windows com mouse): ocupa
+      espaço dentro de `#sidebar` e afasta os controles da borda direita. */
+   chatScrollbar:q('#chat')?q('#chat').offsetWidth-q('#chat').clientWidth:0,
    header:box(q('header')),main:box(q('main')),
    references:box(q('#references')),divider:box(q('#divider')),sidebar:box(q('#sidebar')),
    column:children(q('#references')),grid:box(q('#pdf-grid')),row:children(q('#pdf-grid')),slot:children(q('#support-body')),
@@ -179,12 +182,19 @@ export function assertLayout(m,label,{readers}={}){
  }
  /* Em janela baixa a coluna do tutor rola inteira: a barra é medida no repouso.
     Com o tutor recolhido não há barra para medir. */
- if(m.chatHead)assert.ok(near(m.chatHead.top+m.chatScroll,m.column[0].top),`${label}: barra do tutor na mesma linha da primeira barra da coluna dos leitores (${m.chatHead.top+m.chatScroll} ≠ ${m.column[0].top})`);
+ /* O `.chat-top` é sticky (`tutor-chat.css`): a barra fica no topo da vista
+    mesmo quando `#chat` rolou, então a posição na tela já é a de repouso — somar
+    `chatScroll` dava 6px de erro no Windows, onde a conversa rola um pouco
+    mais (#165). */
+ if(m.chatHead)assert.ok(near(m.chatHead.top,m.column[0].top),`${label}: barra do tutor na mesma linha da primeira barra da coluna dos leitores (${m.chatHead.top} ≠ ${m.column[0].top}; rolagem ${m.chatScroll})`);
 
- /* Recuo interno de 12px (o último ícone de uma barra compensa a própria folga). */
+ /* Recuo interno de 12px (o último ícone de uma barra compensa a própria folga).
+    O conteúdo de `#chat` termina antes da barra de rolagem clássica, quando ela
+    ocupa espaço (Windows com mouse, #165). */
+ const chatRight=m.sidebar.right-(m.chatScrollbar||0);
  assertPad(label,'começo das matérias',m.navStart.left);
  if(m.tutorLabel)assertPad(label,'primeiro item do cabeçalho do tutor',m.tutorLabel.left-m.sidebar.left);
- if(m.tutorLastIcon)assertPad(label,'último ícone da barra do tutor',m.sidebar.right-m.tutorLastIcon.right);
+ if(m.tutorLastIcon)assertPad(label,'último ícone da barra do tutor',chatRight-m.tutorLastIcon.right);
  /* Indicador de modelo e esforço (#42): na fileira da caixa de mensagem, entre
     o Conferir e o Enviar/Parar, sem vazar da fileira; o título da sessão
     continua com um pedaço clicável. */
@@ -196,10 +206,10 @@ export function assertLayout(m,label,{readers}={}){
  }
  if(m.composer){
   /* O composer encosta na coluna de ponta a ponta: sem margem externa. */
-  assert.ok(near(m.composer.left,m.sidebar.left)&&near(m.composer.right,m.sidebar.right),`${label}: o composer vai de ponta a ponta da coluna (${m.composer.left}..${m.composer.right} de ${m.sidebar.left}..${m.sidebar.right})`);
+  assert.ok(near(m.composer.left,m.sidebar.left)&&near(m.composer.right,chatRight),`${label}: o composer vai de ponta a ponta da coluna (${m.composer.left}..${m.composer.right} de ${m.sidebar.left}..${chatRight})`);
   if(m.composerBox){
    assertPad(label,'caixa de mensagem (esquerda)',m.composerBox.left-m.sidebar.left);
-   assertPad(label,'caixa de mensagem (direita)',m.sidebar.right-m.composerBox.right);
+   assertPad(label,'caixa de mensagem (direita)',chatRight-m.composerBox.right);
    /* O texto do campo mora 12px dentro do composer: o recuo de --pad fica no
       composer, não na caixa; o placeholder não encosta na lateral. */
    if(m.prompt){

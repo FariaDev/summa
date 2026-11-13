@@ -12,7 +12,7 @@ import {tempDir} from './temp-dir.mjs';
    Origem normal, pasta de desenvolvimento, worktree e origem inválida; o
    caminho sai com `~` e nunca vai para log. */
 const require=createRequire(import.meta.url);
-const {readInstallSource,gitCheckout,homePathLabel,updateOrigin}=require('../update-origin.cjs');
+const {readInstallSource,gitCheckout,homePathLabel,updateOrigin,isOldRepositoryInstall}=require('../update-origin.cjs');
 const {registerUpdateHost}=require('../update-host.cjs');
 
 const tmp=()=>tempDir('mesa-origin-test');
@@ -85,10 +85,14 @@ test('updateOrigin: bundle ligado a um clone é pasta de desenvolvimento',()=>{
 test('updateOrigin: clone do repositório público é a Release oficial; fork e privado, não',()=>{
  const root=tmp();
  const cases=[
+  ['https://github.com/FariaDev/summa.git','normal'],
+  ['git@github.com:FariaDev/summa.git','normal'],
+  ['https://github.com/FariaDev/summa','normal'],
   ['https://github.com/FariaDev/mesa-de-estudos.git','normal'],
   ['git@github.com:FariaDev/mesa-de-estudos.git','normal'],
   ['https://github.com/FariaDev/mesa-de-estudos','normal'],
   ['https://github.com/FariaDev/mesa-e-conversa.git','development'],
+  ['https://github.com/outra-pessoa/summa.git','development'],
   ['https://github.com/outra-pessoa/mesa-de-estudos.git','development'],
  ];
  cases.forEach(([url,kind],index)=>{
@@ -97,6 +101,51 @@ test('updateOrigin: clone do repositório público é a Release oficial; fork e 
   writeSource(desk,clone);
   assert.equal(updateOrigin({packaged:true,deskDir:desk,home:root}).kind,kind,url);
  });
+});
+
+/* #21: o repositório antigo continua "oficial" para o updater (a ponte o
+   mantém), mas as tags do Summa não chegam ao clone dele. Reconhecer o caso
+   faz o clique recusar e o Sobre mandar reinstalar. */
+test('isOldRepositoryInstall: clone e bundle com origin no mesa-de-estudos; summa e zip, não',()=>{
+ const root=tmp();
+ const oldUrls=[
+  'https://github.com/FariaDev/mesa-de-estudos.git',
+  'git@github.com:FariaDev/mesa-de-estudos.git',
+  'https://github.com/FariaDev/mesa-de-estudos',
+  'ssh://git@github.com/FariaDev/mesa-de-estudos.git',
+ ];
+ oldUrls.forEach((url,index)=>{
+  const clone=newClone(path.join(root,`antigo${index}`));
+  fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = ${url}\n`);
+  const desk=path.join(clone,'desk');
+  fs.mkdirSync(desk,{recursive:true});
+  assert.equal(isOldRepositoryInstall({deskDir:desk}),true,url);
+ });
+ const newUrls=['https://github.com/FariaDev/summa.git','git@github.com:FariaDev/summa.git'];
+ newUrls.forEach((url,index)=>{
+  const clone=newClone(path.join(root,`novo${index}`));
+  fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = ${url}\n`);
+  const desk=path.join(clone,'desk');
+  fs.mkdirSync(desk,{recursive:true});
+  assert.equal(isOldRepositoryInstall({deskDir:desk}),false,url);
+ });
+ const zipDesk=path.join(root,'zip','desk');
+ fs.mkdirSync(zipDesk,{recursive:true});
+ assert.equal(isOldRepositoryInstall({deskDir:zipDesk}),false,'zip não tem origin');
+});
+
+test('isOldRepositoryInstall: no bundle o remote registrado manda',()=>{
+ const root=tmp();
+ const clone=newClone(path.join(root,'clone'));
+ fs.writeFileSync(path.join(clone,'.git','config'),`[remote "origin"]\n\turl = https://github.com/FariaDev/summa.git\n`);
+ const desk=path.join(root,'app','desk');
+ fs.mkdirSync(desk,{recursive:true});
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:'https://github.com/FariaDev/mesa-de-estudos.git'}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),true,'o registro do install-app vem antes do clone');
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:''}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),false,'sem remote registrado cai no origin do clone');
+ fs.writeFileSync(path.join(desk,'install-source.json'),JSON.stringify({path:clone,remote:'https://github.com/FariaDev/summa.git'}));
+ assert.equal(isOldRepositoryInstall({deskDir:desk}),false);
 });
 
 test('updateOrigin: worktree é rotulado como pasta de desenvolvimento (worktree)',()=>{
@@ -142,6 +191,14 @@ test('host: IPC de origem e "não dá para verificar" quando a pasta sumiu',asyn
  const check=await ipcMain.invoke('update-check',{manual:true});
  assert.equal(check.status,'unverifiable','origem inválida nunca vira "Atualizada"');
  assert.equal(check.current,'1.1.0');
+});
+
+test('host #23: origem registrada sem .git (zip extraído) é atualização normal',async()=>{
+ const runtime=tmp(),desk=path.join(runtime,'app','desk'),source=path.join(runtime,'summa-1.2.0');
+ fs.mkdirSync(path.join(source,'desk'),{recursive:true});
+ writeSource(desk,source);
+ const ipcMain=hostWith({runtime,deskDir:desk,packaged:true});
+ assert.deepEqual(await ipcMain.invoke('update-origin'),{kind:'normal',path:'',worktree:false});
 });
 
 test('host: rodando do código o IPC esconde a origem',async()=>{

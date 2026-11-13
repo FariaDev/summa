@@ -26,7 +26,6 @@ const FORBIDDEN=['--r-pill','--r-card','--r-2xl','--r-3xl'];
 const EXCEPTIONS=[
  {file:'src/tutor-chat.css',selector:'#ctx-meter .bar',token:'--r-sm',reason:'barra de progresso: trilho por natureza'},
  {file:'src/conversations-dividers.css',selector:'#review-tab #review-count',token:'--r-sm',reason:'contador numérico pequeno: cápsula por natureza'},
- {file:'src/conversations-dividers.css',selector:'.notebooks-format',token:'--r-sm',reason:'etiqueta curta do formato do caderno (D3): cápsula por natureza'}
 ];
 
 /** Todas as folhas de estilo do app (sem node_modules, runtime e gerados). @returns {string[]} */

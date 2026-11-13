@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {withArtifacts,newRuntime,seedCourse,tinyPdf,writeConfigJson,writeDeskJson,launchDesk,statusOnline,setTheme,openStudyContext,closeStudyContext} from './helpers.mjs';
+import {withArtifacts,newRuntime,seedCourse,tinyPdf,writeConfigJson,writeDeskJson,launchDesk,statusOnline,setTheme,openStudyContext,closeStudyContext,resizeWindow} from './helpers.mjs';
 import {pollUntil} from './waits.mjs';
 import {closeApp} from './proc-tree.mjs';
 
@@ -20,6 +20,8 @@ async function bootsTruncated(ctx,tag,{desk,config}){
  const app=ctx.app=await launchDesk({runtime});
  const page=await app.firstWindow();
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('#prompt',{timeout:20000});
  await page.waitForFunction(()=>!document.querySelector('#settings-dialog')?.open||true,undefined,{timeout:5000}).catch(()=>{});
  assert.equal(await page.locator('#prompt').count(),1,`${tag}: o prompt existe`);
@@ -48,11 +50,17 @@ await withArtifacts('duas-aberturas',async ctx=>{
  let app=ctx.app=await launchDesk({runtime});
  let page=await app.firstWindow();
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await statusOnline(page);
  await page.waitForSelector('.pdf-panel canvas',{timeout:30000});
  await setTheme(page,'dark');
  await page.locator('#course-tabs button[data-id="fis"]').click();
  await page.waitForFunction(()=>document.querySelector('#course-tabs button[data-id="fis"]')?.classList.contains('active'),undefined,{timeout:20000});
+ /* A troca de matéria grava o curso e abre a sessão nova; preencher o estudo
+    antes disso deixava um applyStudy atrasado apagar o título (rodada
+    43140194010). */
+ await pollUntil(()=>deskOf(runtime),desk=>desk?.courseId==='fis'&&!!desk?.session,{timeout:15000,what:'a matéria Física gravada no desk.json'});
  await page.locator('#prompt').fill('rascunho que sobrevive');
  await openStudyContext(page);
  await page.locator('#exercise-title').fill('Lista 9 · questão 3');
@@ -64,6 +72,8 @@ await withArtifacts('duas-aberturas',async ctx=>{
  app=ctx.app=await launchDesk({runtime});
  page=await app.firstWindow();
  page.on('pageerror',error=>errors.push(error.message));
+ /* Mesma janela larga da primeira abertura: a aba da Física precisa estar à vista. */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('.pdf-panel canvas',{timeout:30000});
  await statusOnline(page);
  assert.equal(await page.evaluate(()=>document.documentElement.dataset.theme),'dark','o tema volta');

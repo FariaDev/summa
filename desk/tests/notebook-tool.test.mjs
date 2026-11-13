@@ -279,7 +279,10 @@ test('fundo PDF ausente avisa sem o caminho pessoal', async () => {
   /* Autorização só pelo caminho: o aviso de "PDF ausente" cobre o arquivo
      autorizado que sumiu do disco (o `resolveTutorPdf` do main recusaria). */
   const missing = path.join(dir, 'fundo.pdf');
-  const pdfAuthorize = (resolved) => (path.resolve(resolved) === path.resolve(missing) ? resolved : '');
+  /* O leitor canoniza o `.xopp` (`/var/folders` → `/private/var/folders` no
+     macOS); a autorização compara o mesmo caminho canônico (issue #15). */
+  const missingCanonical = path.join(path.dirname(fs.realpathSync.native(file)), path.basename(missing));
+  const pdfAuthorize = (resolved) => (path.resolve(resolved) === missingCanonical ? resolved : '');
   const result = await makeTool(dir, {file, deps: {pdfAuthorize}}).call({caminho: file, pagina: 2});
   const text = result.content.find((entry) => entry.type === 'text');
   assert.match(text.text, /fundo PDF ausente: imagem sem o PDF/);

@@ -58,7 +58,7 @@ function cspFor(katex, charts = false) {
    inserido pelo host via `innerHTML`, que passa pelo sanitizador do prelude.
    `window.mesa`/`__MESA_ACTIVITY__` também vêm antes do conteúdo para o `js`
    do modelo poder usá-los. */
-function buildActivityDocument(spec, {id, version, hash, theme = 'system', accent = 'blue'} = {}) {
+function buildActivityDocument(spec, {id, version, hash, theme = 'system', accent = 'graphite'} = {}) {
   const clean = normalizeSpec(spec);
   const katex = clean.katex === true;
   const charts = clean.charts === true;

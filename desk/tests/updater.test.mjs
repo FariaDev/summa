@@ -192,7 +192,6 @@ test('lista explícita do modo zip: o código entra (tests incluído), o resto f
     'desk/templates/TUTOR.md', 'desk/locales/en.json', 'desk/scripts/install-app.mjs',
     'desk/tests/updateflow.test.mjs', 'desk/tests/zipkit.mjs',
     'core/dialogsview.bend', 'core/laws/dialogsview.bend', 'geogebra/x.html',
-    'desk/src/xournal-plugins/MesaPagina/main.lua', 'desk/src/xournal-plugins/MesaPagina/plugin.ini',
     'visual-check/windows.swift', '.githooks/pre-push', 'README.md', 'AGENTS.md', 'LICENSE', '.gitignore',
     'docs/agents/mapa.md', 'docs/agents/customizar.md',
   ];
@@ -210,9 +209,9 @@ test('applyZip: confere a versão extraída e copia só a lista explícita', () 
   fs.writeFileSync(path.join(rootDir, 'desk', 'main.cjs'), 'antigo');
   fs.writeFileSync(path.join(rootDir, 'desk', '.runtime', 'desk.json'), '{"keep":true}');
   const zip = makeZip({
-    'mesa-de-estudos-0.4.1/desk/package.json': '{"version":"0.4.1"}',
-    'mesa-de-estudos-0.4.1/desk/main.cjs': 'novo',
-    'mesa-de-estudos-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'novo',
+    'summa-0.4.1/desk/.runtime/desk.json': 'ATAQUE',
   });
   const logs = [];
   const result = updater.applyZip(zip, {rootDir, announcedVersion: '0.4.1', log: (line) => logs.push(line)});

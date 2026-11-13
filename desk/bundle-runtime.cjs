@@ -68,13 +68,6 @@ function stageBundlePayload(desk,dest){
  fs.mkdirSync(path.join(dest,'scripts'),{recursive:true});
  fs.copyFileSync(path.join(desk,'scripts','install-app.mjs'),path.join(dest,'scripts','install-app.mjs'));
  const nm=path.join(dest,'node_modules');fs.rmSync(nm,{recursive:true,force:true});fs.mkdirSync(nm,{recursive:true});
- /* O plugin MesaPagina do Xournal++ (#133) viaja no payload dentro de `src/`
-    (já copiado acima): o `xournal-plugin-host.cjs` o copia para a pasta de
-    plugins do Xournal++ quando o aluno pede. Fonte em
-    `desk/src/xournal-plugins/MesaPagina`; sem cópia separada, o mesmo
-    caminho serve em dev e no app empacotado. */
- const pluginSrc=path.join(desk,'src','xournal-plugins','MesaPagina');
- if(!fs.existsSync(path.join(pluginSrc,'plugin.ini')))throw Error('Fonte do plugin MesaPagina ausente: '+pluginSrc);
  const managed=[...files,...dirs,'scripts/install-app.mjs'];
  for(const pkg of packages){
   const target=path.join(nm,pkg.relative);fs.mkdirSync(path.dirname(target),{recursive:true});
@@ -94,11 +87,17 @@ function setPlistString(app,key,value){
   execFileSync('plutil',['-insert',key,'-string',String(value),plist],{stdio:'inherit'});
  }
 }
-/* Procedência do bundle: o updater dele (modo bundle) atualiza o clone que o
-   originou e re-sincroniza — sem isto não há como voltar à fonte. Fora de um
-   clone git não há o que registrar. */
+/**
+ * Registra de onde o bundle foi instalado: o updater (modo bundle) atualiza
+ * essa origem e re-sincroniza — sem isto não há como voltar à fonte. A origem
+ * pode ser um clone git ou a pasta extraída do zip (#23); `remote` só existe
+ * quando há um clone.
+ * @param {string} root pasta de origem (contém `desk/`)
+ * @param {string} dest payload do bundle (`Contents/Resources/app`)
+ * @returns {void}
+ * @example recordInstallSource('/home/ana/summa-1.2.0','/Applications/Summa.app/Contents/Resources/app')
+ */
 function recordInstallSource(root,dest){
- if(!fs.existsSync(path.join(root,'.git')))return;
  let remote='';
  try{remote=execFileSync('git',['-C',root,'remote','get-url','origin'],{encoding:'utf8'}).trim();}catch{}
  fs.writeFileSync(path.join(dest,'install-source.json'),JSON.stringify({path:root,remote},null,2)+'\n');
@@ -176,4 +175,4 @@ function installBundle({desk,root,app,version}){
  fs.utimesSync(app,new Date(),new Date());
  return {dest,managed};
 }
-module.exports={runtimePackages,stageBundlePayload,installBundle,installWindowsBundle};
+module.exports={runtimePackages,stageBundlePayload,installBundle,installWindowsBundle,recordInstallSource};

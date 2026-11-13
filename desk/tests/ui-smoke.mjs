@@ -729,6 +729,8 @@ await withArtifacts('tabs',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')},{id:'B',name:'Matéria B',path:path.join(runtime,'learning','Courses','B')}]});
  const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  page.on('console',m=>{if(m.text().startsWith('[dbg]'))console.log('[page]',m.text());});
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  const tabs=page.locator('#course-tabs button[role="tab"]:not(#review-tab)');
@@ -744,7 +746,7 @@ await withArtifacts('tabs',async ctx=>{
  assert.equal(await page.locator('#new-tab').getAttribute('title'),'Nova matéria (abre as Configurações)','o "+" é o nó da view');
  assert.deepEqual(await page.locator('#study-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['study-search-open','study-review-today','study-notes-open','study-stats-open','study-backup-open','study-share-open','study-tutor-pdf','xournal','reference-toggle'],'itens do menu Estudar na ordem (o Encerrar mora no Mais opções do tutor)');
   assert.deepEqual(await page.locator('#new-session-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['new-session-opencode','new-session-claude'],'itens da sessão nova: o motor atual primeiro (#87), sem Pi');
- assert.deepEqual(await page.locator('#chat-more-pop [role^="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['more-context','more-notebooks','end-day','export-chat','chat-collapse'],'itens do Mais opções do tutor na ordem, sem sanfona');
+ assert.deepEqual(await page.locator('#chat-more-pop [role^="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['more-context','end-day','export-chat','chat-collapse'],'itens do Mais opções do tutor na ordem, sem sanfona');
  assert.deepEqual(await page.locator('#settings-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['settings','help','shortcuts','release-notes','report-problem','about'],'itens do menu Ajustes na ordem');
  assert.equal(await page.locator('#course-tabs [data-icon],#study-pop [data-icon],#settings-pop [data-icon],#new-session-pop [data-icon],#chat-more-pop [data-icon]').count(),0,'o andaime data-icon sai do DOM');
  assert.equal(await page.locator('#settings-trigger svg.icon').count(),1,'o botão Ajustes é um ícone');
@@ -1097,6 +1099,8 @@ await withArtifacts('welcome',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')},{id:'B',name:'Matéria B',path:path.join(runtime,'learning','Courses','B')}]});
  const app=ctx.app=await launchDesk({runtime});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  await statusOnline(page);
  await page.locator('#course-tabs button[data-id="B"]').click();
@@ -1117,7 +1121,10 @@ await withArtifacts('ipc-error-once',async ctx=>{
  writeDeskJson(runtime,{courseId:'A'});
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'A',name:'Matéria A',path:path.join(runtime,'learning','Courses','A')}]});
  /* Sem Pi: o motor é o OpenCode; quebrar o serve prova a mesma via única. */
- const app=ctx.app=await launchDesk({runtime,env:{LEARNING_DESK_OPENCODE:'/usr/bin/false'}});
+ /* O node que roda o teste existe nos três sistemas e falha ao receber `serve`
+    como script: no Windows o `/usr/bin/false` não existe e a conexão ficava
+    presa em "connecting" (rodada 43140194010). */
+ const app=ctx.app=await launchDesk({runtime,env:{LEARNING_DESK_OPENCODE:process.execPath}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  /* A falha de conexão aparece UMA vez, escrita na coluna do tutor (#23): sem
     aviso flutuante repetindo o mesmo texto e sem o embrulho do Electron. */
@@ -1210,6 +1217,8 @@ await withArtifacts('atualizacao',async ctx=>{
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Upd',name:'Upd',path:path.join(runtime,'learning','Courses','Upd')}]});
  const app=ctx.app=await launchDesk({runtime,env:{LEARNING_VAULT:runtime}});
  const page=await app.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ /* Abaixo de 1100px o header compacto esconde as abas de matéria (#165). */
+ await resizeWindow(app,page,1440,900);
  await page.waitForSelector('.pdf-panel',{timeout:30000});
  await app.evaluate(({ipcMain})=>{
   ipcMain.removeHandler('update-check');

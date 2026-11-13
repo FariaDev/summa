@@ -14,6 +14,8 @@
    ledger do runtime e mata o pid registrado com a mesma prova do produto
    (pid + hora de início + argumentos do serve da Mesa) (#105). */
 import {execFileSync} from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import {createRequire} from 'node:module';
 
 const require=createRequire(import.meta.url);
@@ -70,7 +72,9 @@ export function killRows(rows){
 /* Mata a árvore inteira abaixo de `root` (no Windows, `taskkill /T`). */
 export function killTree(root){
  if(WIN){
-  try{execFileSync('taskkill',['/PID',String(root),'/T','/F'],{stdio:'ignore'});}catch{/* sem filhos */}
+  /* `/T /F` pode pendurar num filho de console preso; o killGroup do produto
+     já usa prazo, e o fechamento do teste não pode ficar 600 s nele (#165). */
+  try{execFileSync('taskkill',['/PID',String(root),'/T','/F'],{stdio:'ignore',timeout:2000,killSignal:'SIGKILL'});}catch{/* sem filhos ou já saiu */}
   return [];
  }
  return killRows(descendants(root));
@@ -117,22 +121,73 @@ export async function killLedgerServer(ledgerDir,{timeout=5000}={}){
    o app morre com SIGKILL (árvore e grupo) e o teste reprova dizendo isso — app
    que não fecha é defeito, não detalhe de teste. Depois, o ledger do runtime
    é conferido: serve vivo ali também morre (#105). */
+/* Fases do fechamento no main, para a falha do Windows dizer ONDE parou
+   (#165): só "não fechou em 15 s" não separa app preso no `before-quit` de
+   app que saiu devagar sob carga. O arquivo mora no runtime do teste (vira
+   artefato na falha) e some quando o fechamento termina. */
+async function traceQuit(app,file){
+ try{
+  await app.evaluate(({app,BrowserWindow},file)=>{
+   const fs=process.getBuiltinModule('node:fs');
+   const mark=line=>{try{fs.appendFileSync(file,`${Date.now()} ${line}\n`);}catch{/* sem arquivo */}};
+   mark('close pedido');
+   app.on('before-quit',()=>mark('before-quit'));
+   app.on('will-quit',()=>mark('will-quit'));
+   app.on('quit',()=>mark('quit'));
+   app.on('window-all-closed',()=>mark('window-all-closed'));
+   for(const win of BrowserWindow.getAllWindows())win.on('closed',()=>mark('janela closed'));
+   process.on('exit',code=>mark(`process exit ${code}`));
+  },file);
+ }catch{/* app já fechando: o trace é opcional */ }
+}
+function quitTrace(file){
+ try{
+  const lines=fs.readFileSync(file,'utf8').trim().split('\n').filter(Boolean);
+  return lines.slice(-12).join(' | ');
+ }catch{return '';}
+}
 export async function closeApp(app,{timeout=15000,ledgerDir=''}={}){
  if(!app)return;
  const runtime=ledgerDir||app.mesaRuntime||'';
+ const trace=runtime?path.join(runtime,'fechamento.log'):'';
+ if(trace)await Promise.race([traceQuit(app,trace),new Promise(resolve=>setTimeout(resolve,3000))]);
  /* App que o próprio teste já fechou: o Playwright descartou o objeto e
     `process()` lança. Ainda assim o ledger é limpo. */
- let pid;
- try{pid=app.process()?.pid;}catch{await killLedgerServer(runtime);return;}
- const closed=app.close().then(()=>true,()=>true);
+ let proc;
+ try{proc=app.process();}catch{await killLedgerServer(runtime);return;}
+ const pid=proc?.pid;
+ /* O `app.close()` do Playwright espera o `BrowserContext.close` responder; no
+    Windows os filhos do Chromium herdam o stdio e podem segurar o pipe depois
+    do exit do main (rodada 43128169284: as fases mostram `process exit 0` e o
+    teste ainda estourava os 15 s). Pede o quit pelo próprio app, que é o
+    caminho que o usuário percorre, e mede o `exit` do processo; os pipes do
+    Playwright são soltos em seguida para a conexão pendente não segurar o teste. */
+ const exited=new Promise(resolve=>{
+  if(!proc)return resolve(false);
+  if(proc.exitCode!==null||proc.signalCode!==null)return resolve(true);
+  proc.once('exit',()=>resolve(true));
+ });
+ let quitTimer=null;
+ const quitSent=Promise.race([
+  app.evaluate(({app})=>app.quit()).then(()=>true,()=>true),
+  new Promise(resolve=>{quitTimer=setTimeout(()=>resolve(false),2000);}),
+ ]);
+ await quitSent;
+ clearTimeout(quitTimer);
  let timer;
  const late=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),timeout);});
- const ok=await Promise.race([closed,late]);
+ const ok=await Promise.race([exited,late]);
  clearTimeout(timer);
+ /* O Playwright abre cinco pipes (`stdio: 'pipe'`), mas o Electron só usa os
+    três primeiros. Os fds 3 e 4 ficam sem leitor e um neto do Chromium que
+    sobrevive ao main segura a ponta de escrita: soltar só 0–2 deixava o
+    processo de teste vivo para sempre (#165, rodada 43364514387). */
+ if(ok)for(const stream of proc?.stdio||[])try{stream?.destroy?.();}catch{/* já fechado */}
  await killLedgerServer(runtime);
- if(ok||!pid)return;
+ if(ok||!pid){if(trace)try{fs.rmSync(trace,{force:true});}catch{}return;}
  killTree(pid);
  if(!WIN){try{process.kill(-pid,'SIGKILL');}catch{/* grupo já foi */}}
  try{process.kill(pid,'SIGKILL');}catch{/* já foi */}
- throw Error(`o app não fechou em ${Math.round(timeout/1000)} s; morto com SIGKILL`);
+ const phases=quitTrace(trace);
+ throw Error(`o app não fechou em ${Math.round(timeout/1000)} s; morto com SIGKILL${phases?` (fases do main: ${phases})`:''}`);
 }
