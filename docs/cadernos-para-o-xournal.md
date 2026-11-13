@@ -14,6 +14,17 @@ Summa a ferramenta `ler_caderno` do tutor e o Caderno de revisão.
 As capturas `tests/capture-ciclo2-cadernos*.mjs` e
 `tests/capture-ciclo2-xournal*.mjs` também saíram.
 
+## O que voltou: a ponte com o Ambitus
+
+A leitura da tinta voltou como serviço para o Ambitus, o Xournal++ modificado:
+`desk/ambitus-bridge-host.cjs` e `desk/ambitus-bridge-wiring.cjs`. É a ponte
+da #159 sem o SVG: o Ambitus manda o PNG da página (`POST /ler-tinta`, porta
+e token em `runtime/ambitus-bridge.json`) e a Summa devolve o texto lido pelo
+modelo de visão da pessoa (`notebook-ink-bridge.cjs`, `notebook-ink-model.cjs`
+e `ink-bridge-lifecycle.cjs`, de volta da tag). A ponte fica no ar com a Summa
+aberta; a leitura só acontece com `inkReading` ligado (desligado por padrão).
+O que ler e onde guardar é do Ambitus.
+
 ## Recuperar
 
 Ver um arquivo como era:

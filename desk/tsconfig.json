@@ -19,6 +19,11 @@
   "strict": false
  },
  "files": [
+  "ambitus-bridge-host.cjs",
+  "ambitus-bridge-wiring.cjs",
+  "ink-bridge-lifecycle.cjs",
+  "notebook-ink-model.cjs",
+  "src/agents/notebook-ink-bridge.cjs",
   "card-host.cjs",
   "session-handoff-host.cjs",
   "card-session.cjs",
