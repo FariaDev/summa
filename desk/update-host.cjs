@@ -5,7 +5,7 @@ const {causeArg}=require('./src/error-detail.mjs');
 const {writeReadableLog}=require('./desk-log.cjs');
 const updater=require('./updater.cjs');
 const components=require('./components.cjs');
-const {readInstallSource,updateOrigin}=require('./update-origin.cjs');
+const {readInstallSource,updateOrigin,isOldRepositoryInstall}=require('./update-origin.cjs');
 const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 
@@ -21,17 +21,45 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     `updater.cjs` (lista de código + caminhos protegidos). Modo de teste não fala
     com a rede (os testes sobrescrevem os handlers com dados falsos). */
  const updateCacheFile=path.join(runtime,'update.json');
+ /* #23: o bundle é reconhecido pelo Info.plist, não por `app.isPackaged` — o
+    teste e a instalação por zip no Linux também rodam empacotados. */
+ function isAppBundle(){return fs.existsSync(path.join(path.resolve(deskDir,'..','..','..'),'Contents','Info.plist'));}
+ /* #23: origem registrada que ainda serve de fonte: a pasta existe e tem
+    `desk/`. O zip da Release é aplicado nela, nunca no payload. */
+ function bundleSourceReady(sourceInfo){
+  const sourcePath=String(sourceInfo&&sourceInfo.path||'');
+  return !!sourcePath&&fs.existsSync(sourcePath)&&fs.existsSync(path.join(sourcePath,'desk'));
+ }
+ /* #23: pasta extraída do zip registrada pelo install-app não é clone, mas é a
+    origem normal de atualização (zip). O `updateOrigin` só conhece clone e a
+    marcaria como indisponível; o Sobre usa a classificação do updater. */
+ function registeredZipSource(){
+  const source=readInstallSource(deskDir);
+  if(!source||!source.path)return null;
+  const sourcePath=path.resolve(String(source.path));
+  if(fs.existsSync(path.join(sourcePath,'.git')))return null;
+  return bundleSourceReady(source)?sourcePath:null;
+ }
  /* #109: o Sobre mostra a MESMA origem que o updater vai usar. O fato vem do
     `install-source.json` (ou da raiz com `.git`); a classificação não adivinha
     pasta pessoal nem log — o caminho só existe aqui e no Sobre. */
  function originFacts(){
-  return updateOrigin({packaged:!!app.isPackaged,deskDir,home:os.homedir()});
+  const facts=updateOrigin({packaged:!!app.isPackaged,deskDir,home:os.homedir()});
+  if(facts.kind==='unavailable'&&registeredZipSource())return {kind:'normal',path:'',worktree:false};
+  return facts;
  }
+ /* #21: clone/bundle com `origin` no repositório antigo não recebe as tags do
+    Summa (histórico novo): o Sobre manda reinstalar e o clique recusa sem
+    abrir o worker. */
+ function oldRepository(){return isOldRepositoryInstall({deskDir});}
  function updateContext(){
   const root=path.join(deskDir,'..');
   const bundle=path.resolve(deskDir,'..','..','..');
   const source=readInstallSource(deskDir);
-  const mode=source&&source.path?'bundle':fs.existsSync(path.join(root,'.git'))?'git':'zip';
+  /* #23: bundle sem `install-source.json` (instalação antiga) não cai no zip
+     com a raiz do payload: o modo `unavailable` recusa antes de qualquer
+     download/mutação em vez de atualizar no lugar errado. */
+  const mode=source&&source.path?'bundle':fs.existsSync(path.join(root,'.git'))?'git':isAppBundle()?'unavailable':'zip';
   const reopen=mode==='bundle'?{cmd:'open',args:[bundle]}:{cmd:'npm',args:['start'],cwd:deskDir,shell:process.platform==='win32'};
   /* #80: a chave pública viaja por parâmetro (o worker é uma cópia no tmpdir);
      marcador/ausente faz o updater recusar antes de qualquer download. */
@@ -39,12 +67,16 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   return {mode,rootDir:root,deskDir,runtime,sourceInfo:source,reopen,publicKey};
  }
  ipcMain.handle('update-origin',()=>originFacts());
- ipcMain.handle('update-check',(_e,opts)=>{
+ ipcMain.handle('update-check',async(_e,opts)=>{
   /* Origem que não recebe atualização não vira "Atualizada": o Sobre diz que
      não dá para verificar (#109). */
   if(originFacts().kind==='unavailable')return {status:'unverifiable',version:'',notes:'',url:'',current:app.getVersion()};
   if(TEST_MODE)return {status:'unknown',version:'',notes:'',url:'',current:app.getVersion()};
-  return updater.checkForUpdates({current:app.getVersion(),manual:!!opts?.manual,cacheFile:updateCacheFile});
+  const result=await updater.checkForUpdates({current:app.getVersion(),manual:!!opts?.manual,cacheFile:updateCacheFile});
+  /* #21: com versão nova anunciada, a instalação do repositório antigo vira o
+     aviso de reinstalar — nunca o "Atualizar e reiniciar" que recusaria. */
+  if(result.status==='update'&&oldRepository())return {...result,status:'legacy-origin'};
+  return result;
  });
  ipcMain.handle('update-apply',async()=>{
   if(TEST_MODE)throw Error(uiMsg('err.update.testMode'));
@@ -55,11 +87,21 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
      mais nova que a instalada. */
   const installed=app.getVersion();
   if(!updater.isNewer(target,installed))throw Error(uiMsg('err.update.notNewer',{announced:target,installed}));
+  /* #21: clone/bundle do repositório antigo não recebe a tag do Summa —
+     recusa antes do lock, do worker e de qualquer git/rede; reinstalar é o
+     caminho, e a pasta de dados não muda. */
+  if(oldRepository())throw Error(uiMsg('update.legacyOrigin'));
+  /* #23: recusa antes de abrir o worker — o app segue aberto e a pessoa lê o
+     motivo. Sem origem registrada (bundle antigo) ou com a origem sumida, o
+     modo `zip` aplicaria a Release dentro de Contents/Resources. */
+  const context=updateContext();
+  if(context.mode==='unavailable')throw Error(uiMsg('err.update.sourceMissing'));
+  if(context.mode==='bundle'&&!bundleSourceReady(context.sourceInfo))throw Error(uiMsg('err.update.sourceGone'));
   /* A4: lock compartilhado entre Atualizar Mesa e o CLI — dois cliques (ou
      clique + terminal) não abrem dois workers concorrentes. */
   const lock=updater.acquireLock(runtime);
   if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
-  const worker=updater.spawnWorker({...updateContext(),announcedVersion:target,waitPid:process.pid,cacheFile:updateCacheFile,lockFile:lock.file});
+  const worker=updater.spawnWorker({...context,announcedVersion:target,waitPid:process.pid,cacheFile:updateCacheFile,lockFile:lock.file});
   if(!worker.ok){
    updater.releaseLock(lock.file);
    throw Error(worker.error||uiMsg('err.update.startFail'));

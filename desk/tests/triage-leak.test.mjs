@@ -47,7 +47,7 @@ test('o relatório não vaza caminho, chave, auth.json, JSONL, matéria nem PDF'
   assert.match(stdout,/<matéria 1>/,'a matéria aparece só como rótulo');
   assert.match(stdout,/\[oculto\]/,'as chaves do log viram [oculto]');
   assert.match(stdout,/linha omitida: parecia conteúdo de sessão/);
-  assert.match(stdout,/https:\/\/github\.com\/FariaDev\/mesa-de-estudos\/issues\/new\?/);
+  assert.match(stdout,/https:\/\/github\.com\/FariaDev\/summa\/issues\/new\?/);
   assert.doesNotMatch(stdout,/FariaDev\/mesa-e-conversa/);
  }finally{profile.cleanup();}
 });

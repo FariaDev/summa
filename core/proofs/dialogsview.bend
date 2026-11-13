@@ -196,6 +196,12 @@ def Laws.dlg_upd_sem_rede():
 def Laws.dlg_upd_sem_origem():
   {==}
 
+def Laws.dlg_upd_origem_antiga_texto():
+  {==}
+
+def Laws.dlg_upd_origem_antiga():
+  {==}
+
 def Laws.dlg_upd_clone_sujo():
   {==}
 

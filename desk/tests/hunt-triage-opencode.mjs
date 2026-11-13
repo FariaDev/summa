@@ -173,8 +173,8 @@ const permission = permissionFromCommand();
   const doctor = await caseShell(permission, 'npm --prefix desk run doctor', 'desk/ran-doctor');
   assert.equal(doctor.marker, true, `o doctor rodou de verdade\n${doctor.output}`);
   assert.match(doctor.output, /\$ .*npm --prefix desk run doctor/);
-  const gh = await caseShell(permission, 'gh issue list --repo FariaDev/mesa-de-estudos --state all --search "pdf não abre"');
-  assert.equal(fs.readFileSync(path.join(workspace, 'gh-args.txt'), 'utf8'), 'issue list --repo FariaDev/mesa-de-estudos --state all --search pdf não abre', 'o gh recebeu só o subcomando permitido');
+  const gh = await caseShell(permission, 'gh issue list --repo FariaDev/summa --state all --search "pdf não abre"');
+  assert.equal(fs.readFileSync(path.join(workspace, 'gh-args.txt'), 'utf8'), 'issue list --repo FariaDev/summa --state all --search pdf não abre', 'o gh recebeu só o subcomando permitido');
   assert.equal(gh.results[0], 'nenhuma issue\n');
 }
 
@@ -193,8 +193,8 @@ for (const [label, command, created] of [
 
 /* ---------- 2b. injeção dentro do comando permitido não executa ---------- */
 for (const [label, command] of [
-  ['substituição $()', 'gh issue list --repo FariaDev/mesa-de-estudos --search "$(touch pwned)"'],
-  ['crase', 'gh issue list --repo FariaDev/mesa-de-estudos --search "`touch pwned`"'],
+  ['substituição $()', 'gh issue list --repo FariaDev/summa --search "$(touch pwned)"'],
+  ['crase', 'gh issue list --repo FariaDev/summa --search "`touch pwned`"'],
   ['ponto e vírgula', 'gh issue list; touch pwned'],
   ['pipe', 'gh issue list | sh -c "touch pwned"'],
   ['&&', 'gh issue list && touch pwned'],

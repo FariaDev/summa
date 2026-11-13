@@ -55,7 +55,7 @@ Para um agente configurar o computador: [`desk/SETUP.md`](desk/SETUP.md).
 
 ## Atualizar
 
-**Sobre → Atualizar e reiniciar** (de 0.4.0 em diante), ou `npm run update` em `desk/`. O `config.json` continua valendo como está. O que mudou em cada versão fica nas [Releases](https://github.com/FariaDev/mesa-de-estudos/releases).
+**Sobre → Atualizar e reiniciar** (de 0.4.0 em diante), ou `npm run update` em `desk/`. O `config.json` continua valendo como está. O que mudou em cada versão fica nas [Releases](https://github.com/FariaDev/summa/releases).
 
 ## Configurações
 
@@ -63,7 +63,7 @@ Para um agente configurar o computador: [`desk/SETUP.md`](desk/SETUP.md).
 
 ## Problemas
 
-**Relatar um problema** (Mais opções do tutor) ou `npm run triage` monta um relatório limpo, sem chaves, sessões, nomes de matéria nem de PDF, e oferece um prompt pronto para um agente e a issue já preenchida no repositório público [`FariaDev/mesa-de-estudos`](https://github.com/FariaDev/mesa-de-estudos) para você revisar. O log do app abre no Sobre.
+**Relatar um problema** (Mais opções do tutor) ou `npm run triage` monta um relatório limpo, sem chaves, sessões, nomes de matéria nem de PDF, e oferece um prompt pronto para um agente e a issue já preenchida no repositório público [`FariaDev/summa`](https://github.com/FariaDev/summa) para você revisar. O log do app abre no Sobre.
 
 ## Desenvolvimento
 
