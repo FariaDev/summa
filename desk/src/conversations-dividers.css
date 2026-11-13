@@ -162,10 +162,10 @@
  /* O mesmo aperto vertical vale para a casca dos estados, que divide a
     coluna com o composer; o respiro entre texto e ações continua. */
  /* A caixa do tutor reserva 24px no topo para alinhar com o escopo do
-    lateral (#123). Na janela baixa a reserva encolhe a área do estado e os
-    botões encostavam sob o composer; o respiro menor entre as linhas devolve
-    o que os botões precisam, sem mexer no composer. */
- .tutor-state{padding:var(--space-3) var(--pad) var(--space-2);gap:var(--space-2)}
+    lateral (#123). Na janela baixa a reserva encolhe a área do estado; com o
+    cabeçalho do r2 e as três saídas do erro (#87) em duas linhas, o bloco
+    passava sob o composer. O respiro do estado cede 6px no total. */
+ .tutor-state{padding:var(--space-2) var(--pad) var(--space-1);gap:var(--space-1)}
  /* As três saídas do estado cabem numa linha só na janela baixa; assim a
     terceira não fica sob a caixa de mensagem. */
  .tutor-state .ts-actions{gap:var(--space-1)}
@@ -186,7 +186,11 @@ body.chat-scroll #messages{flex:1 0 auto;min-height:0;overflow:visible;contain:n
    segue a ordem do mock: o que vai com a mensagem, a questão ativa, o rascunho
    e o uso do contexto com "Resumir agora" no pé. */
 #context-dock{
- position:relative;z-index:auto;display:flex;flex-direction:column;flex:0 1 auto;min-height:0;
+ /* Desde #180 o painel divide a coluna com a conversa e encolhe; sem um piso,
+    a conversa longa do 900×650 o esmagava até 1px (ui-smoke). O piso é a
+    cabeça mais uma linha e quem rola é o `dock-body`. */
+ position:relative;z-index:auto;display:flex;flex-direction:column;flex:0 1 auto;
+ min-height:calc(var(--bar) + var(--space-6));
  width:auto;max-height:70%;overflow:hidden;
  background:var(--bg);border:0;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;padding:0;
 }

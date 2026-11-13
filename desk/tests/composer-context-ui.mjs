@@ -100,12 +100,14 @@ await withArtifacts('composer-context',async ctx=>{
 
  /* 6. Campo da questão e seletor do rascunho: 40px e a largura do painel. */
  await openContext(page);
- const field=await rect(page,'#exercise-title'),pick=await rect(page,'#pick-xopp'),study=await rect(page,'#study-context'),body=await page.locator('#context-dock .dock-body').evaluate(el=>{const cs=getComputedStyle(el);const r=el.getBoundingClientRect();return {width:r.width,padLeft:parseFloat(cs.paddingLeft),padRight:parseFloat(cs.paddingRight)};});
+ const field=await rect(page,'#exercise-title'),pick=await rect(page,'#pick-xopp'),study=await rect(page,'#study-context'),body=await page.locator('#context-dock .dock-body').evaluate(el=>{const cs=getComputedStyle(el);return {clientWidth:el.clientWidth,padLeft:parseFloat(cs.paddingLeft),padRight:parseFloat(cs.paddingRight)};});
  assert.equal(field.height,40,'o campo da questão ativa tem 40px');
  assert.equal(pick.height,40,'o seletor do rascunho tem 40px');
  assert.ok(Math.abs(field.width-study.width)<=0.5,`o campo ocupa a largura do painel (${field.width} × ${study.width})`);
  assert.ok(Math.abs(pick.width-study.width)<=0.5,`o seletor ocupa a largura do painel (${pick.width} × ${study.width})`);
- assert.ok(Math.abs(study.width-(body.width-body.padLeft-body.padRight))<=1,'a largura é a útil do painel, descontado o recuo');
+ /* O corpo rola desde que o contrato do tutor entrou no painel (#180): a
+    largura útil é a do cliente, sem a barra de rolagem. */
+ assert.ok(Math.abs(study.width-(body.clientWidth-body.padLeft-body.padRight))<=1,'a largura é a útil do painel, descontado o recuo');
  assert.equal(await page.locator('#pick-xopp').evaluate(el=>getComputedStyle(el).backgroundColor),await page.locator('#exercise-title').evaluate(el=>getComputedStyle(el).backgroundColor),'campo e seletor usam a mesma camada');
 
  /* 7. Teclado: ↓ abre o Mais opções, Enter abre o Contexto e Tab chega ao campo. */
@@ -118,7 +120,17 @@ await withArtifacts('composer-context',async ctx=>{
  await page.waitForSelector('#context-dock:not([hidden])');
  assert.equal(await page.locator('#context-line').getAttribute('aria-expanded'),'true','o painel aberto pelo teclado marca a linha');
  assert.equal(await page.evaluate(()=>document.activeElement?.id),'context-dock-close','o foco entra no × do painel');
- await page.keyboard.press('Tab');
+ /* O contrato do tutor (#180) pôs linhas focáveis antes do campo: o Tab entra
+    nelas e só depois chega à questão. */
+ const contractRows=await page.locator('#context-contract-items .contract-row').count();
+ if(contractRows){
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.classList.contains('contract-row')),true,'o Tab entra na lista do contrato antes do campo');
+  for(let i=1;i<contractRows;i++)await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+ }else{
+  await page.keyboard.press('Tab');
+ }
  assert.equal(await page.evaluate(()=>document.activeElement?.id),'exercise-title','o Tab chega ao campo da questão');
  assert.equal(await page.locator('#exercise-title').getAttribute('aria-label'),'Lista ou questão ativa','o campo tem nome acessível');
  await page.keyboard.type('Lista 4 · q.9');
