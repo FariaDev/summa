@@ -27,7 +27,7 @@ function tempFile(name, contents = '') {
 
 function harness({allowed = new Set(), allowedXopp = new Set()} = {}) {
   const ipcMain = fakeIpcMain();
-  const live = {state: {draft: '', theme: 'auto', accent: 'blue', study: {}, pdfs: []}};
+  const live = {state: {draft: '', theme: 'auto', accent: 'graphite', study: {}, pdfs: []}};
   const calls = [];
   const win = {setBackgroundColor: color => calls.push(['background', color])};
   const appIcon = {apply: (target, accent, theme) => calls.push(['icon', target === win ? 'win' : 'outro', accent, theme])};
@@ -51,7 +51,7 @@ test('save-state filtra PDFs e rotações, guarda só o .xopp autorizado e aplic
   const xopp = tempFile('lista.xopp');
   const {ipcMain, live, calls} = harness({allowed: new Set(['/p/a.pdf']), allowedXopp: new Set([xopp])});
   await ipcMain.invoke('save-state', {
-    draft: 'novo rascunho', theme: 'dark', accent: 'green', referenceVisible: true,
+    draft: 'novo rascunho', theme: 'dark', accent: 'violet', referenceVisible: true,
     chatWidth: 400, calcHeight: 200, pdfSplit: 0.5, viewLayout: {chatWidth: 500},
     pdfs: [
       {path: '/p/a.pdf', page: 2, zoom: 1.5, rotation: 90, scrollX: 1, scrollY: 2, invert: true, minimized: false},
@@ -67,9 +67,9 @@ test('save-state filtra PDFs e rotações, guarda só o .xopp autorizado e aplic
   assert.equal(live.state.study.xopp, xopp);
   assert.equal(live.state.draft, 'novo rascunho');
   assert.equal(live.state.theme, 'dark');
-  assert.equal(live.state.accent, 'green');
+  assert.equal(live.state.accent, 'violet');
   assert.deepEqual(live.state.viewLayout, {chatWidth: 500});
-  assert.deepEqual(calls, [['background', '#191919'], ['icon', 'win', 'green', 'dark'], ['persist']]);
+  assert.deepEqual(calls, [['background', '#191919'], ['icon', 'win', 'violet', 'dark'], ['persist']]);
 });
 
 test('save-state derruba o .xopp que a Mesa não autorizou', async () => {

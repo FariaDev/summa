@@ -175,32 +175,21 @@ def byTheme(+theme: String, light: String, dark: String) -> String:
   strIf(isDark(theme), dark, light)
 
 def accentIds() -> List<&2, String>:
-  ["blue", "violet", "green", "orange", "pink", "graphite"]
+  ["graphite", "violet"]
 
+# Desconhecido e as cores que saíram (blue/green/orange/pink) caem no grafite.
 def accentOf(+accent: String) -> String:
-  strIf(String.eq(accent, "violet"), "violet",
-  strIf(String.eq(accent, "green"), "green",
-  strIf(String.eq(accent, "orange"), "orange",
-  strIf(String.eq(accent, "pink"), "pink",
-  strIf(String.eq(accent, "graphite"), "graphite", "blue")))))
+  strIf(String.eq(accent, "violet"), "violet", "graphite")
 
 # Preenchimento do acento (ação principal), por tema — os mesmos da Mesa.
 def accentFill(+theme: String, +accent: String) -> String:
   strIf(String.eq(accentOf(accent), "violet"), byTheme(theme, "#6d28d9", "#8c52ef"),
-  strIf(String.eq(accentOf(accent), "green"), byTheme(theme, "#0f7b55", "#13865e"),
-  strIf(String.eq(accentOf(accent), "orange"), byTheme(theme, "#c2410c", "#d0460d"),
-  strIf(String.eq(accentOf(accent), "pink"), byTheme(theme, "#c02667", "#d8306b"),
-  strIf(String.eq(accentOf(accent), "graphite"), byTheme(theme, "#27272a", "#ededed"),
-  byTheme(theme, "#2548c7", "#4663dd"))))))
+  byTheme(theme, "#27272a", "#ededed"))
 
 # Tom de texto, link e glifo do acento (no escuro, mais claro que o fill).
 def accentText(+theme: String, +accent: String) -> String:
   strIf(String.eq(accentOf(accent), "violet"), byTheme(theme, "#6d28d9", "#a78bfa"),
-  strIf(String.eq(accentOf(accent), "green"), byTheme(theme, "#0f7b55", "#5fd3a4"),
-  strIf(String.eq(accentOf(accent), "orange"), byTheme(theme, "#c2410c", "#fb9a6b"),
-  strIf(String.eq(accentOf(accent), "pink"), byTheme(theme, "#c02667", "#f783ac"),
-  strIf(String.eq(accentOf(accent), "graphite"), byTheme(theme, "#27272a", "#ededed"),
-  byTheme(theme, "#2548c7", "#8fa8ff"))))))
+  byTheme(theme, "#27272a", "#ededed"))
 
 # Texto sobre o preenchimento: branco, menos no grafite escuro (fill claro).
 def accentFg(+theme: String, +accent: String) -> String:
@@ -214,7 +203,7 @@ def accentFg(+theme: String, +accent: String) -> String:
 # cinza): no claro, alto · baixo · alto · baixo · médio; no escuro, baixo · alto
 # · baixo · alto · médio. Quando a família de um lugar é a do acento, entra a
 # reserva do mesmo lugar (outro matiz, a mesma luminosidade). O teste do host
-# mede contraste ≥ 3:1 contra o fundo e ΔL* ≥ 10 entre vizinhas, nos 12 casos.
+# mede contraste ≥ 3:1 contra o fundo e ΔL* ≥ 10 entre vizinhas, nos quatro casos.
 
 def slot(+theme: String, +accent: String, family: String, light: String, dark: String, spareLight: String, spareDark: String) -> String:
   strIf(String.eq(accentOf(accent), family), byTheme(theme, spareLight, spareDark), byTheme(theme, light, dark))

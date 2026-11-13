@@ -10,7 +10,7 @@ const path=require('node:path');
  * O tema 'auto' (o "sistema") segue o tema do sistema; qualquer acento que não
  * seja 'violet' usa a tinta grafite.
  * @param {string} theme 'light' | 'dark' | 'auto'
- * @param {string} accent id do acento ('blue', 'violet', …)
+ * @param {string} accent id do acento ('graphite', 'violet')
  * @param {() => boolean} [systemDark] sistema em tema escuro
  * @returns {'light-graphite'|'dark-graphite'|'light-violet'|'dark-violet'}
  * @example iconVariant('auto','violet',()=>true) // 'dark-violet' */

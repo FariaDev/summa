@@ -5,7 +5,7 @@ import {reviewShot,withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJso
 import {layoutStable,nextFrames,pollUntil} from './waits.mjs';
 
 /* Cor de acento (ticket #9 da spec de redesenho): mede na janela real, nos dois
-   temas e para cada um dos seis acentos, o que o usuário vê — a ação principal,
+   temas e para cada um dos dois acentos, o que o usuário vê — a ação principal,
    o link e o alternador ligado —, que trocar em Configurações vale na hora (sem
    Salvar, e mesmo cancelando), que a escolha volta na abertura seguinte e que
    um link dentro de folha branca segue legível. As imagens claro/escuro em
@@ -14,17 +14,17 @@ import {layoutStable,nextFrames,pollUntil} from './waits.mjs';
 
 const SHOT_DIR=screenshotDirectory('acento');
 const SIZES=[[1440,900],[900,650]];
-const ACCENTS=['blue','violet','green','orange','pink','graphite'];
-const LABELS={blue:'Azul',violet:'Violeta',green:'Verde',orange:'Laranja',pink:'Rosa',graphite:'Grafite'};
+const ACCENTS=['graphite','violet'];
+const LABELS={graphite:'Grafite',violet:'Violeta'};
 /* Tabela de acento da spec (#4): preenchimento e texto por tema. No claro o
    texto é o próprio preenchimento. */
 const FILL={
- light:{blue:'#2d5fdc',violet:'#8044ca',green:'#028053',orange:'#af4700',pink:'#bd1c67',graphite:'#303030'},
- dark:{blue:'#4663dd',violet:'#8957d0',green:'#068758',orange:'#c14f00',pink:'#c63a73',graphite:'#e6e6e6'}
+ light:{graphite:'#303030',violet:'#8044ca'},
+ dark:{graphite:'#e6e6e6',violet:'#8957d0'}
 };
 const TEXT={
  light:FILL.light,
- dark:{blue:'#88acf5',violet:'#b89cea',green:'#66c394',orange:'#e8956f',pink:'#e78eaa',graphite:'#e6e6e6'}
+ dark:{graphite:'#e6e6e6',violet:'#b89cea'}
 };
 
 const hex=text=>[1,3,5].map(i=>parseInt(text.slice(i,i+2),16));
@@ -46,7 +46,7 @@ async function setSize(app,page,[width,height]){
  await layoutStable(page,'main');
 }
 const shot=(page,name)=>reviewShot(page,SHOT_DIR,name);
-const accentOf=page=>page.evaluate(()=>document.documentElement.dataset.accent||'blue');
+const accentOf=page=>page.evaluate(()=>document.documentElement.dataset.accent||'graphite');
 async function openAppearance(page){
  await page.keyboard.press('ControlOrMeta+,');
  await page.waitForSelector('#settings-dialog[open]');
@@ -55,7 +55,7 @@ async function openAppearance(page){
 }
 async function pick(page,accent){
  await page.locator(`#accent-mode [data-accent="${accent}"]`).click();
- await page.waitForFunction(a=>(document.documentElement.dataset.accent||'blue')===a,accent,{timeout:5000});
+ await page.waitForFunction(a=>(document.documentElement.dataset.accent||'graphite')===a,accent,{timeout:5000});
 }
 /* Um link no balão do tutor e outro numa folha branca, montados com as classes
    reais: o que se mede é a regra do stylesheet, não um texto de exemplo. */
@@ -122,16 +122,16 @@ await withArtifacts('cor-de-acento',async ctx=>{
  await freezeMotion(page);
  await fixtures(page);
 
- /* Quem nunca escolheu vê azul. */
+ /* Quem nunca escolheu vê grafite. */
  await setTheme(page,'light');
- assert.equal(await accentOf(page),'blue','padrão: azul');
+ assert.equal(await accentOf(page),'graphite','padrão: grafite');
 
  await openAppearance(page);
  const options=await page.locator('#accent-mode [data-accent]').evaluateAll(list=>list.map(el=>el.dataset.accent));
- assert.deepEqual(options,ACCENTS,'seis opções, azul primeiro');
- assert.equal(await page.locator('#accent-mode [data-accent="blue"]').getAttribute('aria-checked'),'true','azul marcado de início');
+ assert.deepEqual(options,ACCENTS,'duas opções, grafite primeiro');
+ assert.equal(await page.locator('#accent-mode [data-accent="graphite"]').getAttribute('aria-checked'),'true','grafite marcado de início');
  for(const accent of ACCENTS)assert.equal((await page.locator(`#accent-mode [data-accent="${accent}"]`).innerText()).trim(),LABELS[accent],`rótulo de ${accent}`);
- /* r2 (2026-11-11): seis círculos de 24px com o nome embaixo em 12px, sem a
+ /* r2 (2026-11-11): dois círculos de 24px com o nome embaixo em 12px, sem a
     caixa com borda em volta da opção. */
  const sizes=await page.evaluate(()=>{
   const options=[...document.querySelectorAll('#accent-mode .accent-option')];
@@ -142,7 +142,7 @@ await withArtifacts('cor-de-acento',async ctx=>{
    labelSize:getComputedStyle(name).fontSize,dotBottom:box.bottom,nameTop:nameBox.top,
    border:optionStyle.borderTopWidth,background:optionStyle.backgroundColor};
  });
- assert.equal(sizes.count,6,'seis círculos de acento');
+ assert.equal(sizes.count,2,'dois círculos de acento');
  assert.deepEqual([Math.round(sizes.width),Math.round(sizes.height)],[24,24],`círculo de 24×24 (${sizes.width}×${sizes.height})`);
  assert.equal(sizes.radius,'50%','o círculo usa --r-round');
  assert.equal(sizes.labelSize,'12px','o nome embaixo usa 12px');
@@ -167,7 +167,7 @@ await withArtifacts('cor-de-acento',async ctx=>{
    assert.equal(ring.style,'solid',`${label}: anel sólido`);
    sameColor(ring.color,FILL[theme][accent],`${label}: anel no acento`);
    /* O realce da busca deriva do acento: o texto --fg precisa continuar AA
-      sobre ele nos seis acentos e nos dois temas (r2, 2026-11-11). */
+      sobre ele nos dois acentos e nos dois temas (r2, 2026-11-11). */
    const hit=await page.evaluate(()=>{
     const probe=document.createElement('i');probe.style.cssText='position:fixed;background:var(--highlight);color:var(--fg)';
     document.body.append(probe);
@@ -231,7 +231,7 @@ await withArtifacts('cor-de-acento',async ctx=>{
 
  /* #101: as escolhas de mascote e ícone saíram; a marca segue só o acento. */
  await setTheme(page,'light');
- await pick(page,'blue');
+ await pick(page,'graphite');
  assert.equal(await page.locator('#mascot-mode').count(),0,'sem seletor de mascote');
  assert.equal(await page.locator('#app-icon-mode').count(),0,'sem seletor de ícone');
  for(const accent of ACCENTS){
@@ -247,24 +247,24 @@ await withArtifacts('cor-de-acento',async ctx=>{
  const saved=JSON.parse(fs.readFileSync(path.join(runtime,'desk.json'),'utf8'));
  assert.equal('mascot' in saved,false,'o desk.json não grava mais mascote');
  assert.equal('appIcon' in saved,false,'nem ícone');
- await pick(page,'blue');
+ await pick(page,'graphite');
 
  /* Vale na hora: sem Salvar, e continua valendo ao cancelar. */
- await pick(page,'blue');
+ await pick(page,'graphite');
  const before=await style(page,'#settings-save','backgroundColor');
- await pick(page,'orange');
+ await pick(page,'violet');
  assert.notEqual(await style(page,'#settings-save','backgroundColor'),before,'a ação principal muda sem esperar o Salvar');
  await page.locator('#settings-dialog button[value="cancel"]').last().click();
  await page.waitForFunction(()=>!document.querySelector('#settings-dialog').open);
- assert.equal(await accentOf(page),'orange','cancelar não desfaz o acento');
- assert.equal(await readRuntimeAccent(runtime),'orange','o acento foi gravado como estado de interface');
+ assert.equal(await accentOf(page),'violet','cancelar não desfaz o acento');
+ assert.equal(await readRuntimeAccent(runtime),'violet','o acento foi gravado como estado de interface');
  const config=JSON.parse(fs.readFileSync(path.join(runtime,'config.json'),'utf8'));
  assert.equal('accent' in config,false,'o acento não vira campo do config.json');
  assert.equal('accent' in (config.desk||{}),false,'nem do bloco desk');
 
- /* Capturas: Aparência aberta, claro e escuro, nos dois tamanhos, com mais de
-    um acento além do azul (grafite no escuro). */
- const shots=[['light','green'],['light','violet'],['dark','graphite'],['dark','pink']];
+ /* Capturas: Aparência aberta, claro e escuro, nos dois tamanhos, com os dois
+    acentos. */
+ const shots=[['light','graphite'],['light','violet'],['dark','graphite'],['dark','violet']];
  for(const [theme,accent] of shots){
   await setTheme(page,theme);
   for(const size of SIZES){
@@ -283,23 +283,23 @@ await withArtifacts('cor-de-acento',async ctx=>{
  /* Abertura seguinte: a escolha volta. */
  await setTheme(page,'light');
  await openAppearance(page);
- await pick(page,'pink');
+ await pick(page,'violet');
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>!document.querySelector('#settings-dialog').open);
- assert.equal(await readRuntimeAccent(runtime),'pink');
+ assert.equal(await readRuntimeAccent(runtime),'violet');
  await ctx.app.close();
  ctx.app=await launchDesk({runtime});
  page=await ctx.app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
  await statusOnline(page);
  await page.waitForSelector('.pdf-panel canvas',{timeout:25000});
- assert.equal(await accentOf(page),'pink','a escolha persiste entre aberturas');
+ assert.equal(await accentOf(page),'violet','a escolha persiste entre aberturas');
  await openAppearance(page);
- assert.equal(await page.locator('#accent-mode [data-accent="pink"]').getAttribute('aria-checked'),'true','a opção salva volta marcada');
- assert.equal(await page.locator('.brand-icon').first().getAttribute('src'),'assets/app-icon/integral-light-graphite-128.png','a marca persistida segue o acento');
+ assert.equal(await page.locator('#accent-mode [data-accent="violet"]').getAttribute('aria-checked'),'true','a opção salva volta marcada');
+ assert.equal(await page.locator('.brand-icon').first().getAttribute('src'),'assets/app-icon/integral-light-violet-128.png','a marca persistida segue o acento');
  await page.keyboard.press('Escape');
 
  assert.deepEqual(errors,[]);
- console.log('PASS: cor de acento — seis opções, nos dois temas, na hora e persistente');
+ console.log('PASS: cor de acento — duas opções, nos dois temas, na hora e persistente');
 });
 
 console.log('Screenshots:',SHOT_DIR);
