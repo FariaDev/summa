@@ -107,8 +107,17 @@ await withArtifacts('sidechat-claude-ipc',async ctx=>{
  const mainDescriptorPath=created.session;
  must('a conversa principal Claude existe em runtime/conversations',mainDescriptorPath,
   p=>typeof p==='string'&&fs.existsSync(p));
- /* A questão ativa entra no snapshot do lateral: grava ANTES de abrir. */
- await page.evaluate(title=>window.desk.save({study:{title}}),QUESTION);
+ /* A questão ativa entra no snapshot do lateral: grava ANTES de abrir. O
+    renderer agenda o próprio save (400 ms) e um save atrasado reescreveria o
+    estado do main com o título vazio; grava pelo estado do renderer e cancela
+    o debounce (mesmo padrão de free-study-integration-ui, #12). */
+ await page.evaluate(async title=>{
+  const {applyStudy,layoutSnapshot,S}=await import('./src/state.mjs');
+  applyStudy({title});
+  clearTimeout(S.saveTimer);
+  S.saveTimer=0;
+  await window.desk.save(layoutSnapshot());
+ },QUESTION);
  /* Daqui em diante, qualquer processo Pi novo aparece no sentinela. */
  fs.writeFileSync(piSentinel,'');
 
