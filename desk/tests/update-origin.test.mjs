@@ -193,6 +193,14 @@ test('host: IPC de origem e "não dá para verificar" quando a pasta sumiu',asyn
  assert.equal(check.current,'1.1.0');
 });
 
+test('host #23: origem registrada sem .git (zip extraído) é atualização normal',async()=>{
+ const runtime=tmp(),desk=path.join(runtime,'app','desk'),source=path.join(runtime,'summa-1.2.0');
+ fs.mkdirSync(path.join(source,'desk'),{recursive:true});
+ writeSource(desk,source);
+ const ipcMain=hostWith({runtime,deskDir:desk,packaged:true});
+ assert.deepEqual(await ipcMain.invoke('update-origin'),{kind:'normal',path:'',worktree:false});
+});
+
 test('host: rodando do código o IPC esconde a origem',async()=>{
  const runtime=tmp();
  const ipcMain=hostWith({runtime,deskDir:runtime,packaged:false});
