@@ -16,8 +16,10 @@ const ASSETS='/mesa/assets';
 const asset=(...parts)=>path.join(ASSETS,...parts);
 const bundle={dock:asset('mesa-1024.png'),window:asset('mesa.ico')};
 
+const EMPTY_DOCK_ICON={empty:true};
 function fakeDisk(files){return (file)=>files.includes(file);}
 function fakeElectronApp(){const calls=[];return {calls,app:{dock:{setIcon:(file)=>calls.push(file)}}};}
+function fakeEmptyIcon(){return EMPTY_DOCK_ICON;}
 function fakeWindow(){const calls=[];return {calls,setIcon:(file)=>calls.push(file),isDestroyed:()=>false};}
 
 test('as quatro combinações de tema e tinta', () => {
@@ -58,7 +60,7 @@ test('arquivo ausente cai no ícone do pacote', () => {
 
 test('no macOS o Dock troca de ícone quando o tema ou o acento muda', () => {
   const {app,calls}=fakeElectronApp();
-  const icon=createAppIcon({app,platform:'darwin',assetsDir:ASSETS,exists:()=>true});
+  const icon=createAppIcon({app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon});
   icon.apply(null,'graphite','light');
   icon.apply(null,'graphite','light');
   icon.apply(null,'violet','light');
@@ -66,7 +68,21 @@ test('no macOS o Dock troca de ícone quando o tema ou o acento muda', () => {
   assert.deepEqual(calls,[
     asset('app-icon','integral-light-graphite-dock.png'),
     asset('app-icon','integral-light-violet-dock.png'),
-    asset('app-icon','integral-dark-graphite-dock.png'),
+    EMPTY_DOCK_ICON,
+  ]);
+});
+
+test('#3: no macOS a variante do pacote não chama setIcon, e voltar a ela restaura o pacote', () => {
+  const {app,calls}=fakeElectronApp();
+  const icon=createAppIcon({app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon});
+  icon.apply(null,'graphite','dark');
+  assert.deepEqual(calls,[],'a variante do pacote fica com o ícone do bundle');
+  icon.apply(null,'violet','dark');
+  icon.apply(null,'graphite','dark');
+  icon.apply(null,'graphite','dark');
+  assert.deepEqual(calls,[
+    asset('app-icon','integral-dark-violet-dock.png'),
+    EMPTY_DOCK_ICON,
   ]);
 });
 
