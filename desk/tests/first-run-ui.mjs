@@ -487,6 +487,12 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.match(f.title,/O tutor está ligado/);
  assert.equal(f.firstRun,'true','ligar o tutor não cria matéria');
  await clickNext(page);
+ /* A integral volta ao Pronto por transição de opacidade: no runner Windows a
+    leitura caía no começo dela ('0'), run 43426988577 (#165). Espera o fim. */
+ await page.waitForFunction(()=>{
+  const brand=document.querySelector('#setup-scene .layer.brand');
+  return brand&&getComputedStyle(brand).opacity==='1';
+ },undefined,{timeout:10000});
  f=await setupFacts(page);
  assert.equal(f.step,'ready');
  const readyGutter=await page.evaluate(()=>{
