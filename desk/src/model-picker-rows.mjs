@@ -41,7 +41,7 @@ export function chartTokens(doc) {
   const root = doc.documentElement;
   const chosen = root.dataset.theme;
   const dark = chosen === 'dark' || (chosen !== 'light' && !!doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches);
-  const tokens = /** @type {Record<string, string>} */ (themeTokens(dark ? 'dark' : 'light', root.dataset.accent || 'blue'));
+  const tokens = /** @type {Record<string, string>} */ (themeTokens(dark ? 'dark' : 'light', root.dataset.accent || 'graphite'));
   return Object.entries(tokens).filter(([name]) => name.startsWith('--mesa-chart-'));
 }
 

@@ -85,9 +85,10 @@ test('com o token a página abre, no idioma da Mesa, sem nada de fora', async ()
   } finally { host.stop(); }
 });
 
-/* #66: o trio entra na página sem abrir a CSP. Todo estilo vai no <style> com
-   o nonce; o desenho não leva atributo style (o navegador o recusaria). */
-test('com o trio, a CSP continua sem unsafe-inline e todo estilo e script levam o nonce', async () => {
+/* Identidade nova: a página leva a integral da marca, as fontes embutidas e o
+   CSS sem abrir a CSP. Todo estilo vai no <style> com o nonce; nenhum elemento
+   leva atributo style (o navegador o recusaria). */
+test('com as fontes embutidas, a CSP continua sem unsafe-inline e todo estilo e script levam o nonce', async () => {
   const deskFile = (name) => fs.readFileSync(new URL(`../${name}`, import.meta.url), 'utf8');
   const castCss = phoneCastCss({styleCss: deskFile('style.css'), motionCss: deskFile('src/motion.css'), trioCss: deskFile('src/trio.css'), pageCss: deskFile('src/phone-page.css')});
   const {host} = harness({castCss: () => castCss});
@@ -96,10 +97,12 @@ test('com o trio, a CSP continua sem unsafe-inline e todo estilo e script levam 
     const page = await request(url);
     const csp = page.headers['content-security-policy'];
     assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval|unsafe-hashes/);
+    assert.match(csp, /font-src data:/, 'as fontes vão em data: dentro do <style> com nonce');
     const nonce = csp.match(/script-src 'nonce-([^']+)'/)[1];
     assert.match(csp, new RegExp(`style-src 'nonce-${nonce.replace(/[+/=]/g, '\\$&')}'`));
-    assert.match(page.body, /class="mascote mascote-integral" data-humor="normal"/);
-    assert.ok(page.body.includes('.mascote-nabla'), 'o trio.css vai junto');
+    assert.match(page.body, /<div class="brand">/);
+    assert.match(page.body, /@font-face\{font-family:"IBM Plex Sans"/);
+    assert.doesNotMatch(page.body, /class="mascote/, 'o trio saiu da página na identidade nova');
     assert.doesNotMatch(page.body, / style="/, 'nenhum atributo style no HTML');
     for (const tag of page.body.match(/<style[^>]*>/g)) assert.equal(tag, `<style nonce="${nonce}">`);
     for (const tag of page.body.match(/<script[^>]*>/g)) assert.ok(tag === `<script nonce="${nonce}">` || tag === '<script id="texts" type="application/json">', tag);

@@ -25,7 +25,7 @@ const PX=/(?:^|[^\w.-])[0-9]*\.?[0-9]+px\b/;
 const EXCEPTIONS=[
  {
   file:'src/phone-page.css',kind:'font-size',
-  values:['13px','30px','17px','18px','16px','15px','14px','22px','20px'],
+  values:['30px','17px','18px','16px','15px','14px','22px'],
   reason:'página do celular não carrega style.css: só os tokens de movimento entram pelo phone-cast.cjs, então tamanho/raio literais são o contrato dela'
  },
  {

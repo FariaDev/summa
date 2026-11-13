@@ -143,8 +143,8 @@ await withArtifacts('activity-viz-ui',async ctx=>{
  /* ---- acento ao vivo: muda os tokens dentro do quadro ---- */
  await size(ctx.app,page,1440,900);
  await setTheme(page,'dark');
- for(const [accent,fill,text] of [['green','#13865e','#5fd3a4'],['pink','#d8306b','#f783ac'],['blue','#4663dd','#8fa8ff']]){
-  await page.evaluate(a=>{if(a==='blue')delete document.documentElement.dataset.accent;else document.documentElement.dataset.accent=a;},accent);
+ for(const [accent,fill,text] of [['violet','#8c52ef','#a78bfa'],['graphite','#ededed','#ededed']]){
+  await page.evaluate(a=>{if(a==='graphite')delete document.documentElement.dataset.accent;else document.documentElement.dataset.accent=a;},accent);
   const states=await tokensAre('accent',fill);
   for(const state of states)assert.equal(state.chart1,text,`acento ${accent}: a paleta começa no acento`);
  }

@@ -11,11 +11,9 @@
    - Esc fecha o popover e o servidor some (a conexão é recusada).
    Por fim, a página do celular numa janela de 375×812, nos dois temas: cabe
    sem rolagem lateral, botões de tocar com 44 px ou mais, e enviar pela
-   galeria da própria página põe as fotos na bandeja. Nos três estados da #66,
-   o personagem certo do trio (pelo contrato de `mascoteMarkup`: classe
-   `mascote-<id>` e `data-humor`): ∫ normal no início, Σ pensando enviando e
-   ∇ aflito sem conexão; com movimento reduzido, o personagem fica parado.
-   Nenhuma violação de CSP no console do celular.
+   galeria da própria página põe as fotos na bandeja. Nos três estados da
+   identidade P1, a marca (integral + "Summa") fica no topo, igual no início,
+   no envio e sem conexão. Nenhuma violação de CSP no console do celular.
    Capturas só com MESA_REVIEW_SHOTS. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -64,31 +62,22 @@ const inspectAttachment=(page,at)=>page.evaluate(async([at,mark])=>{
 },[at,GPS_MARK]);
 const reddish=([r,g,b])=>r>150&&g<90&&b<90;
 
-/* A página do celular (#66): o estado e quem do trio está à vista. */
+/* A página do celular (P1): o estado e a marca no topo, iguais nos três estados. */
 const phoneView=phone=>phone.evaluate(()=>{
- const shown=[...document.querySelectorAll('.mascote')].filter(el=>el.getBoundingClientRect().width>0);
+ const brand=document.querySelector('.brand'),mark=brand?.querySelector('.mark');
  return {
   state:document.querySelector('main').dataset.state,
-  cast:shown.map(el=>({id:[...el.classList].find(c=>/^mascote-(integral|sigma|nabla)$/.test(c)),humor:el.dataset.humor,width:Math.round(el.getBoundingClientRect().width)})),
+  brand:brand?.textContent.trim(),markWidth:Math.round(mark?.getBoundingClientRect().width||0),
   scroll:document.documentElement.scrollWidth,vw:innerWidth,
  };
 });
-/* Durações dos laços do personagem à vista: piscar e o laço do humor. */
-const castMotion=phone=>phone.evaluate(()=>{
- const el=[...document.querySelectorAll('.mascote')].find(m=>m.getBoundingClientRect().width>0);
- return ['.tr-lid','.mascote-jump','.tr-question'].map(sel=>getComputedStyle(el.querySelector(sel)).animationDuration);
-});
-async function expectCast(phone,state,cast,label){
+async function expectPage(phone,state,label){
  const view=await phoneView(phone);
  assert.equal(view.state,state,`${label}: estado`);
- assert.deepEqual(view.cast,[cast],`${label}: personagem à vista`);
+ assert.equal(view.brand,'Summa',`${label}: marca no topo`);
+ assert.ok(view.markWidth>0,`${label}: integral desenhada`);
  assert.ok(view.scroll<=view.vw,`${label}: sem rolagem lateral (${view.scroll} × ${view.vw})`);
- await phone.emulateMedia({reducedMotion:'reduce'});
- assert.deepEqual(await castMotion(phone),['0s','0s','0s'],`${label}: com movimento reduzido o personagem fica parado`);
- await phone.emulateMedia({reducedMotion:'no-preference'});
- assert.notEqual((await castMotion(phone))[0],'0s',`${label}: sem a preferência, ele pisca`);
 }
-const INTEGRAL={id:'mascote-integral',humor:'normal',width:92},SIGMA={id:'mascote-sigma',humor:'pensando',width:92},NABLA={id:'mascote-nabla',humor:'aflita',width:140};
 const bluish=([r,,b])=>b>150&&r<90;
 
 await withArtifacts('phone-photo',async ctx=>{
@@ -172,7 +161,7 @@ await withArtifacts('phone-photo',async ctx=>{
   await phonePage.emulateMedia({colorScheme:theme});
   const view=await phonePage.evaluate(()=>({
    vw:innerWidth,vh:innerHeight,scroll:document.documentElement.scrollWidth,lang:document.documentElement.lang,
-   buttons:[...document.querySelectorAll('label.button')].map(el=>({text:el.textContent.trim(),height:el.getBoundingClientRect().height,right:el.getBoundingClientRect().right})),
+   buttons:[...document.querySelectorAll('label.btn')].map(el=>({text:el.textContent.trim(),height:el.getBoundingClientRect().height,right:el.getBoundingClientRect().right})),
    capture:document.querySelector('#camera').getAttribute('capture'),bg:getComputedStyle(document.body).backgroundColor,
   }));
   assert.deepEqual([view.vw,view.vh],[375,812],'viewport de celular');
@@ -181,20 +170,19 @@ await withArtifacts('phone-photo',async ctx=>{
   assert.deepEqual(view.buttons.map(b=>b.text),['Tirar foto','Escolher da galeria']);
   assert.ok(view.buttons.every(b=>b.height>=44&&b.right<=view.vw),`${theme}: botões de tocar (${JSON.stringify(view.buttons)})`);
   assert.equal(view.capture,'environment');
-  await expectCast(phonePage,'start',INTEGRAL,`${theme} início`);
+  await expectPage(phonePage,'start',`${theme} início`);
   await reviewShot(phonePage,out,`celular-${theme}-375.png`);
  }
  await phonePage.setInputFiles('#gallery',[
   {name:'pagina-1.jpg',mimeType:'image/jpeg',buffer:withExif(syntheticJpeg(),{orientation:8})},
   {name:'pagina-2.png',mimeType:'image/png',buffer:syntheticPng({w:20,h:40})},
  ]);
- /* A marca virou Summa (#190, 5914398b). */
  await phonePage.waitForFunction(()=>document.querySelector('#status').textContent==='Enviado para a Summa (2 de 2)');
  assert.equal(await phonePage.locator('#sent .thumb:not(.pending) .done').count(),2,'as duas enviadas com o ✓');
- assert.deepEqual(await phonePage.locator('label.button').evaluateAll(els=>els.map(el=>el.textContent.trim())),['Mais uma','Da galeria']);
+ assert.deepEqual(await phonePage.locator('label.btn').evaluateAll(els=>els.map(el=>el.textContent.trim())),['Mais uma','Da galeria']);
  for(const theme of ['light','dark']){
   await phonePage.emulateMedia({colorScheme:theme});
-  await expectCast(phonePage,'sending',SIGMA,`${theme} enviando`);
+  await expectPage(phonePage,'sending',`${theme} enviando`);
   await reviewShot(phonePage,out,`celular-enviando-${theme}-375.png`);
  }
  await pollUntil(()=>trayCount(page),n=>n===2,{what:'as duas fotos da página do celular na bandeja'});
@@ -206,15 +194,15 @@ await withArtifacts('phone-photo',async ctx=>{
  await page.waitForFunction(()=>document.querySelector('#phone-pop').hidden);
  assert.equal(await page.locator('.message.user').count(),0,'nenhuma mensagem enviada');
 
- /* Sem conexão: a Mesa desligou o servidor; a próxima foto cai no ∇ e "Tentar de novo" continua lá. */
+ /* Sem conexão: a Mesa desligou o servidor; a próxima foto cai no cartão sem conexão e "Tentar de novo" continua lá. */
  await phonePage.setInputFiles('#camera',[{name:'pagina-3.png',mimeType:'image/png',buffer:syntheticPng({w:20,h:40})}]);
  await phonePage.waitForFunction(()=>document.querySelector('main').dataset.state==='offline');
- assert.equal(await phonePage.locator('#offline[role=alert] strong').textContent(),'Sem conexão com a Summa.');
+ assert.equal(await phonePage.locator('.offline[role=alert] strong').textContent(),'Sem conexão com a Summa.');
  assert.equal(await phonePage.locator('#sent .thumb:not(.pending)').count(),2,'as que chegaram continuam na grade');
  assert.equal(await phonePage.locator('#sent .thumb.pending').count(),1,'a que não chegou fica pendente para o Tentar de novo');
  for(const theme of ['light','dark']){
   await phonePage.emulateMedia({colorScheme:theme});
-  await expectCast(phonePage,'offline',NABLA,`${theme} sem conexão`);
+  await expectPage(phonePage,'offline',`${theme} sem conexão`);
   await reviewShot(phonePage,out,`celular-sem-conexao-${theme}-375.png`);
  }
  await phonePage.locator('#retry').click();
@@ -222,4 +210,4 @@ await withArtifacts('phone-photo',async ctx=>{
  assert.deepEqual(cspErrors,[],'nenhuma violação de CSP na página do celular');
  assert.deepEqual(errors,[]);
 });
-console.log('phone-photo-ui: PASS — popover com QR nos dois temas e tamanhos, fotos do celular na bandeja em pé e sem EXIF, nada enviado, Esc desliga o servidor, página do celular em 375×812 com ∫, Σ e ∇ por estado.');
+console.log('phone-photo-ui: PASS — popover com QR nos dois temas e tamanhos, fotos do celular na bandeja em pé e sem EXIF, nada enviado, Esc desliga o servidor, página do celular em 375×812, com a marca e o estado certo nos três estados.');

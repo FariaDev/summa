@@ -47,12 +47,29 @@ test('sem tokens ou sem o bloco de movimento reduzido, o erro diz o que falta', 
   assert.throws(() => phoneCastCss({...sheets(), motionCss: ''}), /prefers-reduced-motion/);
 });
 
-test('a página começa no início, com os três personagens e sem style inline', () => {
+test('a página começa no início, com a marca nova e sem style inline', () => {
   const t = (key) => key;
   const html = phonePageHtml({t, lang: 'pt-BR', nonce: 'n', maxMb: 15, castCss: phoneCastCss(sheets())});
-  assert.match(html, /<main data-state="start">/);
-  assert.deepEqual([...html.matchAll(/class="mascote mascote-(\w+)"/g)].map((m) => m[1]), ['integral', 'sigma', 'nabla']);
+  assert.match(html, /<main class="phone-main" data-state="start">/);
+  assert.doesNotMatch(html, /class="mascote/, 'o P1 troca o trio pela integral da marca');
   assert.doesNotMatch(html, / style="/);
+  assert.match(html, /<div class="brand"><svg class="mark" viewBox="320 150 610 940"[^>]*><path fill="currentColor" d="M 800\.500 /);
+  assert.match(html, /<span class="wordmark">Summa<\/span>/);
   assert.match(html, /id="retry"/);
   assert.match(html, /phone\.page\.tipFrame/);
+});
+
+test('sem sobretítulo: a marca abre a página, antes do título', () => {
+  const html = phonePageHtml({t: (key) => key, lang: 'pt-BR', nonce: 'n', maxMb: 15});
+  assert.doesNotMatch(html, /class="kicker"/);
+  assert.doesNotMatch(html, /phone\.page\.connected/, 'a chave do sobretítulo saiu do catálogo');
+  assert.ok(html.indexOf('<div class="brand">') < html.indexOf('<h1>'));
+});
+
+test('as fontes da página vão embutidas em base64 e cabem no orçamento', () => {
+  const html = phonePageHtml({t: (key) => key, lang: 'pt-BR', nonce: 'n', maxMb: 15});
+  const faces = [...html.matchAll(/@font-face\{font-family:"([^"]+)";font-style:normal;font-weight:(\d+);src:url\(data:font\/woff2;base64,([A-Za-z0-9+/=]+)\) format\("woff2"\)/g)];
+  assert.deepEqual(faces.map((face) => [face[1], face[2]]), [['IBM Plex Sans', '400'], ['IBM Plex Sans', '600'], ['STIX Two Text', '400']]);
+  const total = faces.reduce((sum, face) => sum + face[3].length, 0);
+  assert.ok(total <= 40 * 1024, `fontes embutidas: ${total} bytes base64; orçamento 40960`);
 });

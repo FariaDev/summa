@@ -78,7 +78,7 @@ function createActivityRuntime({onWatchdog} = {}) {
     const entry = get(parsed.id, parsed.version);
     if (!entry) return new Response('atividade não publicada', {status: 404, headers: {'content-type': 'text/plain; charset=utf-8'}});
     const theme = parsed.theme || 'system';
-    const html = buildActivityDocument(entry.spec, {id: entry.id, version: entry.version, hash: entry.hash, theme, accent: parsed.accent || 'blue'});
+    const html = buildActivityDocument(entry.spec, {id: entry.id, version: entry.version, hash: entry.hash, theme, accent: parsed.accent || 'graphite'});
     return new Response(html, {status: 200, headers: {'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store'}});
   };
 

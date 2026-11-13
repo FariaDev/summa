@@ -8,6 +8,7 @@ const components=require('./components.cjs');
 const {readInstallSource,updateOrigin,isOldRepositoryInstall}=require('./update-origin.cjs');
 const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
+const {isAppBundle}=require('./legacy-bundle.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
@@ -21,9 +22,6 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     `updater.cjs` (lista de código + caminhos protegidos). Modo de teste não fala
     com a rede (os testes sobrescrevem os handlers com dados falsos). */
  const updateCacheFile=path.join(runtime,'update.json');
- /* #23: o bundle é reconhecido pelo Info.plist, não por `app.isPackaged` — o
-    teste e a instalação por zip no Linux também rodam empacotados. */
- function isAppBundle(){return fs.existsSync(path.join(path.resolve(deskDir,'..','..','..'),'Contents','Info.plist'));}
  /* #23: origem registrada que ainda serve de fonte: a pasta existe e tem
     `desk/`. O zip da Release é aplicado nela, nunca no payload. */
  function bundleSourceReady(sourceInfo){
@@ -59,7 +57,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   /* #23: bundle sem `install-source.json` (instalação antiga) não cai no zip
      com a raiz do payload: o modo `unavailable` recusa antes de qualquer
      download/mutação em vez de atualizar no lugar errado. */
-  const mode=source&&source.path?'bundle':fs.existsSync(path.join(root,'.git'))?'git':isAppBundle()?'unavailable':'zip';
+  const mode=source&&source.path?'bundle':fs.existsSync(path.join(root,'.git'))?'git':isAppBundle(fs,bundle)?'unavailable':'zip';
   const reopen=mode==='bundle'?{cmd:'open',args:[bundle]}:{cmd:'npm',args:['start'],cwd:deskDir,shell:process.platform==='win32'};
   /* #80: a chave pública viaja por parâmetro (o worker é uma cópia no tmpdir);
      marcador/ausente faz o updater recusar antes de qualquer download. */

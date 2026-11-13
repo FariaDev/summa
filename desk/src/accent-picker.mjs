@@ -4,8 +4,8 @@
    grupos têm a mesma marcação e o mesmo teclado; aplicar e guardar entram por
    parâmetro, porque quem sabe do estado é o `state.mjs`. */
 
-/** Os acentos na ordem das opções; azul é o padrão (`core/accent.bend`). */
-export const ACCENT_IDS = /** @type {const} */ (['blue', 'violet', 'green', 'orange', 'pink', 'graphite']);
+/** Os acentos na ordem das opções; grafite é o padrão (`core/accent.bend`). */
+export const ACCENT_IDS = /** @type {const} */ (['graphite', 'violet']);
 
 /**
  * As opções do grupo, com `data-i18n` para a tradução estática.
@@ -20,7 +20,7 @@ export function accentOptionsMarkup() {
  * Preenche os grupos vazios (`.accent-options`) das Configurações e do setup.
  * Roda antes do primeiro `setUiLanguage`, para os rótulos serem traduzidos.
  * @param {Document} [doc]
- * @example mountAccentOptions() // #accent-mode e #setup-accent ganham as seis opções
+ * @example mountAccentOptions() // #accent-mode e #setup-accent ganham as duas opções
  */
 export function mountAccentOptions(doc = document) {
   for (const box of doc.querySelectorAll('.accent-options')) if (!box.childElementCount) box.innerHTML = accentOptionsMarkup();
@@ -30,7 +30,7 @@ export function mountAccentOptions(doc = document) {
  * O acento vizinho pelas setas, dando a volta; outra tecla devolve ''.
  * @param {string} current @param {string} key
  * @returns {string}
- * @example nextAccent('graphite', 'ArrowRight') // 'blue'
+ * @example nextAccent('graphite', 'ArrowRight') // 'violet'
  */
 export function nextAccent(current, key) {
   const step = {ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1}[key];

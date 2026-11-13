@@ -189,16 +189,16 @@ function $byTheme(_theme_0, _light_0, _dark_0) {
   return $strIf($$isDark(_theme_0), _dark_0, _light_0);
 }
 function $accentIds() {
-  return { $: "Con", head: "blue", tail: { $: "Con", head: "violet", tail: { $: "Con", head: "green", tail: { $: "Con", head: "orange", tail: { $: "Con", head: "pink", tail: { $: "Con", head: "graphite", tail: { $: "Nil" } } } } } } };
+  return { $: "Con", head: "graphite", tail: { $: "Con", head: "violet", tail: { $: "Nil" } } };
 }
 function $accentOf(_accent_0) {
-  return $strIf($$String_eq(_accent_0, "violet"), "violet", $$strIf($$String_eq(_accent_0, "green"), "green", $$strIf($$String_eq(_accent_0, "orange"), "orange", $$strIf($$String_eq(_accent_0, "pink"), "pink", $$strIf($$String_eq(_accent_0, "graphite"), "graphite", "blue")))));
+  return $strIf($$String_eq(_accent_0, "violet"), "violet", "graphite");
 }
 function $accentFill(_theme_0, _accent_0) {
-  return $strIf($$String_eq($$accentOf(_accent_0), "violet"), $$byTheme(_theme_0, "#6d28d9", "#8c52ef"), $$strIf($$String_eq($$accentOf(_accent_0), "green"), $$byTheme(_theme_0, "#0f7b55", "#13865e"), $$strIf($$String_eq($$accentOf(_accent_0), "orange"), $$byTheme(_theme_0, "#c2410c", "#d0460d"), $$strIf($$String_eq($$accentOf(_accent_0), "pink"), $$byTheme(_theme_0, "#c02667", "#d8306b"), $$strIf($$String_eq($$accentOf(_accent_0), "graphite"), $$byTheme(_theme_0, "#27272a", "#ededed"), $$byTheme(_theme_0, "#2548c7", "#4663dd"))))));
+  return $strIf($$String_eq($$accentOf(_accent_0), "violet"), $$byTheme(_theme_0, "#6d28d9", "#8c52ef"), $$byTheme(_theme_0, "#27272a", "#ededed"));
 }
 function $accentText(_theme_0, _accent_0) {
-  return $strIf($$String_eq($$accentOf(_accent_0), "violet"), $$byTheme(_theme_0, "#6d28d9", "#a78bfa"), $$strIf($$String_eq($$accentOf(_accent_0), "green"), $$byTheme(_theme_0, "#0f7b55", "#5fd3a4"), $$strIf($$String_eq($$accentOf(_accent_0), "orange"), $$byTheme(_theme_0, "#c2410c", "#fb9a6b"), $$strIf($$String_eq($$accentOf(_accent_0), "pink"), $$byTheme(_theme_0, "#c02667", "#f783ac"), $$strIf($$String_eq($$accentOf(_accent_0), "graphite"), $$byTheme(_theme_0, "#27272a", "#ededed"), $$byTheme(_theme_0, "#2548c7", "#8fa8ff"))))));
+  return $strIf($$String_eq($$accentOf(_accent_0), "violet"), $$byTheme(_theme_0, "#6d28d9", "#a78bfa"), $$byTheme(_theme_0, "#27272a", "#ededed"));
 }
 function $accentFg(_theme_0, _accent_0) {
   return $strIf($$String_eq($$accentOf(_accent_0), "graphite"), $$byTheme(_theme_0, "#ffffff", "#181818"), "#ffffff");
@@ -528,7 +528,6 @@ var $$heightAt_go = $heightAt_go;
 var $$heightAt = $heightAt;
 var $$clampHeight = $clampHeight;
 var $$isDark = $isDark;
-var $$strIf = $strIf;
 var $$accentOf = $accentOf;
 var $$byTheme = $byTheme;
 var $$accentText = $accentText;

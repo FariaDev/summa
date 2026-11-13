@@ -6,6 +6,19 @@ const path=require('node:path');
 
 const LEGACY_BUNDLE_NAME='Mesa de Estudos.app';
 
+/**
+ * #23/#27: reconhece o `.app` pelo `Contents/Info.plist` acima do app, não por
+ * `app.isPackaged` — o install-app mantém o executável `Electron`, e aí o
+ * Electron reporta `isPackaged=false` mesmo com o bundle montado.
+ * @param {{existsSync: Function}} fs
+ * @param {string} bundle raiz do `.app` (ex.: `/Applications/Summa.app`)
+ * @returns {boolean}
+ * @example isAppBundle(fs,'/Applications/Summa.app') // true
+ */
+function isAppBundle(fs,bundle){
+ return fs.existsSync(path.join(bundle,'Contents','Info.plist'));
+}
+
 /** @param {string} bundle @returns {string} */
 function legacyBundlePath(bundle){
  return path.join(path.dirname(bundle),LEGACY_BUNDLE_NAME);
@@ -44,13 +57,14 @@ function ensureLegacyBundleLink({fs,app,legacyApp}){
 /**
  * Ao abrir: remove `Mesa de Estudos.app` ao lado do bundle se for o link do
  * instalador ou um bundle antigo — nunca o próprio bundle em execução. Só
- * macOS empacotado; falha vai para o log e não impede abrir.
- * @param {{fs: {lstatSync: Function, realpathSync: Function, rmSync: Function}, bundle: string, platform: string, isPackaged: boolean, log?: (area: string, line: string) => void}} deps
+ * macOS e bundle reconhecido pelo Info.plist (#27); falha vai para o log e não
+ * impede abrir.
+ * @param {{fs: {existsSync: Function, lstatSync: Function, realpathSync: Function, rmSync: Function}, bundle: string, platform: string, log?: (area: string, line: string) => void}} deps
  * @returns {{removed: boolean, error?: string}}
- * @example removeLegacyBundle({fs,bundle:'/Applications/Summa.app',platform:process.platform,isPackaged:app.isPackaged,log:appendLog})
+ * @example removeLegacyBundle({fs,bundle:'/Applications/Summa.app',platform:process.platform,log:appendLog})
  */
-function removeLegacyBundle({fs,bundle,platform,isPackaged,log=()=>{}}){
- if(platform!=='darwin'||!isPackaged)return {removed:false};
+function removeLegacyBundle({fs,bundle,platform,log=()=>{}}){
+ if(platform!=='darwin'||!isAppBundle(fs,bundle))return {removed:false};
  const legacy=legacyBundlePath(bundle);
  const kind=entryKind(fs,legacy);
  if(!kind)return {removed:false};
@@ -66,4 +80,4 @@ function removeLegacyBundle({fs,bundle,platform,isPackaged,log=()=>{}}){
  }
 }
 
-module.exports={LEGACY_BUNDLE_NAME,ensureLegacyBundleLink,removeLegacyBundle};
+module.exports={LEGACY_BUNDLE_NAME,isAppBundle,ensureLegacyBundleLink,removeLegacyBundle};

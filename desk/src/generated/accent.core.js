@@ -24,7 +24,7 @@ function run_lib(f, n) {
 var $0eff = Object.create(null);
 var io_file_append = new Set;
 function $accentDefault() {
-  return { $: "AccentBlue" };
+  return { $: "AccentGraphite" };
 }
 function $accentIf(_hit_0, _found_0, _rest_0) {
   if (_hit_0) {
@@ -34,7 +34,7 @@ function $accentIf(_hit_0, _found_0, _rest_0) {
   }
 }
 function $parseAccent(_raw_0, _fallback_0) {
-  return $accentIf($$String_eq(_raw_0, "blue"), { $: "AccentBlue" }, $$accentIf($$String_eq(_raw_0, "violet"), { $: "AccentViolet" }, $$accentIf($$String_eq(_raw_0, "green"), { $: "AccentGreen" }, $$accentIf($$String_eq(_raw_0, "orange"), { $: "AccentOrange" }, $$accentIf($$String_eq(_raw_0, "pink"), { $: "AccentPink" }, $$accentIf($$String_eq(_raw_0, "graphite"), { $: "AccentGraphite" }, _fallback_0))))));
+  return $accentIf($$String_eq(_raw_0, "graphite"), { $: "AccentGraphite" }, $$accentIf($$String_eq(_raw_0, "violet"), { $: "AccentViolet" }, _fallback_0));
 }
 function $accentOrDefault(_value_0, _fallback_0) {
   if (_value_0.$ === "None") {
