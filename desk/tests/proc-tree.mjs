@@ -178,7 +178,11 @@ export async function closeApp(app,{timeout=15000,ledgerDir=''}={}){
  const late=new Promise(resolve=>{timer=setTimeout(()=>resolve(false),timeout);});
  const ok=await Promise.race([exited,late]);
  clearTimeout(timer);
- if(ok)for(const stream of [proc?.stdin,proc?.stdout,proc?.stderr])try{stream?.destroy?.();}catch{/* já fechado */}
+ /* O Playwright abre cinco pipes (`stdio: 'pipe'`), mas o Electron só usa os
+    três primeiros. Os fds 3 e 4 ficam sem leitor e um neto do Chromium que
+    sobrevive ao main segura a ponta de escrita: soltar só 0–2 deixava o
+    processo de teste vivo para sempre (#165, rodada 43364514387). */
+ if(ok)for(const stream of proc?.stdio||[])try{stream?.destroy?.();}catch{/* já fechado */}
  await killLedgerServer(runtime);
  if(ok||!pid){if(trace)try{fs.rmSync(trace,{force:true});}catch{}return;}
  killTree(pid);

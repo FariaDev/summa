@@ -208,6 +208,24 @@ export function seedNativeSession(runtime,messages=[],{engine='opencode',courseI
 export function writeDeskJson(runtime,data){fs.writeFileSync(path.join(runtime,'desk.json'),JSON.stringify(data));}
 export function writeConfigJson(runtime,data){fs.writeFileSync(path.join(runtime,'config.json'),JSON.stringify(data));}
 
+/** PATH de teste com as pastas do sistema no Windows. Os testes escondem os
+ *  motores do usuário trocando o PATH por um mínimo, mas o app ainda precisa de
+ *  `taskkill` e `powershell` (System32) para encerrar o `serve` e provar a
+ *  identidade no ledger; sem elas o `.cmd` do motor deixa o `node` neto vivo e
+ *  o teste de janela não sai (#165).
+ *  @param {string} pathValue PATH mínimo do teste
+ *  @param {{platform?: NodeJS.Platform, systemRoot?: string}} [options]
+ *  @returns {string} o mesmo PATH com System32 e WindowsPowerShell no Windows
+ *  @example withWindowsTools('C:\\node;/usr/bin', {platform: 'win32', systemRoot: 'C:\\Windows'})
+ */
+export function withWindowsTools(pathValue,{platform=process.platform,systemRoot=process.env.SystemRoot}={}){
+ if(platform!=='win32'||!systemRoot)return pathValue;
+ const dirs=[path.win32.join(systemRoot,'System32'),path.win32.join(systemRoot,'System32','WindowsPowerShell','v1.0')];
+ const parts=String(pathValue).split(path.win32.delimiter).filter(Boolean);
+ for(const dir of dirs)if(!parts.some(part=>part.toLowerCase()===dir.toLowerCase()))parts.push(dir);
+ return parts.join(path.win32.delimiter);
+}
+
 /* `HOME`/`USERPROFILE` apontam para o runtime: sem config, o app não enxerga
    o vault de verdade da pessoa (e qualquer leitura de `~` cai na pasta de
    teste). O `main.cjs` já põe o `userData` em `<runtime>/electron`.
@@ -220,8 +238,10 @@ export function deskEnv(runtime,extra={},opencode=true){
     do plugin do Xournal++ cai no LOCALAPPDATA real (fora do temporário) e a
     asserção do caminho não fecha (#165). */
  const base={LEARNING_DESK_RUNTIME:runtime,HOME:runtime,USERPROFILE:runtime,XDG_CONFIG_HOME:path.join(runtime,'.config')};
- if(opencode&&!Object.hasOwn(extra,'LEARNING_DESK_OPENCODE'))base.LEARNING_DESK_OPENCODE=fakeEngineLauncher(FAKE_OPENCODE);
- return testEnv({...base,...extra});
+ const env={...base,...extra};
+ if(Object.hasOwn(extra,'PATH'))env.PATH=withWindowsTools(extra.PATH);
+ if(opencode&&!Object.hasOwn(extra,'LEARNING_DESK_OPENCODE'))env.LEARNING_DESK_OPENCODE=fakeEngineLauncher(FAKE_OPENCODE);
+ return testEnv(env);
 }
 /* O botão Conferir só habilita quando a captura de janela existe: o helper
    compilado do macOS (visual-check/windows, ignorado pelo git) ou, em modo de
