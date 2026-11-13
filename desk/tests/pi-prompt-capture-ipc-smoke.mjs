@@ -69,6 +69,19 @@ const waitPrompt = async (count) => {
   }
   throw Error('o fake OpenCode não registrou o prompt');
 };
+/* #25: o fake grava o prompt no log antes de fechar o turno; no Mac o
+   `save-config` chegava com o turno ainda ativo e o main recusava com
+   `err.idle.settings`. Tenta de novo só nessa recusa, até o turno acabar. */
+const saveWhenIdle = async (page, next) => {
+  for (let i = 0; i < 100; i += 1) {
+    const result = await page.evaluate((value) => window.desk.saveConfig(value).then((saved) => ({saved}), (error) => ({error: String(error?.message || error)})), next);
+    if (!result.error) return result.saved;
+    if (!/err\.idle\.settings|Pare a resposta|Stop the reply/.test(result.error)) throw Error(result.error);
+    // espera fixa: o fim do turno do fake não tem evento no renderer; 100 ms entre tentativas
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw Error('o turno do fake OpenCode não terminou em 10 s');
+};
 try {
   const page = await app.firstWindow();
   await page.waitForFunction(() => window.desk && typeof window.desk.prompt === 'function', undefined, {timeout: 20000});
@@ -92,7 +105,7 @@ try {
 
   /* ---- ligar a flag em runtime volta a mandar o contexto de estudo ---- */
   const cfg = await page.evaluate(() => window.desk.getConfig());
-  const enabled = await page.evaluate((next) => window.desk.saveConfig(next), {...cfg.config, desk: {...cfg.config.desk, studyContext: true}});
+  const enabled = await saveWhenIdle(page, {...cfg.config, desk: {...cfg.config.desk, studyContext: true}});
   check('salvar config liga studyContext no main', enabled.config?.desk, (value) => value.studyContext === true);
   const beforeSecond = promptRows().length;
   const second = await page.evaluate((payload) => window.desk.prompt(payload), {
