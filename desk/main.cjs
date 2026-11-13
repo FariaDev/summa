@@ -400,8 +400,9 @@ app.whenReady().then(async()=>{
  await tutorMaterialBridge.start().catch(error=>appendLog('tutor-pdf',error.message));
  await activityBridge.start().catch(error=>appendLog('activity',error.message));
  if(quitting)return;
- /* #190: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás. */
- if(process.platform==='darwin'&&app.isPackaged&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,isPackaged:true,log:appendLog});
+ /* #190/#27: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás.
+    A limpeza reconhece o bundle pelo Info.plist, não por `app.isPackaged`: o install-app mantém o executável `Electron`. */
+ if(process.platform==='darwin'&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,log:appendLog});
  /* #178: atalho do menu Iniciar leva o ícone e o AppUserModelId da Mesa; no teste, só com um APPDATA de teste. */
  if(process.platform==='win32'&&(!TEST_MODE||process.env.LEARNING_DESK_APPDATA)&&typeof app.getAppPath==='function'&&typeof shell.writeShortcutLink==='function')ensureStartMenuShortcut({shell,platform:process.platform,env:{...process.env,APPDATA:process.env.LEARNING_DESK_APPDATA||process.env.APPDATA},execPath:process.execPath,appPath:app.getAppPath(),assetsDir:path.join(__dirname,'assets'),defaultApp:!!process.defaultApp,fs,log:appendLog});
  if(TEST_MODE&&process.platform==='darwin'){try{app.setActivationPolicy('accessory');}catch{/* só existe no macOS */}try{app.dock?.hide();}catch{/* só existe no macOS */}}
