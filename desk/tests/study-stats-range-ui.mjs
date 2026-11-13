@@ -23,15 +23,12 @@ const isoLocal = (time) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
+/* #25: digitar os dígitos dependia da ordem dia/mês/ano do campo, que no
+   macOS segue a região do sistema, não o `navigator.language`; no Mac o valor
+   nunca chegava e a espera estourava. O `fill` do Playwright grava o ISO e
+   dispara `input` e `change`, que é o que o painel escuta. */
 async function typeDate(page, selector, iso) {
-  const [year, month, day] = iso.split('-');
-  const language = await page.evaluate(() => navigator.language || '');
-  const digits = language.toLowerCase().startsWith('en-us') ? `${month}${day}${year}` : `${day}${month}${year}`;
-  const input = page.locator(selector);
-  await input.focus();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.type(digits);
-  await page.keyboard.press('Tab');
+  await page.locator(selector).fill(iso);
   await page.waitForFunction(([sel, value]) => document.querySelector(sel)?.value === value, [selector, iso]);
 }
 
