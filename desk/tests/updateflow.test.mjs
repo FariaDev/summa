@@ -817,6 +817,71 @@ test('anti-rollback: allowOlder aplica a mais velha; sem ele, a mesma recusa', a
  }
 });
 
+/* #23: o bundle montado de uma pasta extraída do zip (sem `.git`) não pode
+   tentar `git merge` na fonte: o zip da Release é aplicado NA pasta de origem
+   e o install-app re-sincroniza o payload a partir dela. */
+test('#23: bundle com origem sem git aplica o zip na fonte e re-sincroniza', async () => {
+  const source = fakeInstallRoot();
+  const payload = tmp();
+  write(path.join(payload, 'package.json'), '{"version":"0.4.0"}');
+  write(path.join(payload, 'main.cjs'), 'main antigo (payload)');
+  const runtime = tmp();
+  const commands = [];
+  const run = async (cmd, args = [], opts = {}) => {
+    commands.push({cmd, args, opts});
+    return {stdout: ''};
+  };
+  const zip = makeZip({
+    'summa-0.4.1/desk/package.json': '{"version":"0.4.1"}',
+    'summa-0.4.1/desk/main.cjs': 'main novo',
+  });
+  const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
+  const result = await updater.applyUpdate({
+    mode: 'bundle', rootDir: path.join(payload, '..'), deskDir: payload, runtime,
+    announcedVersion: '0.4.1', sourceInfo: {path: source, remote: ''},
+    publicKey: release.publicKey, fetchBuffer: release.fetchBuffer,
+    run, reopen: () => {}, waitPid: 0, platform: 'darwin',
+  });
+  assert.equal(result.ok, true);
+  assert.equal(read(path.join(source, 'desk', 'main.cjs')), 'main novo', 'o zip foi aplicado na pasta de origem');
+  assert.equal(JSON.parse(read(path.join(source, '.update-manifest.json'))).version, '0.4.1', 'o manifesto fica na fonte, que é o que o zip gerencia');
+  assert.equal(read(path.join(payload, 'main.cjs')), 'main antigo (payload)', 'o payload só muda pelo install-app');
+  const installApp = commands.find((command) => command.cmd === 'node');
+  assert.ok(installApp, 'o install-app roda para re-sincronizar o bundle');
+  assert.equal(installApp.args[0], path.join(source, 'desk', 'scripts', 'install-app.mjs'));
+  assert.equal(installApp.opts.cwd, path.join(source, 'desk'));
+  assert.ok(!commands.some((command) => command.cmd === 'git'), 'fonte sem .git não roda git');
+});
+
+/* #23: origem registrada que sumiu (ou não tem `desk/`) recusa ANTES de baixar
+   a Release e sem tocar no bundle. A recusa é o resultado, não um rollback: a
+   versão anterior nunca saiu do lugar. */
+test('#23: bundle com origem sumida recusa antes do download e sem tocar o payload', async () => {
+  for (const missing of ['sumiu', 'sem-desk']) {
+    const payload = tmp();
+    write(path.join(payload, 'package.json'), '{"version":"0.4.0"}');
+    write(path.join(payload, 'main.cjs'), 'main antigo (payload)');
+    const source = path.join(tmp(), missing);
+    if (missing === 'sem-desk') fs.mkdirSync(source, {recursive: true});
+    const runtime = tmp();
+    let downloads = 0;
+    const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip: makeZip(NOVO)});
+    const result = await updater.applyUpdate({
+      mode: 'bundle', rootDir: path.join(payload, '..'), deskDir: payload, runtime,
+      announcedVersion: '0.4.1', sourceInfo: {path: source, remote: ''},
+      publicKey: release.publicKey,
+      fetchBuffer: async (url) => { downloads++; return release.fetchBuffer(url); },
+      run: async () => ({stdout: ''}), reopen: () => {}, waitPid: 0, platform: 'darwin',
+    });
+    assert.equal(result.ok, false, missing);
+    assert.equal(result.refused, true, `${missing}: recusa, não rollback`);
+    assert.match(result.reason, /origem registrada/, missing);
+    assert.equal(downloads, 0, `${missing}: nada é baixado`);
+    assert.equal(read(path.join(payload, 'main.cjs')), 'main antigo (payload)', `${missing}: payload intacto`);
+    assert.equal(fs.existsSync(path.join(payload, '.update-manifest.json')), false, `${missing}: sem manifesto novo`);
+  }
+});
+
 test('anti-rollback no modo git: anunciada mais velha recusa antes de qualquer git', async () => {
  const {root, release} = olderSignedRelease('0.4.1', '0.4.0');
  const runtime = tmp();
