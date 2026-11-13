@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK,deskEnv,newRuntime,seedCourse,writeConfigJson,withArtifacts} from './helpers.mjs';
+import {DESK,deskEnv,newRuntime,seedCourse,writeConfigJson,withArtifacts,writeUserDataEntry} from './helpers.mjs';
 
 /* Troca o `showOpenDialog` do processo principal pela resposta dada. */
 const stubDialog=(app,answer)=>app.evaluate(({dialog},value)=>{dialog.showOpenDialog=async()=>value;},answer);
@@ -23,8 +23,7 @@ await withArtifacts('configuracoes-executaveis',async ctx=>{
  writeConfigJson(runtime,{runtimePath:runtime,vaultPath:runtime,claudePath:'/opt/claude-salvo',xournalPath:'/opt/xournal-salvo',courses:[{id:'A',name:'Cálculo',path:course}]});
  const configFile=path.join(runtime,'config.json');
  const readConfig=()=>JSON.parse(fs.readFileSync(configFile,'utf8'));
- const entry=path.join(runtime,'entry.cjs');
- fs.writeFileSync(entry,`require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ const entry=writeUserDataEntry(runtime);
  const env=deskEnv(runtime);delete env.LEARNING_DESK_RUNTIME;
  ctx.app=await electron.launch({args:[entry],cwd:DESK,env});
  const page=await ctx.app.firstWindow();

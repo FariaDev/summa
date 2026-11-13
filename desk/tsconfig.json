@@ -123,6 +123,7 @@
   "src/agents/opencode-orphans.cjs",
   "src/agents/opencode-owner-time.cjs",
   "src/agents/opencode-process.cjs",
+  "src/agents/opencode-serve-stop.cjs",
   "src/agents/opencode-shell.cjs",
   "src/agents/opencode-version.cjs",
   "src/agents/opencode-install.cjs",

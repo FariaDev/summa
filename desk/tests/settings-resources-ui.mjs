@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK,deskEnv,newRuntime,seedCourse,writeConfigJson,writeDeskJson,fillStudyTitle,resizeWindow,pageWindow} from './helpers.mjs';
+import {DESK,deskEnv,newRuntime,seedCourse,writeConfigJson,writeDeskJson,fillStudyTitle,resizeWindow,pageWindow,writeUserDataEntry} from './helpers.mjs';
 import {nextFrames} from './waits.mjs';
 const runtime=newRuntime('settings-resources');
 const course=seedCourse(runtime,'Recursos');
@@ -15,8 +15,7 @@ writeDeskJson(runtime,{courseId:'Recursos',study:{title:'Questão preservada',xo
 const fields=['endDay','studyContext','calculator','xournal','conferir','refsToggle'];
 // Exercita a persistência normal em userData temporário. O override de runtime
 // dos smokes comuns deliberadamente não grava configurações.
-const entry=path.join(runtime,'entry.cjs');
-fs.writeFileSync(entry,`require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+const entry=writeUserDataEntry(runtime);
 async function launch(){
  const env=deskEnv(runtime);delete env.LEARNING_DESK_RUNTIME;
  return electron.launch({args:[entry],cwd:DESK,env});

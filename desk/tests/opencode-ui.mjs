@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {withArtifacts,newRuntime,seedCourse,writeDeskJson,writeConfigJson,launchDesk,sendEnabled,statusOnline,currentEngine,newSession,openTutorMore,fakeEngineLauncher} from './helpers.mjs';
+import {withArtifacts,newRuntime,seedCourse,writeDeskJson,writeConfigJson,launchDesk,sendEnabled,statusOnline,currentEngine,newSession,openTutorMore,fakeEngineLauncher,resizeWindow} from './helpers.mjs';
 import {pollUntil} from './waits.mjs';
 import {trackTempDir} from './temp-dir.mjs';
 
@@ -34,6 +34,10 @@ await withArtifacts('opencode-motor',async ctx=>{
  fs.chmodSync(FAKE_OPENCODE_BIN,0o755);
  const app=ctx.app=await launchDesk({runtime,opencode:false,env:{LEARNING_DESK_OPENCODE:FAKE_OPENCODE_BIN,FAKE_OPENCODE_LOG:serveLog}});
  const page=await app.firstWindow();
+ /* A janela abre no tamanho da tela do runner (1024×768 no Windows): fixa
+    1440×900 para o painel Contexto caber e o teste medir o mesmo layout do
+    Linux, sem depender do monitor da máquina (Windows, #165). */
+ await resizeWindow(app,page,1440,900);
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  const submit=async text=>{await page.locator('#prompt').fill(text);await page.locator('#send').click();};
  const body=text=>page.waitForFunction(t=>[...document.querySelectorAll('.message.assistant .body')].some(el=>el.textContent.includes(t)),text,{timeout:30000});
@@ -85,6 +89,9 @@ await withArtifacts('opencode-motor',async ctx=>{
  await page.locator('#prompt').fill('');
  await openTutorMore(page);
  await page.locator('#more-context').click();
+ /* O `chat-top` é sticky: depois do scroll automático do Playwright o botão
+    pode cair sob ele. Centraliza antes de clicar (Windows, #165). */
+ await page.locator('#context-summarize').evaluate(el=>el.scrollIntoView({block:'center'}));
  await page.locator('#context-summarize').click();
  await pollUntil(()=>readLog(serveLog).some(entry=>entry.method==='POST'&&/\/compact$/.test(String(entry.url))),ok=>ok,{what:'o pedido de compactação',timeout:15000});
  await sendEnabled(page,{timeout:30000});

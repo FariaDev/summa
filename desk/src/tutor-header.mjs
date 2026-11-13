@@ -139,14 +139,14 @@ function orderActions(){
    do mais folgado ao mais apertado, se cada degrau cabe; o núcleo
    (`rowFit`) escolhe — o rótulo de Referências cede primeiro, depois o
    esforço, por fim o modelo vira ícone.
-   O indicador encolhe com a fileira (ajustes do indicador). Cheio, o nome tem
-   de caber inteiro, até o teto do CSS: antes de cortar o nome, sai o esforço.
-   No degrau "model" o nome pode ganhar reticências até o piso
-   `--mi-model-floor`; abaixo disso vira ícone. Antes o teto do CSS contava
-   como "não cabe": um nome do OpenRouter maior que o teto mandava tudo para o
-   ícone, com a fileira vazia. */
+   O indicador encolhe com a fileira. Cheio, o nome tem de caber inteiro sem
+   contar o corte do teto do CSS: antes de cortar, sai o esforço. No degrau
+   "model" as reticências valem até o piso `--mi-model-floor`; abaixo vira
+   ícone. Antes o teto do CSS passava por "cabe" e um nome do OpenRouter maior
+   que ele mandava tudo para o ícone, com a fileira vazia. */
 function modelRoom(model,floor){
  const cap=Number.parseFloat(getComputedStyle(model).maxWidth);
+ if(!Number.isFinite(floor))return model.clientWidth+0.5>=model.scrollWidth;
  const whole=Math.min(model.scrollWidth,Number.isFinite(cap)?cap:Infinity);
  return model.clientWidth+1>=Math.min(whole,floor);
 }

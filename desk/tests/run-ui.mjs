@@ -13,13 +13,16 @@ import {parseArgs,runSuite} from './run-suite.mjs';
 import {uiFiles} from './suite-files.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
+const argv=process.argv.slice(2);
+const excludeAt=argv.indexOf('--exclude');
+const exclude=excludeAt>=0?String(argv.splice(excludeAt,2)[1]||''):'';
 /* Três por vez é o default (#48), medido em três rodadas seguidas por valor, sem
    outra sessão com Electron aberto: 2 por vez ~311 s, 3 por vez ~236 s, 4 por vez
    ~204 s, todas sem falha. O 4 também fechou limpo, mas deixa menos folga para
    quem abre outro programa pesado junto; `--jobs 1` serve para investigar. */
-const {jobs,block,timeout,verbose,match}=parseArgs(process.argv.slice(2),{jobs:3});
+const {jobs,block,timeout,verbose,match}=parseArgs(argv,{jobs:3});
 
-const files=uiFiles(match);
+const files=uiFiles(match,exclude);
 if(!files.length){
  console.log(`nenhum teste de janela casa com "${match}"`);
  process.exit(1);

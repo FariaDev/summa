@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK, deskEnv, newRuntime, seedCourse, tinyPdf, writeConfigJson, withArtifacts, freezeMotion, resizeWindow, setTheme} from './helpers.mjs';
+import {DESK, deskEnv, newRuntime, seedCourse, tinyPdf, writeConfigJson, withArtifacts, freezeMotion, resizeWindow, setTheme, writeUserDataEntry} from './helpers.mjs';
 import {layoutStable, pollUntil} from './waits.mjs';
 
 const OUT = '/tmp/opencode/ui-rodada7-consertos';
@@ -31,8 +31,7 @@ await withArtifacts('readers-language', async (ctx) => {
   const configFile = path.join(runtime, 'config.json');
   const readPanels = () => JSON.parse(fs.readFileSync(configFile, 'utf8')).desk.panels;
   /* userData temporário: o Salvar grava de verdade no config.json do teste. */
-  const entry = path.join(runtime, 'entry.cjs');
-  fs.writeFileSync(entry, `require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK, 'main.cjs'))});`);
+  const entry = writeUserDataEntry(runtime);
   const launch = () => {
     const env = deskEnv(runtime, {LEARNING_DESK_LOCALE: 'en-US'});
     delete env.LEARNING_DESK_RUNTIME;

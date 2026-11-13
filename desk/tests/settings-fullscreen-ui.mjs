@@ -11,6 +11,7 @@ import {_electron as electron} from '@playwright/test';
 import {
   DESK, deskEnv, freezeMotion, newRuntime, reviewShot, screenshotDirectory,
   seedCourse, setTheme, statusOnline, tinyPdf, withArtifacts, writeConfigJson,
+  writeUserDataEntry,
 } from './helpers.mjs';
 import {layoutStable} from './waits.mjs';
 
@@ -47,8 +48,7 @@ await withArtifacts('settings-fullscreen', async (ctx) => {
   });
   /* userData temporário: a persistência normal (o override de runtime dos
      smokes comuns deliberadamente não grava configurações). */
-  const entry = path.join(runtime, 'entry.cjs');
-  fs.writeFileSync(entry, `require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK, 'main.cjs'))});`);
+  const entry = writeUserDataEntry(runtime);
   const env = deskEnv(runtime);
   delete env.LEARNING_DESK_RUNTIME;
   ctx.app = await electron.launch({args: [entry], cwd: DESK, env});

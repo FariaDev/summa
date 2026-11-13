@@ -62,11 +62,22 @@ await withArtifacts('tutor-geogebra-ondemand',async ctx=>{
  const back=page.locator('#ggb-back');
  const backHidden=()=>back.evaluate(el=>el.hidden);
 
- /* 0. A aba vazia não abre muda: a barra diz que está carregando (A4). */
+ /* 0. A aba vazia não abre muda: a barra diz que está carregando (A4).
+    No Windows o applet falso fica pronto antes do primeiro poll e a nota já
+    sumiu; o observador guarda o instante em que ela esteve à vista (#165). */
+ await page.evaluate(()=>{
+  window.__ggbLoadingSeen=[];
+  const note=document.querySelector('#ggb-board-note');
+  new MutationObserver(()=>{
+   const text=(note?.textContent||'').trim();
+   if(note&&!note.hidden&&text)window.__ggbLoadingSeen.push(text);
+  }).observe(note,{attributes:true,childList:true,subtree:true});
+ });
  await page.locator('#course-tabs [data-id="geogebra"]').click();
  await page.waitForFunction(()=>document.querySelector('#references').classList.contains('ggb'),undefined,{timeout:10000});
- assert.equal(await page.locator('#ggb-board-note').isVisible(),true,'a barra espelha o carregamento');
- assert.match(await page.locator('#ggb-board-note').textContent(),/Carregando|Loading/,'a barra diz que está carregando');
+ const loadingSeen=await page.evaluate(()=>window.__ggbLoadingSeen||[]);
+ assert.ok(loadingSeen.length>0,'a barra espelha o carregamento');
+ assert.match(loadingSeen.join(' '),/Carregando|Loading/,'a barra diz que está carregando');
  await page.waitForFunction(()=>document.querySelector('#ggb-board-note').hidden,undefined,{timeout:15000});
  await page.locator('#course-tabs [data-id="calc"]').click();
  await page.waitForFunction(()=>!document.querySelector('#references').classList.contains('ggb'),undefined,{timeout:10000});

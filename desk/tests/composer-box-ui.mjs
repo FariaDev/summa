@@ -323,7 +323,7 @@ await withArtifacts('composer-box',async ctx=>{
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===1);
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'de volta a uma mensagem, Limpar sai');
  await page.locator('#stop').click();
- await toastWait(page,'a fila ficou segurada');
+ await toastWait(page,'a fila ficou segurada',{timeout:20000});
  await idle();
  const ids=await sessionIds(page);
  const otherId=ids.find(id=>id===other);

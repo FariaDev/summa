@@ -20,9 +20,12 @@ import {
  reviewShot,screenshotDirectory,setTheme,freezeMotion,resizeWindow,fakeEngineLauncher
 } from './helpers.mjs';
 import {layoutStable} from './waits.mjs';
+import {closeApp} from './proc-tree.mjs';
 
 const out=screenshotDirectory('send-offline');
-const size=(app,page,width,height)=>resizeWindow(app,page,width,height);
+/* Tamanho de CONTEÚDO: no Windows a moldura come ~16px de largura e ~39px
+   de altura, e as medidas abaixo são do viewport (#165, como o model-picker-catalog). */
+const size=(app,page,width,height)=>resizeWindow(app,page,width,height,{content:true});
 const shot=(page,name)=>reviewShot(page,out,name);
 
 /* Motor de bancada controlado por arquivos: sem `engine-gate.open` ele não sobe
@@ -204,7 +207,7 @@ await withArtifacts('send-offline-reopen',async ctx=>{
  assert.deepEqual((await strip(page)).rows,['guardada antes de fechar','Imagem anexada'],'a mensagem só com anexo não vira linha em branco');
  assert.equal(await page.locator('#attachments .attachment').count(),0,'o anexo saiu da bandeja: foi com a mensagem guardada');
  await waitFor(()=>stored(runtime,session),texts=>texts.length===2,'o item só com anexo também chegou ao disco');
- await app.close();
+ await closeApp(app,{ledgerDir:runtime});
  assert.deepEqual(sent(log),[],'fechou sem o tutor ter atendido');
  assert.deepEqual(stored(runtime,session),['guardada antes de fechar',''],'o arquivo guarda as duas (a segunda sem texto, com a imagem)');
 

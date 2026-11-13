@@ -37,9 +37,9 @@ export function cleanOutDir(dir){
 
 /** Redimensiona como os testes de janela, mas registra o tamanho REAL obtido
  * quando o Electron/X11 recusa o pedido (a tela é 1366×768). */
-export async function fitWindow(app,page,width,height){
+export async function fitWindow(app,page,width,height,{content=false}={}){
  let error='';
- try{await resizeWindow(app,page,width,height);}
+ try{await resizeWindow(app,page,width,height,{content});}
  catch(failure){error=String(failure?.message||failure).split('\n')[0];}
  const actual=await page.evaluate(()=>({innerWidth,innerHeight,outerWidth,outerHeight,screenWidth:screen.width,screenHeight:screen.height,devicePixelRatio}));
  await layoutStable(page,'body',{timeout:8000}).catch(()=>{});

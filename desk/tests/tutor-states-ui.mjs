@@ -14,7 +14,9 @@ import {
 import {layoutStable,nextFrames,pollUntil} from './waits.mjs';
 
 const out=screenshotDirectory('tutor-states');
-const size=(app,page,width,height)=>resizeWindow(app,page,width,height);
+/* Tamanho de CONTEÚDO: no Windows a moldura come ~16px de largura e ~39px
+   de altura, e as medidas abaixo são do viewport (#165, como o model-picker-catalog). */
+const size=(app,page,width,height)=>resizeWindow(app,page,width,height,{content:true});
 const RECORD={stopped:'travei na 3 do item b',next:'seguir para a 4 e depois revisar a 2',exercise:'Lista 2 · 7b',xopp:'',pages:[]};
 
 /* OpenCode de bancada: espera o arquivo-portão aparecer antes de subir o fake

@@ -16,6 +16,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {runFile} from './run-suite.mjs';
 import {closeApp,killLedgerServer} from './proc-tree.mjs';
+import {withWindowsTools} from './helpers.mjs';
 
 const require=createRequire(import.meta.url);
 const {readEntry,writeEntry,readProcessInfo,processExists,killGroup}=require('../src/agents/opencode-orphans.cjs');
@@ -71,6 +72,31 @@ test('closeApp com o app que o teste já fechou não lança',async()=>{
     hunt-queue, que fecha e relança o app no meio do roteiro). */
  const closed={process(){throw TypeError("Cannot read properties of undefined (reading '_object')");},close:async()=>{}};
  await closeApp(closed);
+});
+
+test('closeApp solta os cinco stdio do Playwright, não só os três primeiros (#165)',{timeout:20000},async()=>{
+ /* O Electron só usa 0–2, mas o Playwright abre cinco pipes; um neto do
+    Chromium que sobrevive ao main segura as pontas 3/4 e o teste não sai. */
+ const child=spawn(process.execPath,[path.join(FIXTURES,'hold-extra-stdio.mjs')],{stdio:['ignore','pipe','pipe','pipe','pipe']});
+ const grandPid=Number(await firstLine(child));
+ const app={process:()=>child,evaluate:async()=>{}};
+ try{
+  await closeApp(app);
+  assert.deepEqual(child.stdio.map((stream,fd)=>fd===0?null:stream?.destroyed),[null,true,true,true,true],'os cinco pipes fecham');
+ }finally{
+  try{process.kill(grandPid,'SIGKILL');}catch{/* já saiu */}
+ }
+});
+
+test('PATH mínimo dos testes mantém System32 e WindowsPowerShell no Windows (#165)',()=>{
+ const pathValue=['C:\\node','/usr/bin','/bin'].join(path.win32.delimiter);
+ const full=withWindowsTools(pathValue,{platform:'win32',systemRoot:'C:\\Windows'});
+ const parts=full.split(path.win32.delimiter);
+ assert.equal(parts[0],'C:\\node','o PATH mínimo continua primeiro');
+ assert.ok(parts.includes('C:\\Windows\\System32'),'taskkill mora no System32');
+ assert.ok(parts.includes('C:\\Windows\\System32\\WindowsPowerShell\\v1.0'),'powershell mora no WindowsPowerShell');
+ assert.equal(withWindowsTools(full,{platform:'win32',systemRoot:'C:\\Windows'}),full,'não duplica as pastas do sistema');
+ assert.equal(withWindowsTools('/a:/b',{platform:'linux',systemRoot:'C:\\Windows'}),'/a:/b','no POSIX o PATH não muda');
 });
 
 function firstLine(child,timeoutMs=8000){
