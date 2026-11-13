@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK,deskEnv,newRuntime,seedCourse,tinyPdf,writeConfigJson,withArtifacts,screenshotDirectory,setTheme,freezeMotion,toastWait,launchDesk,statusOnline,resizeWindow} from './helpers.mjs';
+import {DESK,deskEnv,newRuntime,seedCourse,tinyPdf,writeConfigJson,withArtifacts,screenshotDirectory,setTheme,freezeMotion,toastWait,launchDesk,statusOnline,resizeWindow,writeUserDataEntry} from './helpers.mjs';
 import {settle} from './layout-measure.mjs';
 
 /* Primeira abertura em tela cheia (#64; antes #21 e #24). Sem configuração a
@@ -28,14 +28,13 @@ const STEPS=['welcome','tour','name','folder','tutor','ready'];
 const sha=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
 /* Cada cenário tem runtime (userData) e HOME próprios, dentro da pasta de teste.
-   O `entry.cjs` põe o userData no runtime e apaga o override de runtime: é o
-   que faz a Mesa persistir `config.json` como no uso real. */
+   O `entry.cjs` (helper) põe userData e appData no runtime e apaga o override
+   de runtime: é o que faz a Mesa persistir `config.json` como no uso real. */
 function scenario(tag){
  const runtime=newRuntime(tag);
  const home=path.join(runtime,'home');
  fs.mkdirSync(home,{recursive:true});
- const entry=path.join(runtime,'entry.cjs');
- fs.writeFileSync(entry,`require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ const entry=writeUserDataEntry(runtime);
  const launch=()=>{
   const env=deskEnv(runtime,{HOME:home,USERPROFILE:home});delete env.LEARNING_DESK_RUNTIME;
   return electron.launch({args:[entry],cwd:DESK,env});

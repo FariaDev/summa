@@ -73,6 +73,9 @@ await withArtifacts('mesa-interactive-integrated',async ctx=>{
  assert.equal(await page.evaluate(()=>window.__activityFrame===document.querySelector('.activity-iframe')),true,'sair da tela cheia mantém o iframe');
  await restoredSlot.locator('[data-act="expand"]').click();
  await restoredSlot.locator('[data-act="stop"]').click();
+ /* O parar é aplicado no card antes de a moldura sair: espera o estado parado
+    para o abrir não correr contra o desmonte do iframe (#165). */
+ await restoredSlot.locator('.activity-card[data-state="stopped"]').waitFor({timeout:5000});
  await restoredSlot.locator('[data-act="open"]').click();
  await restoredSlot.locator('.activity-card[data-state="ready"]').waitFor();
  const resumed=page.frames().find(f=>f.url().startsWith('mesa-activity://act-'));

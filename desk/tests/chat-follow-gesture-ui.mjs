@@ -3,7 +3,7 @@
 // roda, PageUp e arrasto da barra desligam e a resposta não puxa de volta.
 import assert from 'node:assert/strict';
 import {withArtifacts,newRuntime,seedCourse,writeDeskJson,writeConfigJson,launchDesk,statusOnline,freezeMotion,resizeWindow} from './helpers.mjs';
-import {nextFrames} from './waits.mjs';
+import {nextFrames,pollUntil} from './waits.mjs';
 
 const scrollerState = (page) => page.evaluate(() => {
   const chat = document.querySelector('#chat'), messages = document.querySelector('#messages');
@@ -16,6 +16,23 @@ const toBottom = (page) => page.evaluate(() => {
   el.scrollTop = el.scrollHeight;
   el.dispatchEvent(new Event('scroll', {bubbles: true}));
 });
+/* `toBottom` + um evento de scroll pode cair na marca de rolagem própria do
+   `followBottom` (500 ms), que engole o evento: o seguir não religa no mesmo
+   instante. Insiste até o próximo `stream` puxar de volta, como a pessoa que
+   rola até o fim — sem sleep fixo (#12/#165). */
+async function followToBottom(page){
+ return pollUntil(async()=>{
+  await toBottom(page);
+  await nextFrames(page,2);
+  await page.evaluate(()=>{const probe=document.createElement('div');probe.id='follow-probe';probe.style.height='64px';document.querySelector('#messages').append(probe);});
+  await nextFrames(page,2);
+  const state=await streamPull(page);
+  await page.evaluate(()=>document.querySelector('#follow-probe')?.remove());
+  await nextFrames(page,2);
+  return state;
+ },state=>state.distance<=2,{what:'o seguir religado no fim',timeout:5000});
+}
+
 const streamPull = (page) => page.evaluate(async () => {
   const {applyChatScroll, distanceFromEnd} = await import('./src/state.mjs');
   const before = document.querySelector('#messages')?.scrollTop ?? 0;
@@ -56,9 +73,7 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   assert.ok(base && base.height > base.client * 2, `base rolável (${JSON.stringify(base)})`);
 
   // Garante o seguir ligado e a vista no fim.
-  await toBottom(page);
-  await nextFrames(page, 2);
-  let end = await scrollerState(page);
+  let end = await followToBottom(page);
   assert.ok(end.distance <= 2, `começa no fim (${JSON.stringify(end)})`);
 
   /* 1. Rolagem sem gesto (layout, âncora nativa, clamp) não desliga: vai ao
@@ -75,8 +90,7 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   assert.ok(laid.distance > 200, `rolagem sem gesto afasta (${JSON.stringify(laid)})`);
   const kept = await streamPull(page);
   assert.ok(kept.distance <= 2, `sem gesto, o stream puxa de volta (${JSON.stringify(kept)})`);
-  await toBottom(page);
-  await nextFrames(page, 2);
+  await followToBottom(page);
 
   /* 2. Roda real desliga e o stream não puxa de volta. */
   await page.locator('#messages').hover();
@@ -89,9 +103,7 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   assert.ok(Math.abs(heldWheel.after - heldWheel.before) <= 4, `não puxou de volta (${JSON.stringify(heldWheel)})`);
 
   // Volta ao fim religa (roda para baixo até o fim).
-  await toBottom(page);
-  await nextFrames(page, 2);
-  end = await scrollerState(page);
+  end = await followToBottom(page);
   assert.ok(end.distance <= 2, `volta ao fim (${JSON.stringify(end)})`);
 
   /* 3. Teclado PageUp desliga: foco real num botão dentro da vista (sem
@@ -139,8 +151,7 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   const heldKey = await streamPull(page);
   assert.ok(heldKey.distance > 100, `depois do PageUp, o stream respeita (${JSON.stringify(heldKey)})`);
 
-  await toBottom(page);
-  await nextFrames(page, 2);
+  await followToBottom(page);
 
   /* 4. Arrastar a barra (pointerdown no rolador) desliga, sem wheel. */
   await page.evaluate(() => {
@@ -157,11 +168,10 @@ await withArtifacts('chat-follow-gesture', async (ctx) => {
   const heldDrag = await streamPull(page);
   assert.ok(heldDrag.distance > 200, `depois do arrasto, o stream respeita (${JSON.stringify(heldDrag)})`);
 
-  await toBottom(page);
-  await nextFrames(page, 2);
-  /* O toBottom acima passou por `followBottom` e a marca de 500 ms ainda está
-     viva; cair em cima dela religa o seguir só no papel, e a figura seguinte
-     denunciaria como falso negativo (Mac rodada 4b). */
+  await followToBottom(page);
+  /* `followToBottom` só sai com o seguir comprovadamente religado; a espera
+     abaixo continua cobrindo a marca OWN_SCROLL_MS de 500 ms para a figura
+     tardia não cair em cima dela (Mac rodada 4b). */
   await page.waitForTimeout(1200);// espera fixa: marca OWN_SCROLL_MS de 500 ms, com folga para o evento de scroll atrasar no Windows
 
   /* 5. Figura tardia de 571px no fim, sem gesto, não desliga: acompanha. */

@@ -226,6 +226,21 @@ export function withWindowsTools(pathValue,{platform=process.platform,systemRoot
  return parts.join(path.win32.delimiter);
 }
 
+/** Entry de teste que isola userData e appData no runtime antes do main.
+ *  No Windows, `app.getPath('appData')` falha antes do `ready` quando o app
+ *  não vem de um `package.json` (o entry é um arquivo): sem o appData
+ *  explícito, `electronUserData` cai no fallback e o `config.json` do teste
+ *  nunca é lido (#165). `setPath` funciona antes do `ready`.
+ *  @param {string} runtime pasta de dados do teste (já criada)
+ *  @returns {string} caminho do `entry.cjs` para passar ao `electron.launch`
+ *  @example const entry=writeUserDataEntry(runtime);
+ */
+export function writeUserDataEntry(runtime){
+ const entry=path.join(runtime,'entry.cjs');
+ fs.writeFileSync(entry,`const {app}=require('electron');app.setPath('appData',__dirname);app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ return entry;
+}
+
 /* `HOME`/`USERPROFILE` apontam para o runtime: sem config, o app não enxerga
    o vault de verdade da pessoa (e qualquer leitura de `~` cai na pasta de
    teste). O `main.cjs` já põe o `userData` em `<runtime>/electron`.

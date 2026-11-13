@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK,deskEnv,newRuntime,tinyPdf,withArtifacts,screenshotDirectory,setTheme,freezeMotion,resizeWindow,reviewShot,openModelPop,pickModel,modelRows,selectedModelKey,fakeEngineLauncher} from './helpers.mjs';
+import {DESK,deskEnv,newRuntime,tinyPdf,withArtifacts,screenshotDirectory,setTheme,freezeMotion,resizeWindow,reviewShot,openModelPop,pickModel,modelRows,selectedModelKey,fakeEngineLauncher,writeUserDataEntry} from './helpers.mjs';
 import {pollUntil,nextFrames} from './waits.mjs';
 import {createFakeOpencode} from './fake-opencode.mjs';
 
@@ -60,8 +60,7 @@ async function boot(ctx,{homeDir,validKeys,clipboard}){
  fs.writeFileSync(clipboardFile,clipboard);
  const serveLog=path.join(tempDir('serve'),'serve.jsonl');
  /* Primeira abertura: userData no runtime e sem override de runtime, como o first-run-ui. */
- const entry=path.join(runtime,'entry.cjs');
- fs.writeFileSync(entry,`require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ const entry=writeUserDataEntry(runtime);
  fs.writeFileSync(path.join(runtime,'config.json'),JSON.stringify({runtimePath:runtime,courses:[]}));
  fs.chmodSync(FAKE_OPENCODE_BIN,0o755);
  const env=deskEnv(runtime,{

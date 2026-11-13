@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {_electron as electron} from '@playwright/test';
-import {DESK,deskEnv,newRuntime,seedCourse,tinyPdf,writeConfigJson,withArtifacts,screenshotDirectory,setTheme,freezeMotion,resizeWindow} from './helpers.mjs';
+import {DESK,deskEnv,newRuntime,seedCourse,tinyPdf,writeConfigJson,withArtifacts,screenshotDirectory,setTheme,freezeMotion,resizeWindow,writeUserDataEntry} from './helpers.mjs';
 import {layoutStable,pollUntil} from './waits.mjs';
 
 /* Configurações com seções na lateral (ticket #20 da spec de redesenho): mede e
@@ -54,8 +54,7 @@ await withArtifacts('configuracoes-secoes',async ctx=>{
  const readConfig=()=>JSON.parse(fs.readFileSync(configFile,'utf8'));
  // userData temporário: a persistência normal (o override de runtime dos
  // smokes comuns deliberadamente não grava configurações).
- const entry=path.join(runtime,'entry.cjs');
- fs.writeFileSync(entry,`require('electron').app.setPath('userData',__dirname);require(${JSON.stringify(path.join(DESK,'main.cjs'))});`);
+ const entry=writeUserDataEntry(runtime);
  const launch=()=>{
   const env=deskEnv(runtime);delete env.LEARNING_DESK_RUNTIME;
   return electron.launch({args:[entry],cwd:DESK,env});
