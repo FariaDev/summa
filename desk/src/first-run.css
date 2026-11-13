@@ -32,7 +32,7 @@ body[data-first-run] #toast{z-index:60}
 .setup-scene-column{--scene-w:clamp(260px,calc(100vw - 860px),440px);width:var(--scene-w);flex:none;display:flex;flex-direction:column;align-items:center;gap:10px}
 /* A fala do passo fica embaixo da cena, como legenda: sem balão nem
    personagem (#101). */
-.setup-speech{max-width:var(--scene-w);box-sizing:border-box;margin:0;font-size:var(--fs-lg);line-height:1.4;color:var(--fg-strong);text-align:center}
+.setup-speech{max-width:var(--scene-w);box-sizing:border-box;margin:0;font-size:var(--fs-speech,var(--fs-lg));line-height:1.4;color:var(--fg-strong);text-align:center}
 .setup-speech:empty{display:none}
 /* A cena da opção I (docs/design/marca/movimento.html): a Mesa em miniatura,
    a integral a pincel e o contorno na tinta. A tinta segue o tema e o acento;
@@ -220,7 +220,7 @@ body[data-first-run] #setup[data-dragging] .setup-card{outline-color:var(--accen
  .setup-stage{gap:8px;padding:8px 16px;overflow:hidden}
  .setup-scene{width:92px}
  .setup-scene svg{width:92px}
- .setup-speech{font-size:var(--fs-md)}
+ .setup-speech{font-size:var(--fs-speech)}
  .setup-card{padding-top:16px;padding-bottom:16px;flex:1 1 auto;min-height:0}
  .setup-step{gap:8px}
  .setup-trail{margin-bottom:12px}
