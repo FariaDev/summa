@@ -29,7 +29,7 @@ export {modelAttrsPresent,stripModelAttrs} from './model-attrs.mjs';
    acompanha a dependência fixada no `package.json`/lock. O KaTeX também entra
    por número: desde o import sob demanda (#desempenho) ele não existe quando o
    módulo carrega, e ler `katex.version` aqui quebrava o arquivo inteiro. */
-const MARKED_VERSION='18.1.2';
+const MARKED_VERSION='18.2.0';
 const KATEX_VERSION='0.19.1';
 const MARKUP_PIPELINE=`marked=${MARKED_VERSION};katex=${KATEX_VERSION};dompurify=${DOMPurify.version};sanitize=2;figures=1;highlight=1;model-attrs=1`;
 setMarkupPipeline(MARKUP_PIPELINE);
