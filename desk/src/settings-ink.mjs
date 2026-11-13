@@ -11,7 +11,7 @@ import {t} from './ui-text.mjs';
 const INK_CONTROLS = `
 <div class="set-group" id="ambitus-ink">
  <label class="set-check"><input type="checkbox" id="cfg-ambitus-ink" aria-describedby="ambitus-ink-note"><span data-i18n="settings.ambitusInk">Buscar também na escrita à mão</span></label>
- <p class="fine" id="ambitus-ink-note" data-i18n="settings.ambitusInk.note">O Ambitus manda as páginas com tinta ao seu modelo para virar texto na busca. Modelos gratuitos ou sem visão não são usados.</p>
+ <p class="fine" id="ambitus-ink-note" data-i18n="settings.ambitusInk.note">As páginas com tinta vão ao seu modelo e viram texto na busca do Ambitus.</p>
  <p class="fine set-error" id="ambitus-ink-error" role="alert" hidden></p>
 </div>`;
 

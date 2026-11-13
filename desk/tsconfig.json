@@ -229,6 +229,7 @@
   "src/accent-state.mjs",
   "src/settings-appearance.mjs",
   "src/settings-chrome.mjs",
+  "src/ambitus-page.mjs",
   "src/settings-ink.mjs",
   "src/settings-reading.mjs",
   "src/settings-search.mjs",

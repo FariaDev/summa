@@ -471,7 +471,7 @@ ipcMain.handle('switch-course',async(_e,id)=>withHostNav(async()=>{
  persist();stopBridge();applyCourse(id);persist();return initialData();
 }));
 /* PDFs e imagens da mesa (open-pdf … open-image): pdf-host.cjs, mesma posição de registro. */
-registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const ambitusBridge=require('./ambitus-bridge-wiring.cjs').registerAmbitusBridge({ipcMain,runtime,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,engine,openCodeTutor,language:()=>languageHost.tutorLanguage()==='en'?'en':'pt-BR',allowSender:trustedMainSender,log:line=>appendLog('ambitus',line)});
+registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const ambitusBridge=require('./ambitus-bridge-wiring.cjs').registerAmbitusBridge({ipcMain,runtime,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,engine,openCodeTutor,language:()=>languageHost.tutorLanguage()==='en'?'en':'pt-BR',allowSender:trustedMainSender,allowedXopp,win:()=>win,log:line=>appendLog('ambitus',line)});
 ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
  assertNoNav();
  return chatPdfHost.attach(rawPath);

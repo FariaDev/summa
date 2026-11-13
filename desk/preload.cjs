@@ -466,6 +466,7 @@ const deskApi={
   }
   return invoke('sidechat-respond',{...value,response:clean});
  },
+ onAmbitusPage:fn=>ipcRenderer.on('ambitus-page',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onSidechatEvent:fn=>ipcRenderer.on('sidechat-event',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  sidechatAlwaysOnTop:on=>invoke('sidechat-always-on-top',{on:on===true}),
  getConfig:()=>invoke('get-config'),saveConfig:c=>invoke('save-config',c),pickFolder:()=>invoke('pick-folder'),pickXopp:()=>invoke('pick-xopp'),pickExecutable:kind=>invoke('pick-executable',kind),logError:line=>invoke('desk-log',line),

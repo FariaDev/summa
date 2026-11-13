@@ -8,7 +8,7 @@ import {createLazyModule} from './lazy-module.mjs';
  * Cria a fachada do chat lateral. `mount`/`openSaved` esperam o import; `element`
  * e `setVisible` respondem sem carregar — quem só quer saber o que já veio.
  * @param {() => Promise<typeof import('./sidechat.mjs')>} [importModule]
- * @returns {{load: () => Promise<typeof import('./sidechat.mjs')>, current: () => typeof import('./sidechat.mjs') | null, mount: (container: HTMLElement) => Promise<HTMLElement>, element: () => HTMLElement | null, setVisible: (visible: boolean) => void, rebindDocument: () => void, openSaved: (payload: any) => Promise<void>, reveal: (index: unknown, snippet?: unknown) => boolean}}
+ * @returns {{load: () => Promise<typeof import('./sidechat.mjs')>, current: () => typeof import('./sidechat.mjs') | null, mount: (container: HTMLElement) => Promise<HTMLElement>, element: () => HTMLElement | null, setVisible: (visible: boolean) => void, rebindDocument: () => void, openSaved: (payload: any) => Promise<void>, reveal: (index: unknown, snippet?: unknown) => boolean, insertText: (text: string) => Promise<boolean>}}
  * @example const sidechat = createSidechatLoader(); await sidechat.mount(document.body);
  */
 export function createSidechatLoader(importModule = () => import('./sidechat.mjs')) {
@@ -22,6 +22,7 @@ export function createSidechatLoader(importModule = () => import('./sidechat.mjs
     rebindDocument: () => lazy.current()?.rebindSidechatDocument(),
     openSaved: async (payload) => (await lazy.load()).openSavedSidechat(payload),
     reveal: (index, snippet) => lazy.current()?.revealSidechatMessage(index, snippet) ?? false,
+    insertText: async (text) => lazy.current()?.insertSidechatText(text) ?? false,
   };
 }
 
@@ -58,3 +59,8 @@ export const openSavedSidechat = (payload) => sidechat.openSaved(payload);
  * @example revealSidechatMessage(41, 'trecho')
  */
 export const revealSidechatMessage = (index, snippet) => sidechat.reveal(index, snippet);
+/** Põe texto no fim do rascunho do lateral já montado, sem enviar; false antes de ele montar.
+ * @param {string} text @returns {Promise<boolean>}
+ * @example await insertSidechatText('Sobre a pág. 2 do caderno “Limites”: ')
+ */
+export const insertSidechatText = (text) => sidechat.insertText(text);

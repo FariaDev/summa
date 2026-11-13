@@ -786,3 +786,14 @@ export function initSidechat(){
 
 /* Estado exposto só para testes de unidade/inspeção (não usar no DOM). */
 export function sidechatState(){return state;}
+
+/* Texto de fora (a página do Ambitus) entra no fim do rascunho, sem enviar; o `input` sintético salva como a digitação. */
+export async function insertSidechatText(text){
+ if(state.opening)await state.opening;
+ if(!promptEl||state.unavailable)return false;
+ const before=String(promptEl.value||'');
+ promptEl.value=before&&!/\s$/.test(before)?`${before}\n${text}`:`${before}${text}`;
+ promptEl.dispatchEvent(new Event('input',{bubbles:true}));
+ promptEl.focus();promptEl.setSelectionRange(promptEl.value.length,promptEl.value.length);
+ return true;
+}
