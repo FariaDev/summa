@@ -213,12 +213,11 @@ await withArtifacts('tutor-header',async ctx=>{
  /* ---------- Mais opções ---------- */
  await openTutorMore(page);
  const labels=await page.locator('#chat-more-pop > *').evaluateAll(list=>list.map(el=>el.id||el.className));
- assert.deepEqual(labels,['more-context','more-notebooks','menu-sep','end-day','export-chat','chat-collapse'],'itens de Mais opções, na ordem, com o fio');
+ assert.deepEqual(labels,['more-context','menu-sep','end-day','export-chat','chat-collapse'],'itens de Mais opções, na ordem, com o fio');
  assert.equal(await page.locator('#more-context').getAttribute('aria-haspopup'),null,'a sanfona de Contexto saiu');
  const moreItemLook=await page.locator('#more-context').evaluate(el=>({size:getComputedStyle(el).fontSize,icon:el.querySelector('svg')?.innerHTML||''}));
  assert.equal(moreItemLook.size,newSessionItemSize,'Mais opções usa o mesmo corpo do menu de sessão nova');
  assert.match(moreItemLook.icon,/m12 3 9 5/i,'o Contexto usa o ícone de camadas');
- assert.match(await page.locator('#more-notebooks .menu-kbd').textContent(),/(⌘⇧K|Ctrl\+Shift\+K)/,'o item Cadernos mostra a dica do atalho');
  const headBottom=(await rect(page,'#chat .chat-head')).bottom;
  assert.ok((await rect(page,'#chat-more-pop')).top>=headBottom-0.5,'Mais opções nasce abaixo do cabeçalho, sem cobrir a linha de contexto');
  await reviewShot(page,out,'mais-opcoes-1440.png');

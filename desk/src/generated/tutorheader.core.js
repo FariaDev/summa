@@ -289,9 +289,6 @@ function $endDayItem(_endDay_0) {
 function $contextItem() {
   return $item("more-context", $$msg_msg("header.context"), "layers", "OpenContext", { $: "Nil" });
 }
-function $notebooksItem() {
-  return $item("more-notebooks", $$msg_msg("notebooks.button"), "book", "OpenNotebooks", { $: "Nil" });
-}
 function $menuSeparator() {
   return $view_viewEl("div", { $: "Con", head: $$view_attrClass("menu-sep"), tail: { $: "Con", head: $$view_attr("role", "separator"), tail: { $: "Nil" } } }, { $: "Nil" });
 }
@@ -299,7 +296,7 @@ function $collapseItem() {
   return $item("chat-collapse", $$msg_msg("header.collapse"), "chevronRight", "ToggleTutor", { $: "Nil" });
 }
 function $moreItems(_endDay_0) {
-  return { $: "Con", head: $$contextItem(), tail: { $: "Con", head: $$notebooksItem(), tail: { $: "Con", head: $$menuSeparator(), tail: { $: "Con", head: $$endDayItem(_endDay_0), tail: { $: "Con", head: $$exportItem(), tail: { $: "Con", head: $$collapseItem(), tail: { $: "Nil" } } } } } } };
+  return { $: "Con", head: $$contextItem(), tail: { $: "Con", head: $$menuSeparator(), tail: { $: "Con", head: $$endDayItem(_endDay_0), tail: { $: "Con", head: $$exportItem(), tail: { $: "Con", head: $$collapseItem(), tail: { $: "Nil" } } } } } };
 }
 function $levelKey_if(_hit_0, _key_0, _rest_0) {
   if (_hit_0) {
@@ -773,7 +770,6 @@ var $$Bool_not = $Bool_not;
 var $$view_attrWhen = $view_attrWhen;
 var $$view_attrClass = $view_attrClass;
 var $$contextItem = $contextItem;
-var $$notebooksItem = $notebooksItem;
 var $$menuSeparator = $menuSeparator;
 var $$endDayItem = $endDayItem;
 var $$exportItem = $exportItem;
@@ -866,7 +862,6 @@ var tutorheader_default = {
   exportItem: run_lib(() => run_loop($exportItem()), 0),
   endDayItem: run_lib((a0) => run_loop($endDayItem(a0)), 1),
   contextItem: run_lib(() => run_loop($contextItem()), 0),
-  notebooksItem: run_lib(() => run_loop($notebooksItem()), 0),
   menuSeparator: run_lib(() => run_loop($menuSeparator()), 0),
   collapseItem: run_lib(() => run_loop($collapseItem()), 0),
   moreItems: run_lib((a0) => run_loop($moreItems(a0)), 1),

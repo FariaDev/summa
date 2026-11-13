@@ -8,7 +8,10 @@ import path from 'node:path';
 import {withArtifacts,launchDesk,newRuntime,seedCourse,seedPlot,seedNativeSession,writeConfigJson,writeDeskJson,freezeMotion,tinyPdfPages,FAKE_OPENCODE,fakeEngineLauncher} from './helpers.mjs';
 
 /* Motor de bancada fechado: o tutor fica "ligando" até o teste cancelar, para a
-   faixa da fila aparecer sem nada ir ao motor (a técnica do send-offline). */
+   faixa da fila aparecer sem nada ir ao motor (a técnica do send-offline). O
+   portão vale só para `serve`: `--version` e `models` vão direto ao fake, como
+   no CLI de verdade. Sem isso o processo de detecção fica preso no laço e
+   segura os handles do teste depois que o app fecha (#165). */
 function writeGateEngine(runtime){
  const wrapper=path.join(runtime,'engine-gate.mjs');
  fs.writeFileSync(wrapper,`#!/usr/bin/env node
@@ -17,12 +20,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const here=path.dirname(fileURLToPath(import.meta.url));
-const timer=setInterval(()=>{
- if(!fs.existsSync(path.join(here,'engine-gate.open')))return;
- clearInterval(timer);
- const child=spawn(process.execPath,[${JSON.stringify(FAKE_OPENCODE)},...process.argv.slice(2)],{stdio:'inherit'});
+const argv=process.argv.slice(2);
+const run=args=>{
+ const child=spawn(process.execPath,[${JSON.stringify(FAKE_OPENCODE)},...args],{stdio:'inherit'});
  child.on('exit',code=>process.exit(code??0));
-},50);
+};
+if(argv[0]!=='serve')run(argv);
+else{
+ const timer=setInterval(()=>{
+  if(!fs.existsSync(path.join(here,'engine-gate.open')))return;
+  clearInterval(timer);
+  run(argv);
+ },50);
+}
 `);
  fs.chmodSync(wrapper,0o755);
  return fakeEngineLauncher(wrapper);

@@ -95,9 +95,18 @@ async function assertWrapped(page,label){
  const content=contentWidth(facts);
  assert.equal(facts.text.text,SCOPE_TWO,`${label}: o escopo tem os dois materiais ("${facts.text.text}")`);
  assert.equal(facts.note.visible,true,`${label}: a legenda "Só aqui" segue visível`);
- assert.ok(facts.text.bottom<=facts.note.top+0.5,`${label}: o texto fica numa linha própria acima da legenda (texto termina em ${facts.text.bottom.toFixed(1)}, legenda começa em ${facts.note.top.toFixed(1)})`);
- assert.ok(facts.text.bottom<=facts.lock.top+0.5,`${label}: o texto fica acima do cadeado (texto termina em ${facts.text.bottom.toFixed(1)}, cadeado começa em ${facts.lock.top.toFixed(1)})`);
- assert.ok(facts.text.width>=content-4,`${label}: o texto usa a linha inteira (${facts.text.width.toFixed(1)}px de ${content.toFixed(1)}px)`);
+ /* Com a fonte estreita do Windows o texto de dois materiais ainda cabe ao
+    lado do cadeado a 420px; a linha própria só é exigida quando ele quebra.
+    Em qualquer layout o texto inteiro e a ação à direita continuam valendo. */
+ const wrapped=facts.text.bottom<=facts.note.top+0.5&&facts.text.bottom<=facts.lock.top+0.5;
+ if(wrapped){
+  assert.ok(facts.text.bottom<=facts.note.top+0.5,`${label}: o texto fica numa linha própria acima da legenda (texto termina em ${facts.text.bottom.toFixed(1)}, legenda começa em ${facts.note.top.toFixed(1)})`);
+  assert.ok(facts.text.bottom<=facts.lock.top+0.5,`${label}: o texto fica acima do cadeado (texto termina em ${facts.text.bottom.toFixed(1)}, cadeado começa em ${facts.lock.top.toFixed(1)})`);
+  assert.ok(facts.text.width>=content-4,`${label}: o texto usa a linha inteira (${facts.text.width.toFixed(1)}px de ${content.toFixed(1)}px)`);
+ }else{
+  assert.ok(sameRow(facts.text,facts.note),`${label}: na linha única o texto divide a linha com a legenda`);
+  assert.ok(facts.text.right<=facts.lock.left+0.5,`${label}: na linha única o texto não encosta no cadeado (${facts.text.right.toFixed(1)} > ${facts.lock.left.toFixed(1)})`);
+ }
  assert.ok(facts.text.scrollWidth<=facts.text.clientWidth+1,`${label}: os dois materiais aparecem inteiros (${facts.text.scrollWidth}px de texto em ${facts.text.clientWidth}px)`);
  const right=Math.abs(facts.refresh.right-(facts.scope.right-facts.scope.paddingRight));
  assert.ok(right<=1,`${label}: na linha quebrada a ação encosta à direita (${right.toFixed(1)}px da borda)`);
@@ -118,7 +127,7 @@ await block('rodada5-escopo-um',async ctx=>{
 
  const child=await detachSidechat(page,app);
  for(const [width,height] of [[380,800],[420,1000],[420,650]]){
-  await fitWindow(app,child,width,height);
+  await fitWindow(app,child,width,height,{content:true});
   await layoutStable(child,'#sidechat');
   await assertOneLine(child,`${width}×${height} com um material`,{composerHeight:width===420&&height===650?161:null});
  }
@@ -138,7 +147,7 @@ await block('rodada5-escopo-dois',async ctx=>{
 
  const child=await detachSidechat(page,app);
  for(const [width,height] of [[380,800],[420,1000]]){
-  await fitWindow(app,child,width,height);
+  await fitWindow(app,child,width,height,{content:true});
   await layoutStable(child,'#sidechat');
   /* No r2 a IBM Plex Sans é mais estreita: a 420px os dois materiais cabem na
      mesma linha da legenda e da ação, sem cortar o texto; abaixo disso quebra. */

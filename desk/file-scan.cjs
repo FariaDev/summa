@@ -2,7 +2,7 @@
 'use strict';
 
 /* Varredura recursiva de arquivos da Mesa (#133): um molde só para os PDFs da
-   matéria (`courses.cjs`) e para os cadernos `.xopp` (`notebooks-host.cjs`).
+   matéria (`courses.cjs`); os cadernos `.xopp` saíram para o Xournal++.
    Uma responsabilidade: andar a árvore (até 6 níveis) juntando os arquivos
    que o `isMatch` aceita, com o caminho canônico (realpath) e o `mtimeMs`.
    O `seen` de diretórios (por realpath) corta ciclos de symlink e pode ser

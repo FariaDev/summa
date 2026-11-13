@@ -160,7 +160,7 @@ await block('rodada3-escopo-composer',async ctx=>{
 
  const child=await detachSidechat(page,app);
  for(const [width,height] of [[380,800],[420,1000]]){
-  const size=await fitWindow(app,child,width,height);
+  const size=await fitWindow(app,child,width,height,{content:true});
   await layoutStable(child,'#sidechat');
   const facts=await scopeAndPrompt(child);
   assert.equal(facts.noteVisible,true,`${width}×${height}: a legenda "Só aqui" fica visível (veio "${facts.noteText}")`);

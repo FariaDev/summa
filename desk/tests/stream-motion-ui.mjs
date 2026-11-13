@@ -60,8 +60,11 @@ await withArtifacts('motion-dots', async (ctx) => {
   fs.writeFileSync(pdf, tinyPdf('Limites e derivadas'));
   writeDeskJson(runtime, {courseId: 'calc', courseStates: {calc: {pdfs: [{path: pdf, page: 1}], study: {title: '', xopp: ''}}}});
   writeConfigJson(runtime, {runtimePath: runtime, vaultPath: runtime, courses: [{id: 'calc', name: 'Cálculo I', path: course}]});
+  /* O portão vale só para `serve`: `--version` e `models` vão direto ao fake,
+     como no CLI de verdade. Sem isso o processo de detecção fica preso no laço
+     e segura os handles do teste depois que o app fecha (#165). */
   const wrapper = path.join(runtime, 'opencode-gate.mjs');
-  fs.writeFileSync(wrapper, `#!/usr/bin/env node\nimport {spawn} from 'node:child_process';\nimport fs from 'node:fs';\nimport path from 'node:path';\nconst gate=${JSON.stringify(path.join(runtime, 'gate.open'))};\nconst timer=setInterval(()=>{\n if(!fs.existsSync(gate))return;\n clearInterval(timer);\n const child=spawn(process.execPath,[${JSON.stringify(FAKE_OPENCODE)},...process.argv.slice(2)],{stdio:'inherit'});\n child.on('exit',code=>process.exit(code??0));\n},50);\n`);
+  fs.writeFileSync(wrapper, `#!/usr/bin/env node\nimport {spawn} from 'node:child_process';\nimport fs from 'node:fs';\nimport path from 'node:path';\nconst gate=${JSON.stringify(path.join(runtime, 'gate.open'))};\nconst argv=process.argv.slice(2);\nconst run=args=>{\n const child=spawn(process.execPath,[${JSON.stringify(FAKE_OPENCODE)},...args],{stdio:'inherit'});\n child.on('exit',code=>process.exit(code??0));\n};\nif(argv[0]!=='serve')run(argv);\nelse{\n const timer=setInterval(()=>{\n  if(!fs.existsSync(gate))return;\n  clearInterval(timer);\n  run(argv);\n },50);\n}\n`);
   fs.chmodSync(wrapper, 0o755);
   ctx.app = await launchDesk({runtime, env: {LEARNING_DESK_OPENCODE: fakeEngineLauncher(wrapper)}});
   const page = await ctx.app.firstWindow();

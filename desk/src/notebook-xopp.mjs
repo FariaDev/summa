@@ -116,11 +116,3 @@ export function latexOf(pageXml) {
 export function hasUnsafeDoctype(xml) {
   return String(xml).includes('<!DOCTYPE') || String(xml).includes('<!ENTITY');
 }
-
-/** Texto digitado de cada página (caixas `<text>` e LaTeX, na ordem), um
- *  item por página na ordem do documento; página sem texto sai vazia.
- *  @param {string} xml @returns {string[]}
- *  @example notebookPageStrings('<xournal><page><text>a</text></page></xournal>') // ['a'] */
-export function notebookPageStrings(xml) {
-  return pagesOfXml(xml).map((pageXml) => [...textsOf(pageXml), ...latexOf(pageXml)].join('\n'));
-}

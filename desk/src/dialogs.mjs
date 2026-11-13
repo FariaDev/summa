@@ -1,6 +1,5 @@
 import dialogsCore from './generated/dialogsview.core.js';
 import {build, htmlNode, renderChildren, renderInto} from './view-host.mjs';
-import {t} from './ui-text.mjs';
 
 /* Aplicadores dos diálogos da Mesa (o núcleo é `core/dialogsview.bend`).
    O casco estático (`<dialog>`/`<form method=dialog>`, inputs de caminho,
@@ -220,149 +219,6 @@ export function renderComponentChecking() {
   ]);
 }
 
-/* Plugin MesaPagina (#133): o estado (não instalado / instalado / versão
-   diferente) e o botão de instalação moram no aplicador da linha do Xournal++,
-   porque a decisão do núcleo (`ToolAction`) é a do Claude Code — isto é texto
-   e posição, não invariante de domínio, então fica em JS com teste [ADR 0003].
-   O clique vai ao `about-update.mjs` por evento (sem ciclo de imports). */
-const PLUGIN_STATE_KEY = {
-  missing: 'component.plugin.missing',
-  installed: 'component.plugin.installed',
-  different: 'component.plugin.different',
-  foreign: 'component.plugin.foreign',
-  modified: 'component.plugin.modifiedError',
-  symlink: 'component.plugin.symlink',
-};
-const PLUGIN_DOT_STATE = {
-  installed: 'ok',
-  different: 'new',
-  modified: 'warn',
-  foreign: 'warn',
-  symlink: 'warn',
-};
-/* Estados em que instalar seria uma tentativa fadada (#133, N5/N6): a recusa
-   fica na linha e a ação não é oferecida. */
-const PLUGIN_BLOCKED_STATE = new Set(['modified', 'foreign', 'symlink']);
-/* A3: a recusa diz o motivo e o próximo passo; a ação desabilitada some. */
-const PLUGIN_NEXT_KEY = {
-  modified: 'component.plugin.next.modified',
-  foreign: 'component.plugin.next.foreign',
-  symlink: 'component.plugin.next.symlink',
-};
-/* Estado da linha do plugin que sobrevive à repintura do painel: o pedido em
-   voo (F1) e o erro inline até "Tentar de novo" (F3). */
-let pluginUi = {status: 'missing', busy: false, error: ''};
-function paintXournalPluginLine() {
-  const box = document.querySelector('#component-rows .component-row[data-id="xournal"] .component-plugin');
-  if (!box) return;
-  const status = pluginUi.status;
-  const state = box.querySelector('.component-plugin-state');
-  if (state) state.textContent = t(PLUGIN_STATE_KEY[status] ?? 'component.plugin.missing');
-  const dot = box.querySelector('.component-dot');
-  if (dot) dot.dataset.state = pluginUi.busy ? 'busy' : (PLUGIN_DOT_STATE[status] ?? 'muted');
-  /* N4: o estado `different` diz qual versão está na pasta, quando o host
-     publica `plugin.version`; sem versão, só o rótulo da ação muda. */
-  const version = box.querySelector('.component-plugin-version');
-  if (version) {
-    const installedVersion = status === 'different' ? String(pluginUi.version ?? '').trim() : '';
-    version.textContent = installedVersion ? t('component.plugin.differentVersion', {version: installedVersion}) : '';
-    version.hidden = !installedVersion;
-  }
-  /* N11: o aviso de reiniciar fica na linha, não só no toast passageiro. */
-  const restart = box.querySelector('.component-plugin-restart');
-  if (restart) {
-    restart.textContent = status === 'installed' ? t('component.plugin.restart') : '';
-    restart.hidden = status !== 'installed';
-  }
-  /* A3: a recusa explica o que fazer na linha seguinte; sem botão morto. */
-  const refusal = PLUGIN_BLOCKED_STATE.has(status);
-  const next = box.querySelector('.component-plugin-next');
-  if (next) {
-    const nextKey = PLUGIN_NEXT_KEY[status];
-    next.textContent = nextKey ? t(nextKey) : '';
-    next.hidden = !nextKey;
-  }
-  const button = box.querySelector('.component-plugin-install');
-  if (button) {
-    /* N5/N6/N12: com recusa no estado ou erro inline, a linha não repete a
-       tentativa; "Tentar de novo" (ou a frase) é a ação única. */
-    const blocked = refusal || (!!pluginUi.error && !pluginUi.busy);
-    const label = pluginUi.busy
-      ? t('component.plugin.installing')
-      : status === 'installed' ? t('component.plugin.reinstall')
-      : status === 'different' ? t('component.plugin.update') : t('component.plugin.install');
-    button.hidden = refusal;
-    button.disabled = pluginUi.busy || blocked;
-    button.setAttribute('aria-busy', String(pluginUi.busy));
-    button.setAttribute('aria-disabled', String(button.disabled));
-    if (pluginUi.error && !pluginUi.busy) button.setAttribute('aria-describedby', 'component-plugin-error-xournal');
-    else button.removeAttribute('aria-describedby');
-    if (pluginUi.busy) {
-      const spinner = document.createElement('span');
-      spinner.className = 'ts-dots component-plugin-spinner';
-      spinner.setAttribute('aria-hidden', 'true');
-      spinner.append(document.createElement('span'), document.createElement('span'), document.createElement('span'));
-      button.replaceChildren(spinner, document.createTextNode(label));
-    } else button.textContent = label;
-  }
-  box.querySelector('.component-plugin-error')?.remove();
-  if (pluginUi.error && !pluginUi.busy) {
-    const error = document.createElement('div');
-    error.id = 'component-plugin-error-xournal';
-    error.className = 'component-run component-plugin-error';
-    error.dataset.phase = 'failed';
-    error.setAttribute('role', 'alert');
-    const line = document.createElement('p');
-    line.className = 'run-line';
-    const lead = document.createElement('strong');
-    lead.className = 'run-result';
-    lead.textContent = t('component.plugin.error');
-    line.append(lead, document.createTextNode(` ${pluginUi.error}`));
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'component-update component-plugin-retry';
-    retry.textContent = t('component.plugin.retry');
-    retry.onclick = () => window.dispatchEvent(new CustomEvent('desk-xournal-plugin-install'));
-    error.append(line, retry);
-    box.append(error);
-  }
-}
-export function setXournalPluginUi(patch) {
-  pluginUi = {...pluginUi, ...patch};
-  paintXournalPluginLine();
-}
-function paintXournalPlugin(rows) {
-  const row = (Array.isArray(rows) ? rows : []).find((entry) => entry?.id === 'xournal' && entry?.plugin);
-  const main = document.querySelector('#component-rows .component-row[data-id="xournal"] .component-main');
-  if (!row || !main) return;
-  pluginUi = {...pluginUi, status: String(row.plugin.status ?? 'missing'), version: String(row.plugin.version ?? '')};
-  const box = document.createElement('div');
-  box.className = 'component-plugin';
-  const dot = document.createElement('span');
-  dot.className = 'component-dot';
-  dot.setAttribute('aria-hidden', 'true');
-  const state = document.createElement('span');
-  state.className = 'component-plugin-state';
-  state.id = 'component-plugin-state-xournal';
-  const version = document.createElement('span');
-  version.className = 'component-plugin-version';
-  version.hidden = true;
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'component-update component-plugin-install';
-  button.onclick = () => window.dispatchEvent(new CustomEvent('desk-xournal-plugin-install'));
-  const next = document.createElement('span');
-  next.className = 'component-plugin-next';
-  next.id = 'component-plugin-next-xournal';
-  next.hidden = true;
-  const restart = document.createElement('span');
-  restart.className = 'component-plugin-restart';
-  restart.hidden = true;
-  box.append(dot, state, version, button, next, restart);
-  main.append(box);
-  paintXournalPluginLine();
-}
-
 /* Painel "Componentes": Claude Code, Node e Xournal++ (a ordem é do núcleo). `context` traz o que não vem do host de arquivos: tutor ocupado e a
    execução em curso de cada ferramenta. */
 export function renderComponentRows(rows, handlers = {}, context = {}) {
@@ -370,7 +226,6 @@ export function renderComponentRows(rows, handlers = {}, context = {}) {
   if (!box) return;
   const list = bendList((Array.isArray(rows) ? rows : []).map((row) => componentFacts(row, context)));
   renderChildren(box, dialogsCore.componentRows(list), handlers);
-  paintXournalPlugin(rows);
 }
 
 /* ---------- pi-dialog / image-dialog (onda da Conversa) ---------- */

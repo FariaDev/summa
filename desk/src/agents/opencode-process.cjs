@@ -23,6 +23,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {MESA_SERVE_ARGS, ESCALATE_AFTER_MS, writeEntry, clearEntryIfMatches, markEntryStopping, readProcessInfo, killGroup, isAnnotatedServe, serveBinaryFromCommandLine} = require('./opencode-orphans.cjs');
 const {processStartTime} = require('./opencode-owner-time.cjs');
+const {signalServeChild, releaseServeStdio} = require('./opencode-serve-stop.cjs');
 const {findOpenCodeInLoginShell} = require('./opencode-shell.cjs');
 const {openCodeRuntimeBinary} = require('./opencode-binary.cjs');
 const {message} = require('../i18n.mjs');
@@ -414,9 +415,7 @@ function startOpenCodeServer({binary = '', cwd = '', env = process.env, timeoutM
   /* Sem prova de identidade, o handle do ChildProcess ainda é o filho que esta
      Mesa criou: o sinal vai direto nele, sem alcançar o grupo de um pid que não
      deu para conferir. */
-  const signalChild = (/** @type {NodeJS.Signals} */ name) => {
-    try { child.kill?.(name); } catch { /* o filho já saiu */ }
-  };
+  const signalChild = (/** @type {NodeJS.Signals} */ name) => signalServeChild({platform: process.platform, pid, name, child, signalGroup});
   const requestStop = (/** @type {NodeJS.Signals} */ name, /** @type {'ours'|'not-ours'|'unproven'} */ proof) => {
     if (proof === 'ours') signalServer(name);
     else if (proof === 'unproven') signalChild(name);
@@ -435,7 +434,7 @@ function startOpenCodeServer({binary = '', cwd = '', env = process.env, timeoutM
         if (graceTimer) clearTimeout(graceTimer);
         if (killTimer) clearTimeout(killTimer);
         child.removeListener('exit', onStopExit);
-        resolve();
+        releaseServeStdio(child); resolve();
       };
       const onStopExit = () => { clearLedger(); finishStop(); };
       if (exited || child.exitCode !== null || child.signalCode !== null) { clearLedger(); finishStop(); return; }

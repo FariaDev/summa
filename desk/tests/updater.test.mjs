@@ -192,7 +192,6 @@ test('lista explícita do modo zip: o código entra (tests incluído), o resto f
     'desk/templates/TUTOR.md', 'desk/locales/en.json', 'desk/scripts/install-app.mjs',
     'desk/tests/updateflow.test.mjs', 'desk/tests/zipkit.mjs',
     'core/dialogsview.bend', 'core/laws/dialogsview.bend', 'geogebra/x.html',
-    'desk/src/xournal-plugins/MesaPagina/main.lua', 'desk/src/xournal-plugins/MesaPagina/plugin.ini',
     'visual-check/windows.swift', '.githooks/pre-push', 'README.md', 'AGENTS.md', 'LICENSE', '.gitignore',
     'docs/agents/mapa.md', 'docs/agents/customizar.md',
   ];

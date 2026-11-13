@@ -369,6 +369,9 @@ await withArtifacts('model-picker-provider',async ctx=>{
  await freezeMotion(page);
  await openModelPop(page);
  assert.equal(await page.locator('#model-list [role="option"][data-key]').count(),3,'o catálogo do fake tem um provedor só (OpenCode Zen)');
+ /* O módulo da dica entra por import dinâmico (#128): espera montar em vez de
+    ler no mesmo quadro do catálogo (o Windows demora mais que o Linux, #165). */
+ await page.locator('#model-empty').waitFor({state:'visible',timeout:10000});
  assert.equal(await page.locator('#model-empty').isVisible(),true,'a dica de um provedor só aparece');
  assert.match(await page.locator('#model-empty').innerText(),/Só há modelos do OpenCode Zen\. Entre em outro provedor\./);
  const connect=page.locator('#model-connect-provider');
