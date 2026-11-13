@@ -35,3 +35,37 @@ export function uiFiles(match='',exclude=''){
 export function huntFiles(match=''){
  return fs.readdirSync(here).filter(f=>/^hunt-.*\.mjs$/.test(f)&&matches(f,match)).sort();
 }
+
+const SHARD_FORMAT=/^(\d+)\/(\d+)$/;
+
+/** Lê o `--shard I/N` (I de 1 a N); `null` devolve `null`, a rodada inteira.
+ * Recusa o que não cobriria a lista uma vez, como `0/4`, `5/4` ou `2/0`.
+ * Exemplo: parseShard('2/4') → {index:2,count:4}; parseShard(null) → null.
+ * @param {string|null} value @returns {{index:number,count:number}|null} */
+export function parseShard(value){
+ if(value==null)return null;
+ const match=SHARD_FORMAT.exec(String(value).trim());
+ if(!match)throw new Error(`--shard: esperava I/N (ex.: 2/4), recebi "${value}"`);
+ const index=Number(match[1]);
+ const count=Number(match[2]);
+ if(index<1||count<1||index>count)throw new Error(`--shard: esperava 1 <= I <= N, recebi "${value}"`);
+ return {index,count};
+}
+
+/** A `index`-ésima fatia (1-based) da lista JÁ filtrada por `match`/`exclude`.
+ * Round-robin na ordem recebida: o arquivo na posição `p` vai para `p % N + 1`.
+ * A trilha de tempos fica em `.runtime/` (fora do git), então no CI não há peso
+ * conhecido; contar posições é o que dá a mesma divisão em toda máquina (dois
+ * jobs da matriz nunca repetem arquivo nem deixam um de fora) sem tabela que
+ * envelhece. Para N fatias, cada uma fica com `ceil`/`floor(n/N)` arquivos.
+ * Exemplo: shardFiles(['a','b','c','d','e'],{index:2,count:2}) → ['b','d'].
+ * @param {string[]} files @param {{index:number,count:number}|null} shard
+ * @returns {string[]} */
+export function shardFiles(files,shard){
+ if(!shard)return files;
+ const {index,count}=shard;
+ if(!Number.isInteger(index)||!Number.isInteger(count)||index<1||count<1||index>count){
+  throw new Error(`--shard: esperava 1 <= I <= N, recebi "${index}/${count}"`);
+ }
+ return files.filter((_,position)=>position%count===index-1);
+}

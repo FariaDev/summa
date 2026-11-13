@@ -81,14 +81,23 @@ jobs:
   # esconder a suíte de unidade. Proposta em docs/design/108-windows-ui.md §4.
   # Roda em todo PR desde que o repositório ficou público (#130 do antigo).
   ui-windows:
-    name: janelas (windows-latest)
+    # Quatro fatias em paralelo: a rodada inteira levava 25-30 min (run
+    # 43463828136, 30m46s só no passo do resto) enquanto os outros jobs fechavam
+    # em 4 min. O corredor divide a lista filtrada com `--shard I/4` (#165).
+    name: janelas (windows-latest, fatia ${{ matrix.shard }}/4)
     runs-on: windows-latest
     # 3 por vez no runner Windows estourava o fechamento e o prazo de 600 s:
     # run 43110682784, 135 ok e 38 falhas (17 "não fechou em 15 s" e quatro
     # arquivos nos 600 s) em 2659 s. Dois por vez dá CPU a cada Electron. Os
     # quatro arquivos de motores falsos com portão sobem um por vez, em passo
     # próprio: juntos eles ficavam 600 s presos mesmo com 2 por vez (#165).
-    timeout-minutes: 120
+    # 30 min é o antigo 120 dividido por 4, com folga para a fatia 1 somar os
+    # pesados; fail-fast false para uma fatia não cancelar as outras.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: desk
@@ -114,11 +123,13 @@ jobs:
 
       # Motores falsos com portão que sobem vários apps no mesmo arquivo: um por
       # vez e sozinhos para não disputar o runner com outro Electron (#165).
+      # Só na fatia 1, fora do rateio das demais.
       - name: Janelas de motores pesados (um por vez)
+        if: matrix.shard == 1
         run: npm run ui -- i18n-en-leaks,pi-opcional,stream-motion,switch-engine --jobs 1
 
-      - name: Testes de janela
-        run: npm run ui -- --jobs 2 --exclude i18n-en-leaks,pi-opcional,stream-motion,switch-engine
+      - name: Testes de janela (fatia ${{ matrix.shard }}/4)
+        run: npm run ui -- --jobs 2 --exclude i18n-en-leaks,pi-opcional,stream-motion,switch-engine --shard ${{ matrix.shard }}/4
 
   bend:
     name: bend (toolchain fixada)
