@@ -13,7 +13,6 @@ import {
 } from './helpers.mjs';
 import {nextFrames} from './waits.mjs';
 
-const FAKE_OPENCODE=path.resolve(import.meta.dirname,'fake-opencode.mjs');
 
 const longConversation=()=>{
  const messages=[];
@@ -66,8 +65,9 @@ await withArtifacts('context-low-window',async ctx=>{
  const session=seedNativeSession(runtime,longConversation(),{courseId:'calc',started:Date.now()-86400000,preview:'conversa longa'});
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'calc',name:'Cálculo I',path:course}]});
  writeDeskJson(runtime,{session,courseId:'calc',courseStates:{calc:{session,sessions:[{path:session,started:Date.now()-86400000}],pdfs:[{path:one,page:3},{path:two,page:1}],study:{title:'Lista 4 · q.9',xopp:''}}}});
- fs.chmodSync(FAKE_OPENCODE,0o755);
- const app=ctx.app=await launchDesk({runtime,pi:false,env:{LEARNING_DESK_OPENCODE:FAKE_OPENCODE}});
+ /* O motor é o fake padrão do `launchDesk`, pelo `fakeEngineLauncher`: o
+    Windows não executa o `.mjs` cru e o tutor nunca ficava online na CI. */
+ const app=ctx.app=await launchDesk({runtime,pi:false});
  const page=await app.firstWindow();
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.waitForSelector('#composer');
