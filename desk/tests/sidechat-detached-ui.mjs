@@ -27,7 +27,7 @@ function sidechatFacts(page){
    draft:prompt?prompt.value:'',
    text:messages?messages.textContent:'',
    htmlTheme:document.documentElement.dataset.theme||'auto',
-   htmlAccent:document.documentElement.dataset.accent||'blue',
+   htmlAccent:document.documentElement.dataset.accent||'graphite',
    hasSidechat:!!nodes[0],
    sidechatVisible:nodes[0]?nodes[0].getBoundingClientRect().width>0&&!nodes[0].hidden:false,
   };
@@ -91,9 +91,9 @@ await withArtifacts('lateral-solto',async ctx=>{
  assert.notEqual(bgDark,bgLight,'o fundo acompanha o tema na filha');
  await setTheme(page,'light');
  await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.applyAccent('violet');});
- await pollUntil(()=>child.evaluate(()=>document.documentElement.dataset.accent||'blue'),v=>v==='violet',{timeout:10000,interval:100,what:'o acento violeta chegar à filha'});
+ await pollUntil(()=>child.evaluate(()=>document.documentElement.dataset.accent||'graphite'),v=>v==='violet',{timeout:10000,interval:100,what:'o acento violeta chegar à filha'});
  assert.equal((await sidechatFacts(child)).htmlAccent,'violet','o acento entra na filha ao vivo');
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.applyAccent('blue');});
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.applyAccent('graphite');});
 
  /* Leitura (#106): data-reading-* aparece na filha e acompanha ao vivo. */
  await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'larger',readingWidth:'wide'});});

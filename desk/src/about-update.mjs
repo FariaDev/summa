@@ -47,6 +47,9 @@ function checkedLabel(at){
 function updateStateOf(result){
  syncUpdateNotice(result);
  if(result?.status==='update'){offlinePainted=false;return {$:'UpdateReady',version:String(result.version||''),notes:String(result.notes||'').replace(/\s+/g,' ').trim().slice(0,400),url:String(result.url||'')};}
+ /* #21: instalação do repositório antigo não recebe as tags do Summa — o
+    Sobre manda reinstalar no lugar do botão que recusaria. */
+ if(result?.status==='legacy-origin'){offlinePainted=false;return {$:'UpdateLegacyOrigin'};}
  if(result?.status==='current'){offlinePainted=false;return {$:'UpdateNone',current:String(result.current||''),checked:checkedLabel(result.checkedAt)};}
  if(result?.status==='error'){offlinePainted=isOffline();return offlinePainted?{$:'UpdateOffline'}:{$:'UpdateFailed'};}
  /* #109: origem que não recebe atualização não pode dizer "Atualizada". */
@@ -162,4 +165,4 @@ function paintUpdateNotice(){
  button.hidden=false;
 }
 
-export {openHelp,aboutHandlers,refreshAbout,openAbout,syncUpdateNotice,paintUpdateNotice,resultStateOf};
+export {openHelp,aboutHandlers,refreshAbout,openAbout,syncUpdateNotice,paintUpdateNotice,resultStateOf,updateStateOf};

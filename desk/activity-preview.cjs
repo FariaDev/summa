@@ -169,7 +169,7 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
     return serial(async () => {
       const spec = previewSpec(raw);
       const theme = cleanTheme(options.theme ?? raw.tema ?? raw.theme);
-      const accent = view.accentOf(options.accent ?? raw.accent ?? 'blue');
+      const accent = view.accentOf(options.accent ?? raw.accent ?? 'graphite');
       const width = cleanWidth(options.width ?? raw.largura ?? raw.width, cleanWidth(columnWidth(), 360));
       const {win, close} = await open(spec, {theme, accent, width});
       try {
@@ -211,7 +211,7 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
     return serial(async () => {
       const spec = previewSpec(raw);
       const widths = view.measureWidths();
-      const {win, close} = await open(spec, {theme: 'light', accent: 'blue', width: widths[0]});
+      const {win, close} = await open(spec, {theme: 'light', accent: 'graphite', width: widths[0]});
       try {
         const pairs = [];
         for (const width of widths) {

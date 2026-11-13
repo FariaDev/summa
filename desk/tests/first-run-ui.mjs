@@ -217,7 +217,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  /* #70: a cor de acento se escolhe no setup e vale na hora (a marca também). */
  await page.locator('#setup-accent [data-accent="violet"]').click();
  const accent=await page.evaluate(()=>({
-  html:document.documentElement.dataset.accent||'blue',
+  html:document.documentElement.dataset.accent||'graphite',
   brand:document.querySelector('#setup .brand-icon').getAttribute('src'),
   checked:document.querySelector('#setup-accent [aria-checked="true"]')?.dataset.accent,
   settings:document.querySelector('#accent-mode [aria-checked="true"]')?.dataset.accent,
@@ -226,7 +226,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.deepEqual(accent,{html:'violet',brand:'assets/app-icon/integral-light-violet-128.png',checked:'violet',settings:'violet',label:'Violeta'});
  await shot(page,'acento-setup-1440x900.png');
  await page.keyboard.press('ArrowLeft');
- assert.equal(await page.evaluate(()=>document.documentElement.dataset.accent||'blue'),'blue','as setas trocam como nas Configurações');
+ assert.equal(await page.evaluate(()=>document.documentElement.dataset.accent||'graphite'),'graphite','as setas trocam como nas Configurações');
 
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  /* #90: os cartões só com título saíram; o passo segue dizendo o que é a Mesa pelo título. */

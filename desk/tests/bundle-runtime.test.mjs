@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 import os from 'node:os';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
-const {runtimePackages,stageBundlePayload,installBundle}=require('../bundle-runtime.cjs');
+const {runtimePackages,stageBundlePayload,installBundle,recordInstallSource}=require('../bundle-runtime.cjs');
 const {userDataDirectory}=require('../user-data.cjs');
 
 test('payload resolve peers e versões aninhadas sem depender da fonte',()=>{
@@ -161,5 +161,20 @@ test('installBundle: versão no Info.plist, payload, manifesto e órfãos, sem b
   assert.equal(manifest.version,'9.8.7');assert.deepEqual(manifest.files,out.managed);
   assert.equal(fs.existsSync(path.join(dest,'node_modules',cli)),false,'sem binário do SDK: a Mesa usa o Claude Code do usuário');
   assert.throws(()=>installBundle({desk:source,root,app:path.join(root,'nada.app'),version:'1.0.0'}),/esperava um \.app com Contents\/Info\.plist, recebeu/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+/* #23: quem instala pelo zip não tem `.git` na pasta de origem. Sem o
+   registro, o modo bundle do updater não sabe onde aplicar a atualização e
+   cai no zip com a raiz do payload. O formato do JSON não muda: `remote`
+   fica vazio quando não há clone. */
+test('#23: recordInstallSource grava a origem sem .git (pasta extraída do zip)',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-bundle-install-source-'));
+ try{
+  const source=path.join(root,'summa-1.2.0'),dest=path.join(root,'payload');
+  fs.mkdirSync(source,{recursive:true});fs.mkdirSync(dest,{recursive:true});
+  assert.equal(fs.existsSync(path.join(source,'.git')),false,'cenário: pasta extraída do zip');
+  recordInstallSource(source,dest);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dest,'install-source.json'),'utf8')),{path:source,remote:''});
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/* #67: contraste WCAG AA dos dois temas e dos seis acentos, lido do style.css.
+/* #67: contraste WCAG AA dos dois temas e dos dois acentos, lido do style.css.
    Texto pede 4,5:1; o anel de foco, que não é texto, pede 3:1. */
 const desk = path.resolve(import.meta.dirname, '..');
 const css = fs.readFileSync(path.join(desk, 'style.css'), 'utf8');
 const THEMES = /** @type {const} */ (['light', 'dark']);
-const ACCENTS = ['blue', 'violet', 'green', 'orange', 'pink', 'graphite'];
+const ACCENTS = ['graphite', 'violet'];
 const BACKGROUNDS = ['bg', 'surface', 'side'];
 
 /**
  * Lê `--nome:light-dark(#claro,#escuro)` do style.css.
- * @param {string} name token sem os dois traços, como "acc-blue-text"
+ * @param {string} name token sem os dois traços, como "acc-graphite-text"
  * @returns {{light: string, dark: string}}
  */
 function themeToken(name) {
@@ -56,7 +56,7 @@ test('texto, texto fraco e texto de status passam AA nos dois temas', () => {
   }
 });
 
-test('os seis acentos passam AA como link e como fundo da ação principal', () => {
+test('os dois acentos passam AA como link e como fundo da ação principal', () => {
   for (const theme of THEMES) {
     for (const accent of ACCENTS) {
       const onFill = accent === 'graphite' && theme === 'dark' ? '#181818' : '#ffffff';
@@ -96,7 +96,7 @@ test('o ponto da atualização no ⚙ e no item Ajustes usa o tom que passa 3:1 
   }
 });
 
-test('o trio ∫ Σ ∇ segue os seis acentos e passa nos dois temas (#100)', () => {
+test('o trio ∫ Σ ∇ segue os dois acentos e passa nos dois temas (#100)', () => {
   /* Corpo e membro são desenho (3:1); o sinal é glifo (4,5:1); o claro é o
      preenchimento do ∇. A tinta do rosto fica sobre o corpo e é detalhe. */
   for (const theme of THEMES) {

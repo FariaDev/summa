@@ -21,6 +21,44 @@ const path=require('node:path');
    continua aceito porque quem clonou o endereço antigo tem de ser reconhecido. */
 const OFFICIAL_REMOTE=/github\.com[:/]FariaDev\/(summa|mesa-de-estudos)(\.git)?\/?\s*$/i;
 
+/* O repositório antigo (#21): o `mesa-de-estudos` foi a ponte, mas o Summa tem
+   histórico novo, então o clone dele nunca recebe as tags novas. Quem ainda
+   tem esse `origin` recebe o aviso para reinstalar, sem migrar o clone. */
+const OLD_REPOSITORY_REMOTE=/github\.com[:/]FariaDev\/mesa-de-estudos(\.git)?\/?\s*$/i;
+
+/**
+ * URL do `origin` no `.git/config`, na mesma leitura de `isOfficialClone`.
+ * @param {string} sourcePath raiz do clone
+ * @param {(file: string, encoding: 'utf8') => string} [readFileSync]
+ * @returns {string} vazio quando não há clone ou `origin`
+ * @example originRemote('/home/ana/summa') // 'https://github.com/FariaDev/summa.git'
+ */
+function originRemote(sourcePath,readFileSync=fs.readFileSync){
+ let config;
+ try{config=readFileSync(path.join(sourcePath,'.git','config'),'utf8');}
+ catch{return '';}
+ const section=/\[remote "origin"\]([^[]*)/.exec(config);
+ const url=section&&/^\s*url\s*=\s*(.+)$/m.exec(section[1]);
+ return url?url[1].trim():'';
+}
+
+/**
+ * A instalação veio do repositório antigo (`mesa-de-estudos`)? No bundle manda
+ * o `remote` registrado no `install-source.json`; num clone, o `origin` do
+ * `.git/config`. Instalação por zip não tem origem — nunca é o caso.
+ * @param {{deskDir?: string, readFile?: (file: string) => string, readFileSync?: (file: string, encoding: 'utf8') => string}} [options]
+ * @returns {boolean}
+ * @example isOldRepositoryInstall({deskDir:'/Applications/Summa.app/Contents/Resources/app/desk'}) // false
+ */
+function isOldRepositoryInstall({deskDir='',readFile,readFileSync=fs.readFileSync}={}){
+ if(!deskDir)return false;
+ const source=readInstallSource(deskDir,readFile);
+ const remote=source?String(source.remote||''):'';
+ if(remote)return OLD_REPOSITORY_REMOTE.test(remote);
+ const sourcePath=source?path.resolve(String(source.path)):path.resolve(deskDir,'..');
+ return OLD_REPOSITORY_REMOTE.test(originRemote(sourcePath,readFileSync));
+}
+
 /**
  * O clone é do repositório público? Só o `origin` conta: um fork ou o repositório
  * privado continuam sendo pasta de desenvolvimento.
@@ -125,4 +163,4 @@ function updateOrigin({packaged=false,deskDir='',home=os.homedir(),readFile,exis
  return {kind:'normal',path:'',worktree:false};
 }
 
-module.exports={readInstallSource,gitCheckout,isOfficialClone,homePathLabel,updateOrigin};
+module.exports={readInstallSource,gitCheckout,isOfficialClone,isOldRepositoryInstall,homePathLabel,updateOrigin};

@@ -329,6 +329,14 @@ test('about: a linha de atualização vem do núcleo e liga os handlers', () => 
   assert.notEqual(box.children[0].attrs.get('data-state'), 'ok', 'origem inválida não ganha o ✓ de atualizada');
   assert.equal(box.children[2].attrs.get('id'), 'update-check', 'ainda dá para tentar de novo');
 
+  /* #21: instalação do repositório antigo avisa para reinstalar em vez de
+     oferecer o "Atualizar e reiniciar" que recusaria. */
+  renderAboutUpdate({$: 'UpdateLegacyOrigin'}, handlers);
+  assert.match(box.children[1].textContent, /repositório antigo \(mesa-de-estudos\)/);
+  assert.match(box.children[1].textContent, /github\.com\/FariaDev\/summa/);
+  assert.equal(box.children.some(child => child.attrs.get('id') === 'update-apply'), false, 'sem botão de aplicar');
+  assert.match(enText(dialogsCore.updateLegacyOriginText()), /old repository \(mesa-de-estudos\)/, 'texto do núcleo vem do catálogo');
+
   cliques = [];
   renderAboutUpdate({$: 'UpdateReady', version: '0.4.1', notes: 'Corpo da Release', url: 'https://github.com/x'}, handlers);
   assert.equal(box.children.length, 5, 'pronto: ícone, frase, link, ação e corpo da Release');

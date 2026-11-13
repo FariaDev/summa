@@ -26,7 +26,7 @@ The app is called **Summa** in both languages; the repository keeps its old name
 - **PDF from the tutor:** problem list, handout, summary, mock exam and formula sheet, with an A4 preview and a review step before saving.
 - **Notebook** (Review today), study **Statistics**, the **Desk guide** (⌘/) and a numeric calculator.
 - **Free** tab for studying without a course; **Create a course** moves the conversation and its PDFs into a new tab.
-- Interface and tutor in **English or Portuguese**, light or dark theme (Graphite), and six accent colors.
+- Interface and tutor in **English or Portuguese**, light or dark theme (Graphite), and two accent colors (Graphite and Violet).
 
 **Not included:** ink canvas, PDF editing, telemetry, cloud account. Sign-in happens in the app and the provider account stays in OpenCode; the OpenCode Zen free-model key, when used, is encrypted with the system keychain.
 

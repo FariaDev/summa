@@ -6,10 +6,11 @@
    Só os tokens `--nome:light-dark(claro,escuro)` do `:root` entram. */
 
 const BASE_TOKENS = {bg: 'bg', card: 'surface', fg: 'fg', muted: 'muted', line: 'border'};
-const ACCENTS = ['blue', 'violet', 'green', 'orange', 'pink', 'graphite'];
+const ACCENTS = ['graphite', 'violet'];
 /* O trio (#100) também segue o acento na página do celular. */
 const TRIO_PARTS = ['corpo', 'claro', 'membro', 'sinal', 'tinta'];
-const BAD = {light: '#a3341f', dark: '#f08a72'};
+/* O "sem conexão" do mock P1: rosa no claro, rosa claro no escuro. */
+const BAD = {light: '#bd1c67', dark: '#e78eaa'};
 
 /**
  * Lê do `style.css` os tons claro e escuro de cada token `light-dark(...)`.
@@ -33,13 +34,15 @@ function readPalette(cssText) {
  * @param {'light'|'dark'} tone
  */
 function toneVars(palette, accent, tone) {
-  const id = ACCENTS.includes(accent) ? accent : 'blue';
+  const id = ACCENTS.includes(accent) ? accent : 'graphite';
   const fill = palette[`acc-${id}`];
   if (!fill) throw Error(`style.css sem --acc-${id}: recebido ${Object.keys(palette).length} tokens, esperado --acc-<acento>:light-dark(...)`);
   const vars = Object.entries(BASE_TOKENS).map(([name, token]) => `--${name}:${palette[token]?.[tone] ?? ''}`);
   /* Grafite no escuro é um preenchimento claro: o texto por cima fica escuro, como no app. */
   const onAccent = id === 'graphite' && tone === 'dark' ? '#161616' : '#ffffff';
-  vars.push(`--accent:${fill[tone]}`, `--on-accent:${onAccent}`, `--bad:${BAD[tone]}`);
+  /* A marca do topo (P1) usa o tom de texto do acento, mais legível no escuro que o de preenchimento. */
+  const text = palette[`acc-${id}-text`] || fill;
+  vars.push(`--accent:${fill[tone]}`, `--accent-text:${text[tone]}`, `--on-accent:${onAccent}`, `--bad:${BAD[tone]}`);
   for (const part of TRIO_PARTS) {
     const token = palette[`trio-${id}-${part}`];
     if (!token) throw Error(`style.css sem --trio-${id}-${part}: recebido ${Object.keys(palette).length} tokens, esperado --trio-<acento>-<parte>:light-dark(...)`);
@@ -53,9 +56,9 @@ function toneVars(palette, accent, tone) {
  * Tema `auto` segue o tema do celular; `light`/`dark` fixam o da Mesa.
  * @param {{theme?: string, accent?: string, palette: Record<string, {light: string, dark: string}>}} look
  * @returns {string}
- * @example phoneLookCss({theme:'dark', accent:'green', palette}) // ':root{color-scheme:dark;...--accent:#13865e...}'
+ * @example phoneLookCss({theme:'dark', accent:'violet', palette}) // ':root{color-scheme:dark;...--accent:#8957d0...}'
  */
-function phoneLookCss({theme, accent = 'blue', palette}) {
+function phoneLookCss({theme, accent = 'graphite', palette}) {
   if (theme === 'light' || theme === 'dark') return `:root{color-scheme:${theme};${toneVars(palette, accent, theme)}}`;
   return `:root{color-scheme:light dark;${toneVars(palette, accent, 'light')}}`
     + `@media (prefers-color-scheme:dark){:root{${toneVars(palette, accent, 'dark')}}}`;

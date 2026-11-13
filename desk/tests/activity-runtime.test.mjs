@@ -19,26 +19,27 @@ const SPEC = {title: 'MRUV', objective: 'Explorar a', alternativeMarkdown: 's = 
 test('parseActivityUrl aceita o host com id+versão e recusa formatos antigos (#89)', () => {
   /* #89: o host carrega id E versão — cada revisão da mesma atividade tem
      site (e processo) próprios; o caminho é só `/index.html`. */
-  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=dark'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'dark', accent: 'blue'});
-  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'system', accent: 'blue'});
+  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=dark'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'dark', accent: 'graphite'});
+  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'system', accent: 'graphite'});
   /* A prévia do tutor usa um id temporário `pv-`; o mesmo formato de host. */
-  assert.deepEqual(parseActivityUrl('mesa-activity://pv-abc12345--v1/index.html'), {kind: 'artifact', id: 'pv-abc12345', version: 1, theme: 'system', accent: 'blue'});
-  /* #42: o acento entra no query (um dos seis da Mesa) para o quadro nascer pintado. */
-  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=light&accent=green'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'light', accent: 'green'});
+  assert.deepEqual(parseActivityUrl('mesa-activity://pv-abc12345--v1/index.html'), {kind: 'artifact', id: 'pv-abc12345', version: 1, theme: 'system', accent: 'graphite'});
+  /* #42: o acento entra no query (um dos dois da Mesa) para o quadro nascer pintado. */
+  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=light&accent=violet'), {kind: 'artifact', id: 'act-abc12345', version: 3, theme: 'light', accent: 'violet'});
+  assert.equal(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=light&accent=green'), null, 'cor removida não entra no quadro');
   assert.equal(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=light&accent=ciano'), null);
   assert.deepEqual(parseActivityUrl('mesa-activity://lib/chart.umd.min.js'), {kind: 'lib', relative: 'chart.umd.min.js'});
   assert.equal(parseActivityUrl('mesa-activity://lib/chart.umd.min.js?x=1'), null);
-  assert.equal(activityArtifactUrl('act-abc12345', 2, 'dark', 'pink'), 'mesa-activity://act-abc12345--v2/index.html?theme=dark&accent=pink');
+  assert.equal(activityArtifactUrl('act-abc12345', 2, 'dark', 'violet'), 'mesa-activity://act-abc12345--v2/index.html?theme=dark&accent=violet');
   /* Ids que contêm `-` (e até um sufixo `--v<n>` no próprio id): a versão é
      o ÚLTIMO `--v<dígitos>` do host, sem ambiguidade. */
-  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc-def--v3/index.html'), {kind: 'artifact', id: 'act-abc-def', version: 3, theme: 'system', accent: 'blue'});
-  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc--v2--v3/index.html'), {kind: 'artifact', id: 'act-abc--v2', version: 3, theme: 'system', accent: 'blue'});
+  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc-def--v3/index.html'), {kind: 'artifact', id: 'act-abc-def', version: 3, theme: 'system', accent: 'graphite'});
+  assert.deepEqual(parseActivityUrl('mesa-activity://act-abc--v2--v3/index.html'), {kind: 'artifact', id: 'act-abc--v2', version: 3, theme: 'system', accent: 'graphite'});
   assert.equal(activityArtifactUrl('act-abc--v2', 3), 'mesa-activity://act-abc--v2--v3/index.html?theme=system');
   /* Teto do host: id máximo do store (68) + `--v` + 7 dígitos = 78. O
      Chromium aceita esse host no esquema (hunt do watchdog, #89). */
   const longId = `act-${'a'.repeat(64)}`;
   assert.equal(`${longId}--v1000000`.length, 78);
-  assert.deepEqual(parseActivityUrl(`mesa-activity://${longId}--v1000000/index.html`), {kind: 'artifact', id: longId, version: 1000000, theme: 'system', accent: 'blue'});
+  assert.deepEqual(parseActivityUrl(`mesa-activity://${longId}--v1000000/index.html`), {kind: 'artifact', id: longId, version: 1000000, theme: 'system', accent: 'graphite'});
   assert.equal(parseActivityUrl(`mesa-activity://act-${'a'.repeat(65)}--v1/index.html`), null, 'id acima do store');
   assert.equal(parseActivityUrl(`mesa-activity://${longId}--v1x/index.html`), null);
   assert.equal(parseActivityUrl('mesa-activity://act-abc12345--v3/index.html?theme=blue'), null);
@@ -68,7 +69,7 @@ test('parseActivityUrl aceita o host com id+versão e recusa formatos antigos (#
 
 test('buildActivityUrl usa o host com id+versão e a origem exata (#89)', async () => {
   const {buildActivityUrl, activityOrigin} = await import('../src/activity-messages.mjs');
-  assert.equal(buildActivityUrl({id: 'act-abc12345', version: 2}, 'dark', 'pink'), 'mesa-activity://act-abc12345--v2/index.html?theme=dark&accent=pink');
+  assert.equal(buildActivityUrl({id: 'act-abc12345', version: 2}, 'dark', 'violet'), 'mesa-activity://act-abc12345--v2/index.html?theme=dark&accent=violet');
   assert.equal(buildActivityUrl({id: 'act-abc12345', version: 1}), 'mesa-activity://act-abc12345--v1/index.html?theme=system');
   assert.equal(activityOrigin({id: 'act-abc12345', version: 2}), 'mesa-activity://act-abc12345--v2');
 });

@@ -26,7 +26,7 @@ O nome é o mesmo nas duas línguas: **Summa**.
 - **PDF pelo tutor:** Lista, Apostila, Resumo, Simulado e Formulário, com prévia em A4 e revisão antes de salvar.
 - **Caderno** (Revisar hoje), **Estatísticas** de estudo, **Guia da Mesa** (⌘/) e calculadora numérica.
 - **Aba Livre** para estudo avulso, sem criar matéria; **Criar matéria** leva a conversa e os PDFs para uma aba nova.
-- Interface e tutor em **português ou inglês**, tema claro ou escuro (Grafite) e seis cores de acento.
+- Interface e tutor em **português ou inglês**, tema claro ou escuro (Grafite) e duas cores de acento (Grafite e Violeta).
 
 **Não entra:** canvas de tinta, edição de PDF, telemetria, conta na nuvem. O login acontece no app e a conta do provedor fica no OpenCode; a chave dos modelos grátis do OpenCode Zen, quando usada, fica cifrada no cofre do sistema.
 

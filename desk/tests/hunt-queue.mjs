@@ -320,6 +320,14 @@ await withArtifacts('hunt-queue',async ctx=>{
  assert.equal(before7.attachments.length,0,'a bandeja foi junto com o item');
  assert.ok(!firstLines().includes('com anexo'),'nada saiu antes de fechar');
 
+ /* Para o turno antes de fechar: fechar no meio pode reabrir a conversa como
+    entrega incerta (decisão do host) e aí o "Enviar agora" da fila recuperada
+    é recusado — a corrida que a rodada cheia pegava (#12). Parar deixa a
+    entrega terminal e a fila continua segurada, que é o que este bloco testa. */
+ await page.locator('#stop').click();
+ await toastWait(page,'a fila ficou segurada');
+ await idle();
+
  await app.close();
  app=ctx.app=await launchDesk({runtime,env});
  page=await app.firstWindow();
@@ -328,6 +336,9 @@ await withArtifacts('hunt-queue',async ctx=>{
  /* O aviso de recuperação nasce no boot e vive ~3 s: espera antes do ping. */
  await toastWait(page,'mensagens pendentes foram recuperadas');
  await statusOnline(page);
+ /* O turno interrompido no fechamento pode ainda constar aberto no boot; o
+    "Enviar agora" com o tutor ocupado só avisa e não envia (#12). */
+ await idle();
  const recovered=await strip();
  log('[fila] recuperada:',JSON.stringify(recovered));
  assert.equal(recovered.label,'Recuperadas · 2','a faixa diz que a fila veio do disco');
