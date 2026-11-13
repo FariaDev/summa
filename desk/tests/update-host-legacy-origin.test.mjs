@@ -79,7 +79,7 @@ test('update-apply: clone do mesa-de-estudos recusa antes de abrir o worker',asy
    assert.match(error.message,/update\.legacyOrigin/,'motivo novo');
    assert.match(i18n.text(error.message),/mesa-de-estudos/);
    assert.match(i18n.text(error.message),/github\.com\/FariaDev\/summa/,'diz de onde reinstalar');
-   assert.match(i18n.text(error.message),/Seus dados ficam/,'a pasta de dados não muda');
+   assert.match(i18n.text(error.message),/Não apague a pasta antiga/,'os dados podem estar na pasta antiga');
    return true;
   });
  });

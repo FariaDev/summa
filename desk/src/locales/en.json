@@ -2737,7 +2737,7 @@
   "update.ignore": "Ignore this version",
   "update.incomplete": "The update to v{version} failed and the recovery is incomplete.",
   "update.incomplete.reason": "The update to v{version} failed and the recovery is incomplete ({reason}).",
-  "update.legacyOrigin": "This installation came from the old repository (mesa-de-estudos). To keep receiving updates, install again from Summa: github.com/FariaDev/summa. Your data stays where it is.",
+  "update.legacyOrigin": "This install came from the old repository (mesa-de-estudos). To keep receiving updates, install again from Summa: github.com/FariaDev/summa. Do not delete the old folder: your data may be in it, and Summa keeps reading from there.",
   "update.log": "See the log",
   "update.none": "Up to date.",
   "update.notes": "What changed",

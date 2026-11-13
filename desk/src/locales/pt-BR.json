@@ -2737,7 +2737,7 @@
   "update.ignore": "Ignorar esta versão",
   "update.incomplete": "A atualização para v{version} falhou e a recuperação ficou incompleta.",
   "update.incomplete.reason": "A atualização para v{version} falhou e a recuperação ficou incompleta ({reason}).",
-  "update.legacyOrigin": "Esta instalação veio do repositório antigo (mesa-de-estudos). Para continuar recebendo atualizações, instale de novo a partir do Summa: github.com/FariaDev/summa. Seus dados ficam onde estão.",
+  "update.legacyOrigin": "Esta instalação veio do repositório antigo (mesa-de-estudos). Para continuar recebendo atualizações, instale de novo a partir do Summa: github.com/FariaDev/summa. Não apague a pasta antiga: seus dados podem estar nela, e o Summa continua lendo de lá.",
   "update.log": "Ver o log",
   "update.none": "Atualizada.",
   "update.notes": "O que mudou",
