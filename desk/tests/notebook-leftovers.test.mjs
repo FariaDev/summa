@@ -216,10 +216,11 @@ test('apaga a área temporária da instalação e não segue symlink nela', () =
   assert.equal(fs.readFileSync(path.join(target, 'keep.txt'), 'utf8'), 'alheio\n');
 });
 
+/* O separador é o do SO que roda o teste (CI no Windows), como no código. */
 test('pasta de plugins do Xournal++ por SO, como o instalador antigo', () => {
-  assert.deepEqual(xournalPluginDirs({platform: 'linux', env: {}, homedir: '/home/u'}), ['/home/u/.config/xournalpp/plugins']);
-  assert.deepEqual(xournalPluginDirs({platform: 'darwin', env: {XDG_CONFIG_HOME: '/xdg'}, homedir: '/Users/u'}), ['/xdg/xournalpp/plugins']);
-  assert.deepEqual(xournalPluginDirs({platform: 'linux', env: {XDG_CONFIG_HOME: 'relativo'}, homedir: '/home/u'}), ['/home/u/.config/xournalpp/plugins']);
+  assert.deepEqual(xournalPluginDirs({platform: 'linux', env: {}, homedir: '/home/u'}), [path.join('/home/u', '.config', 'xournalpp', 'plugins')]);
+  assert.deepEqual(xournalPluginDirs({platform: 'darwin', env: {XDG_CONFIG_HOME: '/xdg'}, homedir: '/Users/u'}), [path.join('/xdg', 'xournalpp', 'plugins')]);
+  assert.deepEqual(xournalPluginDirs({platform: 'linux', env: {XDG_CONFIG_HOME: 'relativo'}, homedir: '/home/u'}), [path.join('/home/u', '.config', 'xournalpp', 'plugins')]);
   assert.deepEqual(xournalPluginDirs({platform: 'win32', env: {}, homedir: 'C:/u'}), []);
   assert.equal(xournalPluginDirs({platform: 'win32', env: {LOCALAPPDATA: 'C:/u/AppData/Local'}, homedir: 'C:/u'}).length, 1);
 });
