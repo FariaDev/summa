@@ -14,9 +14,10 @@ const path=require('node:path');
  * // 'C:\\Users\\ana\\AppData\\Local\\Programs\\Summa'
  */
 function appRootFromDesk(deskDir,platform=process.platform){
- /* `path.win32` quando a plataforma vem por parâmetro (testes no Linux):
-    `path.resolve` do POSIX trata `C:\...` como nome relativo. */
- const paths=platform==='win32'?path.win32:path;
+ /* O caminho segue a plataforma injetada, não a do host: `path.resolve` do
+    POSIX trata `C:\...` como nome relativo, e o do Windows trata `/Applications`
+    como relativo ao disco (CI do Windows rodando o caso do macOS). */
+ const paths=platform==='win32'?path.win32:path.posix;
  return platform==='win32'?paths.resolve(deskDir,'..','..'):paths.resolve(deskDir,'..','..','..');
 }
 
