@@ -45,7 +45,7 @@
     "electron": "^45.3.2",
     "katex": "^0.19.1",
     "marked": "^18.1.2",
-    "pdfjs-dist": "^6.4.299"
+    "pdfjs-dist": "^6.5.438"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
