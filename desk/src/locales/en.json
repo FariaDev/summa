@@ -1976,7 +1976,6 @@
   "phone.lead": "Point the phone camera at the code. The phone must be on the same network as the computer.",
   "phone.network": "Network",
   "phone.page.camera": "Take photo",
-  "phone.page.connected": "Connected to Summa",
   "phone.page.full": "Summa already received the most photos for now. Send the message and open the code again.",
   "phone.page.gallery": "Choose from gallery",
   "phone.page.gone": "Summa stopped receiving photos. Open the code again in Summa.",

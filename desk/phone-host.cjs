@@ -200,7 +200,7 @@ function createPhoneHost(deps) {
       if (!session.seen) { session.seen = true; emitStatus(); }
       const nonce = crypto.randomBytes(12).toString('base64');
       reply(res, 200, phonePageHtml({t, lang: language(), nonce, maxMb: Math.round(core.maxFileBytes() / 1024 / 1024), lookCss: lookCss(), castCss: castCss()}), {
-        'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; img-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+        'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; font-src data:; connect-src 'self'; img-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
       });
       return;
     }

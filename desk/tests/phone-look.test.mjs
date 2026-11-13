@@ -22,6 +22,7 @@ test('tema fixo da Mesa vale no celular, sem seguir o tema do aparelho', () => {
   const dark = phoneLookCss({theme: 'dark', accent: 'violet', palette});
   assert.match(dark, /color-scheme:dark/);
   assert.match(dark, new RegExp(`--accent:${palette['acc-violet'].dark}`));
+  assert.match(dark, new RegExp(`--accent-text:${palette['acc-violet-text'].dark}`), 'a marca do topo usa o tom de texto do acento (P1)');
   assert.doesNotMatch(dark, /prefers-color-scheme/);
   const light = phoneLookCss({theme: 'light', accent: 'graphite', palette});
   assert.match(light, new RegExp(`--accent:${palette['acc-graphite'].light}`));
@@ -49,7 +50,7 @@ test('grafite no escuro leva texto escuro sobre o botão; acento desconhecido vi
 test('a página leva o :root da Mesa e o lugar das fotos enviadas', () => {
   const t = (key) => key;
   const html = phonePageHtml({t, lang: 'pt-BR', nonce: 'n', maxMb: 15, lookCss: phoneLookCss({theme: 'dark', accent: 'graphite', palette})});
-  assert.match(html, /<style nonce="n">:root\{color-scheme:dark;/);
+  assert.match(html, /<style nonce="n">@font-face[^<]*:root\{color-scheme:dark;/);
   assert.match(html, /<div id="sent"/);
   assert.match(html, /URL\.createObjectURL\(item\.file\)/, 'a prévia é feita no celular, sem buscar a foto no servidor');
 });
