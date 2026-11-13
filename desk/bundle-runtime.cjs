@@ -68,13 +68,6 @@ function stageBundlePayload(desk,dest){
  fs.mkdirSync(path.join(dest,'scripts'),{recursive:true});
  fs.copyFileSync(path.join(desk,'scripts','install-app.mjs'),path.join(dest,'scripts','install-app.mjs'));
  const nm=path.join(dest,'node_modules');fs.rmSync(nm,{recursive:true,force:true});fs.mkdirSync(nm,{recursive:true});
- /* O plugin MesaPagina do Xournal++ (#133) viaja no payload dentro de `src/`
-    (já copiado acima): o `xournal-plugin-host.cjs` o copia para a pasta de
-    plugins do Xournal++ quando o aluno pede. Fonte em
-    `desk/src/xournal-plugins/MesaPagina`; sem cópia separada, o mesmo
-    caminho serve em dev e no app empacotado. */
- const pluginSrc=path.join(desk,'src','xournal-plugins','MesaPagina');
- if(!fs.existsSync(path.join(pluginSrc,'plugin.ini')))throw Error('Fonte do plugin MesaPagina ausente: '+pluginSrc);
  const managed=[...files,...dirs,'scripts/install-app.mjs'];
  for(const pkg of packages){
   const target=path.join(nm,pkg.relative);fs.mkdirSync(path.dirname(target),{recursive:true});

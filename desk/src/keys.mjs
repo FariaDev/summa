@@ -23,7 +23,6 @@ const isMac=navigator.userAgent.includes('Mac');
 const CATALOG=[
  {id:'check',label:'keys.action.check',group:'keys.group.study',combo:'Mod+Shift+C',menu:true,keydown:true},
  {id:'ggb-check',label:'keys.action.ggb-check',group:'keys.group.study',combo:'Mod+Shift+G',menu:true,keydown:true},
- {id:'notebooks',label:'keys.action.notebooks',group:'keys.group.study',combo:'Mod+Shift+K',keydown:true},
  {id:'chat-full',label:'keys.action.chat-full',group:'keys.group.view',combo:'Mod+Shift+E',keydown:true},
  {id:'chat-toggle',label:'keys.action.chat-toggle',group:'keys.group.view',combo:'Mod+\\',menu:true,keydown:true},
  /* #122: o ⌘F/Ctrl+F da busca segue o FOCO — conversa do tutor aberta = busca da

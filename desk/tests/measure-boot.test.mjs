@@ -39,16 +39,6 @@ test('o painel de Estatísticas só entra quando é aberto', () => {
     'o studystats.core.js voltou para o caminho de partida: use src/lazy-module.mjs');
 });
 
-test('a biblioteca de cadernos só entra quando o Contexto abre', () => {
-  const report = measureBoot({root: DESK});
-  assert.ok(!report.moduleFiles.includes('src/notebooks.mjs'),
-    'o notebooks.mjs voltou para o caminho de partida: use src/notebooks-boot.mjs');
-  assert.ok(!report.moduleFiles.includes('src/notebooks-desk.mjs'),
-    'o notebooks-desk.mjs voltou para o caminho de partida: use src/notebooks-boot.mjs');
-  assert.ok(report.dynamic.some((entry) => entry.file === 'src/notebooks-desk.mjs'),
-    'a biblioteca sumiu em vez de ir para o import dinâmico: use src/notebooks-boot.mjs');
-});
-
 test('navegação, avisos, paleta e provedores OpenCode ficam fora do grafo estático', () => {
   const report = measureBoot({root: DESK});
   const dynamicFiles = report.dynamic.map((row) => row.file);

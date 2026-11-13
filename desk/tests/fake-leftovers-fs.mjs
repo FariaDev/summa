@@ -1,12 +1,13 @@
 import fs from 'node:fs';
 
-/* Fake de fs que delega ao real, grava cada chamada em `calls` e falha quando
-   `failWhen(call)` é verdadeiro — para provar a escrita atômica do plugin
-   MesaPagina (#133): a falha no meio não deixa pasta parcial nem reserva. @param {{real?: typeof fs, failWhen?: ((call: {method: string, args: unknown[]}) => boolean) | null}} options
+/* Fake nomeado do fs da limpeza dos restos de cadernos: delega ao fs real,
+   registra cada chamada e falha quando `failWhen(call)` for verdadeiro — para
+   provar que um passo com erro não derruba os outros nem toca fora dos
+   caminhos. @param {{real?: typeof fs, failWhen?: ((call: {method: string, args: unknown[]}) => boolean) | null}} options
  * @returns {{fs: typeof fs, calls: Array<{method: string, args: unknown[]}>}}
- * @example const failing = fakeFailingFs({failWhen: ({method, args}) => method === 'copyFileSync' && String(args[0]).endsWith('tamanho.lua')});
+ * @example const fake = fakeLeftoversFs({failWhen: ({method, args}) => method === 'rmSync' && String(args[0]).endsWith('ink-convert-bridge.json')});
  */
-export function fakeFailingFs({real = fs, failWhen = null} = {}) {
+export function fakeLeftoversFs({real = fs, failWhen = null} = {}) {
   const calls = [];
   const wrapped = new Proxy(real, {
     get(target, prop) {

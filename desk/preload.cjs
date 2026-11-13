@@ -338,11 +338,6 @@ const deskApi={
  firstRunResolveFolder:folder=>invoke('first-run-resolve-drop',[asString(folder,'Escolha uma pasta válida.',4096)]),
  revealCourseFolder:()=>invoke('course-reveal-folder'),
   courseLibrary:()=>invoke('course-library'),
-  notebookLibrary:()=>invoke('notebooks-list'),
-  openNotebook:payload=>{const raw=asPlain(payload,'Caderno inválido.');const page=Number.isInteger(raw.page)&&raw.page>0?raw.page:0;return invoke('notebooks-open',{courseId:asString(raw.courseId||'','Matéria inválida.',400),path:asString(raw.path||'','Caderno inválido.',4096),...(page?{page}:{})});},
-  searchNotebooks:query=>invoke('notebooks-search',asString(query,'Busca inválida.',200)),
-  notebooksInkStatus:()=>invoke('notebooks-ink-status'),
-  notebooksInkSet:payload=>{const raw=asPlain(payload,'Leitura da tinta inválida.');if(typeof raw.on!=='boolean')fail('Leitura da tinta inválida: esperado {on: boolean}.');return invoke('notebooks-ink-set',{on:raw.on});},
  pdfPageLabelsGet:p=>invoke('pdf-page-labels-get',asString(p,'PDF inválido.',4096)),
  pdfPageLabelsSave:p=>invoke('pdf-page-labels-save',asPlain(p,'Numeração inválida.')),
  layoutPresetsGet:()=>invoke('layout-presets-get'),
@@ -508,7 +503,7 @@ const deskApi={
   const listener=(_event,data)=>fn(data);ipcRenderer.on('link-confirm',listener);
   return ()=>ipcRenderer.removeListener('link-confirm',listener);
  },
- updateCheck:o=>invoke('update-check',o),updateOrigin:()=>invoke('update-origin'),updateApply:()=>invoke('update-apply'),updateResult:()=>invoke('update-result'),components:o=>invoke('components',o),xournalPluginInstall:()=>invoke('xournal-plugin-install'),toolNotices:()=>invoke('tool-notices'),toolNoticesOpened:()=>invoke('tool-notices-opened'),toolNoticePostpone:id=>invoke('tool-notice-postpone',id),toolNoticeIgnore:id=>invoke('tool-notice-ignore',id),toolUpdateRun:id=>invoke('tool-update-run',id),openExternal:url=>invoke('open-external',url),openLog:()=>invoke('open-log'),
+ updateCheck:o=>invoke('update-check',o),updateOrigin:()=>invoke('update-origin'),updateApply:()=>invoke('update-apply'),updateResult:()=>invoke('update-result'),components:o=>invoke('components',o),toolNotices:()=>invoke('tool-notices'),toolNoticesOpened:()=>invoke('tool-notices-opened'),toolNoticePostpone:id=>invoke('tool-notice-postpone',id),toolNoticeIgnore:id=>invoke('tool-notice-ignore',id),toolUpdateRun:id=>invoke('tool-update-run',id),openExternal:url=>invoke('open-external',url),openLog:()=>invoke('open-log'),
  testMode:()=>invoke('test-mode'),
  conversations:()=>invoke('conversation-list'),
  libraryChats:()=>invoke('library-chats'),

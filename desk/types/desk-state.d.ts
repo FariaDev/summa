@@ -17,7 +17,6 @@ export type DeskState = {
  tutorLanguage?: string,
  opencodeModel?: string,
  opencodePaidOk?: boolean,
- inkReading?: boolean,
  courseStates?: Record<string, CourseState>,
  modelRecents?: Record<string, Array<[string, string]>>,
  modelFavorites?: Record<string, Array<[string, string]>>,

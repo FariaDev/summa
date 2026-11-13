@@ -744,7 +744,7 @@ await withArtifacts('tabs',async ctx=>{
  assert.equal(await page.locator('#new-tab').getAttribute('title'),'Nova matéria (abre as Configurações)','o "+" é o nó da view');
  assert.deepEqual(await page.locator('#study-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['study-search-open','study-review-today','study-notes-open','study-stats-open','study-backup-open','study-share-open','study-tutor-pdf','xournal','reference-toggle'],'itens do menu Estudar na ordem (o Encerrar mora no Mais opções do tutor)');
   assert.deepEqual(await page.locator('#new-session-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['new-session-opencode','new-session-claude'],'itens da sessão nova: o motor atual primeiro (#87), sem Pi');
- assert.deepEqual(await page.locator('#chat-more-pop [role^="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['more-context','more-notebooks','end-day','export-chat','chat-collapse'],'itens do Mais opções do tutor na ordem, sem sanfona');
+ assert.deepEqual(await page.locator('#chat-more-pop [role^="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['more-context','end-day','export-chat','chat-collapse'],'itens do Mais opções do tutor na ordem, sem sanfona');
  assert.deepEqual(await page.locator('#settings-pop button[role="menuitem"]').evaluateAll(es=>es.map(e=>e.id)),['settings','help','shortcuts','release-notes','report-problem','about'],'itens do menu Ajustes na ordem');
  assert.equal(await page.locator('#course-tabs [data-icon],#study-pop [data-icon],#settings-pop [data-icon],#new-session-pop [data-icon],#chat-more-pop [data-icon]').count(),0,'o andaime data-icon sai do DOM');
  assert.equal(await page.locator('#settings-trigger svg.icon').count(),1,'o botão Ajustes é um ícone');

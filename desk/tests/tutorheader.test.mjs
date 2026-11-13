@@ -10,29 +10,27 @@ import core from '../src/generated/tutorheader.core.js';
 const nodes=(l)=>{const out=[];for(let c=l;c&&c.$==='Con';c=c.tail)out.push(c.head);return out;};
 const attrs=(node)=>{const out={};for(let a=node.attrs;a&&a.$==='Con';a=a.tail)if(!(a.head.name in out))out[a.head.name]=ptText(a.head.value);return out;};
 
-/* r2: o menu Mais opções é plano. Contexto e Cadernos abrem os painéis
-   encaixados; um fio separa as ações da sessão. Nada de sanfona. */
-test('mais opções: menu plano com Contexto, Cadernos, fio e as ações da sessão',()=>{
+/* r2: o menu Mais opções é plano. Contexto abre o painel encaixado; um fio
+   separa as ações da sessão. Nada de sanfona. */
+test('mais opções: menu plano com Contexto, fio e as ações da sessão',()=>{
  const items=nodes(core.moreItems(true));
  assert.deepEqual(items.map(node=>attrs(node).id??attrs(node).class),[
-  'more-context','more-notebooks','menu-sep','end-day','export-chat','chat-collapse'
+  'more-context','menu-sep','end-day','export-chat','chat-collapse'
  ],'itens de Mais opções, na ordem');
- const [context,notebooks,separator]=items;
+ const [context,separator]=items;
  assert.equal(attrs(context).role,'menuitem','o gatilho é um item de menu, não um menu aninhado');
  assert.equal(attrs(context)['aria-haspopup'],undefined,'a sanfona de Contexto saiu');
  assert.equal(attrs(context)['on:click'],'OpenContext','Contexto abre o painel');
  assert.equal(ptText(nodes(context.kids)[0].text),'Contexto');
- assert.equal(attrs(notebooks)['on:click'],'OpenNotebooks','Cadernos abre o painel');
- assert.equal(ptText(nodes(notebooks.kids)[0].text),'Cadernos');
  assert.equal(attrs(separator).role,'separator','o fio separa o que abre painel das ações');
  assert.equal(attrs(separator).class,'menu-sep');
 });
 
 test('mais opções: a flag endDay é o único motivo para o Encerrar por hoje sumir',()=>{
  const on=nodes(core.moreItems(true)),off=nodes(core.moreItems(false));
- assert.equal(attrs(on[3]).hidden,undefined,'Encerrar visível com a flag ligada');
- assert.equal(attrs(off[3]).hidden,'');
- for(const index of [0,1,2,4,5])assert.equal('hidden' in attrs(off[index]),false,`item ${index} não some por flag`);
+ assert.equal(attrs(on[2]).hidden,undefined,'Encerrar visível com a flag ligada');
+ assert.equal(attrs(off[2]).hidden,'');
+ for(const index of [0,1,3,4])assert.equal('hidden' in attrs(off[index]),false,`item ${index} não some por flag`);
 });
 
 /* ---------- indicador de modelo e esforço (ticket #14) ---------- */

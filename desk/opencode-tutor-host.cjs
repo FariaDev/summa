@@ -19,9 +19,6 @@ const {createOpenCodeActivityCalls} = require('./src/agents/opencode-activity-ca
 const {readOpenCodeVersion} = require('./src/agents/opencode-version.cjs');
 const {nativePersistence} = require('./src/agents/native-persistence.cjs');
 const {createOpenCodeDraftBridge} = require('./src/agents/opencode-review-draft.cjs');
-const {createOpenCodeInkBridge} = require('./src/agents/notebook-ink-bridge.cjs');
-const {createOpenCodeClient} = require('./src/agents/opencode-http.cjs');
-const {catalogModels} = require('./src/agents/opencode-catalog.cjs');
 const conversations = require('./src/agents/conversations.cjs');
 const {message} = require('./src/i18n.mjs');
 
@@ -195,27 +192,6 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
   }
 
   /**
-   * Ponte descartável da tinta do caderno (#158): mesmo servidor da Mesa,
-   * sem MCP e com sessão temporária que o `stop()` apaga. Separada do tutor.
-   * @param {{cwd?: string, selection?: {model: string|null, effort: string|null}|null}} [options]
-   * @returns {InstanceType<typeof NativeService>}
-   * @example const bridge = openCodeTutor.inkBridge({cwd, selection});
-   */
-  function inkBridge({cwd = '', selection = null} = {}) {
-    return createOpenCodeInkBridge({cwd, acquire: () => owner.acquire(), selection, readVersion, log});
-  }
-
-  /** Catálogo do `/api/model` para a fiação da tinta (#158): lista sem inferência. @returns {Promise<Array<import('./src/agents/opencode-catalog.cjs').CatalogModel>>} */
-  async function inkCatalog() {
-    try {
-      const lease = await owner.acquireAuth();
-      const client = createOpenCodeClient({baseUrl: lease.baseUrl, password: lease.password});
-      const response = await client.request('GET', '/api/model', {timeoutMs: 15000});
-      return response.ok ? catalogModels(response.payload) : [];
-    } catch { return []; }
-  }
-
-  /**
    * Dá à atividade publicada pelo MCP o id da chamada visto no SSE. Chamadas
    * de outro motor passam como vieram.
    * @param {ActivityCaller} caller
@@ -233,7 +209,7 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
     sideTokens.clear();
   }
 
-  return {connect, connectSide, draft, inkBridge, inkCatalog, identifyCaller, release, sweepAtBoot: () => owner.sweepAtBoot(), stop: () => owner.stop(), acquireAuth: () => owner.acquireAuth()};
+  return {connect, connectSide, draft, identifyCaller, release, sweepAtBoot: () => owner.sweepAtBoot(), stop: () => owner.stop(), acquireAuth: () => owner.acquireAuth()};
 }
 
 module.exports = {createOpenCodeTutorHost, mesaMcpConfig, serveBaseEnv, MCP_SERVER};
