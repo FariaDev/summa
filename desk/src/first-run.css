@@ -220,7 +220,7 @@ body[data-first-run] #setup[data-dragging] .setup-card{outline-color:var(--accen
  .setup-stage{gap:8px;padding:8px 16px;overflow:hidden}
  .setup-scene{width:92px}
  .setup-scene svg{width:92px}
- .setup-speech{font-size:var(--fs-speech)}
+ .setup-speech{font-size:var(--fs-md)}
  .setup-card{padding-top:16px;padding-bottom:16px;flex:1 1 auto;min-height:0}
  .setup-step{gap:8px}
  .setup-trail{margin-bottom:12px}
