@@ -5,6 +5,7 @@ import core from './generated/composerview.core.js';
 import pendingCore from './generated/pending.core.js';
 import {createQueueRetry} from './queue-retry.mjs';
 import {steerQueuedOutcome,restoreQueuedAt} from './queue-steer.mjs';
+import {sendNowState} from './queue-send-now.mjs';
 import {build,renderChildren,preserveFocus} from './view-host.mjs';
 import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
@@ -176,6 +177,9 @@ const handlers={
  sendNow(){
   if(!queue.length)return;
   if(S.busy){toast(message('queue.busyNow'));return;}
+  /* Incerteza não é do turno; reenviar poderia duplicar a fala que talvez tenha
+     chegado — o botão já nasce desligado (#36). */
+  if(sendNowState({held,count:queue.length,uncertain:!!S.uncertain}).blocked){toast(message('queue.sendNowBlocked'));return;}
   retries.reset();
   held=false;
   recovered=false;
@@ -222,10 +226,6 @@ function closeQueueStrip(strip){
  setTimeout(done,180);
 }
 
-/* "Enviar agora" aparece sempre que a fila está segurada: o clique é quem
-   decide (com o Pi ocupado, ele explica em vez de enviar). */
-function canSendNow(){return held&&queue.length>0;}
-
 /* O rótulo da faixa: com o tutor sem atender ela diz "Guardada. Vai quando ele
    atender."; recuperada continua dizendo de onde veio (decisão do núcleo). */
 let shownLabel='';
@@ -251,7 +251,8 @@ function renderQueue(){
  if(editingId&&!queue.some(item=>item.id===editingId)){editingId='';editDraft='';}
  const many=queue.length>1;
  shownLabel=currentLabel(many);
- const tree=core.queueStripView(false,shownLabel,listOf(queue.map(rowOf)),canSendNow(),queue.length>1);
+ const actions=sendNowState({held,count:queue.length,uncertain:!!S.uncertain});
+ const tree=core.queueStripView(false,shownLabel,listOf(queue.map(rowOf)),actions.visible,queue.length>1);
  let strip=current;
  if(!strip){
   strip=build(tree,handlers);
@@ -263,6 +264,12 @@ function renderQueue(){
  }
  /* O × é ícone, como os da mensagem; nome acessível e dica vêm do núcleo. */
  for(const button of strip.querySelectorAll('.queue-remove'))button.innerHTML=icon('close');
+ /* Conversa incerta: ação à vista, desligada, com o motivo e a saída (Limpar) (#36). */
+ const sendNow=strip.querySelector('.queue-send-now');
+ if(sendNow&&actions.blocked){
+  sendNow.disabled=true;
+  sendNow.title=t('queue.sendNowBlocked');
+ }
  const input=editingId?strip.querySelector('.queue-edit'):null;
  if(input)input.addEventListener('input',()=>{editDraft=input.value;persist();});
  if(input&&editingId&&editJustStarted){
