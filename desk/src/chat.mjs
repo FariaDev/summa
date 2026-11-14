@@ -725,14 +725,20 @@ window.desk.onEvent(e=>{
     retry/overload/recusa/fallback (`claudeActivityNotice`) ganham faixa e toast
     concisos, deduplicados por aviso. É só visibilidade — nada aqui mexe em
     busy, conexão, fila nem reenvia; o console genérico (inclusive Pi) continua
-    igual para o que não for reconhecido. */
+    igual para o que não for reconhecido.
+    As ferramentas da Summa fora da conversa (#55) são a exceção visível: o
+    `OPENCODE_MCP_FAILED` vira toast com o texto do próprio evento (o mesmo do
+    aviso ao tutor), uma vez por conexão — o adaptador só o emite no bind. */
  if(e.type==='desk_warn'){
   console.warn('Tutor:',e.message);
-  const limit=claudeLimitNotice(e);
-  if(limit)applyLimitNotice(limit,e);
+  if(e.code==='OPENCODE_MCP_FAILED')toast(e.message);
   else{
-   const notice=claudeActivityNotice(e);
-   if(notice)applyActivityNotice(notice,e);
+   const limit=claudeLimitNotice(e);
+   if(limit)applyLimitNotice(limit,e);
+   else{
+    const notice=claudeActivityNotice(e);
+    if(notice)applyActivityNotice(notice,e);
+   }
   }
  }
  /* `fatal:false` nativo = a consulta continua utilizável (retry/result à

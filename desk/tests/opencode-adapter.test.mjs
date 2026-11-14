@@ -115,7 +115,7 @@ test('MCP que responde failed fica no log, avisa e o prompt do tutor leva a linh
   assert.ok(!line.line.includes(PASSWORD), 'sem segredo no log');
   const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
   assert.ok(warning, 'o aviso OPENCODE_MCP_FAILED chegou');
-  assert.deepEqual(parseMessage(warning.message), {key: 'opencode.mcp.failed', args: {status: 'failed'}});
+  assert.deepEqual(parseMessage(warning.message), {key: 'opencode.mcp.failed', args: {reason: 'opencode.mcp.reason.refused'}});
   const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
   assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_PT}`);
   assert.match(put.body.value, /não estão disponíveis nesta sessão/);
@@ -134,7 +134,7 @@ test('MCP recusado no PUT registra o HTTP no log e o tutor recebe a linha de ind
   const line = logs.find((item) => item.area === 'opencode' && item.line.includes('MCP mesa'));
   assert.match(line.line, /^MCP mesa não conectou em \d+ ms: HTTP 500$/);
   const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
-  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed', args: {status: '500'}});
+  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed.http', args: {status: '500'}});
   const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
   assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_PT}`);
 });
@@ -152,7 +152,7 @@ test('MCP que nunca conecta estoura o prazo injetado e o tutor recebe a linha de
   assert.match(line.line, /^MCP mesa não conectou em \d+ ms: timeout$/);
   assert.ok(Number(line.line.match(/em (\d+) ms/)?.[1]) < 2000, 'o log mostra o prazo curto, não 10 s');
   const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
-  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed', args: {status: 'timeout'}});
+  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed', args: {reason: 'opencode.mcp.reason.timeout'}});
   assert.equal(adapter.mcpUnavailable, true);
   const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
   assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_EN}`);
