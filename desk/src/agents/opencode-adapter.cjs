@@ -34,6 +34,7 @@ const {OpenCodeEventReader} = require('./opencode-events.cjs');
 const {CompactionTracker, runCompaction} = require('./opencode-compaction.cjs');
 const {listCommands} = require('./opencode-commands.cjs');
 const {OpenCodeControls} = require('./opencode-controls.cjs');
+const {registerMesaMcp} = require('./opencode-mcp.cjs');
 const {allMessages, messageList, normalizeHistory} = require('./opencode-history.cjs');
 const {reinsertMarkedImages} = require('../marked-pages.mjs');
 const {publishSessionInstructions} = require('./opencode-instructions.cjs');
@@ -41,7 +42,7 @@ const {markTutorPrompt, visibleHistory} = require('./tutor-prompt-text.mjs');
 const {contextUsage} = require('./opencode-usage.cjs');
 const {WIRE_SESSION_RE, wireMessageId} = require('./opencode-ids.cjs');
 const {materializeImages} = require('./opencode-images.cjs');
-const {PROMPT_TIMEOUT_MS, admitTurn, failure, inboxUser, redactErrorDetail, stringStatus} = require('./opencode-delivery.cjs');
+const {PROMPT_TIMEOUT_MS, admitTurn, failure, inboxUser, redactErrorDetail} = require('./opencode-delivery.cjs');
 const {trackDelivery, cancel: cancelAdapter, cancelledAcceptance: settleCancelledAcceptance} = require('./opencode-cancel.cjs');
 const {createTurnGuard} = require('./opencode-turn-guard.cjs');
 const {readOpenCodeVersion, oldOpenCode} = require('./opencode-version.cjs');
@@ -53,7 +54,8 @@ const {message} = require('../i18n.mjs');
  * @typedef {{conversationId?: string, sessionId: string, acquire: () => Promise<ServeLease>, directory: string,
  *   resume?: boolean, systemPrompt?: string, onSessionId?: (id: string) => unknown, sessionTitle?: string, selection?: unknown, fetch?: typeof globalThis.fetch,
  *   persistDelivery?: (patch: {id: string, status: string}) => unknown, log?: (area: string, line: string) => void,
- *   mcpConfig?: () => Record<string, unknown>|null, compactTimeoutMs?: number,
+ *   mcpConfig?: () => Record<string, unknown>|null, mcpTimeoutMs?: number, mcpPollMs?: number,
+ *   mcpUnavailableNote?: () => string, compactTimeoutMs?: number,
  *   cancelAcquire?: () => void, readVersion?: (binary: string) => Promise<string>, deleteSessionOnStop?: boolean}} OpenCodeAdapterOptions
  */
 
@@ -70,6 +72,9 @@ class OpenCodeAdapter extends EventEmitter {
     /** @type {''|'channel'|'prefix'|'none'} vazio até o `bind` publicar o prompt */
     this.instructionMode = '';
     this.prefixArmed = false;
+    /* O MCP `mesa` da pasta: false quando o registro falhou ou o handshake
+       não chegou a `connected` (#55). */
+    this.mcpUnavailable = false;
     /** @type {ServeLease|null} */
     this.lease = null;
     /** @type {OpenCodeClient|null} */
@@ -208,10 +213,21 @@ class OpenCodeAdapter extends EventEmitter {
     if (!response.ok) throw failure('err.opencode.modelRefused', {status: response.status, model: `${ref.providerID}/${ref.id}`}, {notSent: true, status: response.status});
   }
 
+  /* Prompt do tutor: as instruções da Mesa e, quando o MCP `mesa` não entrou
+     nesta sessão, a linha curta de indisponibilidade (#55). A frase vem do
+     idioma do tutor no host; sem ela, o prompt segue como sempre. */
+  tutorPrompt() {
+    const prompt = String(this.options.systemPrompt || '').trim();
+    if (!this.mcpUnavailable) return prompt;
+    let note = '';
+    try { note = String(this.options.mcpUnavailableNote?.() || '').trim(); } catch { /* sem nota: o prompt segue como sempre */ }
+    return [prompt, note].filter(Boolean).join('\n\n');
+  }
+
   /* Canal de instruções. Falha (404 do binário antigo, 413, rede) não derruba
      o estudo: o envio leva o prompt marcado e a leitura o tira. */
   async publishTutorPrompt() {
-    const prompt = String(this.options.systemPrompt || '');
+    const prompt = this.tutorPrompt();
     this.prefixArmed = false;
     if (!prompt) { this.instructionMode = 'none'; return; }
     const ok = await publishSessionInstructions(this.http().request, this.sessionId, prompt).catch(() => false);
@@ -219,46 +235,23 @@ class OpenCodeAdapter extends EventEmitter {
   }
 
   /* As ferramentas da Mesa (GeoGebra, atividades) entram como MCP `mesa` na
-     pasta da conversa. Falhar aqui não derruba o estudo: só avisa. */
+     pasta da conversa. Falhar aqui não derruba o estudo: o resultado vai ao
+     log e a indisponibilidade acompanha o prompt do tutor (#55). */
   async registerMcp() {
     const config = this.options.mcpConfig?.() || null;
+    this.mcpUnavailable = false;
     if (!config) return;
-    const response = await this.http().request('PUT', '/api/experimental/mcp/mesa', {body: {config}, query: this.location()}).catch((error) => ({ok: false, status: 0, error}));
-    if (!response.ok) {
-      this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: message('opencode.mcp.failed', {status: response.status})});
-      return;
-    }
-    await this.waitMcpConnected();
-  }
-
-  /* O PUT só enfileira o MCP; no macOS o handshake pode terminar depois do
-     retorno. Sem esperar, a sessão nasce e o primeiro prompt vai sem as
-     ferramentas da Mesa (o modelo vê só `skill`). Espera o estado `connected`
-     por até 10 s; falha não derruba o estudo, só avisa. O `/api/mcp` real não
-     lista as ferramentas (2.2.4 e 2.2.5): esperar por elas gastava os 10 s em
-     toda conexão e dava um aviso falso (regressão da 596ecc4). */
-  async waitMcpConnected() {
-    const deadline = Date.now() + 10000;
-    while (Date.now() < deadline) {
-      const status = await this.http().request('GET', '/api/mcp', {query: this.location()})
-        .then((reply) => {
-          const payload = /** @type {{data?: unknown}} */ (reply?.payload);
-          const items = Array.isArray(payload?.data) ? payload.data : [];
-          const mesa = items.find((item) => String(item?.name || '') === 'mesa');
-          return typeof mesa?.status === 'string' ? mesa.status : stringStatus(mesa?.status);
-        })
-        .catch(() => '');
-      if (status === 'connected' || status === 'ready') {
-        /* O status conecta antes de o catálogo de ferramentas da sessão
-           aparecer no primeiro prompt; um quadro de folga fecha essa janela. */
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        return true;
-      }
-      if (status === 'failed' || status === 'error') break;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: message('opencode.mcp.failed', {status: 'timeout'})});
-    return false;
+    const outcome = await registerMesaMcp({
+      request: this.http().request,
+      location: () => this.location(),
+      config,
+      log: (line) => this.log('opencode', line),
+      timeoutMs: this.options.mcpTimeoutMs,
+      pollMs: this.options.mcpPollMs,
+    });
+    this.mcpUnavailable = !outcome.connected;
+    if (outcome.connected) return;
+    this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: message('opencode.mcp.failed', {status: outcome.status})});
   }
 
   /* ---------- eventos ---------- */
@@ -377,7 +370,7 @@ class OpenCodeAdapter extends EventEmitter {
     const steer = input.delivery === 'steer' && this.busy && Boolean(this.turn);
     let text = String(input.text || '');
     const marked = this.instructionMode === 'prefix' && !this.prefixArmed && Boolean(this.options.systemPrompt);
-    if (marked) { this.prefixArmed = true; text = markTutorPrompt(String(this.options.systemPrompt), text); }
+    if (marked) { this.prefixArmed = true; text = markTutorPrompt(this.tutorPrompt(), text); }
     const files = this.files(input.images);
     const body = {id: wireMessageId(id), text, resume: true, ...(input.delivery === 'steer' ? {delivery: 'steer'} : {}), ...(files.length ? {files} : {})};
     /* Recusa comprovada desfaz a marca: a retentativa ainda leva as instruções. */
@@ -412,7 +405,7 @@ class OpenCodeAdapter extends EventEmitter {
 
   async history() {
     await this.connect();
-    const native = visibleHistory(normalizeHistory(await allMessages(this.http().request, this.route('/message'))), String(this.options.systemPrompt || ''));
+    const native = visibleHistory(normalizeHistory(await allMessages(this.http().request, this.route('/message'))), this.tutorPrompt());
     return reinsertMarkedImages(native, this._priorMessages || []); /* #113: servidor é a base; do descritor só voltam as páginas marcadas. */
   }
 

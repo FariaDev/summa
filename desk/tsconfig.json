@@ -149,6 +149,7 @@
   "src/agents/opencode-compaction.cjs",
   "src/agents/opencode-controls.cjs",
   "src/agents/opencode-adapter.cjs",
+  "src/agents/opencode-mcp.cjs",
   "src/agents/opencode-cancel.cjs",
   "src/agents/opencode-delivery.cjs",
   "src/agents/opencode-turn-guard.cjs",
