@@ -62,10 +62,11 @@ PDFs, calculadora e o chat com o tutor funcionam. **Conferir Xournal++** captura
 
 ### Passos
 
-1. Node **20** ou mais novo para o setup a partir do código; o app e o MCP rodam no Node do Electron.
-2. No diretório `desk/`: `npm ci`, `npm run setup`, `npm start`.
-3. Xournal++ é opcional. Se instalado, indique o `xournalpp.exe` em **Configurações** — a Mesa procura em `C:\Program Files\Xournal++\bin` e `%LOCALAPPDATA%\Programs\Xournal++\bin`, e o campo fica visível mesmo sem caminho (para configurar).
-4. No Windows, `npm run install-app` instala por usuário em `%LOCALAPPDATA%\Programs\Summa` (sem admin e sem mexer no PATH), cria o atalho do menu Iniciar com o ícone e o AppUserModelId da Summa e registra a desinstalação em "Aplicativos instalados". O `Summa.app` continua sendo o bundle de macOS.
+1. Microsoft Visual C++ Redistributable x64 — o Electron não baixa sem ele; se faltar, o `npm run setup` avisa com o link ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
+2. Node **20** ou mais novo para o setup a partir do código; o app e o MCP rodam no Node do Electron.
+3. No diretório `desk/`: `npm ci`, `npm run setup`, `npm start`.
+4. Xournal++ é opcional. Se instalado, indique o `xournalpp.exe` em **Configurações** — a Mesa procura em `C:\Program Files\Xournal++\bin` e `%LOCALAPPDATA%\Programs\Xournal++\bin`, e o campo fica visível mesmo sem caminho (para configurar).
+5. No Windows, `npm run install-app` instala por usuário em `%LOCALAPPDATA%\Programs\Summa` (sem admin e sem mexer no PATH), cria o atalho do menu Iniciar com o ícone e o AppUserModelId da Summa e registra a desinstalação em "Aplicativos instalados". O `Summa.app` continua sendo o bundle de macOS.
 
 ### Checklist de teste manual (máquina Windows real)
 
