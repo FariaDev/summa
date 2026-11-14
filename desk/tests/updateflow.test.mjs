@@ -632,7 +632,10 @@ test('D3/A4: PID que sai normalmente destrava a aplicação', async () => {
  const root = fakeInstallRoot();
  write(path.join(root, 'desk', 'package.json'), '{"version":"0.3.9"}'); /* abaixo da anunciada: a trava anti-rollback deixa passar */
  const runtime = tmp();
-  const child = require('node:child_process').spawn('sleep', ['0.2']);
+  /* Filho do próprio Node, não `sleep`: num Windows sem as ferramentas do Git
+     não há `sleep`, o pid vinha indefinido e o kill() lançava EINVAL (VM, #47). */
+  const child = require('node:child_process').spawn(process.execPath, ['-e', 'setTimeout(()=>{},200)']);
+  assert.ok(child.pid, 'o filho que segura o PID nasceu');
   const zip = makeZip({'x/desk/main.cjs': 'main novo', 'x/desk/package.json': '{"version":"0.4.0"}'});
   const release = makeSignedRelease({version: '0.4.0', commit: TEST_COMMIT, zip});
   const result = await updater.applyUpdate({
@@ -645,7 +648,7 @@ test('D3/A4: PID que sai normalmente destrava a aplicação', async () => {
   });
   assert.equal(result.ok, true, 'com o PID saído o update aplica');
   assert.equal(read(path.join(root, 'desk', 'main.cjs')), 'main novo');
-  child.kill();
+  if (child.exitCode === null) child.kill();
 });
 
 /* ---------- #80: atualização assinada ---------- */
