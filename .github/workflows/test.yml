@@ -131,6 +131,19 @@ jobs:
       - name: Testes de janela (fatia ${{ matrix.shard }}/4)
         run: npm run ui -- --jobs 2 --exclude i18n-en-leaks,pi-opcional,stream-motion,switch-engine --shard ${{ matrix.shard }}/4
 
+      # `withArtifacts` grava a falha em `desk/tests/artifacts/<data>-<nome>`
+      # (runtime, desk.json e screenshot), mas o corredor não subia a pasta: a
+      # falha intermitente do Windows chegava sem captura (#1). Roda depois de
+      # qualquer passo que falhe, inclusive o dos motores pesados.
+      - name: Capturas da falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-${{ runner.os }}-fatia-${{ matrix.shard }}
+          path: desk/tests/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
   bend:
     name: bend (toolchain fixada)
     runs-on: ubuntu-latest
