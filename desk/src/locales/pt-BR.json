@@ -1977,6 +1977,7 @@
   "queue.retriesExhausted": "As tentativas acabaram — a fila ficou guardada.",
   "queue.retry": "Falha no envio. Nova tentativa {count}/{max} em {seconds}s.",
   "queue.sendNow": "Enviar agora",
+  "queue.sendNowBlocked": "A entrega anterior está incerta — a fila não volta a enviar nesta conversa. Abra outra sessão para continuar; a fila fica aqui, e Limpar descarta.",
   "queue.sendNowTitle": "Enviar a fila agora, sem esperar o fim do turno",
   "queue.steerNow": "Enviar agora",
   "queue.steerNowTitle": "Interromper a resposta e enviar agora (⌘⏎)",
