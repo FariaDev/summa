@@ -41,6 +41,8 @@ test('atalho do Iniciar leva alvo, ícone da Mesa e AppUserModelId (#181, #178)'
   /* O WScript.Shell não grava o AUMID; o IPropertyStore entra por C# inline. */
   assert.match(script, /IPropertyStore/);
   assert.match(script, /9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3/);
+  // Regressão (PR #17, VM Win11): com Load(..., 0) o SetValue dava STG_E_ACCESSDENIED.
+  assert.match(script, /file\.Load\(shortcutPath, 2\)/, 'o .lnk abre em leitura/escrita (STGM_READWRITE)');
 });
 
 test('aspas e espaços nos caminhos não quebram o PowerShell (#181)', () => {

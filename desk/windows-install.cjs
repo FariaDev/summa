@@ -92,7 +92,9 @@ public static class MesaShortcut {
   public static void SetAppUserModelId(string shortcutPath, string appId) {
     var link = (IShellLinkW)new ShellLink();
     var file = (IPersistFile)link;
-    file.Load(shortcutPath, 0);
+    // 2 = STGM_READWRITE: com 0 (só leitura) o SetValue falha com STG_E_ACCESSDENIED
+    // e o install-app aborta antes da chave de desinstalação (VM Win11 26100, PR #17).
+    file.Load(shortcutPath, 2);
     var store = (IPropertyStore)link;
     var key = new PROPERTYKEY();
     key.fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
