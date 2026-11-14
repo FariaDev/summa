@@ -832,7 +832,14 @@ async function runAsBinary(argv) {
   /* A triagem chama o CLI como a pessoa: `--version` e `models`. A guarda só
      nasce no modo `serve`: um timer aqui seguraria esses comandos curtos
      abertos para sempre. */
-  if (argv[0] === '--version') { process.stdout.write('2.2.4\n'); return; }
+  if (argv[0] === '--version') {
+    /* Atraso de teste na leitura da versão: mantém o envio na fase anterior à
+       admissão, onde o `composer-box-ui` prova o Parar (#1). */
+    const delay = Number(process.env.FAKE_OPENCODE_VERSION_DELAY_MS || 0);
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    process.stdout.write('2.2.4\n');
+    return;
+  }
   if (argv[0] === 'models') {
     for (const model of modelsFromEnv()) process.stdout.write(`${model.providerID}/${model.id}\n`);
     return;

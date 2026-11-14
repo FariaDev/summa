@@ -599,6 +599,42 @@ await withArtifacts('composer-box',async ctx=>{
  assert.deepEqual(errors,[],`erros de página: ${JSON.stringify(errors)}`);
 });
 
+/* ---------- 10b. Parar no meio do envio: o aviso da fila sobrevive (#1) ---------- */
+await withArtifacts('composer-box-parar-no-envio',async ctx=>{
+ const runtime=ctx.runtime=newRuntime('composerstop');
+ const course=seedCourse(runtime,'calc');
+ writeConfigJson(runtime,{runtimePath:runtime,vaultPath:runtime,courses:[{id:'calc',name:'Cálculo I',path:course}]});
+ writeDeskJson(runtime,{courseId:'calc',courseStates:{calc:{}}});
+ /* O fake atrasa a leitura da versão (`FAKE_OPENCODE_VERSION_DELAY_MS`), que
+    todo `connect` do envio faz: o Parar chega antes de o motor receber, que é
+    o caminho da corrida do Windows — o catch do envio cancelado não pode
+    trocar o aviso da fila por um erro de cancelamento (#1). */
+ const env={...captureFixtureEnv(runtime),FAKE_OPENCODE_VERSION_DELAY_MS:'1200'};
+ const app=ctx.app=await launchDesk({runtime,env});
+ const page=await app.firstWindow();
+ await size(app,page,900,650);
+ await statusOnline(page);
+ await freezeMotion(page);
+ await page.evaluate(()=>{
+  window.__toasts=[];
+  new MutationObserver(()=>window.__toasts.push(document.querySelector('#toast').textContent)).observe(document.querySelector('#toast'),{subtree:true,childList:true,attributes:true});
+ });
+ await page.locator('#prompt').fill('pergunta com envio lento');
+ await page.locator('#send').click();
+ await page.waitForFunction(()=>!document.querySelector('#stop').hidden,undefined,{timeout:5000});
+ await page.locator('#prompt').fill('na fila antes do Parar');
+ await page.locator('#prompt').press('Enter');
+ await page.waitForSelector('.queue-item');
+ await page.locator('#stop').click();
+ await toastWait(page,'a fila ficou segurada');
+ /* O envio cancelado só rejeita depois da leitura atrasada da versão: esperar
+    o Enviar voltar deixa os avisos assentados para ler o histórico. */
+ await sendEnabled(page);
+ const toasts=await page.evaluate(()=>window.__toasts);
+ assert.ok(toasts.some(text=>text.includes('a fila ficou segurada')),`o aviso da fila aparece (${JSON.stringify(toasts)})`);
+ assert.deepEqual(toasts.filter(text=>text.includes('Chamada ao tutor cancelada')),[],`o Parar não troca o aviso da fila por um erro de cancelamento (${JSON.stringify(toasts)})`);
+});
+
 /* ---------- 11. as flags do config.json somem com os controles ---------- */
 await withArtifacts('composer-box-flags',async ctx=>{
  const runtime=ctx.runtime=newRuntime('composerflags');

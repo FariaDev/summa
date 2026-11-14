@@ -339,7 +339,11 @@ export async function send(text,images,options={}){
   if(knownNotSent)userMessage?.remove();
   if(fromComposer&&!$('#prompt').value){$('#prompt').value=text;save();}
   options.onFailure?.(safe);
-  setBusy(false);toastFailure(e);return false;
+  setBusy(false);
+  /* O Parar do usuário já tem a resposta na tela (o turno fecha e, com fila,
+     o aviso da faixa); repetir a causa como erro só apaga esse aviso (#1). */
+  if(!attempt.stopped)toastFailure(e);
+  return false;
  }finally{
   if(sendAttempt===attempt)sendAttempt=null;
   if(S.sendAttemptId===attemptId)S.sendAttemptId='';
@@ -423,6 +427,10 @@ installQuoteListeners();
    incerteza é da conversa (o host a mantém até outra conversa). */
 window.addEventListener('desk-stop',()=>{
  turnState.stoppedTurn=true;S.turnCancelled=true;if(turnState.turnLog)settleTurn({reason:'stopped'});
+ /* Parar é decisão da pessoa: o envio em voo não vira aviso de erro depois.
+    Sem a marca, o catch do `send` mostrava "Chamada ao tutor cancelada" e
+    trocava o aviso "a fila ficou segurada" da faixa (#1). */
+ if(sendAttempt)sendAttempt.stopped=true;
  /* Envio ainda no connect do renderer: aborta o connect e não deixa o prompt
     sair depois. O serviço recebe o mesmo id e desiste se o prompt já foi. */
  if(sendAttempt&&sendAttempt.stage!=='prompt'){
