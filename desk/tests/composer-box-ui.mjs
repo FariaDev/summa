@@ -302,13 +302,30 @@ await withArtifacts('composer-box',async ctx=>{
  assert.equal(await page.locator('.queue-item .queue-remove svg.icon').count(),1,'o remover é ícone');
  assert.equal(await page.locator('.queue-item .queue-remove').getAttribute('aria-label'),'Remover da fila');
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'com uma mensagem só, sem Limpar');
- await page.locator('.queue-remove').focus();
- const removeFocus=await page.locator('.queue-remove').evaluate(el=>getComputedStyle(el).outlineStyle);
- assert.notEqual(removeFocus,'none','o × mostra o foco do teclado');
+ /* Foco do teclado no ×: focar e ler no MESMO evaluate. A faixa re-renderiza
+    quando o turno confirma (desk-busy/engine-facts) e o preserveFocus não acha
+    o × (sem key/id, `src/queue.mjs`); entre dois roundtrips do Playwright o nó
+    focado podia ser trocado e o outline vinha "none" (#1). */
+ const removeFocus=await page.evaluate(()=>{
+  const el=document.querySelector('.queue-remove');
+  if(!el)return null;
+  el.focus();
+  return {focused:document.activeElement===el,outline:getComputedStyle(el).outlineStyle};
+ });
+ assert.ok(removeFocus,'a faixa da fila mostra o ×');
+ assert.equal(removeFocus.focused,true,'o foco do teclado fica no × da fila');
+ assert.notEqual(removeFocus.outline,'none','o × mostra o foco do teclado');
  await page.locator('#prompt').fill('segunda guardada e bem comprida para a linha cortar com reticências em vez de esticar a caixa');
  await page.locator('#prompt').press('Enter');
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===2);
  assert.equal(await page.locator('.queue-clear').isVisible(),true,'com duas mensagens, Limpar entra no cabeçalho');
+ /* Parar JÁ: o turno do fake dura 15 s (`FAKE_OPENCODE_QUEUE_HOLD_MS`) e, se
+    ele terminasse antes deste clique, o `desk-idle` mandaria a fila sozinho e
+    não haveria o que segurar — era a corrida do aviso no Windows (#1). As
+    medidas da faixa abaixo rodam com a fila segurada, sem depender do relógio. */
+ await page.locator('#stop').click();
+ await toastWait(page,'a fila ficou segurada');
+ await idle();
  /* A linha é re-renderizada quando a fila confirma o item; medir por locator
     pode pegar o span já desanexado (getComputedStyle vazio). Espera o item
     comprido existir e lê tudo no mesmo evaluate (#12). */
@@ -322,9 +339,6 @@ await withArtifacts('composer-box',async ctx=>{
  await page.locator('.queue-remove').nth(1).click();
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===1);
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'de volta a uma mensagem, Limpar sai');
- await page.locator('#stop').click();
- await toastWait(page,'a fila ficou segurada',{timeout:20000});
- await idle();
  const ids=await sessionIds(page);
  const otherId=ids.find(id=>id===other);
  assert.ok(otherId,'a outra sessão aparece na lista');
