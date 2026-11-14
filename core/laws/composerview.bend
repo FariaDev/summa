@@ -49,6 +49,9 @@ law composer_send_now_hidden_attr:
 law composer_clear_class:
   {V.attrGet(V.attrsOf(C.queueClearBtn(True{})), "class") == Some{"queue-clear"} : Maybe<&2, String>}
 
+law composer_clear_key:
+  {V.attrGet(V.attrsOf(C.queueClearBtn(True{})), "key") == Some{"queue-clear"} : Maybe<&2, String>}
+
 law composer_clear_click:
   {V.attrGet(V.attrsOf(C.queueClearBtn(True{})), "on:click") == Some{"clear"} : Maybe<&2, String>}
 
@@ -182,7 +185,10 @@ law composer_head_actions_class:
   {V.attrGet(V.attrsOf(kid(C.queueHeadView(M.msg("queue.queued"), False{}, False{}), 1n)), "class") == Some{"queue-actions"} : Maybe<&2, String>}
 
 law composer_remove_class:
-  {V.attrGet(V.attrsOf(C.queueRemoveBtn(True{})), "class") == Some{"queue-remove"} : Maybe<&2, String>}
+  {V.attrGet(V.attrsOf(C.queueRemoveBtn("fila-1", True{})), "class") == Some{"queue-remove"} : Maybe<&2, String>}
+
+law composer_remove_key:
+  {V.attrGet(V.attrsOf(C.queueRemoveBtn("fila-1", True{})), "key") == Some{"fila-1"} : Maybe<&2, String>}
 
 law composer_send_now_text:
   {kidText(C.queueSendNowBtn(True{}), 0n) == M.msg("queue.sendNow") : String}
