@@ -242,7 +242,11 @@ if(bootFree)hydrateFreeRecord(bootFree);/* depois dos hosts: a hidratação perg
 function captureHelper(){return [path.join(__dirname,'..','visual-check','windows'),path.join(installRoot(),'visual-check','windows')].filter(Boolean).find(p=>fs.existsSync(p));}
 /* A captura existe no macOS (helper visual-check + screencapture -l) e no
    Windows (PowerShell/.NET do sistema — capture-win.cjs); fora disso, some. */
-function captureAvailable(){return (TEST_MODE&&!!process.env.LEARNING_DESK_CAPTURE_FIXTURE)||process.platform==='win32'||(process.platform==='darwin'&&!!captureHelper());}
+function windowCaptureAvailable(){return (TEST_MODE&&!!process.env.LEARNING_DESK_CAPTURE_FIXTURE)||process.platform==='win32'||(process.platform==='darwin'&&!!captureHelper());}
+/* Com um Ambitus pendurado na ponte o Conferir pede a página a ele, em qualquer plataforma (conferir-host.cjs); a ponte troca isto ao subir. */
+let ambitusLinked=()=>false;
+function captureAvailable(){return windowCaptureAvailable()||ambitusLinked();}
+function captureAvailabilityPayload(){return {captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked()};}
 
 function validPdf(p){if(typeof p!=='string'||!allowed.has(p))throw Error(message('err.pdf.pick'));return p;}
 /* chat lateral: o gerenciador mora em sidechat-host.cjs; o main entrega o que
@@ -393,7 +397,7 @@ async function prepareTutorMaterial(scope,{title,markdown,modelo,opcoes,signal}=
 
 
 
-const deskMenu=createDeskMenu({live,Menu,captureAvailable});
+const deskMenu=createDeskMenu({live,Menu,captureAvailable,writingApp:()=>ambitusLinked()?'Ambitus':'Xournal++'});
 deskMenu.register(ipcMain);
 const {buildMenu}=deskMenu;
 
@@ -471,7 +475,7 @@ ipcMain.handle('switch-course',async(_e,id)=>withHostNav(async()=>{
  persist();stopBridge();applyCourse(id);persist();return initialData();
 }));
 /* PDFs e imagens da mesa (open-pdf … open-image): pdf-host.cjs, mesma posição de registro. */
-registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const ambitusBridge=require('./ambitus-bridge-wiring.cjs').registerAmbitusBridge({ipcMain,runtime,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,engine,openCodeTutor,language:()=>languageHost.tutorLanguage()==='en'?'en':'pt-BR',allowSender:trustedMainSender,allowedXopp,win:()=>win,readNotebook:raw=>live.readTutorNotebook(raw),log:line=>appendLog('ambitus',line)});
+registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const ambitusBridge=require('./ambitus-bridge-wiring.cjs').registerAmbitusBridge({ipcMain,runtime,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,engine,openCodeTutor,language:()=>languageHost.tutorLanguage()==='en'?'en':'pt-BR',allowSender:trustedMainSender,allowedXopp,win:()=>win,readNotebook:raw=>live.readTutorNotebook(raw),log:line=>appendLog('ambitus',line),onLinkChange:()=>{if(win&&!win.isDestroyed()){buildMenu();win.webContents.send('capture-availability',captureAvailabilityPayload());}}});ambitusLinked=ambitusBridge.linked;
 ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
  assertNoNav();
  return chatPdfHost.attach(rawPath);
@@ -479,7 +483,7 @@ ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
 createDeskStateHost({ipcMain,live,allowed,allowedXopp,assertNoFreeMutation,assertNoNav,persist,win:()=>win,appIcon:()=>appIcon}).register();
 const {cancelReviewDraft}=registerStudyRecordsHost({ipcMain,live,runtime,allowed,allowedXopp,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,openCodeDraft:options=>openCodeTutor.draft(options),bookmarksPayload,reviewPayload,assertNoFreeMutation,assertNoNav});
 registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,appendLog,engine,testClaudeSdkLoader});
-ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
+ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
 ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory']});return r.canceled?null:r.filePaths[0];});
 /* Primeira abertura dentro do app (ticket #21). O que a pessoa soltou na folha
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
@@ -630,6 +634,7 @@ const conferirHost=createConferirHost({
  setChoice:value=>{state.conferirApp=value;persist();if(win&&!win.isDestroyed())buildMenu();},
  selfNames:()=>[app.getName(),'Summa',...(app.isPackaged?[]:['Electron'])],
  fixture:conferirFixture(),
+ ambitus:{linked:()=>ambitusLinked(),request:()=>ambitusBridge.requestPage()},
  ensurePermission:async()=>{
   if(process.platform!=='darwin')return;
   let status=systemPreferences.getMediaAccessStatus('screen');

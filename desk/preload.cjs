@@ -487,6 +487,7 @@ const deskApi={
   return invoke('sidechat-respond',{...value,response:clean});
  },
  onAmbitusPage:fn=>ipcRenderer.on('ambitus-page',(_e,data)=>{if(typeof fn==='function')fn(data);}),
+ onCaptureAvailability:fn=>ipcRenderer.on('capture-availability',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onAmbitusPageThumb:fn=>ipcRenderer.on('ambitus-page-thumb',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onSidechatEvent:fn=>ipcRenderer.on('sidechat-event',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  sidechatAlwaysOnTop:on=>invoke('sidechat-always-on-top',{on:on===true}),

@@ -1,5 +1,5 @@
 // @ts-check
-import {S,toast,conferirAppName,conferirShortcut,labelBtn} from './state.mjs';
+import {S,toast,conferirAppName,conferirHintText,labelBtn} from './state.mjs';
 import {t,text as uiText,applyStaticText,LANGUAGE_EVENT} from './ui-text.mjs';
 import {icon} from '../icons.mjs';
 import attachview from './generated/attachview.core.js';
@@ -227,7 +227,17 @@ export function bindSidechatAttach(parts, {prompt, root}) {
     closeMenu();
     if (conferirOff()) return;
     const {conferir} = await import('./chat.mjs');
-    await conferir({attach: (shot) => addFiles([shot]), shutter: clip, focus: () => prompt.focus()});
+    await conferir({
+      attach: (shot) => addFiles([shot]),
+      /* Página do Ambitus de caderno salvo: cartão com a imagem de miniatura; o caminho segue escondido para o tutor. */
+      notebook: (card, thumb) => {
+        if (!addNotebook(card)) return false;
+        setThumb({caminho: card.caminho, pagina: card.pagina, thumb});
+        return true;
+      },
+      shutter: clip,
+      focus: () => prompt.focus(),
+    });
   }
 
   function paintCheck() {
@@ -236,7 +246,7 @@ export function bindSidechatAttach(parts, {prompt, root}) {
     check.hidden = conferirOff();
     check.disabled = !S.captureOk;
     check.setAttribute('aria-label', label);
-    check.title = S.captureOk ? uiText(conferirCore.hintFor(false, app, conferirShortcut())) : t('check.unavailable', {label});
+    check.title = S.captureOk ? conferirHintText(false, app) : t('check.unavailable', {label});
     check.innerHTML = `${icon('scan')} `;
     check.append(h('span', {class: 'label-full', text: label}));
   }

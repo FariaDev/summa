@@ -1,6 +1,6 @@
 import {bindPointerDrag} from './pointer-drag.mjs';
 import {icon} from '../icons.mjs';
-import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
+import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,applyCaptureAvailability,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
 import {visibleEngines,setLegacySession,legacyContinueEngine,relabelLegacySession} from './visible-engines-ui.mjs';
 import {conferir,conferirGeogebra,send,hideQuoteButton,doCompact,openChatSearch,closeChatSearch} from './chat.mjs';
 import {toggleReferencePanel,selectTab as selectSupportTab,supportState,setOpen as setSupportOpen,sidechatOpen,toggleSidechat} from './support.mjs';
@@ -71,7 +71,7 @@ await uiTextReady;
 mountSetupMarkup();mountAccentOptions();mountReadingSettings();mountInkSettings();
 const inkSettings=initInkSettings({status:()=>window.desk.ambitusInkStatus(),set:p=>window.desk.ambitusInkSet(p)});
 /* A página mandada pelo Ambitus vai ao chat lateral (ambitus-page.mjs). */
-window.desk.onAmbitusPage?.(createAmbitusPage({ready:()=>supportState.ready,open:()=>{if(isDetachedSidechat())focusDetachedSidechat();else if(!sidechatOpen())toggleSidechat();},attach:attachSidechatNotebook,toast}));window.desk.onAmbitusPageThumb?.(setSidechatNotebookThumb);
+window.desk.onAmbitusPage?.(createAmbitusPage({ready:()=>supportState.ready,open:()=>{if(isDetachedSidechat())focusDetachedSidechat();else if(!sidechatOpen())toggleSidechat();},attach:attachSidechatNotebook,toast}));window.desk.onAmbitusPageThumb?.(setSidechatNotebookThumb);window.desk.onCaptureAvailability?.(applyCaptureAvailability);
 setUiLanguage(currentLanguage());
 initNavMenus();
 initHeaderTabs({openSettings:(...args)=>openSettings(...args),syncPaletteField:()=>syncPaletteField(),menu:{ToggleReference:toggleReference,OpenXournal:openXournal,OpenHelp:openHelp,OpenSettings:()=>openSettings(),OpenShortcuts:()=>openShortcuts().catch(err=>toast(err.message)),OpenAbout:openAbout,OpenReleaseNotes:()=>openReleaseNotes().catch(err=>toast(err.message)),OpenTriage:()=>openTriage().catch(error=>toast(error.message)),OpenEndDay:openEndDay}});

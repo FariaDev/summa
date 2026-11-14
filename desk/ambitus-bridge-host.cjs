@@ -31,6 +31,9 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
    segundo plano e espera mais que isto. */
 const REQUEST_TIMEOUT_MS = 90000;
 const BRIDGE_VERSION = 1;
+/* `/pagina-atual` leva o PNG em base64 (4/3) dentro de um JSON: o teto é o do
+   PNG nessa proporção mais a folga dos campos. */
+const ANSWER_CAP = Math.ceil(PNG_CAP * 4 / 3) + 16 * 1024;
 
 /**
  * A opção de leitura da tinta (`inkReading`, estado de interface `desk.json`,
@@ -84,22 +87,22 @@ function bridgeReply(res, code, payload) {
 
 /* Escoa o corpo recusado até o fim: fechar no meio do envio vira erro no
    cliente antes de ele ler o 413. Quem passa de 2× o teto é cortado. */
-function drainBody(req) {
+function drainBody(req, cap = PNG_CAP) {
   let size = 0;
   req.on('data', (chunk) => {
     size += chunk.length;
-    if (size > 2 * PNG_CAP) req.destroy();
+    if (size > 2 * cap) req.destroy();
   });
   req.on('error', () => {});
   req.resume();
 }
 
-/** Lê o corpo até o teto; acima dele responde 413 e rejeita. @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res @returns {Promise<Buffer>} */
-function readPngBody(req, res) {
+/** Lê o corpo até o teto (o do PNG, ou o de `/pagina-atual`); acima dele responde 413 e rejeita. @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res @param {number} [cap] @returns {Promise<Buffer>} */
+function readPngBody(req, res, cap = PNG_CAP) {
   const declared = Number(req.headers['content-length']) || 0;
-  if (declared > PNG_CAP) {
+  if (declared > cap) {
     bridgeReply(res, 413, {reason: 'too-large'});
-    drainBody(req);
+    drainBody(req, cap);
     return Promise.reject(Error('corpo grande'));
   }
   return new Promise((resolve, reject) => {
@@ -109,13 +112,13 @@ function readPngBody(req, res) {
     const chunks = [];
     req.on('data', (chunk) => {
       size += chunk.length;
-      if (size <= PNG_CAP) { chunks.push(chunk); return; }
+      if (size <= cap) { chunks.push(chunk); return; }
       if (!overflow) {
         overflow = true;
         bridgeReply(res, 413, {reason: 'too-large'});
         reject(Error('corpo grande'));
       }
-      if (size > 2 * PNG_CAP) req.destroy();
+      if (size > 2 * cap) req.destroy();
     });
     req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
@@ -160,6 +163,34 @@ function parsePageRequest(body) {
   return {caminho, pagina: /** @type {number} */ (pagina), nome: name};
 }
 
+/**
+ * A resposta do Ambitus a um pedido de página (`POST /pagina-atual`): ou
+ * `{pedido, erro: 'sem-pagina'}`, ou `{pedido, caminho, pagina, nome, png}`
+ * com o PNG em base64. `caminho` vazio é um caderno que nunca foi salvo; com
+ * valor, vale a mesma regra de `/mandar-pagina`. O PNG é conferido pela
+ * assinatura e pelo teto de bytes.
+ * @param {Buffer|null} body
+ * @returns {{pedido: string, erro: 'sem-pagina'}|{pedido: string, caminho: string, pagina: number, nome: string, png: string}|null}
+ * @example parsePageAnswer(Buffer.from('{"pedido":"ab","erro":"sem-pagina"}')) // {pedido: 'ab', erro: 'sem-pagina'}
+ */
+function parsePageAnswer(body) {
+  if (!body) return null;
+  let raw;
+  try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const {pedido, erro, caminho, pagina, nome, png} = /** @type {{pedido?: unknown, erro?: unknown, caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown}} */ (raw);
+  if (typeof pedido !== 'string' || !/^[0-9a-f]{8,64}$/.test(pedido)) return null;
+  if (erro !== undefined) return erro === 'sem-pagina' ? {pedido, erro} : null;
+  if (typeof caminho !== 'string' || caminho.length > 4096 || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
+  if (caminho && (!path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho))) return null;
+  if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
+  if (typeof png !== 'string' || !png || !/^[A-Za-z0-9+/]+={0,2}$/.test(png)) return null;
+  const bytes = Buffer.from(png, 'base64');
+  if (bytes.length > PNG_CAP || !isPng(bytes)) return null;
+  const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
+  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png};
+}
+
 /** Host e token conferidos: só 127.0.0.1/localhost na porta da ponte (DNS rebinding) e o token do arquivo. @param {import('node:http').IncomingMessage} req @param {{token: string, port: number}} identity @returns {boolean} */
 function authorized(req, identity) {
   const hostHeader = typeof req.headers.host === 'string' ? req.headers.host : '';
@@ -182,15 +213,20 @@ function authorized(req, identity) {
  * leva a página ao chat lateral (o tutor a relê pelo `ler_caderno`); resposta
  * `{ok: true}` ou `{reason}`. Não depende de `inkReading`: é um pedido
  * explícito da pessoa e nada sai da máquina até ela enviar a mensagem.
+ * Rotas `GET /pedido-pagina` e `POST /pagina-atual` (o Conferir pela ponte, com
+ * `pageBroker`): o Ambitus não tem servidor e segura um long-poll; a Summa o
+ * responde `{pedido}` (ou 204 após ~25 s) e o Ambitus devolve a página
+ * renderizada do documento em memória. Mesmo token, um long-poll por vez.
  * @param {{runtime: string, deskState?: () => unknown,
  *   readText: (png: string, options: {signal: AbortSignal, selection: {model: string, effort: string|null}}) => Promise<{text: string|null, reason: string|null}>,
  *   pickModel: (() => {model: string|null, effort?: string|null, reason: string|null})|null,
  *   sendPage?: (page: {caminho: string, pagina: number, nome: string}) => Promise<{ok: true}|{reason: string}>|{ok: true}|{reason: string},
+ *   pageBroker?: ReturnType<typeof import('./ambitus-page-broker.cjs').createPageBroker>|null,
  *   requestTimeoutMs?: number, now?: () => number, log?: (line: string) => void}} deps
  * @returns {{bridgeFile: string, start: () => Promise<{port: number, token: string}>, close: () => Promise<void>}}
  * @example const ambitus = createAmbitusBridgeHost({runtime, deskState: () => state, readText, pickModel}); await ambitus.start();
  */
-function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pickModel = null, sendPage = null, requestTimeoutMs = REQUEST_TIMEOUT_MS, now = Date.now, log = () => {}}) {
+function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pickModel = null, sendPage = null, pageBroker = null, requestTimeoutMs = REQUEST_TIMEOUT_MS, now = Date.now, log = () => {}}) {
   const bridgeFile = path.join(runtime, BRIDGE_NAME);
   /** @type {import('node:http').Server|null} */
   let server = null;
@@ -260,6 +296,14 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
         await handleSendPage(req, res);
         return;
       }
+      if (req.method === 'GET' && pathname === '/pedido-pagina') {
+        handlePageRequestPoll(req, res);
+        return;
+      }
+      if (req.method === 'POST' && pathname === '/pagina-atual') {
+        await handlePageAnswer(req, res);
+        return;
+      }
       if (req.method !== 'POST' || pathname !== '/ler-tinta') {
         bridgeReply(res, 404, {error: 'Rota desconhecida.'});
         return;
@@ -285,6 +329,53 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
       log('ambitus: falha na leitura');
       if (!res.headersSent) bridgeReply(res, 500, {error: 'A leitura falhou.'});
     }
+  }
+
+  /** O long-poll do Ambitus: fica pendurado até a Summa pedir a página, ou 204. @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res */
+  function handlePageRequestPoll(req, res) {
+    if (!pageBroker) {
+      bridgeReply(res, 404, {error: 'Rota desconhecida.'});
+      return;
+    }
+    res.on('error', () => {});
+    pageBroker.poll({
+      send: (code, payload) => {
+        if (res.writableEnded || res.destroyed) return;
+        if (code === 204) { res.writeHead(204); res.end(); return; }
+        bridgeReply(res, code, payload || {});
+      },
+      onClose: (fn) => { res.on('close', () => { if (!res.writableEnded) fn(); }); },
+    });
+  }
+
+  /** @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res */
+  async function handlePageAnswer(req, res) {
+    if (!pageBroker) {
+      drainBody(req, ANSWER_CAP);
+      bridgeReply(res, 404, {error: 'Rota desconhecida.'});
+      return;
+    }
+    if (!/^application\/json(;|$)/.test(String(req.headers['content-type'] || ''))) {
+      drainBody(req, ANSWER_CAP);
+      bridgeReply(res, 400, {reason: 'bad-request'});
+      return;
+    }
+    const body = await readPngBody(req, res, ANSWER_CAP);
+    const answer = parsePageAnswer(body);
+    if (!answer) {
+      /* Corpo estragado: se der para ler o id, o pedido falha na hora, sem esperar o teto. */
+      let id = '';
+      try { id = String(JSON.parse(body.toString('utf8'))?.pedido || ''); } catch { /* sem id legível */ }
+      if (id) pageBroker.fail(id);
+      bridgeReply(res, 400, {reason: 'bad-request'});
+      return;
+    }
+    if (!pageBroker.answer(answer.pedido, answer)) {
+      bridgeReply(res, 404, {reason: 'unknown-request'});
+      return;
+    }
+    log(`ambitus: pagina-atual ${'erro' in answer ? answer.erro : 'pronto'}`);
+    bridgeReply(res, 200, {ok: true});
   }
 
   /** @param {import('node:http').IncomingMessage} req @param {import('node:http').ServerResponse} res */
@@ -314,6 +405,7 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
 
   async function startOnce() {
     if (server) return {port, token};
+    if (pageBroker) pageBroker.open();
     /* Órfão de uma Summa que caiu some na partida; o de outra viva fica (#212). */
     removeOrphanBridge(bridgeFile);
     const myToken = crypto.randomBytes(32).toString('base64url');
@@ -348,6 +440,8 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
   async function closeOnce() {
     const closingToken = token;
     const closingPort = port;
+    /* O long-poll pendurado termina em 204 antes do close esperar o socket dele. */
+    if (pageBroker) pageBroker.close();
     if (server) {
       const current = server;
       server = null; port = 0;
@@ -365,4 +459,4 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
   return {bridgeFile, start, close};
 }
 
-module.exports = {BRIDGE_NAME, BRIDGE_VERSION, PAGE_CAP, PNG_CAP, REQUEST_TIMEOUT_MS, createAmbitusBridgeHost, inkReadingEnabled, isPng, parsePageRequest};
+module.exports = {ANSWER_CAP, BRIDGE_NAME, BRIDGE_VERSION, PAGE_CAP, PNG_CAP, REQUEST_TIMEOUT_MS, createAmbitusBridgeHost, inkReadingEnabled, isPng, parsePageAnswer, parsePageRequest};

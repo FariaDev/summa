@@ -21,6 +21,7 @@
  "files": [
   "ambitus-bridge-host.cjs",
   "ambitus-bridge-wiring.cjs",
+  "ambitus-page-broker.cjs",
   "ink-bridge-lifecycle.cjs",
   "notebook-ink-model.cjs",
   "src/agents/notebook-ink-bridge.cjs",

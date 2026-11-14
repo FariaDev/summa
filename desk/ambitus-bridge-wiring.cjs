@@ -14,6 +14,7 @@ const path = require('node:path');
 const {selectInkModel} = require('./notebook-ink-model.cjs');
 const {readInk} = require('./src/agents/notebook-ink-bridge.cjs');
 const {createAmbitusBridgeHost, inkReadingEnabled} = require('./ambitus-bridge-host.cjs');
+const {createPageBroker} = require('./ambitus-page-broker.cjs');
 const {authorizeXopp} = require('./xopp-authorization.cjs');
 const conversations = require('./src/agents/conversations.cjs');
 const {message} = require('./src/i18n.mjs');
@@ -83,15 +84,38 @@ function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = 
 }
 
 /**
+ * Pede ao Ambitus a página atual (o Conferir pela ponte) e prepara a resposta
+ * para a janela: se o caderno tem arquivo e ele existe, entra na lista viva
+ * (`allowedXopp`) para o tutor relê-lo pelo `ler_caderno`, como em
+ * `/mandar-pagina`. Arquivo que sumiu vira `caminho` vazio: a página entra
+ * como imagem, sem prometer uma releitura que o tutor não faria.
+ * @param {{request: () => Promise<{ok: true, answer: any}|{ok: false, reason: string}>}} broker
+ * @param {{allowedXopp: Set<string>, isFile?: (file: string) => boolean}} deps
+ * @returns {Promise<{ok: true, png: string, caminho: string, pagina: number, nome: string}|{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'|'no-page'}>}
+ * @example await requestAmbitusPage(broker, {allowedXopp}) // {ok: true, png: 'iVBOR…', caminho: '/c/a.xopp', pagina: 2, nome: 'a'}
+ */
+async function requestAmbitusPage(broker, {allowedXopp, isFile = (file) => { try { return fs.statSync(file).isFile(); } catch { return false; } }}) {
+  const outcome = await broker.request();
+  if (!outcome.ok) return /** @type {{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'}} */ (outcome);
+  const {erro, caminho = '', pagina, nome = '', png} = outcome.answer;
+  if (erro) return {ok: false, reason: 'no-page'};
+  const known = caminho && isFile(caminho) ? caminho : '';
+  if (known) authorizeXopp(allowedXopp, known);
+  return {ok: true, png, caminho: known, pagina, nome};
+}
+
+/**
  * Liga a ponte com o Ambitus ao main: sobe a ponte, registra o estado e o
  * interruptor da leitura (`ambitus-ink-status`, `ambitus-ink-set`) e devolve
- * o `close` para o `before-quit`.
+ * o `close` para o `before-quit`, `requestPage` (o Conferir pela ponte) e
+ * `linked` (há um Ambitus pendurado agora; `onLinkChange` avisa quando muda).
  * @param {{ipcMain: {handle: (channel: string, fn: Function) => void}, runtime: string,
  *   state: () => any, patchState: (patch: object) => void, persist: () => void, session: () => string,
  *   engine: () => string, openCodeTutor: {inkBridge: Function, inkCatalog: () => Promise<any[]>},
  *   language: () => 'pt-BR'|'en', allowSender: (event: any) => boolean, log: (line: string) => void,
- *   allowedXopp: Set<string>, win: () => any, readNotebook?: (raw: {caminho: string, pagina: number}) => Promise<{image?: string}>, readInkImpl?: typeof readInk}} deps
- * @returns {{close: () => Promise<void>, setInkReading: (payload: unknown) => Promise<{ok: true}|{ok: false, reason: string}>, inkStatus: () => Promise<{enabled: boolean, reason: string|null}>}}
+ *   allowedXopp: Set<string>, win: () => any, readNotebook?: (raw: {caminho: string, pagina: number}) => Promise<{image?: string}>, readInkImpl?: typeof readInk,
+ *   onLinkChange?: (connected: boolean) => void}} deps
+ * @returns {{requestPage: () => ReturnType<typeof requestAmbitusPage>, linked: () => boolean, close: () => Promise<void>, setInkReading: (payload: unknown) => Promise<{ok: true}|{ok: false, reason: string}>, inkStatus: () => Promise<{enabled: boolean, reason: string|null}>}}
  * @example const ambitus = registerAmbitusBridge({ipcMain, runtime, state: () => state, patchState, persist, session: () => session, engine, openCodeTutor, language, allowSender: trustedMainSender, log});
  */
 function registerAmbitusBridge(deps) {
@@ -129,7 +153,8 @@ function registerAmbitusBridge(deps) {
   }
 
   const sendPage = (page) => sendPageToSidechat(page, {allowedXopp: deps.allowedXopp, win: deps.win, readNotebook: deps.readNotebook || null, log: deps.log});
-  const host = createAmbitusBridgeHost({runtime, deskState: () => ({inkReading: !isClaude() && inkReadingEnabled(state())}), readText, pickModel, sendPage, log});
+  const pageBroker = createPageBroker({onLinkChange: (connected) => { log(`ambitus: ${connected ? 'conectado' : 'desconectado'}`); (deps.onLinkChange || (() => {}))(connected); }});
+  const host = createAmbitusBridgeHost({runtime, deskState: () => ({inkReading: !isClaude() && inkReadingEnabled(state())}), readText, pickModel, sendPage, pageBroker, log});
   /* Opt-in já salvo: o catálogo vem fora do caminho síncrono da partida. */
   if (inkReadingEnabled(state()) && !isClaude()) setImmediate(() => { void refreshCatalog(); });
   void host.start().catch((error) => log(`ambitus: a ponte não subiu: ${error?.message || error}`));
@@ -172,7 +197,7 @@ function registerAmbitusBridge(deps) {
   guarded('ambitus-ink-status', () => inkStatus());
   guarded('ambitus-ink-set', (payload) => setInkReading(payload));
 
-  return {close: () => host.close(), setInkReading, inkStatus};
+  return {close: () => host.close(), setInkReading, inkStatus, linked: () => pageBroker.connected(), requestPage: () => requestAmbitusPage(pageBroker, {allowedXopp: deps.allowedXopp})};
 }
 
-module.exports = {registerAmbitusBridge, currentSelection, sendPageToSidechat, sendPageThumbnail};
+module.exports = {registerAmbitusBridge, requestAmbitusPage, currentSelection, sendPageToSidechat, sendPageThumbnail};

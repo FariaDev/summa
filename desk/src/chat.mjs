@@ -365,7 +365,9 @@ function dataUrlFile(dataUrl,name){
    matéria/sessão de destino fica FIXADA — se ela mudou durante a captura, a
    imagem é descartada em vez de pousar na conversa de outra matéria. */
 /* `sink` (opcional): o chat lateral recebe a captura na bandeja dele, com a mesma captura e as mesmas travas;
-   `{attach(file) → Promise<number>, shutter: Element|null, focus()}`. Sem ele vale a bandeja do tutor. */
+   `{attach(file) → Promise<number>, notebook?(card, dataUrl) → boolean, shutter: Element|null, focus()}`. Sem ele vale a bandeja do tutor.
+   Com o Ambitus na ponte a página vem renderizada por ele (`shot.ambitus`): no lateral, caderno salvo entra como cartão
+   (`notebook`, com a imagem de miniatura); sem caminho, ou no tutor, entra como imagem. */
 export async function conferir(sink){
  if(S.busy&&!sink)return;
  if(S.appConfig.desk?.conferir===false)return;
@@ -386,12 +388,16 @@ export async function conferir(sink){
      com a frase do motivo e a pessoa escolhe de propósito. */
   if(shot?.absent){window.dispatchEvent(new CustomEvent('desk-conferir-absent',{detail:shot}));return;}
   const app=String(shot?.app||'').trim()||conferirCore.defaultApp();
-  const file=dataUrlFile(shot?.dataUrl,captureFileName(app));
+  /* Pela ponte (Ambitus) a imagem é a página renderizada, nomeada "<caderno> — pág. N"; o caminho do caderno só vale se o caderno foi salvo. */
+  const page=shot?.ambitus;
+  const file=dataUrlFile(shot?.dataUrl,page?uiText(String(shot.title||app)):captureFileName(app));
   if(!file){toast(uiMessage('capture.invalid'));return;}
-  const added=sink?await sink.attach(file):await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
+  const asCard=!!(sink?.notebook&&page?.caminho);
+  const added=asCard?(sink.notebook({caminho:page.caminho,pagina:page.pagina,nome:page.nome},shot.dataUrl)?1:0)
+   :sink?await sink.attach(file):await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
   if(!added)return;
   playShutter(sink?sink.shutter:$('#attach'));
-  toast(uiText(conferirCore.attachedText(app)));
+  toast(page?uiMessage('check.attached.ambitus'):uiText(conferirCore.attachedText(app)));
   if(sink)sink.focus();else $('#prompt').focus();
  }catch(e){toast(e.message);}
  finally{endCaptureLock(S,lock);}
