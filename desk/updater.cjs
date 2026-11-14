@@ -135,8 +135,17 @@ function logRunOutput(result,log){
 }
 
 async function syncBundle({mode,sourceDir,run,log,platform=process.platform}){
- if(platform!=='darwin')return;
  const installScript=path.join(sourceDir,'desk','scripts','install-app.mjs');
+ /* #181: no Windows o app instalado mora fora do clone
+    (`%LOCALAPPDATA%\Programs\Summa`), então só o modo bundle tem o
+    que re-sincronizar — o install-app copia Electron + payload para lá de
+    novo. Git/zip (rodando do código) não têm instalação para tocar. */
+ if(platform==='win32'){
+  if(mode!=='bundle')return;
+  logRunOutput(await run('node',[installScript],{cwd:path.join(sourceDir,'desk')}),log);
+  return;
+ }
+ if(platform!=='darwin')return;
  const bundle=path.join(sourceDir,'Summa.app');
  /* #190: quem atualiza da versão antiga ainda tem o bundle com o nome antigo;
     o install-app cria o novo e apaga o velho depois. */
@@ -276,7 +285,7 @@ async function applyUpdate(opts={}){
    ?null // o payload inteiro é gerenciado pelo install-app
    :rel=>isReplaceable(rel)||normalizeRel(rel)==='.update-manifest.json';
   snapshot(snapshotRoot,backup,snapshotInclude);
-  if(mode==='bundle'){
+  if(mode==='bundle'&&platform==='darwin'){
    /* O Info.plist mora fora do payload; entra no backup com nome reservado. */
    const plist=path.join(path.resolve(deskDir,'..','..','..'),'Contents','Info.plist');
    if(fs.existsSync(plist))fs.copyFileSync(plist,path.join(backup,'__Info.plist__'));
@@ -380,16 +389,19 @@ async function applyUpdate(opts={}){
       RE-RODAR o sync: o install-app copia os runtimeDeps do clone já
       restaurado (lock antigo, ci de recuperação acima), reescreve o payload
       e re-assina. Sem sync, o fallback re-assina a cópia devolvida e avisa
-      que as dependências podem estar inconsistentes. */
-   if(mode==='bundle'&&platform==='darwin'){
+      que as dependências podem estar inconsistentes. No Windows (#181) o
+      mesmo sync repõe a cópia instalada, sem código de assinatura. */
+   if(mode==='bundle'&&(platform==='darwin'||platform==='win32')){
     try{
      await syncBundle({mode,sourceDir,run,log,platform});
      log('update: payload do bundle re-sincronizado após o rollback (dependências refeitas do clone restaurado)');
     }catch(err2){
      log('update: sync de recuperação falhou ('+String(err2&&err2.message||err2)+') — dependências do payload podem estar inconsistentes');
-     const bundle=path.resolve(deskDir,'..','..','..');
-     try{await run('codesign',['--force','--deep','--sign','-',bundle],{timeout:120000});log('update: bundle re-assinado (ad-hoc) após o rollback');}
-     catch(err3){log('update: re-assinatura do bundle falhou ('+String(err3&&err3.message||err3)+')');}
+     if(platform==='darwin'){
+      const bundle=path.resolve(deskDir,'..','..','..');
+      try{await run('codesign',['--force','--deep','--sign','-',bundle],{timeout:120000});log('update: bundle re-assinado (ad-hoc) após o rollback');}
+      catch(err3){log('update: re-assinatura do bundle falhou ('+String(err3&&err3.message||err3)+')');}
+     }
     }
    }else if(platform==='darwin'){
     /* git/zip com bundle instalado do lado: melhor esforço — devolve o

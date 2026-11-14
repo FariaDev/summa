@@ -6,8 +6,8 @@
    protegidos nunca). Em todos os modos, só aplica release assinada (#80): o
    manifesto Ed25519 da Release é conferido com desk/update-signing-key.pub e
    o commit da tag/hash do zip tem de bater. `npm ci` só quando o
-   package-lock.json mudou; no macOS
-   re-roda o install-app (sync + codesign); no fim a Mesa reabre sozinha.
+   package-lock.json mudou; no macOS re-roda o install-app (sync + codesign)
+   e no Windows, a cópia por usuário (#181); no fim a Mesa reabre sozinha.
    Falhou = rollback e a versão anterior sobe de novo, com o motivo em
    .runtime/desk.log; rollback incompleto PRESERVA o backup (caminho no log).
 
@@ -28,20 +28,11 @@ import {createRequire} from 'node:module';
 
 const require = createRequire(import.meta.url);
 const updater = require('../updater.cjs');
+const {reopenInstalled} = require('../install-location.cjs');
 
 const desk = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.dirname(desk);
 const args = process.argv.slice(2);
-/* #190: o bundle pode ser o novo (`Summa.app`) ou o antigo, que o install-app
-   troca durante a atualização — nos dois casos, reabrir é abrir o novo. */
-const bundleFile = path.join(root, 'Summa.app');
-const legacyBundleFile = path.join(root, 'Mesa de Estudos.app');
-const reopen = args.includes('--sem-reabrir') ? null
- : process.platform === 'darwin' && (fs.existsSync(bundleFile) || fs.existsSync(legacyBundleFile)) && !fs.existsSync(path.join(root, '.git'))
-  /* #190: no fim, abre o bundle que existir — o novo depois do update, o
-     antigo se o update falhar antes de o install-app trocar os dois. */
-  ? () => updater.spawnReopen({cmd: 'open', args: [fs.existsSync(bundleFile) ? bundleFile : legacyBundleFile]}, process.env, (line) => console.error(line))
-  : {cmd: 'npm', args: ['start'], cwd: desk, shell: process.platform === 'win32'};
 
 /* Mesma resolução de runtime do doctor.mjs: é lá que moram o desk.log e o
    cache do updater (nunca tocamos config.json, sessões, PDFs ou templates). */
@@ -61,6 +52,18 @@ const pkg = JSON.parse(fs.readFileSync(path.join(desk, 'package.json'), 'utf8'))
 let source = null;
 try {source = JSON.parse(fs.readFileSync(path.join(desk, 'install-source.json'), 'utf8'));} catch {}
 const mode = source && source.path ? 'bundle' : fs.existsSync(path.join(root, '.git')) ? 'git' : 'zip';
+/* #190: o bundle pode ser o novo (`Summa.app`) ou o antigo, que o install-app
+   troca durante a atualização — nos dois casos, reabrir é abrir o novo. */
+const bundleFile = path.join(root, 'Summa.app');
+const legacyBundleFile = path.join(root, 'Mesa de Estudos.app');
+/* #181: reabrir pelo caminho da plataforma — no Windows o bundle é a pasta em
+   %LOCALAPPDATA%\Programs, não o .app do macOS. */
+const reopen = args.includes('--sem-reabrir') ? null
+ : process.platform === 'darwin' && (fs.existsSync(bundleFile) || fs.existsSync(legacyBundleFile)) && !fs.existsSync(path.join(root, '.git'))
+  /* #190: no fim, abre o bundle que existir — o novo depois do update, o
+     antigo se o update falhar antes de o install-app trocar os dois. */
+  ? () => updater.spawnReopen({cmd: 'open', args: [fs.existsSync(bundleFile) ? bundleFile : legacyBundleFile]}, process.env, (line) => console.error(line))
+  : reopenInstalled({mode, deskDir: desk});
 
 const versionArg = args.map((a) => /^--versao=(.+)$/.exec(a)?.[1] || (/^--versao$/.test(a) ? '' : null)).find(Boolean)
  || (args.includes('--versao') ? args[args.indexOf('--versao') + 1] : '');

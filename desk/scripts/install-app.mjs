@@ -14,6 +14,7 @@ import {execFileSync} from 'node:child_process';
 import runtimeBundle from '../bundle-runtime.cjs';
 import bundleElectron from '../bundle-electron.cjs';
 import legacyBundle from '../legacy-bundle.cjs';
+import windowsInstall from '../windows-install.cjs';
 import {ensureElectronBinary} from './electron-binary.mjs';
 import {ensureVisualHelper} from './visual-helper.mjs';
 
@@ -24,9 +25,22 @@ const app=path.join(root,'Summa.app');
 const legacyApp=path.join(root,'Mesa de Estudos.app');
 const pkg=JSON.parse(fs.readFileSync(path.join(desk,'package.json'),'utf8'));
 
+/* #181: a instalação por usuário do Windows espelha o `.app` — Electron de
+   node_modules + o MESMO payload, sem admin e sem PATH. Assinatura e SmartScreen
+   ficam de fora (ADR 0005). */
+if(process.platform==='win32'){
+ const electronDir=path.join(desk,'node_modules','electron');
+ ensureElectronBinary({electronDir});
+ const installed=windowsInstall.installWindows({desk,root,electronDir,env:process.env,version:pkg.version||''});
+ console.log('Instalado:',installed.installDir);
+ console.log('Atalho:',installed.shortcut);
+ console.log('Para desinstalar: Configurações → Aplicativos → Summa.');
+ process.exit(0);
+}
+
 /* O bundle .app é só macOS: fora dele a Mesa roda de fonte (`npm start`). */
 if(process.platform!=='darwin'){
- console.log('Summa.app é um bundle de macOS. Neste sistema rode `npm start` (ou um atalho para `npm start` na pasta desk/).');
+ console.log('A instalação automática é para macOS (Summa.app) e Windows (por usuário). Neste sistema rode `npm start` (ou um atalho para `npm start` na pasta desk/).');
  process.exit(0);
 }
 
