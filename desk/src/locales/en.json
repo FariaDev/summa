@@ -2379,6 +2379,8 @@
   "sidechat.detach": "Detach to another window",
   "sidechat.attach": "Bring back",
   "sidechat.detachedStrip": "Chat in another window",
+  "sidechat.detachedStripHint": "Bring the chat back to the Desk",
+  "sidechat.attachToDesk": "Bring back to the Desk",
   "sidechat.alwaysOnTop": "Always on top",
   "sidechat.alwaysOnTop.on": "On",
   "sidechat.alwaysOnTop.off": "Off",

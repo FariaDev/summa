@@ -190,11 +190,9 @@ body>#sidechat #sidechat-box>#sidechat-prompt{
  overflow:auto;
 }
 .composer-box .composer-field:focus{outline:none;border-color:transparent;box-shadow:none}
-/* Foco do campo na janela solta (#157, rodada 1, achado 5): o contorno do painel
-   (`#sidechat:focus-within::after`) é desligado no layout da filha e o
-   substituto `:has(:focus-visible)` não repõe `display`; o campo ganha o mesmo
-   anel de --ring do resto da Mesa. */
-body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+/* Foco do campo na janela solta: igual ao da Mesa — só a linha de cima do
+   compositor pinta (`:is(#composer,#sidechat-composer):focus-within`, acima), sem
+   anel de 2px em volta do campo, que existia só na filha. */
 .composer-actions{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-1) 0 0}
 .composer-actions button{
  flex:none;height:32px;padding:0 var(--space-3);gap:var(--space-2);white-space:nowrap;
