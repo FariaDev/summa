@@ -39,17 +39,17 @@
     "node": ">=22.19"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.3.314",
+    "@anthropic-ai/claude-agent-sdk": "0.3.325",
     "chart.js": "4.6.1",
     "dompurify": "^3.4.17",
-    "electron": "^45.2.0",
+    "electron": "^45.3.2",
     "katex": "^0.19.1",
-    "marked": "^18.1.2",
-    "pdfjs-dist": "^6.4.299"
+    "marked": "^18.2.0",
+    "pdfjs-dist": "^6.5.438"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.1",
     "eslint": "10.14.0",
     "globals": "17.13.0",
     "typescript": "7.0.2"
