@@ -61,6 +61,7 @@ const {CHECK_TTL,CLAUDE_REGISTRY_URL,RELEASES_URL,TAGS_URL,XOURNAL_RELEASES_URL,
 const {LOCK_STALE_MS,acquireLock,defaultRun,doReopen,lockFileOf,needsShell,pidAlive,releaseLock,resolveNode,spawnReopen,spawnWorker,stageWorkerFiles,WORKER_FILES,waitForHandshake,waitForPid,workerEnv,writeHandshake}=require('./updater-worker.cjs');
 const {applyZip,assertRealTarget,assertSafeEntries,isProtected,isReplaceable,manifestFile,normalizeRel,readManifest,readZip,removeOrphans,restoreTree,snapshotTree,stripCommonRoot,writeManifest}=require('./updater-files.cjs');
 const {checkForUpdates,claudeLatest,defaultFetchBuffer,defaultFetchJson,releaseFromGithub,releaseFromTags,sharedFetchJson,timedFetch,xournalLatest}=require('./updater-check.cjs');
+const {defaultSleep,listElectronProcesses:defaultListElectronProcesses,npmCiWithRetry,waitForElectronProcesses}=require('./updater-npm-ci.cjs');
 const {MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,assertAppliedCommitMatches,assertTagCommitMatches,loadSignedRelease,normalizeVersion,readUpdatePublicKey,tagMissingError}=require('./updater-signature.cjs');
 
 /* ---------- aplicação ---------- */
@@ -88,8 +89,15 @@ function bundleSourceError(sourceDir){
  return REFUSED('err.update.sourceGone');
 }
 
-async function npmCi({deskDir,run}){
- await run('npm',['ci'],{cwd:deskDir,timeout:20*60*1000});
+/* #6: no Windows, `npm ci` apaga o `node_modules` e um processo do Electron
+   ainda vivo (MCP via ELECTRON_RUN_AS_NODE, chat lateral, filho do app) trava
+   `electron.exe` com EPERM/EBUSY — o rollback reabre a versão antiga. Espera
+   com prazo antes do ci e repete com espera crescente quando a falha é trava;
+   quem segurava vai para o log com pid e caminho, nunca para a mensagem do
+   Sobre. Fora do Windows nada muda. */
+async function npmCi({deskDir,run,platform=process.platform,log=()=>{},sleep=defaultSleep,listElectronProcesses=defaultListElectronProcesses}){
+ if(platform==='win32')await waitForElectronProcesses({deskDir,platform,list:listElectronProcesses,sleep,log});
+ await npmCiWithRetry({deskDir,run,platform,log,sleep});
 }
 
 /* Resultado real da aplicação, persistido no cache do runtime: é o que o
@@ -193,6 +201,8 @@ async function applyUpdate(opts={}){
   manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES,
   snapshot=snapshotTree,restore=restoreTree, /* injeção de teste (mesma ideia do run) */
   platform=process.platform, /* injeção de teste para o sync do bundle */
+  sleep=defaultSleep, /* #6: injeção de teste da espera/retry do npm ci */
+  listElectronProcesses=defaultListElectronProcesses, /* #6: injeção de teste */
   allowOlder=false, /* só o CLI passa (`--versao` explícito): a chamada automática nunca */
  }=opts;
  const logFile=runtime?path.join(runtime,'desk.log'):'';
@@ -310,7 +320,7 @@ async function applyUpdate(opts={}){
   if(lockChangedSince(lockBefore,path.join(npmCiDir,'package-lock.json'))){
    log('update: package-lock.json mudou — rodando npm ci');
    depsTouched=true;
-   await npmCi({deskDir:npmCiDir,run});
+   await npmCi({deskDir:npmCiDir,run,platform,log,sleep,listElectronProcesses});
   }
   /* A3: "vX no lugar" só depois de conferir a versão INSTALADA no
      package.json. No modo git o commit da tag pode trazer outra versão no
@@ -362,7 +372,7 @@ async function applyUpdate(opts={}){
       com dependências mexidas (npm ci morto no meio, node_modules da versão
       nova). Refaz o ci com o lock antigo e registra o motivo no desk.log. */
    if(depsTouched){
-    try{await npmCi({deskDir:npmCiDir,run});log('update: npm ci de recuperação ok (lock antigo de volta)');}
+    try{await npmCi({deskDir:npmCiDir,run,platform,log,sleep,listElectronProcesses});log('update: npm ci de recuperação ok (lock antigo de volta)');}
     catch(err2){log('update: npm ci de recuperação TAMBÉM falhou ('+String(err2&&err2.message||err2)+') — rode npm ci à mão; node_modules pode estar inconsistente');}
    }
    /* A1: as dependências do payload do bundle NÃO vivem no instantâneo (o

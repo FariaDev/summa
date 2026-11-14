@@ -21,8 +21,10 @@ const {appendLog}=require('./updater-core.cjs');
    zipkit (#82) é o leitor de zip do `updater-files.cjs`, e o catálogo
    `pt-BR.json` traduz o erro dele: sem os dois na cópia o worker morre antes do
    handshake, do mesmo jeito. O `updater-signature.cjs` (#80) confere o
-   manifesto e o zip assinados. */
-const WORKER_FILES=['src/i18n.mjs','src/error-detail.mjs','src/log-entry.mjs','src/study-data/zipkit.cjs','src/locales/pt-BR.json','updater-core.cjs','updater-check.cjs','updater-files.cjs','updater-signature.cjs','updater-worker.cjs'];
+   manifesto e o zip assinados. O `updater-npm-ci.cjs` (#6) espera os processos
+   do Electron soltarem o `node_modules` no Windows; sem ele na cópia o worker
+   não roda nem o `npm ci`. */
+const WORKER_FILES=['src/i18n.mjs','src/error-detail.mjs','src/log-entry.mjs','src/study-data/zipkit.cjs','src/locales/pt-BR.json','updater-core.cjs','updater-check.cjs','updater-files.cjs','updater-signature.cjs','updater-npm-ci.cjs','updater-worker.cjs'];
 
 /**
  * Monta em `dir` a cópia do updater que o worker executa, com os módulos que ela requer.
