@@ -638,3 +638,43 @@ test('pacote: importar conversa com origin descarta a linhagem, sem perder a tra
     cleanup(fixture.runtime, fixture.materialsDir, fixture.agentHome, root);
   }
 });
+
+/* #4: o descritor do runtime guarda a referência do anexo; o pacote e a
+   transcrição importada continuam levando os bytes, sem perder a imagem. */
+test('pacote: conversa externalizada leva a imagem inline e a importação a preserva', () => {
+  const fixture = seedRuntime();
+  const root = tempDir('mesa-import-attachment');
+  try {
+    const image = Buffer.from('imagem do pacote').toString('base64');
+    const source = conversations.createClaudeConversation({runtime: fixture.runtime, courseId: 'mat-1'});
+    conversations.updateClaudeConversation(source, {messages: [
+      {role: 'user', content: [{type: 'text', text: 'veja a imagem'}, {type: 'image', data: image, mimeType: 'image/png'}]},
+    ]}, {runtime: fixture.runtime});
+    const origin = conversations.readClaudeConversation(source, {runtime: fixture.runtime});
+    assert.equal(origin.messages[0].content[1].data, undefined, 'no runtime a imagem está no arquivo');
+    const built = packages.buildPackage({
+      runtime: fixture.runtime,
+      course: {id: 'mat-1', name: 'Algebra Linear'},
+      materialsDir: fixture.materialsDir,
+      learningDir: path.join(fixture.runtime, 'learning', 'Courses', 'Algebra Linear'),
+      include: {review: true, bookmarks: true, resume: true, conversations: true},
+    });
+    const entry = built.manifest.conversations.find((item) => item.originalName === path.basename(source));
+    const payload = zipkit.readZip(built.buffer).find((item) => item.name === entry.archivePath);
+    const packed = JSON.parse(payload.data.toString('utf8'));
+    assert.equal(packed.messages[0].content[1].data, image, 'o pacote carrega os bytes, não o nome do arquivo');
+    assert.equal(packed.messages[0].content[1].attachment, undefined);
+
+    const destination = packages.planDestination({root, name: 'Algebra Linear'});
+    const preview = packages.previewImport({buffer: built.buffer, destination});
+    const result = packages.importPackage({buffer: built.buffer, destination, courseId: preview.courseId});
+    const imported = fs.readdirSync(path.join(result.conversationsDir, 'claude'))
+      .map((name) => JSON.parse(fs.readFileSync(path.join(result.conversationsDir, 'claude', name), 'utf8')))
+      .find((descriptor) => descriptor.importedFrom === origin.nativeSessionId);
+    assert.ok(imported, 'a conversa foi importada');
+    assert.equal(imported.messages[0].content[1].data, image, 'a importação devolve a imagem inline');
+    assert.equal(imported.messages[0].content[1].attachment, undefined);
+  } finally {
+    cleanup(fixture.runtime, fixture.materialsDir, fixture.agentHome, root);
+  }
+});

@@ -456,7 +456,16 @@ assert.deepEqual(shell.menu,['page-shot','more-zoom','invert','rotate','nav','co
   const saved=savedText();assert.match(saved,/Onde parei: terminei a questão 7b/);assert.match(saved,/Próximo passo: começar a questão 8/);
  assert.match(saved,/Por que isso vale/);
  assert.match(saved,/> A identidade de Pitágoras: \$a\^2 \+ b\^2 = c\^2\$ vale/);
- assert.match(saved,/"type":"image","data":"iVBOR/);
+ /* #4: a imagem do print sai do descritor para o arquivo da conversa. */
+ assert.doesNotMatch(saved,/"type":"image","data":"iVBOR/,'o base64 não fica no descritor');
+ const savedAttachment=/"type":"image","attachment":"([0-9a-f]{64}\.png)"/.exec(saved)?.[1];
+ assert.ok(savedAttachment,'a imagem foi para o arquivo da conversa (#4)');
+ const attachmentRoot=path.join(runtime,'conversations','attachments');
+ const attachmentFile=fs.existsSync(attachmentRoot)
+  ?fs.readdirSync(attachmentRoot,{recursive:true}).map(name=>path.join(attachmentRoot,name)).find(file=>file.endsWith(savedAttachment))
+  :undefined;
+ assert.ok(attachmentFile,'o anexo existe dentro do runtime');
+ assert.match(fs.readFileSync(attachmentFile).subarray(0,8).toString('base64'),/^iVBOR/,'o arquivo guarda os bytes originais da imagem');
  assert.match(saved,/"mimeType":"image\/png"/);
  await page.locator('#study-menu .nav-trigger').click();
  assert.match(await page.locator('#context-summary').textContent(),/Limites\.pdf, p\.\s?\d+ \+1/,'a linha do contexto nomeia o primeiro material e conta o segundo');
