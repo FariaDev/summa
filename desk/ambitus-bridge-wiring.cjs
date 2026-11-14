@@ -35,15 +35,41 @@ function currentSelection({session, runtime, state}) {
 }
 
 /**
+ * Renderiza a miniatura do cartão pelo mesmo caminho do `ler_caderno` e a manda
+ * à janela num evento à parte (`ambitus-page-thumb`): o Ambitus espera só
+ * alguns segundos pela resposta da ponte, e a renderização pode demorar. Falha
+ * ou janela fechada: nada é enviado e o cartão fica com o ícone do caderno.
+ * @param {{caminho: string, pagina: number}} page
+ * @param {{readNotebook: (raw: {caminho: string, pagina: number}) => Promise<{image?: string}>, win: () => any, log?: (line: string) => void}} deps
+ * @returns {Promise<boolean>} se a miniatura foi enviada
+ * @example await sendPageThumbnail({caminho: '/c/a.xopp', pagina: 2}, {readNotebook, win: () => win}) // true
+ */
+async function sendPageThumbnail(page, {readNotebook, win, log = () => {}}) {
+  try {
+    const result = await readNotebook({caminho: page.caminho, pagina: page.pagina});
+    const window = win();
+    if (!result || typeof result.image !== 'string' || !result.image || !window || window.isDestroyed()) return false;
+    window.webContents.send('ambitus-page-thumb', {caminho: page.caminho, pagina: page.pagina, thumb: `data:image/png;base64,${result.image}`});
+    return true;
+  } catch (error) {
+    log(`ambitus: sem miniatura da página ${page.pagina}: ${error?.message || error}`);
+    return false;
+  }
+}
+
+/**
  * Leva uma página do Ambitus ao chat lateral: o caderno precisa existir; entra
  * na lista viva (`allowedXopp`) para o tutor relê-lo pelo `ler_caderno`, e a
- * janela vem para a frente com o pedido (`ambitus-page`). Sem janela, o motivo.
+ * janela vem para a frente com o pedido (`ambitus-page`), que no renderer vira
+ * um cartão na bandeja de anexos. Sem janela, o motivo. Com `readNotebook`, a
+ * miniatura segue depois, sem segurar a resposta (`sendPageThumbnail`).
  * @param {{caminho: string, pagina: number, nome: string}} page
- * @param {{allowedXopp: Set<string>, win: () => any, isFile?: (file: string) => boolean}} deps
+ * @param {{allowedXopp: Set<string>, win: () => any, isFile?: (file: string) => boolean,
+ *   readNotebook?: ((raw: {caminho: string, pagina: number}) => Promise<{image?: string}>) | null, log?: (line: string) => void}} deps
  * @returns {{ok: true}|{reason: string}}
  * @example sendPageToSidechat({caminho: '/c/a.xopp', pagina: 2, nome: 'a'}, {allowedXopp, win: () => win}) // {ok: true}
  */
-function sendPageToSidechat(page, {allowedXopp, win, isFile = (file) => { try { return fs.statSync(file).isFile(); } catch { return false; } }}) {
+function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = () => {}, isFile = (file) => { try { return fs.statSync(file).isFile(); } catch { return false; } }}) {
   if (!isFile(page.caminho)) return {reason: 'not-found'};
   const window = win();
   if (!window || window.isDestroyed()) return {reason: 'no-window'};
@@ -52,6 +78,7 @@ function sendPageToSidechat(page, {allowedXopp, win, isFile = (file) => { try { 
   window.show();
   window.focus();
   window.webContents.send('ambitus-page', {caminho: page.caminho, pagina: page.pagina, nome: page.nome});
+  if (typeof readNotebook === 'function') void sendPageThumbnail(page, {readNotebook, win, log});
   return {ok: true};
 }
 
@@ -63,7 +90,7 @@ function sendPageToSidechat(page, {allowedXopp, win, isFile = (file) => { try { 
  *   state: () => any, patchState: (patch: object) => void, persist: () => void, session: () => string,
  *   engine: () => string, openCodeTutor: {inkBridge: Function, inkCatalog: () => Promise<any[]>},
  *   language: () => 'pt-BR'|'en', allowSender: (event: any) => boolean, log: (line: string) => void,
- *   allowedXopp: Set<string>, win: () => any, readInkImpl?: typeof readInk}} deps
+ *   allowedXopp: Set<string>, win: () => any, readNotebook?: (raw: {caminho: string, pagina: number}) => Promise<{image?: string}>, readInkImpl?: typeof readInk}} deps
  * @returns {{close: () => Promise<void>, setInkReading: (payload: unknown) => Promise<{ok: true}|{ok: false, reason: string}>, inkStatus: () => Promise<{enabled: boolean, reason: string|null}>}}
  * @example const ambitus = registerAmbitusBridge({ipcMain, runtime, state: () => state, patchState, persist, session: () => session, engine, openCodeTutor, language, allowSender: trustedMainSender, log});
  */
@@ -101,7 +128,7 @@ function registerAmbitusBridge(deps) {
     return (deps.readInkImpl || readInk)({bridge, png, language: deps.language(), signal});
   }
 
-  const sendPage = (page) => sendPageToSidechat(page, {allowedXopp: deps.allowedXopp, win: deps.win});
+  const sendPage = (page) => sendPageToSidechat(page, {allowedXopp: deps.allowedXopp, win: deps.win, readNotebook: deps.readNotebook || null, log: deps.log});
   const host = createAmbitusBridgeHost({runtime, deskState: () => ({inkReading: !isClaude() && inkReadingEnabled(state())}), readText, pickModel, sendPage, log});
   /* Opt-in já salvo: o catálogo vem fora do caminho síncrono da partida. */
   if (inkReadingEnabled(state()) && !isClaude()) setImmediate(() => { void refreshCatalog(); });
@@ -148,4 +175,4 @@ function registerAmbitusBridge(deps) {
   return {close: () => host.close(), setInkReading, inkStatus};
 }
 
-module.exports = {registerAmbitusBridge, currentSelection, sendPageToSidechat};
+module.exports = {registerAmbitusBridge, currentSelection, sendPageToSidechat, sendPageThumbnail};

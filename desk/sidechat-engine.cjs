@@ -143,8 +143,8 @@ function nativeSideChannel({engine, id, service, onEvent, log}) {
       }
       await warming;
     },
-    async prompt({text}) {
-      const result = await service.request('prompt', {message: text});
+    async prompt({text, images}) {
+      const result = await service.request('prompt', {message: text, ...(Array.isArray(images) && images.length ? {images} : {})});
       return {accepted: true, result};
     },
     async abort() {

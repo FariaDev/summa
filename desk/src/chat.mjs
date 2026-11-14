@@ -364,8 +364,10 @@ function dataUrlFile(dataUrl,name){
    B6: clique duplo engole o segundo clique (uma captura em voo por vez) e a
    matéria/sessão de destino fica FIXADA — se ela mudou durante a captura, a
    imagem é descartada em vez de pousar na conversa de outra matéria. */
-export async function conferir(){
- if(S.busy)return;
+/* `sink` (opcional): o chat lateral recebe a captura na bandeja dele, com a mesma captura e as mesmas travas;
+   `{attach(file) → Promise<number>, shutter: Element|null, focus()}`. Sem ele vale a bandeja do tutor. */
+export async function conferir(sink){
+ if(S.busy&&!sink)return;
  if(S.appConfig.desk?.conferir===false)return;
  const appNow=conferirAppName();
  if(!S.captureOk){toast(uiMessage('check.unavailableToast',{label:uiText(conferirCore.buttonLabel(appNow))}));return;}
@@ -386,11 +388,11 @@ export async function conferir(){
   const app=String(shot?.app||'').trim()||conferirCore.defaultApp();
   const file=dataUrlFile(shot?.dataUrl,captureFileName(app));
   if(!file){toast(uiMessage('capture.invalid'));return;}
-  const added=await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
+  const added=sink?await sink.attach(file):await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
   if(!added)return;
-  playShutter($('#attach'));
+  playShutter(sink?sink.shutter:$('#attach'));
   toast(uiText(conferirCore.attachedText(app)));
-  $('#prompt').focus();
+  if(sink)sink.focus();else $('#prompt').focus();
  }catch(e){toast(e.message);}
  finally{endCaptureLock(S,lock);}
 }

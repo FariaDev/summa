@@ -225,4 +225,4 @@ function conversationList(sessions, {max = 100} = {}) {
     .filter((entry) => entry.id);
 }
 
-module.exports = {SCHEMA_VERSION, ID_RE, MAX_MESSAGE_ID, MAX_DIALOG_IDS, STATUS_BY_CORE, CORE_BY_STATUS, isPlainObject, nowMs, CONTEXT_END_MARKER, displayUserText, displayMessages, fail, sidechatsDir, descriptorPath, readIndex, writeIndex, validDescriptor, readDescriptorRaw, saveDescriptor, normalizeRefs, appendMessage, conversationList};
+module.exports = {SCHEMA_VERSION, ID_RE, MAX_MESSAGE_ID, MAX_DIALOG_IDS, STATUS_BY_CORE, CORE_BY_STATUS, isPlainObject, nowMs, CONTEXT_START, CONTEXT_END_MARKER, displayUserText, displayMessages, fail, sidechatsDir, descriptorPath, readIndex, writeIndex, validDescriptor, readDescriptorRaw, saveDescriptor, normalizeRefs, appendMessage, conversationList};

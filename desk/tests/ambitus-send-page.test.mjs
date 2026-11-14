@@ -1,18 +1,19 @@
 /* Mandar a página do Ambitus ao chat lateral: a rota `POST /mandar-pagina` da
    ponte (JSON com caminho e página, mesmo token da leitura), o main que
-   autoriza o caderno e chama a janela, e o renderer que põe a origem no
-   rascunho sem enviar. Não depende da leitura da tinta estar ligada. */
+   autoriza o caderno, chama a janela e manda a miniatura depois, e o renderer
+   que põe a página como cartão na bandeja de anexos (campo vazio, caminho
+   escondido no cartão). Não depende da leitura da tinta estar ligada. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {ambitusPageText, createAmbitusPage} from '../src/ambitus-page.mjs';
+import {notebookCardOf, createAmbitusPage} from '../src/ambitus-page.mjs';
 
 const require = createRequire(import.meta.url);
 const {createAmbitusBridgeHost, parsePageRequest} = require('../ambitus-bridge-host.cjs');
-const {sendPageToSidechat} = require('../ambitus-bridge-wiring.cjs');
+const {sendPageToSidechat, sendPageThumbnail} = require('../ambitus-bridge-wiring.cjs');
 
 function hostWith(t, sendPage) {
   const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-page-'));
@@ -97,33 +98,76 @@ test('caderno que não existe ou janela fechada não autorizam nada', () => {
   assert.deepEqual(calls, []);
 });
 
-test('o rascunho diz de onde vem a página, com o caminho para o tutor', () => {
-  const text = ambitusPageText({caminho: '/c/Limites — aula 3.xopp', pagina: 2, nome: ''});
-  assert.match(text, /2/);
-  assert.match(text, /Limites — aula 3/);
-  assert.match(text, /\/c\/Limites — aula 3\.xopp/);
-  assert.ok(text.endsWith(' '));
-  assert.equal(ambitusPageText({caminho: '/c/a.xopp', pagina: 0}), '');
-  assert.equal(ambitusPageText(null), '');
+function wiredWin() {
+  const sent = [];
+  return {sent, win: {isDestroyed: () => false, isMinimized: () => false, restore() {}, show() {}, focus() {}, webContents: {send: (channel, data) => sent.push([channel, data])}}};
+}
+
+test('a miniatura segue depois da resposta, num evento à parte, pelo mesmo leitor do ler_caderno', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-thumb-'));
+  const file = path.join(dir, 'Limites.xopp');
+  fs.writeFileSync(file, 'x');
+  try {
+    const {sent, win} = wiredWin();
+    const reads = [];
+    let release = () => {};
+    const gate = new Promise((resolve) => { release = resolve; });
+    const readNotebook = async (raw) => { reads.push(raw); await gate; return {image: 'QUJD'}; };
+    const answer = sendPageToSidechat({caminho: file, pagina: 2, nome: 'Limites'}, {allowedXopp: new Set(), win: () => win, readNotebook});
+    assert.deepEqual(answer, {ok: true}, 'o Ambitus recebe a resposta sem esperar a renderização');
+    assert.deepEqual(sent.map(([channel]) => channel), ['ambitus-page']);
+    assert.deepEqual(reads, [{caminho: file, pagina: 2}]);
+    release();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(sent.at(-1), ['ambitus-page-thumb', {caminho: file, pagina: 2, thumb: 'data:image/png;base64,QUJD'}]);
+  } finally { fs.rmSync(dir, {recursive: true, force: true}); }
 });
 
-test('o renderer abre o lateral e espera ele montar para pôr o texto', async () => {
+test('renderização que falha, volta vazia ou chega com a janela fechada não manda miniatura', async () => {
+  const logs = [];
+  const {sent, win} = wiredWin();
+  const page = {caminho: '/c/a.xopp', pagina: 1};
+  assert.equal(await sendPageThumbnail(page, {readNotebook: async () => { throw Error('xournalpp saiu com código 1'); }, win: () => win, log: (line) => logs.push(line)}), false);
+  assert.equal(await sendPageThumbnail(page, {readNotebook: async () => ({image: ''}), win: () => win}), false);
+  assert.equal(await sendPageThumbnail(page, {readNotebook: async () => ({image: 'QUJD'}), win: () => ({isDestroyed: () => true})}), false);
+  assert.equal(await sendPageThumbnail(page, {readNotebook: async () => ({image: 'QUJD'}), win: () => null}), false);
+  assert.deepEqual(sent, []);
+  assert.match(logs[0], /sem miniatura da página 1: xournalpp saiu com código 1/);
+});
+
+test('o cartão da página tem o caderno, a página e o caminho; o que não é página não vira cartão', () => {
+  assert.deepEqual(notebookCardOf({caminho: '/c/Limites — aula 3.xopp', pagina: 2, nome: ''}), {caminho: '/c/Limites — aula 3.xopp', pagina: 2, nome: 'Limites — aula 3'});
+  assert.deepEqual(notebookCardOf({caminho: '/c/a.xopp', pagina: 1, nome: '  Cálculo  '}), {caminho: '/c/a.xopp', pagina: 1, nome: 'Cálculo'});
+  assert.equal(notebookCardOf({caminho: 'C:\\cadernos\\Aula.xopp', pagina: 1, nome: ''}).nome, 'Aula');
+  assert.equal(notebookCardOf({caminho: '/c/a.xopp', pagina: 0}), null);
+  assert.equal(notebookCardOf({caminho: '/c/a.xopp', pagina: '2'}), null);
+  assert.equal(notebookCardOf({caminho: '', pagina: 1}), null);
+  assert.equal(notebookCardOf(null), null);
+});
+
+test('o renderer abre o lateral e espera ele montar para pôr o cartão na bandeja', async () => {
   const toasts = [];
   let opened = 0;
   let tries = 0;
-  const inserted = [];
-  const receive = createAmbitusPage({ready: () => true, open: () => { opened++; }, insert: async (text) => { tries++; if (tries < 3) return false; inserted.push(text); return true; }, toast: (m) => toasts.push(m), wait: async () => {}});
+  const cards = [];
+  const receive = createAmbitusPage({ready: () => true, open: () => { opened++; }, attach: async (card) => { tries++; if (tries < 3) return false; cards.push(card); return true; }, toast: (m) => toasts.push(m), wait: async () => {}});
   assert.equal(await receive({caminho: '/c/a.xopp', pagina: 1, nome: 'a'}), true);
   assert.equal(opened, 1);
-  assert.equal(inserted.length, 1);
+  assert.deepEqual(cards, [{caminho: '/c/a.xopp', pagina: 1, nome: 'a'}]);
   assert.deepEqual(toasts, []);
 });
 
-test('sem matéria aberta ou sem o lateral montar, um aviso e nada no rascunho', async () => {
+test('pedido que não é uma página não abre nada nem avisa', async () => {
+  const receive = createAmbitusPage({ready: () => assert.fail('não consulta'), open: () => assert.fail('não abre'), attach: async () => assert.fail('não anexa'), toast: () => assert.fail('não avisa')});
+  assert.equal(await receive({caminho: '/c/a.xopp', pagina: 0}), false);
+  assert.equal(await receive(undefined), false);
+});
+
+test('sem matéria aberta ou sem o lateral montar, um aviso e nenhum cartão', async () => {
   const toasts = [];
-  const noCourse = createAmbitusPage({ready: () => false, open: () => assert.fail('não abre'), insert: async () => assert.fail('não insere'), toast: (m) => toasts.push(m)});
+  const noCourse = createAmbitusPage({ready: () => false, open: () => assert.fail('não abre'), attach: async () => assert.fail('não anexa'), toast: (m) => toasts.push(m)});
   assert.equal(await noCourse({caminho: '/c/a.xopp', pagina: 1}), false);
-  const never = createAmbitusPage({ready: () => true, open: () => {}, insert: async () => false, toast: (m) => toasts.push(m), wait: async () => {}, tries: 3});
+  const never = createAmbitusPage({ready: () => true, open: () => {}, attach: async () => false, toast: (m) => toasts.push(m), wait: async () => {}, tries: 3});
   assert.equal(await never({caminho: '/c/a.xopp', pagina: 1}), false);
   assert.equal(toasts.length, 2);
   assert.ok(toasts.every((m) => typeof m === 'string' && m.length > 0));

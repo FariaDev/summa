@@ -14,6 +14,7 @@ import {createSidechatScroll} from './sidechat-scroll.mjs';
 import {createSidechatDraft} from './sidechat-draft.mjs';
 import {installMessageLinks} from './message-links.mjs';
 import {revealMessageBubble} from './reveal-message.mjs';
+import {sidechatAttachParts,bindSidechatAttach} from './sidechat-attach.mjs';
 /* ---------------------------------------------------------------------------
    Chat lateral: uma conversa INDEPENDENTE da principal, no espaço da área de
    apoio (segundo leitor). Estado e DOM isolados: nada aqui usa `#messages`,
@@ -51,7 +52,7 @@ function api(){return bridgeOverride||window.desk;}
    fila do composer principal. */
 const state={id:'',engine:'',model:'',scope:null,messages:[],cards:[],draft:'',busy:false,sending:false,sendGen:0,uncertain:false,stopping:false,context:null,requests:new Map(),visible:false,gen:0,opening:null,unavailable:false};
 let root=null,promptEl=null,msgsEl=null,activityEl=null,sendEl=null,stopEl=null,ctxPop=null,engineEl=null,morePop=null,scopeTextEl=null;
-let paintTimer=0,liveText='',liveEl=null,sideScroll=null;
+let paintTimer=0,liveText='',liveEl=null,sideScroll=null,attach=null;
 /* O aviso do limite do grátis no LATERAL (#144), com a troca de modelo da
    própria sessão lateral: o componente é o mesmo do tutor. */
 const freeLimit=createSidechatFreeLimit({state,api:()=>api(),root:()=>root});
@@ -81,6 +82,7 @@ export function mountSidechat(container){
     (`core/sidechat.bend`); o estado, a fila e o envio seguem independentes. */
  const menuItem=h('button',{type:'button',id:'sidechat-context',role:'menuitem','aria-haspopup':'dialog','aria-expanded':'false'});
  menuItem.innerHTML=`${icon('textQuote')} <span></span>`;
+ const attachParts=sidechatAttachParts();
  root=h('section',{id:'sidechat',hidden:''},
   h('div',{class:'sidechat-head'},
    h('h3',{class:'sidechat-head-title'},h('span',{id:'sidechat-title'}),h('span',{id:'sidechat-engine',class:'sidechat-engine',hidden:''}),h('span',{id:'sidechat-pin',class:'sidechat-pin',role:'img',hidden:''})),
@@ -100,17 +102,20 @@ export function mountSidechat(container){
      h('span',{id:'sidechat-scope-note'}),
      h('button',{type:'button',id:'sidechat-refresh'}))),
    h('div',{id:'sidechat-box',class:'composer-box'},
+    attachParts.tray,
     h('textarea',{id:'sidechat-prompt',class:'composer-field',rows:'3'}),
     h('div',{class:'composer-actions'},
+     attachParts.clip,
      h('button',{type:'button',id:'sidechat-stop',hidden:''}),
-     h('button',{type:'button',id:'sidechat-send',class:'primary'})))));
+     h('button',{type:'button',id:'sidechat-send',class:'primary'}))),
+   attachParts.pop,attachParts.input));
  container.append(root);
  window.addEventListener('desk-tutor-link',syncLegacyLateral);
  syncLegacyLateral();
  labelBtn(root.querySelector('#sidechat-new'),'plus');
  labelBtn(root.querySelector('#sidechat-more'),'more');
  labelBtn(root.querySelector('#sidechat-close'),'close');
- promptEl=root.querySelector('#sidechat-prompt');
+ promptEl=root.querySelector('#sidechat-prompt');attach=bindSidechatAttach(attachParts,{prompt:promptEl,root});
  msgsEl=root.querySelector('#sidechat-messages');
  activityEl=root.querySelector('#sidechat-activity');
  sendEl=root.querySelector('#sidechat-send');
@@ -310,7 +315,7 @@ async function newSidechat(){
  state.sendGen++;
  state.opening=null;
  freeLimit.hide();state.id='';state.model='';state.messages=[];state.cards=[];state.requests.clear();state.busy=false;state.sending=false;state.stopping=false;state.uncertain=false;state.context=null;liveText='';liveEl=null;failureNoted=false;state.draft='';
- if(promptEl)promptEl.value='';
+ if(promptEl)promptEl.value='';attach?.clear();
  adopt(pendingPlaceholder(),{scope:scopeOf(),useLocal:false});
  await openSidechat({fresh:true});
 }
@@ -369,7 +374,7 @@ export function resetSidechat(){
  state.id='';state.model='';state.messages=[];state.cards=[];state.requests.clear();state.busy=false;state.sending=false;state.stopping=false;state.uncertain=false;state.context=null;liveText='';liveEl=null;failureNoted=false;
  state.draft='';
  state.scope=scopeOf();
- if(promptEl)promptEl.value='';
+ if(promptEl)promptEl.value='';attach?.clear();
  renderAll();
  /* Se o painel está visível, a sessão nova abre quando o host terminar de
     trocar (o evento chega antes dos painéis novos; o timeout deixa a troca
@@ -450,16 +455,17 @@ async function sendMessage(){
  paintSend();
  mirrorDraft(state.draft,{scope:state.scope});
  saveDraftNow(); /* A aceito não pode ressuscitar no hide/show/restart */
- const watch={terminal:false};
+ const attached=attach?.snapshot()||{},watch={terminal:false};
  failureNoted=false;
  ackWatch=watch;
  try{
-  const result=await api().sidechatPrompt({id,text});
+  const result=await api().sidechatPrompt({id,text,...attached});
   if(state.id!==id){removeLocalMessage(localUser);return;}
   if(result?.sent===false){
    if(result.uncertain){
     /* Pode ter chegado: a bolha fica (não reenviamos), com o aviso do cabeçalho. */
     state.uncertain=true;
+    attach?.release(attached);
     toast(result.error||uiMessage('sidechat.err.uncertainDelivery'));
    }else{
     removeLocalMessage(localUser);
@@ -473,6 +479,7 @@ async function sendMessage(){
      Pi pode ainda não ter emitido `agent_start`; `streaming` medido no canal
      não é prova de que não há turno). Terminal visto durante o aceite mantém o
      desfecho e libera já — nada de timer hipotético. */
+  attach?.release(attached);
   state.busy=!watch.terminal;
   if(state.busy)ensureLive();
   paintHeader();
@@ -787,13 +794,6 @@ export function initSidechat(){
 /* Estado exposto só para testes de unidade/inspeção (não usar no DOM). */
 export function sidechatState(){return state;}
 
-/* Texto de fora (a página do Ambitus) entra no fim do rascunho, sem enviar; o `input` sintético salva como a digitação. */
-export async function insertSidechatText(text){
- if(state.opening)await state.opening;
- if(!promptEl||state.unavailable)return false;
- const before=String(promptEl.value||'');
- promptEl.value=before&&!/\s$/.test(before)?`${before}\n${text}`:`${before}${text}`;
- promptEl.dispatchEvent(new Event('input',{bubbles:true}));
- promptEl.focus();promptEl.setSelectionRange(promptEl.value.length,promptEl.value.length);
- return true;
-}
+/* A página do Ambitus vira cartão na bandeja (o campo fica vazio, com foco); a miniatura chega depois, quando o caderno renderiza. */
+export async function attachSidechatNotebook(card){if(state.opening)await state.opening;return !!attach&&!state.unavailable&&attach.addNotebook(card);}
+export function setSidechatNotebookThumb(data){return !!attach&&attach.setThumb(data);}

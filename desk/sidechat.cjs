@@ -42,7 +42,7 @@ const {MAX_DRAFT} = require('./state-adapter.cjs');
 const core = require('./src/generated/sidechat.core.js').default;
 const {message: uiMsg} = require('./src/i18n.mjs');
 const {createCardSession} = require('./card-session.cjs');
-const {CONTEXT_END_MARKER, CORE_BY_STATUS, ID_RE, MAX_DIALOG_IDS, MAX_MESSAGE_ID, SCHEMA_VERSION, STATUS_BY_CORE, appendMessage, conversationList, descriptorPath, displayMessages, displayUserText, fail, isPlainObject, normalizeRefs, nowMs, readDescriptorRaw, readIndex, saveDescriptor, sidechatsDir, validDescriptor, writeIndex} = require('./sidechat-store.cjs');
+const {CONTEXT_END_MARKER, CONTEXT_START, CORE_BY_STATUS, ID_RE, MAX_DIALOG_IDS, MAX_MESSAGE_ID, SCHEMA_VERSION, STATUS_BY_CORE, appendMessage, conversationList, descriptorPath, displayMessages, displayUserText, fail, isPlainObject, normalizeRefs, nowMs, readDescriptorRaw, readIndex, saveDescriptor, sidechatsDir, validDescriptor, writeIndex} = require('./sidechat-store.cjs');
 
 /* ---------- manager ---------- */
 
@@ -56,9 +56,13 @@ const isNative = (engine) => conversations.NATIVE_ENGINES.includes(engine);
  *   snapshot: (request: {refs: Array<{path: string, page: number}>}) => object, validPdf: (path: string) => string,
  *   createEngine: (request: {engine: string, id: string, descriptor: {claude?: string|null, session?: string|null}, onEvent: (event: object) => void}) => object | Promise<object>,
  *   emit: (payload: object) => void, log: (scope: string, line: string) => void,
- *   revokeCardGrant?: ((grant: {token: string}) => void) | null, now?: () => number}} options
+ *   revokeCardGrant?: ((grant: {token: string}) => void) | null, now?: () => number,
+ *   validateImages?: ((images: unknown) => object[]) | null,
+ *   notebookNote?: ((notebooks: unknown) => string) | null}} options
+ *   `validateImages` mede e encolhe os anexos de imagem (o mesmo `promptImages` do tutor);
+ *   `notebookNote` confere os cadernos anexados e devolve o bloco escondido que o motor lê (lança se algum não é conhecido).
  */
-function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now} = {}) {
+function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now, validateImages = null, notebookNote = null} = {}) {
   if (typeof runtime !== 'string' || !runtime) fail('runtime obrigatório para o chat lateral.');
   if (typeof current !== 'function') fail('current() obrigatório para o chat lateral.');
   if (typeof snapshot !== 'function') fail('snapshot() obrigatório para o chat lateral.');
@@ -89,6 +93,19 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
     });
     cardSessions.set(id, session);
     return session;
+  }
+
+  /** Imagens da bandeja, medidas e encolhidas como as do tutor; sem validador, o anexo é recusado. @param {unknown} raw @returns {object[]} */
+  function attachedImages(raw) {
+    if (raw === undefined || (Array.isArray(raw) && !raw.length)) return [];
+    if (!Array.isArray(raw) || typeof validateImages !== 'function') fail(uiMsg('err.sidechat.attachInvalid', {received: JSON.stringify(raw)?.slice(0, 80) ?? 'undefined'}));
+    return validateImages(raw);
+  }
+  /** O bloco escondido dos cadernos anexados (o `notebookNote` do host lança se algum não é conhecido). @param {unknown} raw @returns {string} */
+  function attachedNote(raw) {
+    if (raw === undefined || (Array.isArray(raw) && !raw.length)) return '';
+    if (!Array.isArray(raw) || typeof notebookNote !== 'function') fail(uiMsg('err.sidechat.attachInvalid', {received: JSON.stringify(raw)?.slice(0, 80) ?? 'undefined'}));
+    return notebookNote(raw);
   }
 
   function newEntry(descriptor) {
@@ -478,6 +495,9 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       const descriptor = entry.descriptor;
       if (typeof input.text !== 'string' || !input.text.trim()) fail('Mensagem inválida.');
       if (input.text.length > MAX_DRAFT) fail(uiMsg('err.sidechat.tooLong'));
+      /* Anexos da bandeja (imagens e cadernos): conferidos antes de qualquer escrita. */
+      const images = attachedImages(input.images);
+      const note = attachedNote(input.notebooks);
       /* Aquecimento em voo (foco no campo) não é turno: espera terminar. */
       if (entry.warming) {
         try { await entry.warming; } catch { /* o envio tenta o canal do mesmo jeito */ }
@@ -514,7 +534,10 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       const text = input.text.trim();
       /* O envelope fecha o bloco interno: o que vem depois é a fala do usuário,
          exatamente como ele escreveu. */
-      const message = includeContext ? `${context.digest}${CONTEXT_END_MARKER}${text}` : text;
+      /* O caderno anexado vai dentro do envelope, que a tela e a busca cortam:
+         a pessoa não vê o caminho, o motor sim. */
+      const envelope = [includeContext ? context.digest : (note ? CONTEXT_START : ''), note].filter(Boolean).join('\n');
+      const message = envelope ? `${envelope}${CONTEXT_END_MARKER}${text}` : text;
       const promptId = crypto.randomUUID();
       /* A fala visível entra UMA vez, antes de qualquer evento do motor: ordem
          garantida mesmo quando o eco/assistant chegam antes do aceite, e a
@@ -539,6 +562,7 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
         await channel.prompt({
           id: promptId,
           text: message,
+          images,
           running: channel.isBusy?.() === true,
         });
       } catch (error) {

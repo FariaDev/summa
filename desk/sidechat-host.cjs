@@ -1,10 +1,13 @@
 // @ts-check
-const fs=require('node:fs');const crypto=require('node:crypto');
+const fs=require('node:fs');const crypto=require('node:crypto');const path=require('node:path');
+const {message}=require('./src/i18n.mjs');
 const {createSideChatManager,conversationList}=require('./sidechat.cjs');
 const {createClaudeSideEngine,createOpenCodeSideEngine}=require('./sidechat-engine.cjs');
 const {buildStudyContext}=require('./studycontext.cjs');
 const {cleanStudy}=require('./study.cjs');
 const conversations=require('./src/agents/conversations.cjs');
+
+const MAX_SIDE_NOTEBOOKS=4;
 
 /* ---------- chat lateral (segundo chat) ----------
    O contexto que o lateral copia do principal na abertura: histórico curto
@@ -15,7 +18,7 @@ const conversations=require('./src/agents/conversations.cjs');
    O main entrega o que o lateral lê do principal como acessores (`session`,
    `courseId`, `courses`, `config`, `state`, `bridge` são reatribuídos lá) e as
    preparações que dependem do motor (`prepareClaudeSide`). */
-function createMesaSidechat({runtime,freeId,session,courseId,courses,config,state,bridge,engine,validPdf,allowedXopp,descriptorCache,prepareClaudeSide,connectOpenCodeSide,testClaudeSdkLoader,claudeBinary,claudeDetector,win,appendLog,languageHost,readPdf,readNotebook,searchMaterial,listMaterials,activityBridge}){
+function createMesaSidechat({runtime,freeId,session,courseId,courses,config,state,bridge,engine,validPdf,allowedXopp,promptImages,descriptorCache,prepareClaudeSide,connectOpenCodeSide,testClaudeSdkLoader,claudeBinary,claudeDetector,win,appendLog,languageHost,readPdf,readNotebook,searchMaterial,listMaterials,activityBridge}){
  /* O digest vai ao modelo: os rótulos seguem o idioma do tutor (#41). */
  const roleLabel=(isUser)=>languageHost.tutorT(isUser?'sidechatctx.roleUser':'sidechatctx.roleAssistant');
  function mainHistoryLines(limit=12){
@@ -76,8 +79,22 @@ function createMesaSidechat({runtime,freeId,session,courseId,courses,config,stat
   const record=descriptorCache.get(session())||null;
   return {model:record?.model||null,effort:record?.effort||null};
  }
+ /* O caderno anexado (cartão vindo do Ambitus) só vale se a Mesa já o conhece; o bloco vai no
+    envelope escondido do prompt, na língua do tutor, com o caminho para o `ler_caderno`. */
+ function notebookNote(notebooks){
+  const lines=(Array.isArray(notebooks)?notebooks:[]).slice(0,MAX_SIDE_NOTEBOOKS).map(item=>{
+   const caminho=typeof item?.caminho==='string'?item.caminho:'';
+   if(!caminho||!allowedXopp.has(caminho))throw Error(message('err.sidechat.notebookUnknown',{received:String(caminho).slice(0,200)}));
+   const page=Number.isInteger(item.pagina)&&item.pagina>=1?item.pagina:1;
+   const name=String(typeof item.nome==='string'&&item.nome.trim()?item.nome:path.basename(caminho).replace(/\.xopp$/i,'')).replace(/\s+/g,' ').slice(0,200);
+   return languageHost.tutorT('sidechatctx.notebook',{name,page,path:caminho});
+  });
+  return lines.length?[languageHost.tutorT('sidechatctx.notebookHead'),...lines].join('\n'):'';
+ }
  const manager=createSideChatManager({
   runtime,
+  validateImages:promptImages,
+  notebookNote,
   current:()=>({session:session(),courseId:courseId(),engine:engine(),...mainNativeSelection(),courseName:courseId()===freeId?'':(courses().find(c=>c.id===courseId())?.name||'')}),
   /* O manager chama `snapshot({refs})` (objeto), não o array solto: sem o
      destructuring o `Array.isArray` de `sidechatSnapshot` zerava TODAS as refs

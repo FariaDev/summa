@@ -9,6 +9,7 @@ import {isPdfFile} from './pdf-drop.mjs';
 import {renderChildren} from './view-host.mjs';
 import {bendList,openImageDialog} from './chat-assets.mjs';
 import {PIN_IDS,PIN_LIMIT,normalizeComposerPins,toggleComposerPin} from './composer-pins.mjs';
+import {imageFacts} from './attach-image-facts.mjs';
 
 /* Bandeja de anexos de imagem do composer (extraído de chat.mjs, #29): estado
    vivo em `S.attachments`, compressão, persistência por conversa, colar e
@@ -55,13 +56,7 @@ const attachmentHandlers={
   persistTray();
  }
 };
-function attachmentFacts(){
- return bendList(S.attachments.map((item,at)=>({
-  $:'AttachImage',key:`img-${at}`,dataUrl:item.dataUrl,
-  alt:item.name?t('attach.alt',{name:item.name}):t('attach.altImage'),
-  removeLabel:t('attach.remove',{name:item.name||t('attach.imageWord')}),removeTitle:'',handler:'RemoveAttachment',lazy:false
- })));
-}
+function attachmentFacts(){return imageFacts(S.attachments);}
 function pdfFacts(){
  return bendList(S.pdfAttachments.map((item,at)=>({
   $:'AttachFile',key:`pdf-${at}`,name:t('chatpdf.chip',{name:item.name,count:item.pages}),
@@ -81,6 +76,24 @@ function renderAttachments(){
 export function persistTray(){
  window.desk.traySave({images:S.attachments,pdfs:S.pdfAttachments}).catch(e=>toast(e.message));
 }
+/* Lê UMA imagem para a bandeja: reduz se for grande, confere o teto de bytes e vira data URL. Devolve
+   o anexo, `null` quando a imagem foi recusada (o aviso já saiu) ou `undefined` quando `stale()` diz que a
+   bandeja mudou no meio. A bandeja do chat lateral usa a mesma leitura (`sidechat-attach.mjs`). */
+export async function loadImageAttachment(file,stale){
+ const name=file.name||'imagem';
+ let blob=file,mime=file.type||'image/png';
+ const prepared=await prepareAttachment(file);
+ if(stale())return undefined;
+ if(prepared){blob=prepared;mime=prepared.type||mime;}
+ if(blob.size>MAX_ATTACH_BYTES){toast(t('attach.tooBig',{mb:Math.round(MAX_ATTACH_BYTES/1024/1024),name:file.name||t('attach.imageFallbackName')}));return null;}
+ const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error||Error(t('attach.readFailed')));
+  reader.readAsDataURL(blob);}).catch(()=>'');
+ if(stale())return undefined;
+ if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:image/')){toast(t('attach.unreadable'));return null;}
+ return {dataUrl,mimeType:mime,name};
+}
 /* `provenance` marca de onde o anexo veio (captura do Xournal++: horário e
    exercício do momento). O main usa isso para avisar que a captura não é do
    exercício ativo, em vez de deixá-la passar por tentativa de agora. */
@@ -88,20 +101,11 @@ export async function addAttachments(list,provenance){
  const gen=S.attachGen;let added=0,imagesAdded=0;
  const images=imageFiles(list),pdfs=pdfFiles(list);
  for(const file of images){
-  const name=file.name||'imagem';
-  let blob=file,mime=file.type||'image/png';
-  const prepared=await prepareAttachment(file);
-  if(gen!==S.attachGen)return 0;
-  if(prepared){blob=prepared;mime=prepared.type||mime;}
-  if(blob.size>MAX_ATTACH_BYTES){toast(t('attach.tooBig',{mb:Math.round(MAX_ATTACH_BYTES/1024/1024),name:file.name||t('attach.imageFallbackName')}));continue;}
-  const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();
-   reader.onload=()=>resolve(reader.result);
-   reader.onerror=()=>reject(reader.error||Error(t('attach.readFailed')));
-   reader.readAsDataURL(blob);}).catch(()=>'');
-  if(gen!==S.attachGen)return 0;
-  if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:image/')){toast(t('attach.unreadable'));continue;}
+  const item=await loadImageAttachment(file,()=>gen!==S.attachGen);
+  if(item===undefined)return 0;
+  if(!item)continue;
   if(S.attachments.length>=MAX_ATTACH){toast(t('pdf.attach.max',{max:MAX_ATTACH}));break;}
-  S.attachments.push({dataUrl,mimeType:mime,name,capturedAt:provenance?.capturedAt,exercise:provenance?.exercise,app:provenance?.app});added++;imagesAdded++;
+  S.attachments.push({...item,capturedAt:provenance?.capturedAt,exercise:provenance?.exercise,app:provenance?.app});added++;imagesAdded++;
  }
  for(const file of pdfs){
   if(S.pdfAttachments.length>=MAX_CHAT_PDFS){toast(t('chatpdf.max',{max:MAX_CHAT_PDFS}));break;}

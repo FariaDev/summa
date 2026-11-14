@@ -93,6 +93,26 @@ function sidechatModel(raw){
  const model=asPlain(raw,'Modelo inválido.');
  return {provider:asString(model.provider||'','Modelo inválido.',80),id:asString(model.id||'','Modelo inválido.',200)};
 }
+/* Anexos da bandeja do lateral: imagens (data URL; o main mede e encolhe) e cadernos
+   `{caminho, pagina, nome}` (o main só aceita os que a Mesa já conhece). */
+const MAX_SIDE_ATTACH=4,MAX_SIDE_IMAGE=40000000;
+function sidechatAttachments(raw){
+ const out={};
+ if(raw.images!==undefined){
+  if(!Array.isArray(raw.images)||raw.images.length>MAX_SIDE_ATTACH)fail('Imagens inválidas.');
+  out.images=raw.images.map(item=>({dataUrl:asString(asPlain(item,'Imagem inválida.').dataUrl,'Imagem inválida.',MAX_SIDE_IMAGE)}));
+ }
+ if(raw.notebooks!==undefined){
+  if(!Array.isArray(raw.notebooks)||raw.notebooks.length>MAX_SIDE_ATTACH)fail('Cadernos inválidos.');
+  out.notebooks=raw.notebooks.map(item=>{
+   const book=asPlain(item,'Caderno inválido.');
+   const pagina=Number(book.pagina);
+   if(!Number.isInteger(pagina)||pagina<1)fail('Caderno inválido.');
+   return {caminho:asString(book.caminho,'Caderno inválido.',MAX_SIDE_PATH),pagina,nome:asString(book.nome??'','Caderno inválido.',200)};
+  });
+ }
+ return out;
+}
 function sidechatText(value,message){
  const text=asString(value,message,MAX_SIDE_TEXT);
  if(!text.trim())fail(message);
@@ -435,7 +455,7 @@ const deskApi={
  /* Chat lateral: canais próprios, escopados à conversa principal atual. */
  sidechatOpen:p=>invoke('sidechat-open',sidechatOpenArgs(p)),
  sidechatRead:p=>invoke('sidechat-read',sidechatArgs(p)),
- sidechatPrompt:p=>invoke('sidechat-prompt',{...sidechatArgs(p),text:sidechatText(asPlain(p,'Pedido inválido.').text,'Mensagem inválida.')}),
+ sidechatPrompt:p=>{const raw=asPlain(p,'Pedido inválido.');return invoke('sidechat-prompt',{...sidechatArgs(raw),text:sidechatText(raw.text,'Mensagem inválida.'),...sidechatAttachments(raw)});},
  sidechatWarm:p=>invoke('sidechat-warm',sidechatArgs(p)),
  sidechatAbort:p=>invoke('sidechat-abort',sidechatArgs(p)),
  sidechatSave:p=>invoke('sidechat-save',{...sidechatArgs(p),draft:asString(asPlain(p,'Pedido inválido.').draft??'','Rascunho inválido.',MAX_SIDE_TEXT)}),
@@ -467,6 +487,7 @@ const deskApi={
   return invoke('sidechat-respond',{...value,response:clean});
  },
  onAmbitusPage:fn=>ipcRenderer.on('ambitus-page',(_e,data)=>{if(typeof fn==='function')fn(data);}),
+ onAmbitusPageThumb:fn=>ipcRenderer.on('ambitus-page-thumb',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onSidechatEvent:fn=>ipcRenderer.on('sidechat-event',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  sidechatAlwaysOnTop:on=>invoke('sidechat-always-on-top',{on:on===true}),
  getConfig:()=>invoke('get-config'),saveConfig:c=>invoke('save-config',c),pickFolder:()=>invoke('pick-folder'),pickXopp:()=>invoke('pick-xopp'),pickExecutable:kind=>invoke('pick-executable',kind),logError:line=>invoke('desk-log',line),
