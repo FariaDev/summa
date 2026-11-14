@@ -938,7 +938,8 @@ test('#6: Windows espera o processo do Electron antes do npm ci e repete em EBUS
   assert.deepEqual(npmCalls, [['npm', 'ci'], ['npm', 'ci']], 'a primeira trava e a segunda passa');
   assert.deepEqual(sleeps, [500, 2000], 'espera entre as listagens e antes da nova tentativa');
   assert.match(logOf(runtime), /pid 4242/, 'o processo que segurava vai para o log');
-  assert.match(logOf(runtime), /node_modules[\\/]electron[\\/]dist[\\/]electron\.exe/);
+  // o log é JSON: no Windows cada barra invertida do caminho sai dobrada (CI do #47).
+  assert.match(logOf(runtime), /node_modules[\\/]+electron[\\/]+dist[\\/]+electron\.exe/);
   assert.match(logOf(runtime), /trava de arquivo \(EBUSY; tentativa 1\/4\)/);
 });
 
