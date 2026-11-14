@@ -301,3 +301,74 @@ node /tmp/medir-threads/medir.mjs
 ```
 
 O `v8MB` do script acima mede só a serialização; para a memória real do renderer, use a sonda de janela. O script de gravação usado separado (`updateClaudeConversation` com uma mensagem nova) está resumido na coluna “Gravação” da tabela.
+
+## 4. Medição depois de gravar por turno (#4)
+
+**Data:** 2026-11-14. **Base:** `959b551d` (origin/main). **Pergunta:** a #4 (mover a gravação da conversa para `worker_threads`) ainda compensa depois da #119, que passou a gravar o descritor uma vez por turno?
+
+### 4.1 Quantas vezes um turno grava hoje
+
+A seção 3 foi medida antes da #119 e fala em gravação a cada `message_end`; o caminho atual é o desta tabela. A #119 separou o estado do turno do descritor: o que muda várias vezes durante o turno vai para um arquivo pequeno ao lado (`<descritor>.turn`), e `messages` só é reescrito no fim. Num turno curto (menos de 8 s) o caminho é:
+
+| Momento | Gravação | Tamanho | Onde |
+|---|---|---|---|
+| Aceite da pergunta | `appendPendingMessage` → `writeTurnMetadata` | arquivo pequeno do turno | `src/agents/service.cjs:202-207,211`; `conversation-turn.cjs:196-207` |
+| Fase da entrega `accepted` | `persistDelivery` → `writeTurnMetadata` | arquivo pequeno | `native-persistence.cjs:47-49`; chamado por `opencode-adapter.cjs:308` e `claude-adapter-turns.cjs:62-67` |
+| Id do turno no motor | `onTurn` → `writeTurnMetadata` | arquivo pequeno | `service.cjs:425`; `native-persistence.cjs:64-72` |
+| `message_end` de cada fala | nada em disco; `_deferMessages` só arma o teto | — | `service.cjs:101-104,159-161` |
+| `turn_end` | `flush` → `onMessages` → `updateClaudeConversation` | **descritor inteiro** | `service.cjs:108,228-232`; `native-persistence.cjs:50-52`; `conversations.cjs:305-382` |
+
+O `_saveMessages` (`service.cjs:152-155`) ainda existe e chama o mesmo `flush`, mas não está no caminho normal do turno: ele só aparece em dois casos extras — imagem de página marcada (`_insertMarkedImageMessage`, `service.cjs:143-151`) e `get_messages` que troca o histórico pelo do adaptador (`service.cjs:256`). Parar/abortar também descarrega (`service.cjs:285,450`).
+
+Duas ressalvas para a #4:
+
+- **Turno longo não é estritamente uma gravação.** `_notePartial` arma o teto de 8 s (`PENDING_MESSAGES_FLUSH_MS`, `service.cjs:14,163-185`): enquanto o stream passa de 8 s, cada tique reescreve o descritor inteiro com o parcial. O número por turno cresce a cada 8 s de resposta.
+- **Imagem de página marcada** insere uma mensagem e chama `_saveMessages` na hora (`service.cjs:143-151`): mais uma reescrita completa por imagem inserida.
+
+### 4.2 Como foi medido
+
+Máquina: Debian 13 (`Linux 7.2.11+deb13-amd64`, x86_64), AMD Ryzen 5 2500U (4 núcleos/8 threads), 14 GiB de RAM. Node 22.19.0 nos scripts; Electron 45 na janela. A máquina estava sob carga de outras sessões; os `uptime` de cada rodada estão nas tabelas. Dados só sintéticos, no schema do descritor, sem ler sessão real nem `desk/.runtime`: 4 mensagens por turno, matemática, imagem base64 de 24 KiB a cada 25 turnos e `toolResult` de ~18 KiB a cada 50, como no Apêndice A.
+
+Comandos:
+
+```sh
+cd desk
+node scripts/measure-conversation-write.mjs
+DISPLAY=:0 npm run ui -- conversation-write-block --jobs 1   # 3 vezes
+```
+
+O script sem janela mede o tempo síncrono do caminho real (`nativePersistence` → `updateClaudeConversation`): uma mensagem nova (`+1`) e o turno completo (as três gravações pequenas + a reescrita final), com 1 aquecimento e 7 execuções, mediana e máximo. O teste de janela semeia 5.000 mensagens, abre a conversa, manda um turno pelo OpenCode falso e lê `monitorEventLoopDelay` no main (`app.evaluate`, como o `conversation-write-ui.mjs`) e `PerformanceObserver` de `longtask` no renderer. Ele não reprova por tempo: só falha se o turno não terminar, a conversa não gravar ou a janela lançar erro.
+
+Nesta base, o `pi-connect` já compara a identidade do histórico (#115) e não devolve a lista quando ela não mudou (`tutor-session-ipc.cjs:75-90`); o teste contou **uma montagem** antes do turno (`montagens=1`), então as long tasks medidas são do turno, não de uma segunda montagem.
+
+### 4.3 Sem janela
+
+`node scripts/measure-conversation-write.mjs` — carga (1/5/15 min) 3,70/4,61/3,30 no início e 3,64/4,58/3,30 no fim.
+
+| N | Gravadas no descritor | Arquivo (MB) | +1 mensagem mediana | +1 mensagem máximo | Turno completo mediana | Turno completo máximo |
+|---:|---:|---:|---:|---:|---:|---:|
+| 100 | 100 | 0,05 | 3,4 ms | 4,0 ms | 4,7 ms | 5,0 ms |
+| 1.000 | 1.000 | 0,62 | 23,5 ms | 26,5 ms | 33,3 ms | 46,4 ms |
+| 5.000 | 5.000 | 3,12 | 92,9 ms | 120,2 ms | 138,0 ms | 170,6 ms |
+
+A coluna “turno completo” é a soma síncrona do que o serviço faz hoje num turno curto: três gravações do arquivo pequeno e a reescrita do descritor no `turn_end`. Em 5.000, a reescrita domina: ~93 ms de mediana e ~120 ms de máximo; o turno completo fica em ~138–171 ms.
+
+### 4.4 Com janela
+
+Três execuções de `conversation-write-block-ui.mjs` com 5.000 mensagens (o arquivo em disco ficou em 3,17 MB). A carga (1 min) de cada rodada está na primeira coluna. “Gravação” é o tempo síncrono real de `updateClaudeConversation` no main; “event loop” é o máximo do histograma durante o turno; as long tasks são do renderer (não só da gravação: o turno numa conversa de 5.000 também rola e repinta).
+
+| Carga (1 min) | Gravação (ms) | Event loop máx (ms) | p95 (ms) | p99 (ms) | Long tasks (n) | Long task máx (ms) | Long tasks total (ms) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 4,74 | 332,7 | 427,6 | 6,2 | 18,4 | 17 | 575 | 3.773 |
+| 6,60 | 287,6 | 416,8 | 6,5 | 16,2 | 20 | 629 | 4.648 |
+| 12,60 | 301,4 | 393,2 | 7,1 | 12,7 | 16 | 724 | 4.181 |
+
+As três rodadas de `npm run ui -- conversation-write-block --jobs 1` passaram (13–14 s cada). O p95/p99 baixo mostra que o turno não fica travado o tempo todo: o bloqueio é o pico da reescrita (e o trabalho de layout do turno no renderer), não o turno inteiro.
+
+### 4.5 Conclusão para a #4
+
+O bloqueio do main por turno em 5.000 continua **acima de ~50 ms**: 93–120 ms de reescrita no Node com carga baixa (3,70 no início) e 288–333 ms de gravação / 393–428 ms de pico do event loop com a janela (máquina sob carga de outras sessões). A #119 tirou as reescritas múltiplas do descritor do caminho normal, mas não mudou a ordem de grandeza do rewrite O(N); e o teto de 8 s ainda repete o rewrite durante streams longos.
+
+**Recomendação: implementar o worker da #4**, com os números acima. O ganho esperado é tirar do main os ~100–300 ms de cada reescrita em 5.000 (e cada reescrita de 8 s num turno longo), mantendo a janela e o IPC responsivos. O worker não resolve as long tasks do renderer — essas são do turno na conversa enorme, não da gravação —, mas o critério da issue é o bloqueio do main, e ele está bem acima do limite de ~50 ms.
+
+Se o worker for implementado, o teste `conversation-write-block-ui.mjs` continua sendo a régua: o número de “Gravação” deve sair do main e o “event loop máx” deve cair para perto do p95/p99 do turno.
