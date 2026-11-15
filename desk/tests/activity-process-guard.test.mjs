@@ -88,6 +88,11 @@ test('detachedActivityDecision: sem outro frame mata mesmo sem travamento (#88)'
  /* Chromium reusa o processo do subframe removido se a atividade remonta;
     sem frame num tick só não basta para matar. */
  assert.equal(detachedActivityDecision({...base,framelessMs:0}),'retry','primeiro tick sem frame: espera o commit da remontagem');
+ /* #1: a reabertura do quadro começou a montar o frame novo e o watchdog viu
+    o processo sem frame antes do commit; matar ali derrubava a carga. */
+ assert.equal(detachedActivityDecision({...base,mounting:true}),'retry','montagem em andamento segura o kill');
+ assert.equal(detachedActivityDecision({...base,mounting:true,framelessMs:60000}),'retry','prazo grande não fura a montagem');
+ assert.equal(detachedActivityDecision({...base,mounting:false}),'frameless','terminada a montagem, o kill volta');
  assert.equal(detachedActivityDecision({...base,framelessMs:999}),'retry');
  assert.equal(detachedActivityDecision({...base,framelessMs:0,waitedMs:5000}),'retry','sem frame ainda não confirmado não vira drop');
 });
