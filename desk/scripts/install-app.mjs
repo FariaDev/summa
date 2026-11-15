@@ -37,7 +37,7 @@ if(process.platform==='win32'){
  console.log('Instalado:',installed.installDir);
  console.log('Atalho:',installed.shortcut);
  console.log('Para desinstalar: Configurações → Aplicativos → Summa.');
- console.log(runtimeKeepNotice(doctorContext().runtime));
+ console.log(runtimeKeepNotice(doctorContext().runtime,root));
  process.exit(0);
 }
 
@@ -110,4 +110,4 @@ execFileSync('osascript',['-e',[
 execFileSync('/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister',['-f',app]);
 console.log('Atualizado:',app);
 console.log('Atalho:',alias);
-console.log(runtimeKeepNotice(doctorContext().runtime));
+console.log(runtimeKeepNotice(doctorContext().runtime,root));
