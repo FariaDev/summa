@@ -4,6 +4,7 @@
    janela escondida não precisa dele. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -60,12 +61,18 @@ async function launchRenderWindow() {
   });
   const page = await app.firstWindow();
   await page.waitForFunction(() => typeof window.mesaRenderPdfPage === 'function', undefined, {timeout: 30000});
+  /* O render guarda um documento por caminho (#60): bytes diferentes ganham
+     caminhos diferentes para a página não reaproveitar o PDF errado. */
+  const files = new Map();
   return {
+    page,
     async render(pdf, options = {}) {
+      const hash = crypto.createHash('sha256').update(pdf).digest('hex').slice(0, 16);
+      if (!files.has(hash)) files.set(hash, `/sintetico-${hash}.pdf`);
       await page.evaluate((base64) => {
         window.mesaPdf = {read: async () => Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))};
       }, pdf.toString('base64'));
-      return page.evaluate((view) => window.mesaRenderPdfPage('/sintetico.pdf', 1, view), options);
+      return page.evaluate(([file, view]) => window.mesaRenderPdfPage(file, 1, view), [files.get(hash), options]);
     },
     async close() {
       await app.close().catch(() => {});
@@ -155,6 +162,38 @@ test('giro, recorte e ampliação mudam os pixels e o teto reduz a imagem', {ski
     const capped = decodePng(noisy);
     assert.ok(capped.width < 3600 && capped.height < 3600, `a imagem foi reduzida para ${capped.width}×${capped.height}`);
     assert.ok(capped.width > 0 && capped.height > 0, 'a imagem reduzida continua válida');
+  } finally {
+    await window.close();
+  }
+});
+
+test('o render reaproveita o documento entre páginas do mesmo arquivo (#60)', {skip: NO_DISPLAY ? 'sem DISPLAY para a janela escondida do Electron' : false, timeout: 120000}, async () => {
+  const window = await launchRenderWindow();
+  const reads = () => window.page.evaluate(() => window.__mesaPdfReads);
+  try {
+    const quadrants = quadrantsPdf(400);
+    await window.page.evaluate((base64) => {
+      window.__mesaPdfReads = [];
+      window.__mesaPdfDocIdleMs = 5000;
+      window.mesaPdf = {
+        read: async (file) => {
+          window.__mesaPdfReads.push(file);
+          return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+        },
+      };
+    }, quadrants.toString('base64'));
+    const first = await window.page.evaluate(() => window.mesaRenderPdfPage('/a.pdf', 1));
+    const second = await window.page.evaluate(() => window.mesaRenderPdfPage('/a.pdf', 1, {girar: 90}));
+    assert.ok(first.length > 0 && second.length > 0);
+    assert.deepEqual(await reads(), ['/a.pdf'], 'a segunda página do mesmo arquivo não relê os bytes');
+
+    await window.page.evaluate(() => { window.__mesaPdfDocIdleMs = 80; });
+    await window.page.evaluate(() => window.mesaRenderPdfPage('/a.pdf', 1));
+    await window.page.waitForTimeout(300);
+    await window.page.evaluate(() => window.mesaRenderPdfPage('/a.pdf', 1));
+    assert.deepEqual(await reads(), ['/a.pdf', '/a.pdf'], 'depois da ociosidade o documento é solto e reaberto');
+    await window.page.evaluate(() => window.mesaRenderPdfPage('/b.pdf', 1));
+    assert.deepEqual(await reads(), ['/a.pdf', '/a.pdf', '/b.pdf'], 'outro caminho abre o documento de novo');
   } finally {
     await window.close();
   }

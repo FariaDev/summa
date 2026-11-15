@@ -6,12 +6,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {PLOT_PNG} from './helpers.mjs';
-import {fakePdfWindow, fakeIpc} from './fake-pdf-render.mjs';
+import {fakePdfWindow, fakeIpc, fakeSlowRender} from './fake-pdf-render.mjs';
 
 const require = createRequire(import.meta.url);
 const {createPdfPageRenderer, PDF_RENDER_READ_CHANNEL} = require('../pdf-page-render.cjs');
-const {createPdfPageReader, pageKind, kindFromCounts, imageAreaRatio, opsByName} = require('../pdf-page-text.cjs');
+const {createPdfPageReader, pageKind, kindFromCounts, imageAreaRatio, opsByName, READ_BUDGET_MS} = require('../pdf-page-text.cjs');
 const {fakePdfjs} = await import('./fake-pdf-render.mjs');
+
+const scanPdfjs = (pages) => fakePdfjs({text: '', pages, fnArray: [9], ops: {paintImageXObject: 9}});
 
 test('página de texto não pede imagem; página visual anexa o PNG e falha de render não derruba o texto', async () => {
   let renders = 0;
@@ -42,6 +44,53 @@ test('página de texto não pede imagem; página visual anexa o PNG e falha de r
   assert.equal(broken.pages[0].kind, 'figure');
   assert.match(broken.pages[0].imageError, /janela caiu/);
   assert.equal(broken.pages[0].image, undefined);
+});
+
+test('o orçamento da ponte é menor que os 30 s do ler_pdf (#60)', () => {
+  assert.ok(READ_BUDGET_MS < 30000, `orçamento de ${READ_BUDGET_MS} ms; a ponte corta em 30000 ms`);
+});
+
+test('render lento devolve o texto com imageError dentro do orçamento, sem derrubar a chamada (#60)', async () => {
+  const started = [];
+  const reader = createPdfPageReader({
+    loadPdfjs: async () => scanPdfjs(3),
+    readFile: () => Buffer.from('%PDF'),
+    renderPage: fakeSlowRender({delayMs: 120, started}),
+    readBudgetMs: 60,
+  });
+  const startedAt = Date.now();
+  const result = await reader.read({file: '/c/Scan.pdf', first: 1, last: 3});
+  const elapsed = Date.now() - startedAt;
+  assert.equal(result.pages.length, 3);
+  assert.ok(elapsed < 240, `o read voltou em ${elapsed} ms`);
+  for (const page of result.pages) {
+    assert.equal(page.kind, 'scan');
+    assert.equal(page.image, undefined);
+    assert.match(page.imageError, new RegExp(`a imagem da página ${page.page} não ficou pronta a tempo; peça só essa página`));
+  }
+});
+
+test('render abandonado sai da fila e a chamada seguinte não espera por ele (#60)', async () => {
+  const win = fakePdfWindow({png: PLOT_PNG, renderDelayMs: 250});
+  const renderer = createPdfPageRenderer({createWindow: () => win, html: '/tmp/pdf-render.html', ipcMain: fakeIpc(), timeoutMs: 5000});
+  const readerWithBudget = (readBudgetMs) => createPdfPageReader({
+    loadPdfjs: async () => scanPdfjs(3),
+    readFile: () => Buffer.from('%PDF'),
+    renderPage: (request, options) => renderer.render(request, options),
+    readBudgetMs,
+  });
+  const first = await readerWithBudget(100).read({file: '/c/Scan.pdf', first: 1, last: 3});
+  assert.equal(first.pages.length, 3);
+  assert.match(first.pages[0].imageError, /a imagem da página 1 não ficou pronta a tempo/);
+  const second = await readerWithBudget(5000).read({file: '/c/Scan.pdf', first: 2, last: 2});
+  assert.equal(second.pages[0].image, PLOT_PNG);
+  /* Só rodaram a página 1 da chamada abandonada (já em voo) e a página 2 da
+     seguinte: as páginas 2 e 3 da fila não começaram, então a segunda chamada
+     não esperou por elas. */
+  const rendered = win.scripts.filter((script) => script.startsWith('window.mesaRenderPdfPage('));
+  assert.equal(rendered.length, 2, `rodaram ${rendered.length} renders; a fila abandonada não deveria rodar`);
+  assert.ok(rendered.every((script) => !script.includes('mesaRenderPdfPage("/c/Scan.pdf", 3,')), 'a página 3 abandonada nunca começou');
+  renderer.close();
 });
 
 test('a classificação usa o nome do operador, não o número, e só figura grande pede imagem', () => {

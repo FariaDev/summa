@@ -30,7 +30,7 @@ function withTimeout(promise, ms, label) {
  * Renderer de páginas: uma janela escondida, criada na primeira página e reaproveitada.
  * `readFile` lê o caminho autorizado no main; a janela de render não tem acesso ao disco.
  * @param {{createWindow: () => {loadFile: (html: string) => Promise<void>, webContents: {executeJavaScript: (script: string) => Promise<unknown>}, on?: (event: string, fn: () => void) => void, close?: () => void}, html: string, ipcMain: {handle: (channel: string, fn: (event: {sender: unknown}, file: unknown) => unknown) => void}, readFile?: (file: string) => Buffer, timeoutMs?: number}} deps
- * @returns {{render: (request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}) => Promise<string>, close: () => void}}
+ * @returns {{render: (request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}, options?: {signal?: AbortSignal}) => Promise<string>, close: () => void}}
  * @example const renderer = createPdfPageRenderer({createWindow, html, ipcMain, readFile: fs.readFileSync});
  */
 function createPdfPageRenderer({createWindow, html, ipcMain, readFile = (file) => fs.readFileSync(file), timeoutMs = 20000}) {
@@ -84,6 +84,9 @@ function createPdfPageRenderer({createWindow, html, ipcMain, readFile = (file) =
     }
   }
 
+  /**
+   * @param {{file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}} request
+   */
   async function renderOne({file, page, girar, recorte, ampliar, marcas}) {
     const win = await ensure();
     current = file;
@@ -102,8 +105,17 @@ function createPdfPageRenderer({createWindow, html, ipcMain, readFile = (file) =
   }
 
   let tail = Promise.resolve();
-  function render(request) {
-    const run = tail.then(() => renderOne(request));
+  /* #60: o `signal` da chamada descarta o render que ainda está na fila quando
+     o orçamento do `read` estoura. O que já começou termina no teto de
+     `timeoutMs` e não impede os seguintes de sair. */
+  /**
+   * @param {{file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}} request
+   * @param {{signal?: AbortSignal}} [options]
+   */
+  function render(request, {signal} = {}) {
+    const discard = () => Promise.reject(Error('render da página descartado antes de começar'));
+    if (signal?.aborted) return discard();
+    const run = tail.then(() => (signal?.aborted ? discard() : renderOne(request)));
     tail = run.then(() => {}, () => {});
     return run;
   }
