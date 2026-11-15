@@ -63,7 +63,7 @@ await withArtifacts('tutor-contract',async ctx=>{
  assert.ok(tutorRow,`a linha do TUTOR.md da matéria existe (${JSON.stringify(rows)})`);
  assert.equal(tutorRow.icon,16,'o ícone de arquivo tem 16px');
  assert.equal(tutorRow.caret,true,'a linha tem o › à direita');
- assert.ok(rows.some(row=>row.name==='LEARNER.md'&&row.meta==='padrão da Mesa'),'o LEARNER.md que cai no padrão também aparece, com a própria origem');
+ assert.ok(rows.some(row=>row.name==='LEARNER.md'&&row.meta==='padrão da Summa'),'o LEARNER.md que cai no padrão também aparece, com a própria origem');
  assert.equal(await page.locator('#context-contract-group').textContent(),'Orienta o tutor','o grupo se chama Orienta o tutor');
  assert.equal(await page.locator('#context-contract-group').isVisible(),true,'o grupo fica logo depois de Vai com a mensagem');
  const goesBox=await page.locator('#context-goes').boundingBox();
@@ -117,15 +117,15 @@ await withArtifacts('tutor-contract',async ctx=>{
  const vaultRows=await contractRows(page);
  assert.ok(vaultRows.some(row=>row.name==='TUTOR.md'&&row.meta==='vault'),`a origem vault aparece embaixo (${JSON.stringify(vaultRows)})`);
 
- /* ---------- sem vault, o padrão da Mesa ---------- */
+ /* ---------- sem vault, o padrão da Summa ---------- */
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>document.querySelector('#context-dock').hidden);
  fs.rmSync(path.join(vault,'TUTOR.md'));
  await openPanel(page);
- await waitContractRow(page,'TUTOR.md','padrão da Mesa');
+ await waitContractRow(page,'TUTOR.md','padrão da Summa');
  const defaultRows=await contractRows(page);
- assert.ok(defaultRows.some(row=>row.name==='TUTOR.md'&&row.meta==='padrão da Mesa'),`a origem padrão da Mesa aparece embaixo (${JSON.stringify(defaultRows)})`);
- assert.ok(defaultRows.some(row=>row.name==='LEARNER.md'&&row.meta==='padrão da Mesa'),'o LEARNER.md padrão também aparece');
+ assert.ok(defaultRows.some(row=>row.name==='TUTOR.md'&&row.meta==='padrão da Summa'),`a origem padrão da Summa aparece embaixo (${JSON.stringify(defaultRows)})`);
+ assert.ok(defaultRows.some(row=>row.name==='LEARNER.md'&&row.meta==='padrão da Summa'),'o LEARNER.md padrão também aparece');
  await reviewShot(page,out,'claro-contexto-padrao.png');
  await setTheme(page,'dark');
  await reviewShot(page,out,'escuro-contexto-padrao.png');
