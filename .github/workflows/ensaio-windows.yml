@@ -4,6 +4,12 @@ name: Ensaio no Windows
 # runner instala a versão indicada, atualiza pela release publicada com o updater
 # dela e abre a Mesa. Não substitui uma pessoa usando. Os testes de janela ficam de
 # fora porque ainda não rodam no Windows: os motores falsos são scripts `.mjs` (#108).
+#
+# Dois caminhos (#6): o `ensaio` fecha a Mesa antes de atualizar (CLI, updater da
+# tag publicada); o `mesa-aberta` sobe a Mesa, deixa um MCP de ensaio segurando o
+# electron.exe e dispara o update pelo mesmo IPC do clique em "Atualizar e
+# reiniciar". O caminho aberto usa o código deste PR como partida — nenhuma tag
+# publicada tem o updater do #47, e o `update-apply` recusa em `DESK_TEST`.
 on:
   workflow_dispatch:
     inputs:
@@ -81,3 +87,63 @@ jobs:
           $log = Join-Path $env:LEARNING_DESK_RUNTIME 'desk.log'
           if (Test-Path $log) { Get-Content $log -Tail 40 }
           if ((Test-Path $log) -and (Select-String -Path $log -Pattern '"level":"error"' -Quiet)) { throw 'erro no desk.log' }
+
+  # #6: a pessoa atualiza com a Mesa aberta e o tutor/MCP de pé. O caminho
+  # fechado acima não reproduz o EPERM/EBUSY do `npm ci` no Windows.
+  mesa-aberta:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      FROM_TAG: ${{ inputs.from }}
+      TO_VERSION: ${{ inputs.versao }}
+      # A API pública do GitHub responde 403 no IP compartilhado do runner; o
+      # driver usa o token só para ler a última release ao escolher o alvo.
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+
+      - name: Preparar a partida com o updater do PR
+        run: |
+          set -euo pipefail
+          INSTALL="$RUNNER_TEMP/mesa-aberta"
+          rm -rf "$INSTALL"
+          mkdir -p "$INSTALL"
+          cp -R desk "$INSTALL/desk"
+          cd "$INSTALL/desk"
+          export FROM_VERSION="${FROM_TAG#v}"
+          # A tag publicada não tem o updater do #47; a partida é este código com
+          # a versão do input para a trava anti-rollback deixar aplicar a release.
+          node -e 'const fs=require("fs"); for(const f of ["package.json","package-lock.json"]){const p=JSON.parse(fs.readFileSync(f,"utf8")); p.version=process.env.FROM_VERSION; if(p.packages&&p.packages[""])p.packages[""].version=process.env.FROM_VERSION; fs.writeFileSync(f,JSON.stringify(p,null,2)+"\n");}'
+          # Enquanto os assets assinados só existem no mesa-de-estudos, o ensaio
+          # aponta o updater para lá; o código do updater é o deste PR.
+          sed -i 's#FariaDev/summa/releases#FariaDev/mesa-de-estudos/releases#g' updater-core.cjs
+          sed -i 's#FariaDev/summa/tags#FariaDev/mesa-de-estudos/tags#g' updater-core.cjs
+          sed -i 's#FariaDev/summa/releases/download#FariaDev/mesa-de-estudos/releases/download#g' updater-signature.cjs
+          npm ci --no-audit --no-fund
+          node node_modules/electron/install.js
+          echo "DESK=$INSTALL/desk" >> "$GITHUB_ENV"
+          echo "FROM_VERSION=$FROM_VERSION" >> "$GITHUB_ENV"
+          grep '"version"' package.json
+
+      - name: Mesa aberta, MCP de ensaio de pé e clique em Atualizar
+        run: |
+          cd "$DESK"
+          node scripts/update-open-rehearsal.mjs
+
+      - name: Log do update (espera do #47 e resultado)
+        if: always()
+        shell: pwsh
+        run: |
+          $log = Join-Path $env:DESK '.runtime-mesa-aberta\desk.log'
+          if (Test-Path $log) {
+            Get-Content $log | Select-String 'update:' | Select-Object -Last 40
+          } else {
+            Write-Output "sem desk.log em $log"
+          }
