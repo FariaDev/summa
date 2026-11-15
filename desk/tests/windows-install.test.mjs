@@ -155,5 +155,17 @@ test('installWindows copia Electron, monta payload, grava desinstalador e chama 
     installDir: install, payloadDir: payload,
     shortcut: path.join(env.APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Summa.lnk'),
   });
-  assert.equal(fs.readFileSync(path.join(payload, 'scripts', 'uninstall.ps1'), 'utf8'), windowsInstall.uninstallScript({env}));
+  assert.equal(fs.readFileSync(path.join(payload, 'scripts', 'uninstall.ps1'), 'utf8'), '\ufeff' + windowsInstall.uninstallScript({env}), 'com BOM, para o PowerShell 5.1 ler os acentos');
+});
+
+test('desinstalador recusa com a Summa aberta antes de apagar qualquer coisa (#11)', () => {
+  const script = windowsInstall.uninstallScript({env: ENV});
+  const guard = script.indexOf('$running = @(Get-Process');
+  assert.ok(guard > 0, script);
+  assert.ok(guard < script.indexOf('Directory]::Delete'), 'a conferência vem antes de apagar a pasta');
+  assert.ok(guard < script.indexOf('Remove-Item'), 'a conferência vem antes de qualquer remoção');
+  assert.ok(script.includes(`$_.Path.StartsWith($full + [System.IO.Path]::DirectorySeparatorChar`), 'só processos de dentro da pasta da instalação contam');
+  assert.ok(script.includes(`'${windowsInstall.OPEN_APP_MESSAGE}'`), 'a mensagem diz o que fazer');
+  assert.match(script, /\n exit 1\n\}/, 'sai com erro sem mexer em nada');
+  assert.ok(script.includes('SessionId -ne 0'), 'a caixa de diálogo só aparece com tela; pelo SSH não trava');
 });
