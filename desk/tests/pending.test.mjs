@@ -206,3 +206,34 @@ test('poda: a conversa cujo arquivo sumiu sai do pending.json', () => {
     assert.equal(pending.readPending(runtime, gone).items.length, 0);
   });
 });
+
+test('cartão de caderno da bandeja: grava com a miniatura e some em silêncio quando o arquivo não existe', () => {
+  withRuntime((runtime) => {
+    const session = join(runtime, SESSION);
+    const xopp = join(runtime, 'Limites — aula 3.xopp');
+    writeFileSync(xopp, 'caderno');
+    const thumb = 'data:image/png;base64,iVBORw0KGgo=';
+    const out = pending.saveTray(runtime, session, [], [], [{caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb}]);
+    assert.deepEqual(out.notebooks, [{caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb}]);
+    assert.deepEqual(pending.readPending(runtime, session).notebooks, [{caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb}], 'a miniatura volta do disco');
+    rmSync(xopp);
+    const gone = pending.readPending(runtime, session);
+    assert.equal(gone.notebooks, undefined, 'sem o arquivo, o cartão é descartado');
+    assert.deepEqual(gone.attachments, [], 'e nada mais é inventado');
+  });
+});
+
+test('item da fila leva o caderno junto (com o caminho) e volta do disco', () => {
+  withRuntime((runtime) => {
+    const session = join(runtime, SESSION);
+    const xopp = join(runtime, 'Aula.xopp');
+    writeFileSync(xopp, 'caderno');
+    const notebook = {caminho: xopp, pagina: 3, nome: 'Aula'};
+    const out = pending.saveQueue(runtime, session, [{text: '', refs: [], images: [], pdfs: [], notebooks: [notebook]}], false);
+    assert.equal(out.items.length, 1, 'só o caderno já é um anexo do item');
+    assert.deepEqual(out.items[0].notebooks, [notebook]);
+    assert.deepEqual(pending.readPending(runtime, session).items[0].notebooks, [notebook], 'o caminho volta do disco para o envio');
+    const tray = pending.saveTray(runtime, session, [png()]);
+    assert.deepEqual(tray.items[0].notebooks, [notebook], 'o save da bandeja preserva o caderno da fila');
+  });
+});

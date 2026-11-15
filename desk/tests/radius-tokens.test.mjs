@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 /* Etapa 1 da consistência do CSS: dois raios de uso e o círculo por natureza.
    `--r-sm` (4px) é o controle, o campo, a aba, o chip, o item de menu, a
    mensagem e o cartão pequeno; `--r-md` (8px) é o diálogo, o menu suspenso, o
-   popover e o painel flutuante; `--r-round` (50%) fica para o que é círculo
+   popover e o painel flutuante; `--r-round` (999px: círculo no quadrado, pílula no retângulo) fica para o que é círculo
    por natureza (ponto de status, botão redondo, alternador). Zero e `inherit`
    continuam válidos. Qualquer outro token (`--r-lg`, `--r-xl`, `--r-pill`,
    `--r-card`, `--r-xs`, `--r-2xs`, `--r-hairline`, `--r-2xl`, `--r-3xl`) ou

@@ -5,6 +5,7 @@ const {createClaudeSideEngine,createOpenCodeSideEngine}=require('./sidechat-engi
 const {buildStudyContext}=require('./studycontext.cjs');
 const {cleanStudy}=require('./study.cjs');
 const conversations=require('./src/agents/conversations.cjs');
+const {notebookNote:sharedNotebookNote}=require('./notebook-note.cjs');
 
 /* ---------- chat lateral (segundo chat) ----------
    O contexto que o lateral copia do principal na abertura: histórico curto
@@ -15,7 +16,7 @@ const conversations=require('./src/agents/conversations.cjs');
    O main entrega o que o lateral lê do principal como acessores (`session`,
    `courseId`, `courses`, `config`, `state`, `bridge` são reatribuídos lá) e as
    preparações que dependem do motor (`prepareClaudeSide`). */
-function createMesaSidechat({runtime,freeId,session,courseId,courses,config,state,bridge,engine,validPdf,allowedXopp,descriptorCache,prepareClaudeSide,connectOpenCodeSide,testClaudeSdkLoader,claudeBinary,claudeDetector,win,appendLog,languageHost,readPdf,readNotebook,searchMaterial,listMaterials,activityBridge}){
+function createMesaSidechat({runtime,freeId,session,courseId,courses,config,state,bridge,engine,validPdf,allowedXopp,promptImages,descriptorCache,prepareClaudeSide,connectOpenCodeSide,testClaudeSdkLoader,claudeBinary,claudeDetector,win,appendLog,languageHost,readPdf,readNotebook,searchMaterial,listMaterials,activityBridge}){
  /* O digest vai ao modelo: os rótulos seguem o idioma do tutor (#41). */
  const roleLabel=(isUser)=>languageHost.tutorT(isUser?'sidechatctx.roleUser':'sidechatctx.roleAssistant');
  function mainHistoryLines(limit=12){
@@ -76,8 +77,13 @@ function createMesaSidechat({runtime,freeId,session,courseId,courses,config,stat
   const record=descriptorCache.get(session())||null;
   return {model:record?.model||null,effort:record?.effort||null};
  }
+ /* O caderno anexado (cartão vindo do Ambitus) só vale se a Mesa já o conhece; o bloco vai no
+    envelope escondido do prompt, na língua do tutor, com o caminho para o `ler_caderno`. */
+ function notebookNote(notebooks){return sharedNotebookNote(notebooks,{allowedXopp,tutorT:(key,args)=>languageHost.tutorT(key,args)});}
  const manager=createSideChatManager({
   runtime,
+  validateImages:promptImages,
+  notebookNote,
   current:()=>({session:session(),courseId:courseId(),engine:engine(),...mainNativeSelection(),courseName:courseId()===freeId?'':(courses().find(c=>c.id===courseId())?.name||'')}),
   /* O manager chama `snapshot({refs})` (objeto), não o array solto: sem o
      destructuring o `Array.isArray` de `sidechatSnapshot` zerava TODAS as refs

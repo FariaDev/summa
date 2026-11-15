@@ -213,7 +213,7 @@ await withArtifacts('tutor-header',async ctx=>{
  /* ---------- Mais opções ---------- */
  await openTutorMore(page);
  const labels=await page.locator('#chat-more-pop > *').evaluateAll(list=>list.map(el=>el.id||el.className));
- assert.deepEqual(labels,['more-context','menu-sep','end-day','export-chat','chat-collapse'],'itens de Mais opções, na ordem, com o fio');
+ assert.deepEqual(labels,['more-context','menu-sep','end-day','export-chat','chat-collapse','chat-mini-menu'],'itens de Mais opções, na ordem, com o fio (o Modo mini é o último, da Mesa e fora do núcleo)');
  assert.equal(await page.locator('#more-context').getAttribute('aria-haspopup'),null,'a sanfona de Contexto saiu');
  const moreItemLook=await page.locator('#more-context').evaluate(el=>({size:getComputedStyle(el).fontSize,icon:el.querySelector('svg')?.innerHTML||''}));
  assert.equal(moreItemLook.size,newSessionItemSize,'Mais opções usa o mesmo corpo do menu de sessão nova');

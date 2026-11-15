@@ -31,6 +31,8 @@ const CONTEXT_BLOCKS=[
  /\n\n\[Da Conversa\][\s\S]*$/,
  /\n\n\[(?:Contexto da Mesa|Desk context)\][\s\S]*$/,
  PDF_BLOCK,
+ /* Cadernos anexados (a página do Ambitus no modo mini, `notebook-note.cjs`): o caminho do arquivo não aparece na bolha. */
+ /\n\n\[(?:Cadernos anexados à mensagem|Notebooks attached to the message)\][\s\S]*$/,
  /\n\n\[Contexto da sessão na Mesa:[\s\S]*?(?=\n\n\[Referências abertas|$)/,
  /\n\n\[Referências abertas[\s\S]*$/,
  /\n\n\[Conferência visual[\s\S]*$/,

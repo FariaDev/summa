@@ -93,7 +93,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
  /* Payload do desk.json com um courseStates explícito (a promoção grava o
     estado da matéria nova ANTES do commit e restaura byte a byte em falha). */
  function deskPayload(states){
-  return JSON.stringify({...live.state,ggbBase64:undefined,session:live.session,courseId:live.courseId,courseStates:states||courseStates,bounds:live.win&&!live.win.isDestroyed()?live.win.getBounds():live.state.bounds});
+  return JSON.stringify({...live.state,ggbBase64:undefined,session:live.session,courseId:live.courseId,courseStates:states||courseStates,bounds:live.miniMode?.windowBounds()||(live.win&&!live.win.isDestroyed()?live.win.getBounds():live.state.bounds)});
  }
  function applyCourse(id){
   if(id===FREE_ID){applyFreeCourse();return;}
@@ -150,6 +150,14 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
  }
  function materialContext(){return live.courseId===FREE_ID?'':(live.courses.find(c=>c.id===live.courseId)?.name||'');}
  function coursePdfDraft(){try{return courseMaterials.getDraft(runtime,{courseId:live.courseId,session:live.session});}catch(error){appendLog('tutor-pdf',error.message);return null;}}
+ /* Caderno que volta da bandeja/fila guardada precisa voltar à lista viva
+    (`allowedXopp`): sem isso o reload o mostraria no cartão, mas o envio o
+    recusaria. O arquivo que sumiu já foi descartado pelo `pending.cjs`. */
+ function authorizePendingNotebooks(entry){
+  const notebooks=[...(entry?.notebooks||[])];
+  for(const item of entry?.items||[])notebooks.push(...(item.notebooks||[]));
+  for(const notebook of notebooks)authorizeXopp(allowedXopp,notebook.caminho);
+ }
  function initialData(){
   const freeActive=live.courseId===FREE_ID;
   const record=freeActive?free.findWorkspace(runtime,live.freeSessionId):null;
@@ -169,6 +177,10 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
   /* A identidade é do conteúdo completo (#115); o payload de abertura leva os
      marcadores de mídia (#121) e o corte das últimas 6 imagens. */
   const messages=fullMessages?historyMediaHostFor({live,trimMessageImages}).markerize(fullMessages):conversation.messages;
+  /* Fila e bandeja guardadas desta conversa: o renderer hidrata a faixa e os
+     anexos com isto (a troca de conversa devolve o que era da outra). */
+  const pendingView=pending.readPending(runtime,live.session);
+  authorizePendingNotebooks(pendingView);
   return {
    library,state:live.state,
    course:freeActive?free.freeCourseName():(live.courses.find(c=>c.id===live.courseId)?.name||''),
@@ -179,9 +191,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
    session:live.session,sessions:courseSessions(),...conversation,
    ...(messages!==undefined?{messages}:{}),
    ...(identity?{historyIdentity:identity}:{}),
-   /* Fila e bandeja guardadas desta conversa: o renderer hidrata a faixa e os
-      anexos com isto (a troca de conversa devolve o que era da outra). */
-   pending:pending.readPending(runtime,live.session),
+   pending:pendingView,
    /* Registro do Encerrar da matéria: o "onde parei" da coluna sai daqui. Em Livre
       não há matéria, então o cartão e os favoritos ficam vazios. */
    resume:freeActive?null:resumePayload(),

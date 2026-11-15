@@ -10,6 +10,7 @@ const {MAX_DRAFT}=require('./state-adapter.cjs');
 const {message}=require('./src/i18n.mjs');
 const {causeArg,invalidRequest}=require('./src/error-detail.mjs');
 const {validMentions,mentionBlock}=require('./mentions-host.cjs');
+const {notebookNote}=require('./notebook-note.cjs');
 
 /* Envio de mensagem ao tutor (`pi-prompt`; #43 fase 2: saiu do main.cjs).
    Monta o texto (refs de PDF, menções `@`, bloco de estudo) e entrega pelo
@@ -94,6 +95,9 @@ function registerTutorPromptHost({ipcMain,live,runtime,FREE_ID,allowedXopp,ggb,a
   if(mentionIds.length)promptText+=mentionBlock(mentionIds,live.languageHost.tutorLanguage());
   if(block.text)promptText+='\n\n'+block.text;
   if(pdfBlock)promptText+='\n\n'+pdfBlock;
+  /* Cadernos anexados (a página que o Ambitus manda, no modo mini): o caminho vai escondido ao motor, como no chat lateral; só vale caderno que a Mesa já autorizou. */
+  const notebookBlock=notebookNote(payload.notebooks,{allowedXopp,tutorT:(key,args)=>live.languageHost.tutorT(key,args)});
+  if(notebookBlock)promptText+='\n\n'+notebookBlock;
    const delivered=await deliver(promptText,{images:payload.images,steer:payload.steer===true,attemptId:payload.attemptId,onAccepted(){live.lastContextKey=block.key;live.studyServices.accepted({id:crypto.randomUUID(),engine:kind,model:conversations.readClaudeConversation(live.session,{runtime})?.model});
     /* Turno novo do aluno: libera o teto de `salvar_nota` para esta rodada.
        Resultado de cartão (`sendText`) não é turno e não libera. */
