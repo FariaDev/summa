@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="src/activity.css">
   <link rel="stylesheet" href="src/release-notes.css">
   <link rel="stylesheet" href="src/opencode-providers.css">
+  <link rel="stylesheet" href="src/mini-mode.css">
 </head>
 <body>
 <!-- Primeira abertura em tela cheia (#64, docs/design/setup-guia-r1/Setup-passos.dc.html):
@@ -117,6 +118,7 @@
           <div class="chat-head-actions">
             <button id="sidechat-toggle" type="button" class="icon-btn" aria-pressed="false" title="Abrir o chat lateral" aria-label="Chat lateral" data-i18n-attr="title=sidechat.toggle.open;aria-label=sidechat.toggle.aria"></button>
             <button id="chat-full" type="button" class="icon-btn" aria-pressed="false" title="Chat na tela inteira" aria-label="Chat na tela inteira" data-i18n-attr="title=header.chatFull;aria-label=header.chatFull"></button>
+            <button id="chat-mini" type="button" class="icon-btn" title="Modo mini · sempre por cima" aria-label="Modo mini · sempre por cima" data-i18n-attr="title=header.chatMini;aria-label=header.chatMini"></button>
             <button id="new-session" type="button" class="icon-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="new-session-pop" title="Sessão nova" aria-label="Sessão nova" data-i18n-attr="title=header.newSession;aria-label=header.newSessionAria"></button>
             <button id="chat-more" type="button" class="icon-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="chat-more-pop" title="Mais opções" aria-label="Mais opções do tutor" data-i18n-attr="title=header.moreTitle;aria-label=header.moreAria"></button>
           </div>
@@ -505,6 +507,7 @@
                 <div class="guide-key" data-key="command-palette" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>K</kbd></span><span data-i18n="guide.atalhos.row.command-palette">Busca de comandos</span></div>
                 <div class="guide-key" data-key="chat-toggle" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>\</kbd></span><span data-i18n="guide.atalhos.row.chat-toggle">Recolher ou mostrar o tutor</span></div>
                 <div class="guide-key" data-key="chat-full" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>E</kbd></span><span data-i18n="guide.atalhos.row.chat-full">Chat na tela inteira ou ao lado</span></div>
+                <div class="guide-key" data-key="mini-mode" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></span><span data-i18n="guide.atalhos.row.mini-mode">Modo mini do tutor (janela pequena, sempre por cima)</span></div>
                 <div class="guide-key" data-key="tab-number" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>1</kbd>…<kbd>9</kbd></span><span data-i18n="guide.atalhos.row.tab-number">Ir para a matéria</span></div>
                 <div class="guide-key" data-key="tab-cycle" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>Tab</kbd></span><span data-i18n="guide.atalhos.row.tab-cycle">Próxima ou anterior matéria</span></div>
                 <div class="guide-key" data-key="new-course" data-search><span class="guide-combo"><kbd>⌘</kbd><kbd>T</kbd></span><span data-i18n="guide.atalhos.row.new-course">Nova matéria (Configurações)</span></div>

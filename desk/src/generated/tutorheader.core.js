@@ -272,7 +272,7 @@ function $view_viewMapTextI(_xs_0) {
   return $view_viewMapTextI_go(_xs_0, 0);
 }
 function $headIds() {
-  return { $: "Con", head: "session-title", tail: { $: "Con", head: "context-line", tail: { $: "Con", head: "sidechat-toggle", tail: { $: "Con", head: "chat-full", tail: { $: "Con", head: "new-session", tail: { $: "Con", head: "chat-more", tail: { $: "Nil" } } } } } } };
+  return { $: "Con", head: "session-title", tail: { $: "Con", head: "context-line", tail: { $: "Con", head: "sidechat-toggle", tail: { $: "Con", head: "chat-full", tail: { $: "Con", head: "chat-mini", tail: { $: "Con", head: "new-session", tail: { $: "Con", head: "chat-more", tail: { $: "Nil" } } } } } } } };
 }
 function $menuNode(_id_0, _role_0, _text_0, _icon_0, _handler_0, _extra_0) {
   return $view_viewEl("button", $$view_attrJoin({ $: "Con", head: { $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrId(_id_0), tail: { $: "Con", head: $$view_attr("role", _role_0), tail: { $: "Nil" } } } }, tail: { $: "Con", head: _extra_0, tail: { $: "Con", head: { $: "Con", head: $$view_attrData("icon", _icon_0), tail: { $: "Con", head: $$view_attrOn("click", _handler_0), tail: { $: "Nil" } } }, tail: { $: "Nil" } } } }), { $: "Con", head: $$view_viewText(_text_0), tail: { $: "Nil" } });

@@ -1,13 +1,11 @@
 // @ts-check
-const fs=require('node:fs');const crypto=require('node:crypto');const path=require('node:path');
-const {message}=require('./src/i18n.mjs');
+const fs=require('node:fs');const crypto=require('node:crypto');
 const {createSideChatManager,conversationList}=require('./sidechat.cjs');
 const {createClaudeSideEngine,createOpenCodeSideEngine}=require('./sidechat-engine.cjs');
 const {buildStudyContext}=require('./studycontext.cjs');
 const {cleanStudy}=require('./study.cjs');
 const conversations=require('./src/agents/conversations.cjs');
-
-const MAX_SIDE_NOTEBOOKS=4;
+const {notebookNote:sharedNotebookNote}=require('./notebook-note.cjs');
 
 /* ---------- chat lateral (segundo chat) ----------
    O contexto que o lateral copia do principal na abertura: histórico curto
@@ -81,16 +79,7 @@ function createMesaSidechat({runtime,freeId,session,courseId,courses,config,stat
  }
  /* O caderno anexado (cartão vindo do Ambitus) só vale se a Mesa já o conhece; o bloco vai no
     envelope escondido do prompt, na língua do tutor, com o caminho para o `ler_caderno`. */
- function notebookNote(notebooks){
-  const lines=(Array.isArray(notebooks)?notebooks:[]).slice(0,MAX_SIDE_NOTEBOOKS).map(item=>{
-   const caminho=typeof item?.caminho==='string'?item.caminho:'';
-   if(!caminho||!allowedXopp.has(caminho))throw Error(message('err.sidechat.notebookUnknown',{received:String(caminho).slice(0,200)}));
-   const page=Number.isInteger(item.pagina)&&item.pagina>=1?item.pagina:1;
-   const name=String(typeof item.nome==='string'&&item.nome.trim()?item.nome:path.basename(caminho).replace(/\.xopp$/i,'')).replace(/\s+/g,' ').slice(0,200);
-   return languageHost.tutorT('sidechatctx.notebook',{name,page,path:caminho});
-  });
-  return lines.length?[languageHost.tutorT('sidechatctx.notebookHead'),...lines].join('\n'):'';
- }
+ function notebookNote(notebooks){return sharedNotebookNote(notebooks,{allowedXopp,tutorT:(key,args)=>languageHost.tutorT(key,args)});}
  const manager=createSideChatManager({
   runtime,
   validateImages:promptImages,

@@ -11,6 +11,7 @@ import {createWorkLogView} from './worklog-view.mjs';
 import {installAssetListeners} from './chat-assets.mjs';
 import {addAttachments,clearAttachments,installAttachmentListeners} from './chat-attachments.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
+import {tutorNotebooksSnapshot,releaseTutorNotebooks} from './tutor-notebooks.mjs';
 import {installQuoteListeners} from './chat-quote.mjs';
 import {showDialog,cancelDialogRequest,installDialogListeners} from './chat-dialogs.mjs';
 import {createCardBoard} from './chat-cards.mjs';
@@ -289,6 +290,7 @@ export async function send(text,images,options={}){
  const fromComposer=images===undefined;
  const pending=fromComposer?S.attachments.slice():images;
  const pdfs=Array.isArray(options.pdfs)?options.pdfs:(fromComposer?S.pdfAttachments.slice():[]);
+ const notebooks=Array.isArray(options.notebooks)?options.notebooks:(fromComposer?tutorNotebooksSnapshot():[]);/* cartões de caderno do modo mini; o caminho segue escondido ao motor */
  if(!text.trim()&&!pending.length&&!pdfs.length)return false;
  if(images===undefined&&COMPACT_CMD.test(text.trim())){if(!supportsCapability('compact')){toast(uiMessage('compact.notAvailable'));
    return false;}if(S.busy){toast(uiMessage('compact.stopFirst'));
@@ -323,9 +325,9 @@ export async function send(text,images,options={}){
   /* A fala do aluno termina aqui: entra na fonte da busca (#122). */
   addChatSearchEntry({text,el:userMessage});
   if(fromComposer&&$('#prompt').value===text)$('#prompt').value='';
-  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app}),pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),steer,mentions:mentionList,attemptId});
+  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app}),pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),notebooks,steer,mentions:mentionList,attemptId});
   if(result?.sent===false){knownNotSent=result.retryable===true;throw Error(result.error||uiMessage('send.refused'));}
-  if(fromComposer){clearAttachments(pending,pdfs);clearMentions(mentionList);}
+  if(fromComposer){clearAttachments(pending,pdfs);releaseTutorNotebooks(notebooks);clearMentions(mentionList);}
   /* `streaming` só libera o composer quando o Pi DISSE que não está no turno.
      Estado desconhecido (a leitura falhou depois do aceite) NÃO é envio falho:
      o item sai da fila e o aviso aparece — quem fecha o turno, nesse caso, são

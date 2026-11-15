@@ -10,6 +10,7 @@ import {renderChildren} from './view-host.mjs';
 import {bendList,openImageDialog} from './chat-assets.mjs';
 import {PIN_IDS,PIN_LIMIT,normalizeComposerPins,toggleComposerPin} from './composer-pins.mjs';
 import {imageFacts} from './attach-image-facts.mjs';
+import {appendTutorNotebookCards,tutorNotebookCount,onTutorNotebooksChange,clearTutorNotebooks} from './tutor-notebooks.mjs';
 
 /* Bandeja de anexos de imagem do composer (extraído de chat.mjs, #29): estado
    vivo em `S.attachments`, compressão, persistência por conversa, colar e
@@ -66,9 +67,12 @@ function pdfFacts(){
 function renderAttachments(){
   const box=$('#attachments');
   renderChildren(box,attachview.attachmentViews(attachmentFacts(),pdfFacts()),attachmentHandlers);
-  box.hidden=!S.attachments.length&&!S.pdfAttachments.length;
+  /* Cartões de caderno (a página do Ambitus no modo mini): estado e nó em tutor-notebooks.mjs, no fim da bandeja. */
+  appendTutorNotebookCards(box);
+  box.hidden=!S.attachments.length&&!S.pdfAttachments.length&&!tutorNotebookCount();
   paintComposerSend();
 }
+onTutorNotebooksChange(renderAttachments);
 /* A bandeja sobrevive ao fechamento: as imagens pendentes são guardadas por
    conversa (`desk/pending.cjs`, núcleo `core/pending.bend`) e voltam no boot.
    Quem esvazia a bandeja (enfileirar, enviar, remover) também persiste — o
@@ -134,7 +138,7 @@ export function clearAttachments(items,pdfs){
  }
  renderAttachments();persistTray();
 }
-export function resetAttachments(){S.attachGen++;S.attachments=[];S.pdfAttachments=[];renderAttachments();}
+export function resetAttachments(){S.attachGen++;S.attachments=[];S.pdfAttachments=[];clearTutorNotebooks();renderAttachments();}
 /* Anexos guardados de uma conversa (o payload `pending` do main): entram na
    bandeja depois do `resetAttachments` do boot/troca — sem regravar. */
 export function restoreAttachments(pending){

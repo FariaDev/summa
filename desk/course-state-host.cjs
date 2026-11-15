@@ -93,7 +93,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
  /* Payload do desk.json com um courseStates explícito (a promoção grava o
     estado da matéria nova ANTES do commit e restaura byte a byte em falha). */
  function deskPayload(states){
-  return JSON.stringify({...live.state,ggbBase64:undefined,session:live.session,courseId:live.courseId,courseStates:states||courseStates,bounds:live.win&&!live.win.isDestroyed()?live.win.getBounds():live.state.bounds});
+  return JSON.stringify({...live.state,ggbBase64:undefined,session:live.session,courseId:live.courseId,courseStates:states||courseStates,bounds:live.miniMode?.windowBounds()||(live.win&&!live.win.isDestroyed()?live.win.getBounds():live.state.bounds)});
  }
  function applyCourse(id){
   if(id===FREE_ID){applyFreeCourse();return;}

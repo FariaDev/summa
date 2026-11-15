@@ -32,11 +32,12 @@ import view.bend as V
 # ---------------------------------------------------------------------------
 
 # Os controles do cabeçalho, da esquerda para a direita (#42: o indicador de
-# modelo saiu daqui para a caixa de mensagem). A linha de contexto é o segundo
+# modelo saiu daqui para a caixa de mensagem; o modo mini, passo 9, entra ao
+# lado da tela inteira). A linha de contexto é o segundo
 # controle e mora na segunda linha do cabeçalho. O teste de janela confere que
 # o cabeçalho é exatamente esta ordem.
 def headIds() -> List<&2, String>:
-  ["session-title", "context-line", "sidechat-toggle", "chat-full", "new-session", "chat-more"]
+  ["session-title", "context-line", "sidechat-toggle", "chat-full", "chat-mini", "new-session", "chat-more"]
 
 # Item de menu: papel, id, rótulo, glifo e handler. `extra` entra antes do
 # ícone e do clique, na ordem dada.

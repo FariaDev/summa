@@ -10,6 +10,7 @@ import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
 import {icon} from '../icons.mjs';
 import {createQueueIntake} from './queue-intake.mjs';
+import {tutorNotebooksSnapshot} from './tutor-notebooks.mjs';
 
 /* Fila de mensagens da Mesa — nasceu como espelho da fila da Conversa (aposentada na #50)
    e segue sobre o núcleo (`core/composerview.bend`), com uma diferença que aqui é
@@ -158,7 +159,7 @@ const handlers={
   renderQueue();
   persist(true);
   let safe=false;
-  const posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions||[],steer:true,onFailure:value=>{safe=value;}})===true;
+  const posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions||[],steer:true,onFailure:value=>{safe=value;}})===true;
   /* A conversa trocou durante o envio: a fila viva agora é de outra sessão. */
   if(owner!==generationOwner)return;
   const outcome=steerQueuedOutcome(posted,safe);
@@ -311,7 +312,7 @@ function enqueue(text){
     o composer esvazia: o payload desta mensagem não pode vazar para as próximas
     nem ser capturado pelo envio anterior (que ainda não voltou). A bandeja
     esvaziada também vai para o disco — senão o anexo ficaria nos dois lugares. */
- queue.push({id:`fila-${Date.now()}-${seq}`,text,payload:{images:S.attachments.slice(),pdfs:S.pdfAttachments.slice(),refs:refs(),mentions:mentionIds()}});
+ queue.push({id:`fila-${Date.now()}-${seq}`,text,payload:{images:S.attachments.slice(),pdfs:S.pdfAttachments.slice(),notebooks:tutorNotebooksSnapshot(),refs:refs(),mentions:mentionIds()}});
  clearMentions();
  resetAttachments();
  persistTray();
@@ -359,7 +360,7 @@ async function flushQueue({force=false}={}){
  let posted,retryable=false;
  const generationOwner=owner;
  try{
-  posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions||[],onFailure:safe=>{retryable=safe;}})===true;
+  posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions||[],onFailure:safe=>{retryable=safe;}})===true;
  }finally{
   sendingId='';
   flushing=false;

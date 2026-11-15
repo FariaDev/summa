@@ -187,6 +187,8 @@ let lastContextKey='';
 let freeMutation=false,navInFlight=false,deferredPersist=false;
 let freeMutationIdle=Promise.resolve(),releaseFreeMutation=null;
 let tutorMaterialGrant=null,quitting=false;
+/** Modo mini (mini-mode-host.cjs): só existe depois que a janela abre. @type {{windowBounds: () => {x: number, y: number, width: number, height: number} | null, isOn: () => boolean} | null} */
+let miniMode=null;
 let activityGeneration=1,activityGrant=null,cardHost=null;
 /* Estado vivo do main (#43 fase 2): as variáveis continuam aqui e os hosts as
    leem e trocam por estes acessores, no padrão dos `*-host.cjs`. */
@@ -225,6 +227,7 @@ const live={
  get sidechatManager(){return sidechatManager;},
  get studyServices(){return studyServices;},
  get tutorMaterialBridge(){return tutorMaterialBridge;},
+ get miniMode(){return miniMode;},
 };
 /** O estado vivo que os hosts recebem (#43 fase 3: o tipo deles sai daqui). @typedef {typeof live} DeskLive */
 const {engine,isNative,openCodeBinary,claudeBinary,claudeDetector,defaultEngine,newSessionPath,resumeSession,visibleEngines,descriptorCache,conversationData,sessionInfo,prepareClaude,prepareOpenCode,prepareClaudeSide,prepareOpenCodeSide,testClaudeSdkLoader,previewFile,engineFacts,engineFactsPrime,legacyHistory}=createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID});
@@ -422,7 +425,7 @@ app.whenReady().then(async()=>{
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
  win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:path.join(__dirname,'assets',process.platform==='win32'?'mesa.ico':'mesa-1024.png'),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
- keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line)});
+ keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line),skip:()=>miniMode?.isOn()===true});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));
  /* Recarregar a página fecha o popover da Foto do celular (#36) e derruba o
@@ -449,6 +452,8 @@ app.whenReady().then(async()=>{
   activityRuntime.installSessionGuards(win.webContents.session, fileGuardOptions({appRoot:deskDir,runtimeRoot:runtime,live}));
  activityRuntime.attachWindow(win);
  require('./sidechat-window-host.cjs').registerSidechatWindowGuard(win,undefined,{screen,loadState:()=>({sidechatBounds:state.sidechatBounds,sidechatAlwaysOnTop:state.sidechatAlwaysOnTop}),saveState:patch=>{state={...state,...patch};persist();},ipcMain});win.webContents.on('will-navigate',(e,url)=>{if(url!==win.webContents.getURL())e.preventDefault();});
+ /* Modo mini: a mesma janela encolhe para o chat; fica ANTES do `win.on('close',persist)` para o fechar voltar à Mesa antes de gravar os limites. */
+ miniMode=require('./mini-mode-host.cjs').registerMiniModeHost({win,screen,ipcMain,trusted:trustedMainSender,loadState:()=>({miniBounds:state.miniBounds,miniAlwaysOnTop:state.miniAlwaysOnTop}),saveState:patch=>{state={...state,...patch};persist();},log:line=>appendLog('janela',line)});
  buildMenu();
  ggb.start();
  win.on('resize',()=>{ggb.captureConstruction();ggb.placeView();});win.on('move',ggb.placeView);

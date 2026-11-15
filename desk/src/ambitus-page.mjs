@@ -5,7 +5,9 @@ import {t} from './ui-text.mjs';
    chat lateral e a põe na bandeja de anexos como cartão (miniatura, caderno e
    "pág. N"), com o campo de texto vazio e com foco para a pergunta. O caminho
    do arquivo vai junto do cartão, escondido, e segue ao motor no envio para o
-   tutor reler a página pelo `ler_caderno` (o main já autorizou o caderno). */
+   tutor reler a página pelo `ler_caderno` (o main já autorizou o caderno).
+   Com o modo mini ligado (`mini-mode.mjs`) o destino é a bandeja do tutor
+   principal (`tutor-notebooks.mjs`), com o mesmo cartão e o mesmo caminho escondido. */
 
 /** O nome do caderno: o que veio, senão o arquivo sem `.xopp`. @param {string} caminho @param {string} nome @returns {string} */
 function notebookName(caminho, nome) {
@@ -26,20 +28,27 @@ export function notebookCardOf(raw) {
 }
 
 /**
- * Recebe as páginas do Ambitus. Sem matéria aberta, avisa; senão abre o chat
- * lateral e espera ele montar (a primeira abertura importa o módulo) para pôr
- * o cartão na bandeja.
+ * Recebe as páginas do Ambitus. Sem matéria aberta, avisa. Com o modo mini
+ * ligado a página vai ao TUTOR principal, como cartão na bandeja dele (o chat
+ * lateral não abre); fora do modo mini abre o chat lateral e espera ele montar
+ * (a primeira abertura importa o módulo) para pôr o cartão na bandeja.
  * @param {{ready: () => boolean, open: () => void, attach: (card: {caminho: string, pagina: number, nome: string}) => Promise<boolean>,
- *   toast: (text: string) => void, wait?: (ms: number) => Promise<void>, tries?: number}} deps
+ *   toast: (text: string) => void, mini?: () => boolean, attachTutor?: (card: {caminho: string, pagina: number, nome: string}) => boolean,
+ *   wait?: (ms: number) => Promise<void>, tries?: number}} deps
  * @returns {(raw: unknown) => Promise<boolean>}
- * @example window.desk.onAmbitusPage(createAmbitusPage({ready, open, attach: attachSidechatNotebook, toast}));
+ * @example window.desk.onAmbitusPage(createAmbitusPage({ready, open, attach: attachSidechatNotebook, toast, mini: isMiniMode, attachTutor: attachTutorNotebook}));
  */
-export function createAmbitusPage({ready, open, attach, toast, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), tries = 50}) {
+export function createAmbitusPage({ready, open, attach, toast, mini = () => false, attachTutor = () => false, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), tries = 50}) {
   return async (raw) => {
     const card = notebookCardOf(raw);
     if (!card) return false;
     if (!ready()) {
       toast(t('sidechat.ambitusPage.noCourse'));
+      return false;
+    }
+    if (mini()) {
+      if (attachTutor(card)) return true;
+      toast(t('sidechat.ambitusPage.failed'));
       return false;
     }
     open();

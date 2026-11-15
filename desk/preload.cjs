@@ -491,6 +491,8 @@ const deskApi={
  onAmbitusPageThumb:fn=>ipcRenderer.on('ambitus-page-thumb',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onSidechatEvent:fn=>ipcRenderer.on('sidechat-event',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  sidechatAlwaysOnTop:on=>invoke('sidechat-always-on-top',{on:on===true}),
+ /* Modo mini (mini-mode-host.cjs): `{on?, alwaysOnTop?}` → `{on, alwaysOnTop}`. */
+ miniMode:p=>invoke('mini-mode',asPlain(p,'Pedido inválido.')),
  getConfig:()=>invoke('get-config'),saveConfig:c=>invoke('save-config',c),pickFolder:()=>invoke('pick-folder'),pickXopp:()=>invoke('pick-xopp'),pickExecutable:kind=>invoke('pick-executable',kind),logError:line=>invoke('desk-log',line),
  /* Contrato do tutor (#180): nome, origem e texto; o main não devolve caminho. */
  tutorContract:()=>invoke('tutor-contract'),
