@@ -2,7 +2,7 @@
  *
  * Esta é a única superfície que o main deve importar do motor Claude. O
  * transporte é o Agent SDK OFICIAL (@anthropic-ai/claude-agent-sdk 0.3.325,
- * testado com o CLI 2.1.301), com `import()` dinâmico e
+ * testado com o CLI 2.1.325), com `import()` dinâmico e
  * `pathToClaudeCodeExecutable` apontando sempre para o Claude Code do usuário,
  * numa versão dentro da faixa aceita (#51, ver claude-environment.cjs) — nunca
  * para o binário que o pacote do SDK instala, Pi, proxy, token copiado ou flag

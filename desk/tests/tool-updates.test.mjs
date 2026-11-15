@@ -18,7 +18,7 @@ const tested = require('../src/tested-versions.json');
 const DAY = 24 * 60 * 60 * 1000;
 const tmp = () => tempDir('mesa-tool-updates');
 
-function harness({fake = {}, latest = {claude: '2.1.302'}, busy = false, bridge = true, now = 20_000 * DAY, state = {}, allowRun = true, run, claudeLauncher} = {}) {
+function harness({fake = {}, latest = {claude: '2.1.326'}, busy = false, bridge = true, now = 20_000 * DAY, state = {}, allowRun = true, run, claudeLauncher} = {}) {
   const dir = tmp();
   const tools = installFakeTools(dir, fake);
   const seen = {persist: 0, relink: 0, events: [], logs: []};
@@ -63,9 +63,9 @@ test('sanitizeNotices: só versões estritas e dia inteiro; o resto vira vazio',
 test('notices: versão nova acende a linha e o ponto; sem rede não há aviso nem erro', async () => {
   const h = harness();
   const s = await h.host.notices();
-  assert.deepEqual(s.lines.map((l) => [l.id, l.name, l.version]), [['claude', 'Claude Code', '2.1.302']]);
+  assert.deepEqual(s.lines.map((l) => [l.id, l.name, l.version]), [['claude', 'Claude Code', '2.1.326']]);
   assert.equal(s.dot, true);
-  assert.equal(s.lines[0].ahead, true, 'a 2.1.302 passa da testada');
+  assert.equal(s.lines[0].ahead, true, 'a 2.1.326 passa da testada');
 
   const offline = harness({latest: null});
   const quiet = await offline.host.notices();
@@ -80,7 +80,7 @@ test('abrir o Sobre vê a versão: o ponto some, a linha fica, e só uma mais no
   assert.equal(opened.dot, false);
   assert.equal(opened.lines.length, 1, 'ver não é ignorar');
   assert.equal(h.seen.persist, 1);
-  assert.equal(h.box.state.toolNotices.claude.seen, '2.1.302');
+  assert.equal(h.box.state.toolNotices.claude.seen, '2.1.326');
   assert.equal((await h.host.notices()).dot, false, 'reabrir a Mesa não acende o ponto de novo');
 });
 
@@ -99,18 +99,18 @@ test('"Lembrar depois" cala hoje e volta amanhã como novidade', async () => {
 test('"Ignorar esta versão" cala a versão; uma mais nova acorda o aviso', async () => {
   const h = harness();
   await h.host.ignore('claude');
-  assert.equal(h.box.state.toolNotices.claude.ignored, '2.1.302');
+  assert.equal(h.box.state.toolNotices.claude.ignored, '2.1.326');
   assert.deepEqual((await h.host.notices()).lines, []);
-  const nova = harness({state: h.box.state, latest: {claude: '2.1.303'}});
+  const nova = harness({state: h.box.state, latest: {claude: '2.1.327'}});
   assert.deepEqual((await nova.host.notices()).lines.map((l) => l.id), ['claude']);
   await assert.rejects(() => h.host.ignore('node'), /ferramenta desconhecida: "node"; esperado claude/);
 });
 
 test('run (Claude Code): `claude update`; o tutor "religa na versão nova" se ela couber na faixa (#51)', async () => {
-  const h = harness();
+  const h = harness({fake: {claudeAfter: '2.1.326'}});
   const r = await h.host.run('claude');
   assert.deepEqual(h.tools.calls(), [{tool: 'claude', args: ['update']}]);
-  assert.equal(ptText(r.sentence), 'Claude Code atualizado para 2.1.302. O tutor religou com a versão nova.', 'mais nova que a testada, na série: o tutor usa');
+  assert.equal(ptText(r.sentence), 'Claude Code atualizado para 2.1.326. O tutor religou com a versão nova.', 'mais nova que a testada, na série: o tutor usa');
   assert.equal(r.relink, true);
   assert.equal(h.seen.relink, 1);
   assert.match(r.output, /Checking for updates/);
