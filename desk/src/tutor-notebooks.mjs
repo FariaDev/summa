@@ -127,6 +127,8 @@ export function tutorNotebookFind(raw) {
 
 /** O que o envio leva: caminho, página e nome (a miniatura não vai). @returns {Array<{caminho: string, pagina: number, nome: string}>} @example tutorNotebooksSnapshot() // [{caminho: '/c/a.xopp', pagina: 2, nome: 'a'}] */
 export function tutorNotebooksSnapshot() { return tray.snapshot(); }
+/** Cartões de um item da fila lido do disco: só os válidos, no máximo quatro. @param {unknown} raw @returns {Array<{caminho: string, pagina: number, nome: string}>} @example queuedNotebooks([{caminho: "/c/a.xopp", pagina: 2, nome: "a"}, null]) // [{caminho: "/c/a.xopp", pagina: 2, nome: "a"}] */
+export function queuedNotebooks(raw) { return (Array.isArray(raw) ? raw : []).map(notebookCardOf).filter(Boolean).slice(0, 4); }
 
 /** O que o `traySave` guarda: os fatos do cartão e a miniatura reduzida. @returns {Array<{caminho: string, pagina: number, nome: string, thumb: string}>} @example tutorNotebooksForSave() // [{caminho: '/c/a.xopp', pagina: 2, nome: 'a', thumb: ''}] */
 export function tutorNotebooksForSave() { return tray.persisted(); }

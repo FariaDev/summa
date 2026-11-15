@@ -1,6 +1,6 @@
 import {$,S,connect,toast,refs,mayAdvanceQueue,supportsCapability} from './state.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
-import {send,isComposerCommand,resetAttachments,persistTray} from './chat.mjs';
+import {send,isComposerCommand,resetAttachments,persistTray,tutorNotebooksSnapshot,queuedNotebooks} from './chat.mjs';
 import core from './generated/composerview.core.js';
 import pendingCore from './generated/pending.core.js';
 import {createQueueRetry} from './queue-retry.mjs';
@@ -11,8 +11,6 @@ import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
 import {icon} from '../icons.mjs';
 import {createQueueIntake} from './queue-intake.mjs';
-import {tutorNotebooksSnapshot} from './tutor-notebooks.mjs';
-import {notebookCardOf} from './ambitus-page.mjs';
 
 /* Fila de mensagens da Mesa — nasceu como espelho da fila da Conversa (aposentada na #50)
    e segue sobre o núcleo (`core/composerview.bend`), com uma diferença que aqui é
@@ -431,7 +429,7 @@ export function adopt(data){
  sendingId='';editingId='';editDraft='';editJustStarted=false;
  for(const raw of items){
   const text=typeof raw?.text==='string'?raw.text:'';
-  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],notebooks:(Array.isArray(raw?.notebooks)?raw.notebooks:[]).map(notebookCardOf).filter(Boolean).slice(0,4),refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
+  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],notebooks:queuedNotebooks(raw?.notebooks),refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
   if(!text.trim()&&!payload.images.length&&!payload.pdfs.length&&!payload.notebooks.length)continue;
   seq++;
   queue.push({id:typeof raw?.id==='string'&&raw.id?raw.id:`fila-${Date.now()}-${seq}`,text,payload});
