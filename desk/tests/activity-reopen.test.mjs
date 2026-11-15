@@ -162,3 +162,20 @@ test('OpenCode: quadro publicado volta ao reabrir, com estado, kind e heights', 
   const {messages} = await reopened.service.request('get_messages');
   assertBoardBack(boardsAfterReopen(store, conversationId, messages), published, 'opencode');
 });
+
+test('OpenCode: o toolCall e o resultado ficam na conversa antes de religar (#66)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD,
+    mcpCall: {name: 'criar_atividade', id: 'call_local_66', input: SPEC}, mcpBefore: 'Antes.', mcpAfter: 'Depois.'});
+  t.after(() => serve.close());
+  const {service, events} = openCodeService(serve, '');
+  t.after(() => service.stop());
+  await service.request('prompt', {message: 'Crie a atividade.'});
+  await until(() => events.find((event) => event.type === 'agent_settled'), 'agent_settled');
+  /* A reabertura sem `connect` lê SÓ esta lista: o leitor fecha o passo antes
+     da ferramenta, então o `message_end` da chamada chega com o mesmo `uuid`. */
+  const call = service.messages.flatMap((message) => Array.isArray(message.content) ? message.content : []).find((part) => part.type === 'toolCall');
+  assert.ok(call, 'a chamada entra na conversa local, não só no histórico do servidor');
+  assert.equal(call.id, 'call_local_66');
+  assert.ok(Object.hasOwn(call, 'result'), 'o resultado chega junto da chamada, como no descritor local');
+  assert.ok(Number(call.endedAt) > 0, 'o carimbo do resultado acompanha a chamada');
+});
