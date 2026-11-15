@@ -31,7 +31,7 @@ const os = require('node:os');
 const path = require('node:path');
 const {createOpenCodeClient, wireItem} = require('./opencode-http.cjs');
 const {OpenCodeEventReader} = require('./opencode-events.cjs');
-const {CompactionTracker, runCompaction} = require('./opencode-compaction.cjs');
+const {CompactionTracker, autoCompactionNotice, runCompaction} = require('./opencode-compaction.cjs');
 const {listCommands} = require('./opencode-commands.cjs');
 const {OpenCodeControls} = require('./opencode-controls.cjs');
 const {registerMesaMcp, mcpFailureMessage} = require('./opencode-mcp.cjs');
@@ -94,7 +94,7 @@ class OpenCodeAdapter extends EventEmitter {
     this.tempDir = '';
     /** @type {import('./opencode-commands.cjs').SlashCommand[]|null} */
     this.commandCache = null;
-    this.compactions = new CompactionTracker({timeoutMs: options.compactTimeoutMs});
+    this.compactions = new CompactionTracker({timeoutMs: options.compactTimeoutMs, onAuto: (signal, payload) => { const notice = autoCompactionNotice(signal, payload); if (notice) this.emitEvent(notice.type, notice.payload); }});
     this.controls = new OpenCodeControls({request: () => this.http().request, selection: options.selection});
     this.reader = new OpenCodeEventReader({emit: (type, payload) => this.fromReader(type, /** @type {Record<string, unknown>} */ (payload || {})), sessionId: this.sessionId});
   }

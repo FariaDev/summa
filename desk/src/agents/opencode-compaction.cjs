@@ -37,10 +37,11 @@ function failure(key, args, flags) {
  * @example const tracker = new CompactionTracker(); const waiter = tracker.begin(); tracker.receive('compaction_end', {text: 'resumo'});
  */
 class CompactionTracker {
-  /** @param {{timeoutMs?: number}} [options] */
-  constructor({timeoutMs} = {}) {
+  /** @param {{timeoutMs?: number, onAuto?: (signal: 'auto-ended'|'auto-failed', payload: Record<string, unknown>) => void}} [options] */
+  constructor({timeoutMs, onAuto} = {}) {
     const value = Number(timeoutMs);
     this.timeoutMs = Number.isFinite(value) && value > 0 ? value : COMPACT_TIMEOUT_MS;
+    this.onAuto = typeof onAuto === 'function' ? onAuto : () => {};
     /** @type {CompactionWaiter|null} */
     this.current = null;
   }
@@ -59,11 +60,16 @@ class CompactionTracker {
     return waiter;
   }
 
-  /* Evento de compactação automática (sem pedido nosso) não resolve nada. */
+  /* Compactação automática (sem pedido nosso) não resolve pedido, mas avisa
+     pelo `onAuto` (#77). O evento de um pedido manual segue sem aviso. */
   /** @param {string} type @param {Record<string, unknown>} [payload] */
   receive(type, payload = {}) {
     const waiter = this.current;
-    if (!waiter) return;
+    if (!waiter) {
+      if (type === 'compaction_end') this.onAuto('auto-ended', payload);
+      if (type === 'compaction_failed') this.onAuto('auto-failed', payload);
+      return;
+    }
     if (type === 'compaction_start' && !waiter.id && payload.id) waiter.id = String(payload.id);
     if (type === 'compaction_delta' && typeof payload.text === 'string') waiter.summary += payload.text;
     if (type === 'compaction_end') this.finish(waiter, 'ended', {summary: typeof payload.text === 'string' && payload.text ? payload.text : waiter.summary});
@@ -84,6 +90,21 @@ class CompactionTracker {
     if (this.current === waiter) this.current = null;
     waiter.resolve({status, summary: waiter.summary, ...extra});
   }
+}
+
+/**
+ * Aviso da compactação que o servidor fez sozinho (#77): o fim vira aviso
+ * discreto; a falha reusa o aviso não fatal do turno, com a frase do provedor
+ * quando o SSE a trouxe.
+ * @param {'auto-ended'|'auto-failed'} signal @param {Record<string, unknown>} payload
+ * @returns {{type: 'warning'|'error', payload: {code: string, message: string, fatal?: boolean}}|null}
+ * @example autoCompactionNotice('auto-ended', {}) // {type: 'warning', payload: {code: 'OPENCODE_COMPACTED', …}}
+ */
+function autoCompactionNotice(signal, payload = {}) {
+  if (signal === 'auto-ended') return {type: 'warning', payload: {code: 'OPENCODE_COMPACTED', message: message('opencode.compacted')}};
+  if (signal !== 'auto-failed') return null;
+  const phrase = typeof payload.message === 'string' ? payload.message.trim() : '';
+  return {type: 'error', payload: {code: 'OPENCODE_COMPACT_FAILED', message: phrase || message('opencode.compact.failed'), fatal: false}};
 }
 
 /** @param {CompactionSettled} settled @param {string} id @returns {{id: string, accepted: true, summary: string, tokensBefore: number, pending?: true}} */
@@ -121,4 +142,4 @@ async function runCompaction(port, input = {}) {
   throw failure('err.opencode.unconfirmed', {action, status: response.status}, {uncertain: true, notSent: false, status: response.status});
 }
 
-module.exports = {COMPACT_TIMEOUT_MS, CompactionTracker, runCompaction};
+module.exports = {COMPACT_TIMEOUT_MS, CompactionTracker, autoCompactionNotice, runCompaction};

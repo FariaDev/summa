@@ -417,6 +417,38 @@ test('compactação manual espera o fim pelo SSE e devolve o resumo', async (t) 
   assert.equal(adapter.snapshot().compacting, false);
 });
 
+test('compactação automática vira aviso não fatal com a frase do provedor (#77)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve);
+  t.after(() => adapter.stop());
+  await adapter.connect();
+
+  serve.emit('session.compaction.started', {sessionID: adapter.sessionId, reason: 'threshold'});
+  serve.emit('session.compaction.ended', {sessionID: adapter.sessionId, reason: 'threshold', text: 'Resumo automático.'});
+  const done = await waitFor(events, (item) => item.type === 'warning' && item.code === 'OPENCODE_COMPACTED', 'aviso da compactação automática');
+  assert.equal(parseMessage(done.message)?.key, 'opencode.compacted');
+
+  serve.emit('session.compaction.failed', {sessionID: adapter.sessionId, reason: 'threshold', error: {message: 'insufficient credits'}});
+  const failed = await waitFor(events, (item) => item.type === 'error' && item.code === 'OPENCODE_COMPACT_FAILED', 'aviso da falha automática');
+  assert.equal(failed.fatal, false);
+  assert.equal(failed.message, 'insufficient credits');
+
+  serve.emit('session.compaction.failed', {sessionID: adapter.sessionId, reason: 'threshold'});
+  await waitFor(events, (item) => item.type === 'error' && item.code === 'OPENCODE_COMPACT_FAILED' && item !== failed, 'aviso da falha automática sem frase');
+  assert.equal(parseMessage(events.filter((item) => item.code === 'OPENCODE_COMPACT_FAILED').at(-1).message)?.key, 'opencode.compact.failed');
+});
+
+test('compactação manual não gera o aviso da automática (#77)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve);
+  t.after(() => adapter.stop());
+  const result = await adapter.compact({id: 'k1'});
+  assert.equal(result.accepted, true);
+  assert.equal(events.some((item) => item.code === 'OPENCODE_COMPACTED'), false);
+});
+
 test('pedido de permissão inesperado é recusado na hora, sem diálogo', async (t) => {
   const serve = await createFakeOpencodeServe({password: PASSWORD, permission: {action: 'bash', resources: ['ls *']}});
   t.after(() => serve.close());

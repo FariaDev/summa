@@ -1727,6 +1727,7 @@
   "opencode.compact.busy": "O OpenCode já está compactando esta conversa.",
   "opencode.compact.failed": "O OpenCode não conseguiu compactar o contexto.",
   "opencode.compact.lost": "A conexão com o OpenCode caiu durante a compactação.",
+  "opencode.compacted": "A conversa foi resumida para caber no contexto.",
   "opencode.controls.effortUnsupported": "O esforço {effort} não existe neste modelo.",
   "opencode.controls.modelUnavailable": "O modelo {model} não está no catálogo do OpenCode.",
   "opencode.controls.savedUnavailable": "O modelo salvo saiu do catálogo do OpenCode; esta conversa usa o padrão do servidor.",

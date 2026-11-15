@@ -735,6 +735,7 @@ window.desk.onEvent(e=>{
  if(e.type==='desk_warn'){
   console.warn('Tutor:',e.message);
   if(e.code==='OPENCODE_MCP_FAILED')toast(e.message);
+  else if(e.code==='OPENCODE_COMPACTED'){toast(e.message);refreshMeter();} // #77: aviso discreto + medidor relido, como o "Resumir agora"
   else{
    const limit=claudeLimitNotice(e);
    if(limit)applyLimitNotice(limit,e);
