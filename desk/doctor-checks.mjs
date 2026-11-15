@@ -18,6 +18,9 @@ const {mergeCourses,courseLibrary}=require('./courses.cjs');
 const {detectTutorEngines,engineNames,defaultEngineFrom,ENGINE_NAMES}=require('./tutor-default-engine.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 const desk=path.dirname(fileURLToPath(import.meta.url));
+/* #84: o doctor dizia "Node 20+" depois que o engines subiu; o major vem do
+   mesmo `engines.node` que o setup e o README citam. */
+const nodeFloor=Number(JSON.parse(fs.readFileSync(path.join(desk,'package.json'),'utf8')).engines.node.replace(/[^0-9.]/g,'').split('.')[0]);
 const repo=path.dirname(desk);
 
 /** @typedef {{name: string, ok: boolean, detail: string}} DoctorRow */
@@ -44,7 +47,7 @@ function checkSetup(rows,env,config,home,runtime){
  const [nodeMajor]=process.versions.node.split('.').map(Number);
  /* Node só é exigência do setup a partir do código; o app e o MCP rodam no
     Node do Electron (#93). */
- check('Node 20+ (setup a partir do código)',nodeMajor>=20,process.version);
+ check(`Node ${nodeFloor}+ (setup a partir do código)`,nodeMajor>=nodeFloor,process.version);
  const dependenciesReady=fs.existsSync(path.join(desk,'node_modules','electron'));
  check('Dependências da Mesa',dependenciesReady,dependenciesReady?'instaladas':'rode npm ci');
  const all=detectTutorEngines({config,deskDir:desk,runtime,env,home,testMode:false});
@@ -103,7 +106,7 @@ export function doctorChecks({env=process.env,home=os.homedir()}={}){
  * As linhas no formato que o `npm run doctor` sempre imprimiu.
  * @param {DoctorRow[]} rows
  * @returns {string}
- * @example doctorText([{name:'Node 20+ (setup a partir do código)',ok:true,detail:'v20.0.0'}]) // '✓ Node 20+ (setup a partir do código): v20.0.0\n\nSetup learning pronto.'
+ * @example doctorText([{name:'Node 22+ (setup a partir do código)',ok:true,detail:'v22.19.0'}]) // '✓ Node 22+ (setup a partir do código): v22.19.0\n\nSetup learning pronto.'
  */
 export function doctorText(rows){
  const lines=rows.map(row=>`${row.ok?'✓':'✗'} ${row.name}: ${row.detail}`);
