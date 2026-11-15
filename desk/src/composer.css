@@ -253,6 +253,11 @@ body>#sidechat #sidechat-box>#sidechat-prompt{
 .attachment .notebook-text{display:flex;flex-direction:column;min-width:0;line-height:1.3}
 .attachment .notebook-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .attachment .notebook-page{font-size:var(--fs-xs);color:var(--muted)}
+/* Chip do caderno na bolha: o mesmo `.file` do chip de PDF, com o ícone do
+   livro e o nome/página do cartão em duas linhas (sem miniatura). */
+.message-file .notebook-chip-file{gap:var(--space-2);max-width:240px}
+.message-file .notebook-icon{display:flex;flex:none;color:var(--muted)}
+.message-file .notebook-icon .icon{width:14px;height:14px}
 .phone-pop{
  position:absolute;z-index:12;display:flex;flex-direction:column;gap:var(--space-2);overflow:auto;
  width:min(320px,calc(100% - var(--space-5)));padding:var(--space-3);

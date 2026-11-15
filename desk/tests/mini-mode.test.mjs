@@ -190,3 +190,28 @@ test('o histórico não mostra o bloco de cadernos (nem o caminho do arquivo) na
   const withContext = 'oi\n\n[Contexto da Mesa]\nmatéria: Cálculo\n\n[Cadernos anexados à mensagem]\n- caderno “A”, pág. 1, arquivo /c/A.xopp (releia com ler_caderno)';
   assert.equal(displayUserText(withContext), 'oi');
 });
+
+test('bandeja de cadernos guardada: restore devolve os cartões e persisted leva a miniatura reduzida', () => {
+  const original = 'data:image/png;base64,iVBORw0KGgo=';
+  const small = 'data:image/png;base64,iVBORw0KGgoAAA=';
+  const tray = createNotebookTray();
+  tray.add({caminho: '/c/a.xopp', pagina: 2, nome: 'A'});
+  assert.equal(tray.setThumb({caminho: '/c/a.xopp', pagina: 2, thumb: original}), true);
+  assert.equal(tray.setSavedThumb({caminho: '/c/a.xopp', pagina: 2, thumb: small}), true);
+  assert.deepEqual(tray.persisted(), [{caminho: '/c/a.xopp', pagina: 2, nome: 'A', thumb: small}], 'o disco leva a miniatura reduzida');
+  assert.deepEqual(tray.snapshot(), [{caminho: '/c/a.xopp', pagina: 2, nome: 'A'}], 'o envio continua sem miniatura');
+
+  const restored = createNotebookTray();
+  restored.restore([
+    {caminho: '/c/b.xopp', pagina: 1, nome: 'B', thumb: original},
+    {caminho: '/c/b.xopp', pagina: 1, nome: 'B repetido', thumb: ''},
+    {caminho: '', pagina: 1},
+    {caminho: '/c/b.xopp', pagina: 3, nome: 'B', thumb: 'data:text/html;base64,PGI+'},
+  ]);
+  assert.deepEqual(restored.snapshot().map((item) => [item.caminho, item.pagina, item.nome]), [
+    ['/c/b.xopp', 1, 'B'],
+    ['/c/b.xopp', 3, 'B'],
+  ], 'a mesma página não repete e pedido inválido fica de fora');
+  assert.equal(restored.list()[0].thumb, original, 'a miniatura guardada volta para o cartão');
+  assert.equal(restored.list()[1].thumb, '', 'miniatura que não é PNG é descartada');
+});

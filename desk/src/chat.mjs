@@ -118,7 +118,7 @@ export function showHistory(messages,cards=[],identity=null){
  try{
   for(const turn of turns){
    flushCards(turn.userTime||turn.startedAt||turn.time||0);
-   if(turn.userText||turn.userImages.length||turn.userPdfs?.length)searchEntries.push({text:turn.userText,el:tagMessageIndex(message('user',turn.userText,turn.userImages,frag,turn.userPdfs||[]),turn.userIndex)});
+   if(turn.userText||turn.userImages.length||turn.userPdfs?.length||turn.userNotebooks?.length)searchEntries.push({text:turn.userText,el:tagMessageIndex(message('user',turn.userText,turn.userImages,frag,turn.userPdfs||[],[],0,'','',turn.userNotebooks||[]),turn.userIndex)});
    /* E3: o diário reconstruído começa aberto quando traz motivo e o turno
       não tem resposta. O histórico de hoje não carrega motivo (`reason`
       vazio mantém o recolhido de sempre); a resposta do turno decide. */
@@ -321,7 +321,7 @@ export async function send(text,images,options={}){
      `streaming:false` (busy já caído) seria descartada como atraso. */
   turnState.promptArmed=true;
   if(pending.length&&!S.supportsImages){turnState.promptArmed=false;setBusy(false);toast(uiMessage('send.needsImages'));return false;}
-  userMessage=message('user',text,pending.map(item=>item.dataUrl),null,pdfs);
+  userMessage=message('user',text,pending.map(item=>item.dataUrl),null,pdfs,[],0,'','',notebooks);
   /* A fala do aluno termina aqui: entra na fonte da busca (#122). */
   addChatSearchEntry({text,el:userMessage});
   if(fromComposer&&$('#prompt').value===text)$('#prompt').value='';

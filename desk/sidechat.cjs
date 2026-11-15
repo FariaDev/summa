@@ -542,7 +542,12 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       /* A fala visível entra UMA vez, antes de qualquer evento do motor: ordem
          garantida mesmo quando o eco/assistant chegam antes do aceite, e a
          recusa comprovada tira a MESMA referência de volta. */
-      const userMessage = {role: 'user', content: [{type: 'text', text}]};
+      /* Nome e página do caderno ficam no registro (sem o caminho): é o chip
+         da bolha que sobrevive ao reload; mensagens antigas não têm o campo. */
+      const visibleNotebooks = (Array.isArray(input.notebooks) ? input.notebooks : []).slice(0, 4)
+        .map((item) => ({nome: String(item?.nome || '').slice(0, 200), pagina: Math.max(1, Math.trunc(Number(item?.pagina)) || 1)}))
+        .filter((item) => item.nome);
+      const userMessage = {role: 'user', content: [{type: 'text', text}], ...(visibleNotebooks.length ? {notebooks: visibleNotebooks} : {})};
       appendMessage(descriptor, userMessage);
       entry.pendingUser = userMessage;
       entry.settledTurn = null;

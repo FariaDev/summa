@@ -9,6 +9,7 @@ import {bendList,openImageDialog} from './chat-assets.mjs';
 import {imageFacts} from './attach-image-facts.mjs';
 import {h} from './sidechat-message-view.mjs';
 import {notebookCardOf} from './ambitus-page.mjs';
+import {notebookCardNode} from './notebook-card.mjs';
 
 /* Clipe e bandeja de anexos do chat lateral: o MESMO desenho do compositor do
    tutor (`.attach-pop`, `#attachments`, `.attachment`, o × e a leitura da
@@ -78,18 +79,10 @@ export function bindSidechatAttach(parts, {prompt, root}) {
   };
 
   function notebookCard(/** @type {(typeof notebooks)[number]} */ item) {
-    const name = item.nome;
-    const thumb = item.thumb
-      ? h('img', {class: 'notebook-thumb', src: item.thumb, alt: ''})
-      : h('span', {class: 'notebook-thumb', 'aria-hidden': 'true'});
-    if (!item.thumb) thumb.innerHTML = icon('book');
-    const remove = h('button', {type: 'button', class: 'attachment-remove', 'aria-label': t('attach.remove', {name}), text: '×'});
-    remove.addEventListener('click', () => { notebooks = notebooks.filter((other) => other !== item); render(); prompt.focus(); });
-    const page = t('sidechat.tray.page', {page: item.pagina});
-    return h('div', {class: 'attachment', role: 'group', 'aria-label': `${name}, ${page}`},
-      h('div', {class: 'file notebook-card', title: `${name} · ${page}`}, thumb,
-        h('span', {class: 'notebook-text'}, h('span', {class: 'notebook-name', text: name}), h('span', {class: 'notebook-page', text: page}))),
-      remove);
+    return notebookCardNode(item, {
+      doc: doc(),
+      onRemove: () => { notebooks = notebooks.filter((other) => other !== item); render(); prompt.focus(); },
+    });
   }
 
   function render() {

@@ -10,7 +10,7 @@ import {renderChildren} from './view-host.mjs';
 import {bendList,openImageDialog} from './chat-assets.mjs';
 import {PIN_IDS,PIN_LIMIT,normalizeComposerPins,toggleComposerPin} from './composer-pins.mjs';
 import {imageFacts} from './attach-image-facts.mjs';
-import {appendTutorNotebookCards,tutorNotebookCount,onTutorNotebooksChange,clearTutorNotebooks} from './tutor-notebooks.mjs';
+import {appendTutorNotebookCards,tutorNotebookCount,onTutorNotebooksChange,onTutorNotebooksPersist,clearTutorNotebooks,restoreTutorNotebooks,tutorNotebooksForSave} from './tutor-notebooks.mjs';
 
 /* Bandeja de anexos de imagem do composer (extraído de chat.mjs, #29): estado
    vivo em `S.attachments`, compressão, persistência por conversa, colar e
@@ -73,12 +73,13 @@ function renderAttachments(){
   paintComposerSend();
 }
 onTutorNotebooksChange(renderAttachments);
+onTutorNotebooksPersist(persistTray);
 /* A bandeja sobrevive ao fechamento: as imagens pendentes são guardadas por
    conversa (`desk/pending.cjs`, núcleo `core/pending.bend`) e voltam no boot.
    Quem esvazia a bandeja (enfileirar, enviar, remover) também persiste — o
    arquivo não pode ficar com um anexo que já foi para um item da fila. */
 export function persistTray(){
- window.desk.traySave({images:S.attachments,pdfs:S.pdfAttachments}).catch(e=>toast(e.message));
+ window.desk.traySave({images:S.attachments,pdfs:S.pdfAttachments,notebooks:tutorNotebooksForSave()}).catch(e=>toast(e.message));
 }
 /* Lê UMA imagem para a bandeja: reduz se for grande, confere o teto de bytes e vira data URL. Devolve
    o anexo, `null` quando a imagem foi recusada (o aviso já saiu) ou `undefined` quando `stale()` diz que a
@@ -155,11 +156,12 @@ export function restoreAttachments(pending){
   path:typeof item?.path==='string'?item.path:'',
   pages:Math.max(1,Math.trunc(Number(item?.pages))||1),
  })).filter(item=>item.path);
- if(!list.length&&!pdfs.length)return;
+ const notebooks=Array.isArray(pending?.notebooks)?pending.notebooks:[];
+ if(!list.length&&!pdfs.length&&!notebooks.length)return;
  S.attachGen++;
  S.attachments=list;
  S.pdfAttachments=pdfs;
- renderAttachments();
+ restoreTutorNotebooks(notebooks);
 }
 /* Os listeners entram na mesma posição em que o chat sempre os registrou
    (depois do handler de eventos do composer): o chat chama esta função. */

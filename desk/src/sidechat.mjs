@@ -444,7 +444,8 @@ async function sendMessage(){
  /* A fala local aparece ANTES de qualquer evento do motor: com aceite tardio,
    a ordem "user antes de assistant" continua certa. O eco `role:'user'` do
    motor é suprimido pelo backend; a bolha local é a fonte. */
- const localUser={role:'user',text,id:''};
+ const attached=attach?.snapshot()||{},watch={terminal:false};
+ const localUser={role:'user',text,id:'',...(Array.isArray(attached.notebooks)&&attached.notebooks.length?{notebooks:attached.notebooks.slice(0,4).map(({nome,pagina})=>({nome,pagina}))}:{})};
  state.messages.push(localUser);
  sideScroll?.setFollowing(true);
  renderMessages();
@@ -455,7 +456,6 @@ async function sendMessage(){
  paintSend();
  mirrorDraft(state.draft,{scope:state.scope});
  saveDraftNow(); /* A aceito não pode ressuscitar no hide/show/restart */
- const attached=attach?.snapshot()||{},watch={terminal:false};
  failureNoted=false;
  ackWatch=watch;
  try{
@@ -521,7 +521,7 @@ function normalizeMessage(raw){
  if(typeof raw.text==='string')text=raw.text;
  else if(typeof raw.content==='string')text=raw.content;
  else if(Array.isArray(raw.content))text=raw.content.filter(part=>part?.type==='text'&&typeof part.text==='string').map(part=>part.text).join('\n');
- return {role,text,id:String(raw.id||'')};
+ return {role,text,id:String(raw.id||''),...(Array.isArray(raw.notebooks)&&raw.notebooks.length?{notebooks:raw.notebooks.slice(0,4).map(item=>({nome:String(item?.nome||''),pagina:Math.max(1,Math.trunc(Number(item?.pagina))||1)})).filter(item=>item.nome)}:{})};
 }
 
 function noteText(text,{error=false}={}){

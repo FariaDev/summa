@@ -115,12 +115,27 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  await page.locator('#sidechat-prompt').press('Enter');
  await page.waitForFunction(()=>[...document.querySelectorAll('#sidechat-messages .sidechat-msg.assistant .sidechat-body')].length>=1,undefined,{timeout:30000});
  await page.waitForFunction(()=>document.querySelector('#sidechat-attachments').hidden,undefined,{timeout:10000});
- const bubble=await page.locator('#sidechat-messages .sidechat-msg.user').last().innerText();
- assert.match(bubble,/o que acontece na página dois\?/);
- assert.doesNotMatch(bubble,/aula 3\.xopp/,'a bolha não mostra o caminho');
+ const bubble=page.locator('#sidechat-messages .sidechat-msg.user').last();
+ assert.match(await bubble.innerText(),/o que acontece na página dois\?/);
+ assert.doesNotMatch(await bubble.innerText(),/aula 3\.xopp/,'a bolha não mostra o caminho');
+ const chip=bubble.locator('.message-file.notebook-chip');
+ await chip.waitFor({timeout:10000});
+ assert.equal(await chip.locator('.notebook-name').innerText(),'Limites — aula 3','o chip diz qual caderno foi junto');
+ assert.match(await chip.locator('.notebook-page').innerText(),/^pág\. 2$/);
  const engineSaw=fs.readFileSync(serveLog,'utf8');
  assert.match(engineSaw,/aula 3\.xopp/,'o motor recebeu o caminho do caderno');
  assert.match(engineSaw,/pág\. 2/,'e a página');
  assert.match(engineSaw,/"files":\[\{[^\]]*\.png/,'e a imagem anexada, como arquivo do pedido');
+
+ /* ---- 6. O chip do caderno sobrevive ao reload; a mensagem antiga não o inventa ---- */
+ await page.reload();
+ await statusOnline(page,{timeout:30000});
+ await page.waitForFunction(()=>{const panel=document.querySelector('#sidechat');return panel&&!panel.hidden&&!document.querySelector('#sidechat-prompt').disabled;},undefined,{timeout:30000});
+ const restored=page.locator('#sidechat-messages .sidechat-msg.user').last();
+ await restored.locator('.message-file.notebook-chip').waitFor({timeout:15000});
+ assert.equal(await restored.locator('.notebook-chip .notebook-name').innerText(),'Limites — aula 3','o chip volta do histórico');
+ assert.match(await restored.locator('.notebook-chip .notebook-page').innerText(),/^pág\. 2$/);
+ assert.doesNotMatch(await restored.innerText(),/aula 3\.xopp/,'o caminho continua fora da bolha depois do reload');
+ assert.equal(await page.locator('#sidechat-messages .sidechat-msg.user .notebook-chip').count(),1,'só a mensagem com caderno ganha chip');
  assert.deepEqual(errors,[]);
 });

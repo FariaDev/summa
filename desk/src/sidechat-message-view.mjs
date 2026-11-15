@@ -7,6 +7,7 @@ import {build,renderChildren} from './view-host.mjs';
 import talkCore from './generated/talkview.core.js';
 import {t as uiT,text as uiText} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';
+import {notebookChipNode} from './notebook-card.mjs';
 
 /* Cartões de mensagem do chat lateral (#43 fase 2: saíram de sidechat.mjs).
    Sem estado: o rótulo do motor entra por parâmetro; o DOM usa o mesmo
@@ -57,6 +58,7 @@ export function sidechatMessageCard(message,engineLabel){
  const card=h('article',{class:`sidechat-msg message ${message.role}${failed?' sidechat-error':''}`,role:failed?'alert':'group','aria-labelledby':voiceId},voice);
  const body=h('div',{class:'body sidechat-body'});
  paintSidechatBody(body,uiText(String(message.text??'')),false);
+ if(message.role==='user')paintNotebookChips(body,message.notebooks);
  if(failed){
   const mark=h('span',{class:'sidechat-error-icon','aria-hidden':'true'});
   mark.innerHTML=icon('alert');
@@ -84,6 +86,13 @@ export function sidechatMessageCard(message,engineLabel){
  }
  card.append(actions);
  return card;
+}
+function paintNotebookChips(body,notebooks){
+ const list=Array.isArray(notebooks)?notebooks:[];
+ if(!list.length)return;
+ const row=h('div',{class:'message-files'});
+ for(const item of list)row.append(notebookChipNode(item));
+ body.append(row);
 }
 export function paintSidechatBody(body,text,live){
  if(!body)return;

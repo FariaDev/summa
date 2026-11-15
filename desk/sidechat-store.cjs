@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const {boundMessages} = require('./src/agents/conversations.cjs');
 const {MAX_DRAFT} = require('./state-adapter.cjs');
 const {message: uiMsg} = require('./src/i18n.mjs');
+const {attachedNotebooks} = require('./src/notebook-facts.mjs');
 
 /* Chat lateral — limites e estados, envelope de contexto e texto de exibição,
    o store dos descritores (escrita atômica, índice, validação), refs de PDF,
@@ -54,9 +55,17 @@ function displayUserText(text) {
    história nativa e o arquivo em disco ficam intactos — é cópia para payload. */
 function displayMessages(messages) {
   return (Array.isArray(messages) ? messages : []).map((message) => {
-    if (!isPlainObject(message) || message.role !== 'user' || !Array.isArray(message.content)) return message;
+    if (!isPlainObject(message) || message.role !== 'user') return message;
+    const text = Array.isArray(message.content)
+      ? message.content.filter((part) => isPlainObject(part) && part.type === 'text' && typeof part.text === 'string').map((part) => part.text).join('\n')
+      : '';
+    /* O bloco escondido do caderno (chat lateral nativo) vira chip: só nome e
+       página; o caminho não vai à tela. Descritor Pi já traz o campo pronto. */
+    const notebooks = attachedNotebooks(text);
+    if (!Array.isArray(message.content)) return notebooks.length ? {...message, notebooks} : message;
     return {
       ...message,
+      ...(notebooks.length ? {notebooks} : {}),
       content: message.content.map((part) =>
         isPlainObject(part) && part.type === 'text' && typeof part.text === 'string' ? {...part, text: displayUserText(part.text)} : part),
     };

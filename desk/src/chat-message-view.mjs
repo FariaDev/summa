@@ -16,6 +16,8 @@ import {paintMessageBody} from './chat-stream-view.mjs';
 import {turnState} from './chat-turn-state.mjs';
 import {installMessageLinks} from './message-links.mjs';
 import {markRetryAnswer} from './chat-retry.mjs';
+import {notebookChipNode} from './notebook-card.mjs';
+import {notebookFactsOf} from './notebook-facts.mjs';
 
 /* Coluna do tutor — a bolha de mensagem: criar, pintar (Markdown + LaTeX,
    imagens) e atualizar no fluxo.
@@ -79,7 +81,7 @@ function paintImageAlts(body,sources){
   if(alt)images[i].alt=alt;
  }
 }
-function message(role,text,images=[],parent=null,files=[],imageSources=[],time=0,model='',modelName=''){
+function message(role,text,images=[],parent=null,files=[],imageSources=[],time=0,model='',modelName='',notebooks=[]){
  let el;
  const handlers={
   CopyMessage:async e=>{e.stopPropagation();try{await navigator.clipboard.writeText(el._raw||el.querySelector('.body').innerText);flashMark(e.target.closest?.('.msg-copy'),copiedMark(),t('talk.copied'));toast(uiMessage('toast.messageCopied'));}catch(err){toast(err.message);}},
@@ -87,6 +89,7 @@ function message(role,text,images=[],parent=null,files=[],imageSources=[],time=0
  };
  el=build(talkCore.message(role==='user',htmlNode(''),bendList(images),true,false,role!=='user'),handlers);
  el._imageSources=Array.isArray(imageSources)?imageSources:[];
+ el._notebooks=notebookFactsOf(notebooks);
  applyIcons(el,icon);
  setMessageTime(el,time);
  if(role!=='user')setMessageModel(el,model,modelName);
@@ -98,7 +101,7 @@ function message(role,text,images=[],parent=null,files=[],imageSources=[],time=0
   /* Lote do histórico em conversa longa (#118): a bolha nasce em casca (texto
      cru) e o rico entra perto da vista. A viva do stream nunca passa por aqui:
      o lote só arma dentro do `showHistory`. */
-  if(deferLazyBubble())return lazyShell(el,text,images,parent,imageSources);
+  if(deferLazyBubble())return lazyShell(el,text,images,parent,imageSources,notebooks);
   (parent||$('#messages')).append(el);updateMessage(el,text,images);return el;
 }
 /* Formatar uma casca não é envio nem stream: sem esta marca, cada pergunta antiga
@@ -108,7 +111,7 @@ let paintingLazyShell=false;
 /* Casca preguiçosa: o mesmo andaime (ações, imagens, arquivos) com o texto via
    `textContent` — `$...$`, cerca de código e `<script>` ficam literais, sem
    executar nada; o rico usa o mesmo `updateMessage` do desenho direto. */
-function lazyShell(el,text,images,parent,imageSources){
+function lazyShell(el,text,images,parent,imageSources,notebooks){
   el._raw=text;
   /* A região `#messages` é `aria-live=polite`: formatar a casca troca os nós e
      o leitor anunciaria a conversa inteira em massa (#118). A bolha em casca
@@ -121,6 +124,7 @@ function lazyShell(el,text,images,parent,imageSources){
   if(body){
     body.prepend(document.createTextNode(displayUserText(text||'')));
     paintFiles(body,el._files,el);
+    paintNotebookChips(body,notebookFactsOf(notebooks));
     for(const img of body.querySelectorAll('img.shot'))wrapCopy(img);
   }
   (parent||$('#messages')).append(el);
@@ -139,6 +143,7 @@ function paintMessage(el,text,images,live){
  paintImageAlts(body,el._imageSources);
  window.dispatchEvent(new CustomEvent('desk-media-painted',{detail:{body}}));
  paintFiles(body,el._files,el);
+ paintNotebookChips(body,el._notebooks);
  if(!live)hydrateAssets(body);
  if(!live)linkifyRefs(body);
  for(const img of body.querySelectorAll('img.shot'))wrapCopy(img);
@@ -170,6 +175,13 @@ function paintFiles(body,files,el){
   chip.append(label,remove);
   row.append(chip);
  }
+ body.append(row);
+}
+function paintNotebookChips(body,notebooks){
+ const list=Array.isArray(notebooks)?notebooks:[];
+ if(!list.length)return;
+ const row=document.createElement('div');row.className='message-files';
+ for(const item of list)row.append(notebookChipNode(item));
  body.append(row);
 }
 function updateMessage(el,text,images,live){

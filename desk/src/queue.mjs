@@ -11,6 +11,7 @@ import {message} from './i18n.mjs';
 import {icon} from '../icons.mjs';
 import {createQueueIntake} from './queue-intake.mjs';
 import {tutorNotebooksSnapshot} from './tutor-notebooks.mjs';
+import {notebookCardOf} from './ambitus-page.mjs';
 
 /* Fila de mensagens da Mesa — nasceu como espelho da fila da Conversa (aposentada na #50)
    e segue sobre o núcleo (`core/composerview.bend`), com uma diferença que aqui é
@@ -94,7 +95,7 @@ function idFromEvent(e){
 /* O que vai para o arquivo: texto, referências e anexos do item (o snapshot do
    composer no momento do enqueue), nunca o estado vivo do DOM. */
 function snapshot(){
- return queue.map(item=>({id:item.id,text:item.text,refs:item.payload.refs,images:item.payload.images,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions}));
+ return queue.map(item=>({id:item.id,text:item.text,refs:item.payload.refs,images:item.payload.images,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions}));
 }
 
 /* Escrita imediata nas mudanças discretas (enfileirar, remover, enviar, limpar)
@@ -423,8 +424,8 @@ export function adopt(data){
  sendingId='';editingId='';editDraft='';editJustStarted=false;
  for(const raw of items){
   const text=typeof raw?.text==='string'?raw.text:'';
-  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
-  if(!text.trim()&&!payload.images.length&&!payload.pdfs.length)continue;
+  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],notebooks:(Array.isArray(raw?.notebooks)?raw.notebooks:[]).map(notebookCardOf).filter(Boolean).slice(0,4),refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
+  if(!text.trim()&&!payload.images.length&&!payload.pdfs.length&&!payload.notebooks.length)continue;
   seq++;
   queue.push({id:typeof raw?.id==='string'&&raw.id?raw.id:`fila-${Date.now()}-${seq}`,text,payload});
  }

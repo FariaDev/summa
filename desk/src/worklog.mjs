@@ -11,7 +11,7 @@
    núcleo é imutável e a ponte é o par toCore/toPlain + sync. */
 import core from './generated/worklog.core.js';
 import {contentParts,displayUserText,imageSources} from '../text.mjs';
-import {attachedPdfs} from './chat-pdf.mjs';
+import {attachedPdfs} from './chat-pdf.mjs';import {attachedNotebooks} from './notebook-facts.mjs';
 import {headlineElapsed,headBase} from './worklog-head.mjs';
 import {formatDuration,isPdfRead} from './worklog-tools.mjs';
 import {artifactPart,isActivityTool} from './timeline.mjs';
@@ -421,11 +421,11 @@ export function historyTurns(messages){
  let turn=null;
  let currentWork=null,messageIndex=-1;
  const flush=()=>{
-  if(turn&&(turn.steps.length||turn.text.trim()||turn.userText||turn.userImages.length||turn.userPdfs.length||turn.assistantImages.length))turns.push(turn);
+  if(turn&&(turn.steps.length||turn.text.trim()||turn.userText||turn.userImages.length||turn.userPdfs.length||turn.userNotebooks.length||turn.assistantImages.length))turns.push(turn);
   turn=null;
   currentWork=null;
  };
- const emptyTurn=at=>({startedAt:at,endedAt:0,steps:[],parts:[],text:'',userText:'',userImages:[],userPdfs:[],assistantImages:[],userTime:0,time:0});
+ const emptyTurn=at=>({startedAt:at,endedAt:0,steps:[],parts:[],text:'',userText:'',userImages:[],userPdfs:[],userNotebooks:[],assistantImages:[],userTime:0,time:0});
  const pushStep=step=>{
   if(!currentWork){currentWork={type:'work',startedAt:0,endedAt:0,steps:[]};turn.parts.push(currentWork);}
   if(!currentWork.steps.length)currentWork.startedAt=step.startedAt;
@@ -439,7 +439,7 @@ export function historyTurns(messages){
   if(message.role==='user'){
    flush();
    const {text,images}=contentParts(message);
-   turn={...emptyTurn(stampOf(message)),userText:displayUserText(text),userImages:images,userPdfs:attachedPdfs(text),userTime:stampOf(message),userIndex:String(text||'').trim()?++messageIndex:-1};
+   turn={...emptyTurn(stampOf(message)),userText:displayUserText(text),userImages:images,userPdfs:attachedPdfs(text),userNotebooks:attachedNotebooks(text),userTime:stampOf(message),userIndex:String(text||'').trim()?++messageIndex:-1};
    continue;
   }
   if(message.role==='assistant'){
