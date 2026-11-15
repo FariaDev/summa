@@ -1741,6 +1741,7 @@
   "opencode.image.failed": "Não deu para preparar a imagem para o OpenCode; ela não foi enviada.",
   "opencode.image.unsupported": "Imagem {mime} não enviada: o OpenCode recebe PNG, JPEG, GIF ou WebP.",
   "opencode.mcp.failed": "As ferramentas da Summa (GeoGebra e atividades) não entraram no OpenCode (HTTP {status}).",
+  "opencode.mcp.unavailableTutor": "As ferramentas da Summa não estão disponíveis nesta sessão. Diga isso ao aluno em vez de tentar `read` ou `skill`.",
   "opencode.permission.refused": "O OpenCode pediu uma permissão inesperada; a chamada foi recusada.",
   "opencode.noEvents": "O OpenCode está sem o canal de eventos. Nada foi enviado.",
   "opencode.session.missing": "A sessão do OpenCode não estava no servidor; a Summa abriu outra com o mesmo id e o histórico daqui.",

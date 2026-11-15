@@ -1741,6 +1741,7 @@
   "opencode.image.failed": "Could not prepare the image for OpenCode; it was not sent.",
   "opencode.image.unsupported": "Image {mime} not sent: OpenCode accepts PNG, JPEG, GIF or WebP.",
   "opencode.mcp.failed": "The Summa tools (GeoGebra and activities) did not load in OpenCode (HTTP {status}).",
+  "opencode.mcp.unavailableTutor": "The Summa tools are unavailable in this session. Tell the student that instead of trying `read` or `skill`.",
   "opencode.permission.refused": "OpenCode asked for an unexpected permission; the call was refused.",
   "opencode.noEvents": "OpenCode has no event channel. Nothing was sent.",
   "opencode.session.missing": "The OpenCode session was not on the server; Summa opened another with the same id and the history kept here.",

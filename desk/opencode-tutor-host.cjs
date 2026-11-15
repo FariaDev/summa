@@ -136,6 +136,9 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
       /* O servidor cunha o `ses_` na primeira ligação; o descritor o guarda uma vez. */
       onSessionId: (id) => { if (live.session !== descriptorAtConnect) return; conversations.updateClaudeConversation(descriptorAtConnect, {nativeSessionId: id}, {runtime}); },
       mcpConfig: () => mesaMcpConfig({execPath, ggbBridge: ggbBridge(), activityGrant, materialGrant: live.tutorMaterialGrant, cardGrant: activityGrant, tutorLanguage: live.languageHost.tutorLanguage()}),
+      /* #55: sem as ferramentas da Mesa, o tutor recebe esta linha no idioma
+         dele e diz ao aluno em vez de improvisar `read`/`skill`. */
+      mcpUnavailableNote: () => live.languageHost.tutorT('opencode.mcp.unavailableTutor'),
     });
     adapter.on('event', calls.observe);
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
@@ -173,6 +176,7 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
       ...ownerSeat(), persistDelivery: persistence.persistDelivery, log, readVersion,
       onSessionId: (id) => conversations.updateClaudeConversation(descriptor, {nativeSessionId: id}, {runtime}),
       mcpConfig: () => mesaMcpConfig({execPath, ggbBridge: '', activityGrant, cardGrant, tutorLanguage: live.languageHost.tutorLanguage(), pdfOnly: true}),
+      mcpUnavailableNote: () => live.languageHost.tutorT('opencode.mcp.unavailableTutor'),
     });
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
       onMessages: persistence.onMessages, onSelection: persistence.onSelection,
