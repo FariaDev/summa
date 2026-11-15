@@ -120,7 +120,8 @@ test('desk.json round-trips through init/save-state/switch-course and ggbBase64 
     pdfRotations:{[pdfA]:90,[pdfB]:45,'':270},
     referenceVisible:true,chatWidth:420,calcHeight:260,pdfSplit:.62,theme:'light',
     modelRecents:{pi:[['xai','grok-4'],['lixo'],[7,8]],opencode:'ruim'},
-    modelFavorites:{pi:[['xai','grok-4-fast'],['só um']],claude:7}
+    modelFavorites:{pi:[['xai','grok-4-fast'],['só um']],claude:7},
+    modelLast:{provider:'opencode',id:'deepseek-v4.1-flash-free',effort:'high'}
    });
    let desk=JSON.parse(fs.readFileSync(path.join(runtime,'desk.json'),'utf8'));
    assert.equal(desk.draft,'novo rascunho');
@@ -132,6 +133,7 @@ test('desk.json round-trips through init/save-state/switch-course and ggbBase64 
    assert.deepEqual(desk.courseStates.A.pdfRotations,{[pdfA]:90},'o estado da matéria carrega o mapa de rotações');
    assert.deepEqual(desk.modelRecents,{pi:[['xai','grok-4']]},'os recentes do seletor (#59) guardam só pares de texto, por motor');
    assert.deepEqual(desk.modelFavorites,{pi:[['xai','grok-4-fast']]},'os favoritos do seletor guardam só pares de texto, por motor');
+   assert.deepEqual(desk.modelLast,{provider:'opencode',id:'deepseek-v4.1-flash-free',effort:'high'},'o último modelo usado (#76) fica no estado de interface');
    assert.equal(desk.theme,'light');assert.equal(desk.chatWidth,420);assert.equal(desk.calcHeight,260);assert.equal(desk.pdfSplit,.62);
    assert.equal(desk.session,init.session,'o save persiste a sessão OpenCode nova');assert.equal(desk.courseId,'A');
    assert.deepEqual(desk.courseStates.A.study,{title:'Lista 3 · q8',xopp},'course state carries the live study');
@@ -150,8 +152,10 @@ test('desk.json round-trips through init/save-state/switch-course and ggbBase64 
    assert.equal(desk.theme,'light','unknown theme keeps the previous one');
    assert.deepEqual(desk.modelRecents,{pi:[['xai','grok-4']]},'um save sem recentes não apaga os guardados');
    assert.deepEqual(desk.modelFavorites,{pi:[['xai','grok-4-fast']]},'um save sem favoritos não apaga os guardados');
+   assert.deepEqual(desk.modelLast,{provider:'opencode',id:'deepseek-v4.1-flash-free',effort:'high'},'um save sem o último modelo não apaga o guardado');
    assert.deepEqual((await handlers.get('init')({})).state.modelFavorites,{pi:[['xai','grok-4-fast']]},'os favoritos voltam no init');
    assert.deepEqual((await handlers.get('init')({})).state.modelRecents,{pi:[['xai','grok-4']]},'os recentes voltam no init');
+   assert.deepEqual((await handlers.get('init')({})).state.modelLast,{provider:'opencode',id:'deepseek-v4.1-flash-free',effort:'high'},'o último modelo volta no init');
    assert.equal(desk.referenceVisible,false);
    assert.deepEqual(desk.courseStates.A.study,{title:'Lista 4 · clamp',xopp},'the latest study is the one persisted');
 

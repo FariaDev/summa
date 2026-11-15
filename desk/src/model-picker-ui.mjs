@@ -2,6 +2,7 @@
 import {icon} from '../icons.mjs';
 import {t, text} from './ui-text.mjs';
 import {toggleModelDefault, normalizeModelDefault} from './model-default.mjs';
+import {normalizeModelLast} from './model-last.mjs';
 import {groupModels, flattenGroups, railEntries, stepActive, initialActive, modelKey, pushRecent, normalizeRecents, normalizeFavorites, toggleFavorite, alignedScrollTop, isFavoriteShortcut, activeAfterFlip} from './model-picker.mjs';
 import {railButton, groupNode, itemRow, defaultRow, waitingRow, chartTokens} from './model-picker-rows.mjs';
 
@@ -50,6 +51,8 @@ const picker = {
   favorites: {},
   /** @type {{provider: string, id: string, effort: string} | null} */
   default: null,
+  /** @type {{provider: string, id: string, effort: string} | null} */
+  last: null,
   /** Esforço em uso, para o padrão guardar modelo e esforço juntos. */
   effort: '',
   /** @type {null | ((pick: ModelPick) => void)} */
@@ -150,6 +153,32 @@ export function loadModelDefault(raw) {
 /** O modelo padrão para o `save-state`. */
 export function modelDefaultSnapshot() {
   return picker.default;
+}
+
+/** O último modelo e esforço usados, lidos do estado de interface. @param {unknown} raw */
+export function loadModelLast(raw) {
+  picker.last = normalizeModelLast(raw);
+}
+
+/** O último modelo e esforço para o `save-state`. */
+export function modelLastSnapshot() {
+  return picker.last;
+}
+
+/**
+ * Guarda o último modelo e esforço que a pessoa escolheu e o host confirmou
+ * numa sessão OpenCode (#76). Só a escolha confirmada entra; a sessão aberta
+ * não muda e o modelo pago segue confirmando no seletor.
+ * `noteModelUsed({provider: 'opencode', id: 'big-pickle', effort: 'high'})` → `true`
+ * @param {{provider?: unknown, id?: unknown, effort?: unknown}} choice
+ * @returns {boolean} `true` quando mudou algo a gravar
+ */
+export function noteModelUsed(choice) {
+  if (picker.engine !== 'opencode') return false;
+  const next = normalizeModelLast(choice);
+  if (!next || (picker.last && picker.last.provider === next.provider && picker.last.id === next.id && picker.last.effort === next.effort)) return false;
+  picker.last = next;
+  return true;
 }
 
 /**

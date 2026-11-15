@@ -27,7 +27,7 @@ import {applyAttrs,applyAttrsOn,applyView} from './live-view.mjs';
 import {updateMeter,renderAutoCompact,refreshMeter,installContextMeter,meterUsage} from './context-meter.mjs';
 export {refreshMeter};
 import {applyEngineVisibility,setLegacySession} from './visible-engines-ui.mjs';
-import {loadReleaseNotesSeen,releaseNotesSeen} from './release-notes.mjs';import {loadMaterialFolders,materialFoldersSnapshot} from './material-picker-ui.mjs';import {shortModelName} from './model-picker.mjs';import {renderModelPicker,setModelPickerDisabled,loadModelRecents,modelRecentsSnapshot,loadModelFavorites,modelFavoritesSnapshot,loadModelDefault,modelDefaultSnapshot} from './model-picker-ui.mjs';import {renderEffortStrip,setEffortStripDisabled,effortLevelText} from './effort-strip.mjs';import {knownEngine,sessionEngine,isNativeEngine,defaultEffort,defaultCapability} from './engine-facts.mjs';
+import {loadReleaseNotesSeen,releaseNotesSeen} from './release-notes.mjs';import {loadMaterialFolders,materialFoldersSnapshot} from './material-picker-ui.mjs';import {shortModelName} from './model-picker.mjs';import {renderModelPicker,setModelPickerDisabled,loadModelRecents,modelRecentsSnapshot,loadModelFavorites,modelFavoritesSnapshot,loadModelDefault,modelDefaultSnapshot,loadModelLast,modelLastSnapshot} from './model-picker-ui.mjs';import {renderEffortStrip,setEffortStripDisabled,effortLevelText} from './effort-strip.mjs';import {knownEngine,sessionEngine,isNativeEngine,defaultEffort,defaultCapability} from './engine-facts.mjs';
 import {detachConnectFlight,createConnectRunner} from './connect-flight.mjs';
 import {applyDisplayState} from './display-preferences.mjs';
 import {normalizeComposerPins} from './composer-pins.mjs';
@@ -282,7 +282,7 @@ export function studySnapshot(){return {title:$('#exercise-title').value.trim(),
 /* Páginas abertas (caminho + página) para o registro do Encerrar: os PDFs da
    mesa na ordem dos painéis — a forma e o teto saem do núcleo (`core/resume.bend`). */
 export function pageRefs(){return S.panels.filter(p=>p.path).map(p=>({path:p.path,page:p.page}));}
-export function layoutSnapshot(){return {draft:$('#prompt').value,study:studySnapshot(),pdfs:pdfSnapshot(),pdfRotations:pdfRotationsSnapshot(),materialFolders:materialFoldersSnapshot(),pdfSplit:pdfSplitValue(),referenceVisible:S.refVisible,chatWidth:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chat')),calcHeight:calcHeightPx(),theme:S.currentTheme,accent:S.currentAccent,readingSize:S.readingSize,readingWidth:S.readingWidth,codeSize:S.codeSize,pdfDark:S.pdfDark,composerPins:S.composerPins,composerHeight:Math.round($('#prompt').getBoundingClientRect().height),viewLayout:captureViewLayout(),modelRecents:modelRecentsSnapshot(),modelFavorites:modelFavoritesSnapshot(),modelDefault:modelDefaultSnapshot(),releaseNotesSeen:releaseNotesSeen()};}
+export function layoutSnapshot(){return {draft:$('#prompt').value,study:studySnapshot(),pdfs:pdfSnapshot(),pdfRotations:pdfRotationsSnapshot(),materialFolders:materialFoldersSnapshot(),pdfSplit:pdfSplitValue(),referenceVisible:S.refVisible,chatWidth:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chat')),calcHeight:calcHeightPx(),theme:S.currentTheme,accent:S.currentAccent,readingSize:S.readingSize,readingWidth:S.readingWidth,codeSize:S.codeSize,pdfDark:S.pdfDark,composerPins:S.composerPins,composerHeight:Math.round($('#prompt').getBoundingClientRect().height),viewLayout:captureViewLayout(),modelRecents:modelRecentsSnapshot(),modelFavorites:modelFavoritesSnapshot(),modelDefault:modelDefaultSnapshot(),modelLast:modelLastSnapshot(),releaseNotesSeen:releaseNotesSeen()};}
 /* A seta de Enviar só acende quando há o que enviar: texto (sem só espaços),
    imagem ou PDF na bandeja. A fila não conta: o botão envia o composer, e a
    fila tem o "Enviar agora" da própria faixa. O estado de Parar não muda. */
@@ -616,7 +616,7 @@ export async function loadCourse(data,{publishWorkspace=true}={}){
  applyAccent(data.state.accent);applyDisplayState(S,data.state);
  S.composerPins=normalizeComposerPins(data.state.composerPins);
  window.dispatchEvent(new Event('desk-composer-pins'));
- loadModelRecents(data.state.modelRecents);loadModelFavorites(data.state.modelFavorites);loadModelDefault(data.state.modelDefault);loadReleaseNotesSeen(data.state.releaseNotesSeen);
+ loadModelRecents(data.state.modelRecents);loadModelFavorites(data.state.modelFavorites);loadModelDefault(data.state.modelDefault);loadModelLast(data.state.modelLast);loadReleaseNotesSeen(data.state.releaseNotesSeen);
  // Esconder o recurso não apaga a questão nem o arquivo associado.
  applyStudy(data.state.study);
  /* Fila e bandeja guardadas da conversa: a faixa volta com o que ainda não foi

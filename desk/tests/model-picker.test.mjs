@@ -10,6 +10,7 @@ import {
 } from '../src/model-picker.mjs';
 import {onlyFreeCatalog, connectProviderOffer} from '../src/model-provider-hint.mjs';
 import {normalizeModelDefault, toggleModelDefault} from '../src/model-default.mjs';
+import {normalizeModelLast, sessionModelChoice} from '../src/model-last.mjs';
 
 const zeroTail = [message('freeModels.policy.zero')];
 const catalog = [
@@ -193,6 +194,19 @@ test('modelo padrão: guarda provedor, id e esforço; a mesma ação desfaz e li
   assert.equal(normalizeModelDefault({provider: 'opencode'}), null);
   assert.equal(normalizeModelDefault('opencode/x'), null);
   assert.equal(normalizeModelDefault({provider: 'opencode', id: 'x', effort: 7}).effort, '');
+});
+
+test('último modelo usado: padrão marcado > último usado > padrão do OpenCode, e lixo cai (#76)', () => {
+  const last = {provider: 'opencode', id: 'deepseek-v4.1-flash-free', effort: 'high'};
+  const marked = {provider: 'opencode', id: 'gpt-5.5', effort: 'low'};
+  assert.deepEqual(sessionModelChoice({modelDefault: marked, modelLast: last}), marked, 'o padrão marcado manda sempre');
+  assert.deepEqual(sessionModelChoice({modelLast: last}), last, 'sem padrão, vale o último usado');
+  assert.equal(sessionModelChoice({}), null, 'sem os dois, o padrão do OpenCode');
+  assert.deepEqual(normalizeModelLast(last), last, 'o último usa o mesmo saneamento do padrão');
+  assert.equal(normalizeModelLast({provider: '', id: 'x'}), null);
+  assert.equal(normalizeModelLast({provider: 'opencode'}), null);
+  assert.equal(normalizeModelLast('opencode/x'), null);
+  assert.equal(normalizeModelLast({provider: 'opencode', id: 'x', effort: 7}).effort, '');
 });
 
 test('pushRecent: o novo vai ao topo, sem repetir, no limite, sem mudar o original e por motor', () => {

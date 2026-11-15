@@ -58,6 +58,7 @@
   "src/chat-search-view.mjs",
   "src/reveal-message.mjs",
   "src/model-default.mjs",
+  "src/model-last.mjs",
   "src/composer-pins.mjs",
   "src/composer-height.mjs",
   "src/composer-resize.mjs",

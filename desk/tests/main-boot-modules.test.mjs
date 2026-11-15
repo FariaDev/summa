@@ -115,6 +115,16 @@ test('sanitizeState guarda os recentes do seletor de modelo por motor e descarta
   assert.deepEqual(sanitize.sanitizeModelRecents({claude: [['anthropic', '']]}), {claude: [['anthropic', '']]});
 });
 
+test('sanitizeState guarda o último modelo usado com o mesmo saneamento do padrão e descarta lixo (#76)', () => {
+  const state = sanitize.sanitizeState({modelLast: {provider: 'opencode', id: 'deepseek-v4.1-flash-free', effort: 'high'}, modelDefault: {provider: 'opencode', id: 'gpt-5.5', effort: ''}});
+  assert.deepEqual(state.modelLast, {provider: 'opencode', id: 'deepseek-v4.1-flash-free', effort: 'high'});
+  assert.deepEqual(state.modelDefault, {provider: 'opencode', id: 'gpt-5.5', effort: ''}, 'o padrão continua com o saneamento dele');
+  assert.equal(sanitize.sanitizeState({modelLast: {provider: '', id: 'x'}}).modelLast, null);
+  assert.equal(sanitize.sanitizeState({modelLast: 'opencode/x'}).modelLast, null);
+  assert.equal(sanitize.sanitizeState({}).modelLast, null);
+  assert.deepEqual(sanitize.sanitizeModelLast({provider: 'opencode', id: 'x', effort: 7}), {provider: 'opencode', id: 'x', effort: ''});
+});
+
 test('sanitizeState guarda os favoritos do seletor por motor, fora do config.json, e descarta lixo', () => {
   const state = sanitize.sanitizeState({modelFavorites: {pi: [['xai', 'grok-4'], ['ruim'], [1, 2]], opencode: 'x'}});
   assert.deepEqual(state.modelFavorites, {pi: [['xai', 'grok-4']]});
