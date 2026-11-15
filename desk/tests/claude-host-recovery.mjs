@@ -46,7 +46,9 @@ await withArtifacts('claude-recovery',async ctx=>{
  assert.equal(final.nativeEstablished,true);
  assert.equal(final.messages[0].role,'user');assert.equal(final.messages[1].role,'assistant');
  // A native transcript larger than the display prefix must export all pages,
- // even when the descriptor only contains the two recent cached messages.
+ // even when the descriptor only contains the two recent cached messages. Desde
+ // o #113 o descritor entra como prefixo: 501 linhas nativas + a resposta em
+ // cache = 502 cabeçalhos `## Claude`.
  const nativeDir=path.join(runtime,'claude-workspaces',final.id,'.claude-fake-sessions');
  fs.mkdirSync(nativeDir,{recursive:true});
  const nativeMessages=Array.from({length:501},(_,index)=>({type:'assistant',uuid:`native-${index}`,message:{role:'assistant',content:[{type:'text',text:`Artificial native row ${index}`} ]}}));
@@ -55,7 +57,7 @@ await withArtifacts('claude-recovery',async ctx=>{
  assert.equal(exported.saved,true);
  const markdown=fs.readFileSync(exported.file,'utf8');
  assert.match(markdown,/Artificial native row 500/,'export reaches beyond the 200-row display limit');
- assert.equal((markdown.match(/## Claude\b/g)||[]).length,501,'native pagination has neither duplicate nor missing rows');
+ assert.equal((markdown.match(/## Claude\b/g)||[]).length,502,'native pagination has neither duplicate nor missing rows, plus the cached prefix (#113)');
  assert.equal(fs.existsSync(starts),false,'sending through Claude must never launch OpenCode');
- console.log('CLAUDE RECOVERY PASSED: uncertain delivery held; corrupt descriptor preserved; new conversation available; 501 native rows exported; zero OpenCode starts.');
+ console.log('CLAUDE RECOVERY PASSED: uncertain delivery held; corrupt descriptor preserved; new conversation available; 501 native rows plus the cached prefix exported; zero OpenCode starts.');
 });

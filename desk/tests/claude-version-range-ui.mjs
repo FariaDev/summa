@@ -89,7 +89,7 @@ await scenario('in-range','2.1.296',async ({page,runtime,file,id,user,calls,rows
 await scenario('ahead','2.1.400',async ({page,user,rows,log,errors})=>{
  await statusOnline(page,{timeout:30000});
  assert.equal(rows()[0].executable,user);
- await pollUntil(log,text=>text.includes(`2.1.400 é mais nova que a testada com esta Mesa (${CLAUDE_RANGE.tested})`),{timeout:15000,what:'a linha de "mais nova que a testada" no desk.log'});
+ await pollUntil(log,text=>text.includes(`2.1.400 é mais nova que a testada com esta versão da Summa (${CLAUDE_RANGE.tested})`),{timeout:15000,what:'a linha de "mais nova que a testada" no desk.log'});
  assert.equal(await page.locator('#tutor-state[data-state="error"]').count(),0,'mais nova nunca bloqueia');
  assert.deepEqual(errors,[]);
 });
@@ -98,7 +98,7 @@ await scenario('ahead','2.1.400',async ({page,user,rows,log,errors})=>{
 await scenario('below','2.1.250',async ({page,user,calls,rows,errors})=>{
  const column=await refusedColumn(page);
  assert.equal(column.fix,'update');
- assert.equal(column.text,`Atualize o Claude Code: a versão 2.1.250 é anterior à faixa que a Mesa aceita (${CLAUDE_RANGE.minimum} a 2.1.x).`);
+ assert.equal(column.text,`Atualize o Claude Code: a versão 2.1.250 é anterior à faixa que a Summa aceita (${CLAUDE_RANGE.minimum} a 2.1.x).`);
  assert.deepEqual(column.buttons,['state-claude-update','connect','state-log']);
  assert.equal(await page.locator('#status-dot.online').count(),0,'não conecta');
  assert.deepEqual(rows(),[],'nenhuma Query foi aberta');
@@ -111,11 +111,11 @@ await scenario('below','2.1.250',async ({page,user,calls,rows,errors})=>{
  assert.deepEqual(errors,[]);
 });
 
-// 4. Série nova: recusa e manda procurar a Mesa nova no Sobre.
+// 4. Série nova: recusa e manda procurar a Summa nova no Sobre.
 await scenario('series','2.2.0',async ({page,calls,rows,errors})=>{
  const column=await refusedColumn(page);
  assert.equal(column.fix,'about');
- assert.match(column.text,/^O Claude Code 2\.2\.0 é de uma série que a Mesa ainda não aceita/);
+ assert.match(column.text,/^O Claude Code 2\.2\.0 é de uma série que a Summa ainda não aceita/);
  assert.deepEqual(column.buttons,['state-claude-about','connect','state-log']);
  assert.deepEqual(rows(),[]);
  assert.equal(calls().some(line=>/ auth /.test(line)),false);
