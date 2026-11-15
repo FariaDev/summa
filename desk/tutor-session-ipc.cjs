@@ -2,6 +2,7 @@
 'use strict';
 
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const {EFFORT_LEVELS:CLAUDE_EFFORT_LEVELS}=require('./src/agents/claude-controls.cjs');
 const {selectionFromChange}=require('./src/agents/opencode-controls.cjs');
 const {isPlainObject}=require('./desk-state-sanitize.cjs');
@@ -76,7 +77,11 @@ function registerTutorSessionIpc({ipcMain,live,runtime,pendingDialogs,appendLog,
    /* O renderer manda a identidade do histórico que está na tela. Se o motor
       devolve o mesmo conteúdo, mensagens e cartões NÃO voltam pelo IPC (#115);
       só o selo diz que nada mudou, e o `showHistory` do connect não roda. */
-   const originalMessages=Array.isArray(messages?.messages)?messages.messages:[];
+   /* #4: `get_messages` devolve a referência do descritor; a tela, a
+      identidade e os marcadores de mídia precisam do conteúdo. */
+   const originalMessages=attachments.resolveMessages(
+     Array.isArray(messages?.messages)?messages.messages:[],
+     {runtime,descriptor:live.session});
    /* A identidade é a do conteúdo COMPLETO (#115); o payload leva o corte das
       últimas 6 imagens e os marcadores de mídia (#121). */
    const screenMessages=historyMedia.markerize(originalMessages);

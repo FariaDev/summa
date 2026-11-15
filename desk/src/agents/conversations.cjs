@@ -42,6 +42,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const history = require('./history.cjs'); const {validateNativeTurns, patchNativeTurns} = require('./native-turns.cjs');
+const attachments = require('./conversation-attachments.cjs');
 
 const SCHEMA_VERSION = 1;
 const ENGINE_CLAUDE = 'claude';
@@ -131,12 +132,7 @@ function validatePart(part) {
   if (!isPlainObject(part)) return false;
   if (part.type === 'text') return typeof part.text === 'string' && part.text.length <= history.MAX_TEXT_CHARS;
   if (part.type === 'thinking') return typeof part.thinking === 'string' && part.thinking.length <= history.MAX_TEXT_CHARS;
-  if (part.type === 'image') {
-    if (typeof part.data !== 'string' || !part.data || part.data.length > history.MAX_IMAGE_DATA_CHARS) return false;
-    if (typeof part.mimeType !== 'string' || part.mimeType.length > 100) return false;
-    if (part.source !== undefined && (typeof part.source !== 'string' || part.source.length > history.MAX_SOURCE_CHARS)) return false;
-    return true;
-  }
+  if (part.type === 'image') return attachments.validImagePart(part);
   if (part.type === 'toolCall') {
     if (part.id !== undefined && (typeof part.id !== 'string' || part.id.length > history.MAX_TOOL_CHARS)) return false;
     if (part.name !== undefined && (typeof part.name !== 'string' || part.name.length > history.MAX_TOOL_CHARS)) return false;
@@ -357,7 +353,9 @@ function updateClaudeConversation(file, patch, {runtime} = {}) {
     else if (!Array.isArray(patch.messages)) throw patchError(invalidValue('messages', patch.messages, 'array|null'));
     else {
       const normalized=history.normalizeClaudeMessages(patch.messages);
-      const messages = boundMessages(normalized);
+      /* #4: o `data` inline sai para arquivo antes do teto, para a migração
+         não perder imagem por causa do tamanho do JSON. */
+      const messages = attachments.storeMessages(normalized, {runtime, descriptor: file});
       if(next.importedPrefixLength!==undefined)next.importedPrefixLength=Math.max(0,Math.min(messages.length,next.importedPrefixLength-(normalized.length-messages.length)));
       if (messages.length) next.messages = messages;
       else delete next.messages;
@@ -378,6 +376,8 @@ function updateClaudeConversation(file, patch, {runtime} = {}) {
     if (current.handoff !== undefined && !sameValue(current.handoff, patch.handoff)) throw patchError(`handoff é imutável: recebido ${describeReceived(patch.handoff)}, diferente do atual.`);
     next.handoff = {kind: patch.handoff.kind, bytes: patch.handoff.bytes, createdAt: patch.handoff.createdAt};
   }
+  /* #4: uma gravação sem `messages` também migra o descritor antigo. */
+  if (!Object.hasOwn(patch, 'messages') && Array.isArray(next.messages)) next.messages = attachments.storeMessages(next.messages, {runtime, descriptor: file});
   if (!validDescriptor(next, managedUuid(file), current.engine)) throw patchError(`patch produziria um descritor inválido: campos ${describeReceived(patch)}.`);
   writeDescriptorAtomic(file, next);
   /* O descritor carrega o turno (#119); o sidecar, apagado depois, só repete
@@ -495,5 +495,6 @@ module.exports = {
   conversationEngine,
   conversationMetadata,
   recoverClaudeConversation,
-  descriptorPath
+  descriptorPath,
+  removeClaudeConversation: attachments.removeConversation
 };

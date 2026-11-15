@@ -3,6 +3,7 @@
 
 const fs=require('node:fs');
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const pendingCore=require('./src/generated/pending.core.js').default;
 const {ClaudeService}=require('./src/agents/service.cjs');
 const {ClaudeAdapter}=require('./src/agents/claude-adapter.cjs');
@@ -52,6 +53,7 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
    const materialScope={courseId:live.courseId,session:live.session,freeSessionId:live.freeSessionId};
    const activityScope=captureActivityScope();
    const persistence=nativePersistence({descriptor,runtime,preview:record.preview});
+   const resolveImages=parts=>attachments.resolveImageParts(parts,{runtime,descriptor});
    // The launcher follows the user's current CLI; nativeSessionId owns resume.
    // pinnedExecutable is the last observed binary, a fallback without launcher.
    const adapter=new ClaudeAdapter({conversationId:descriptor,sessionId:record.nativeSessionId,resume:record.nativeEstablished,cwd,claudePath:claudeBinary()||record.pinnedExecutable,detectClaude:claudeDetector(),systemPrompt,sdkLoader,deliveryUncertain:record.delivery?.status==='uncertain',selection:{model:record.model||null,effort:record.effort||null},
@@ -70,7 +72,7 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
     persistDelivery:persistence.persistDelivery
    });
    live.bridge=new ClaudeService({adapter,uncertain:record.delivery?.status==='uncertain',messages:record.messages||[],importedPrefixLength:record.importedPrefixLength||0,
-    onMessages:persistence.onMessages,onSelection:persistence.onSelection,
+    resolveImages,onMessages:persistence.onMessages,onSelection:persistence.onSelection,
     onInit(e){const patch={};
      if(e.executable&&fs.existsSync(e.executable))patch.pinnedExecutable=fs.realpathSync(e.executable);
      if(Object.keys(patch).length)conversations.updateClaudeConversation(descriptor,patch,{runtime});

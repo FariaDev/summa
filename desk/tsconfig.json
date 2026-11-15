@@ -134,6 +134,7 @@
   "src/agents/opencode-http.cjs",
   "src/agents/opencode-events.cjs",
   "src/agents/native-identity.cjs",
+  "src/agents/conversation-attachments.cjs",
   "src/agents/opencode-history.cjs",
   "src/agents/opencode-usage.cjs",
   "src/agents/claude-usage.cjs",

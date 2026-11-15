@@ -20,6 +20,7 @@ const {readOpenCodeVersion} = require('./src/agents/opencode-version.cjs');
 const {nativePersistence} = require('./src/agents/native-persistence.cjs');
 const {createOpenCodeDraftBridge} = require('./src/agents/opencode-review-draft.cjs');
 const conversations = require('./src/agents/conversations.cjs');
+const attachments = require('./src/agents/conversation-attachments.cjs');
 const {message} = require('./src/i18n.mjs');
 
 const MCP_SERVER = path.join(__dirname, 'src', 'extensions', 'mesa-mcp', 'server.mjs');
@@ -143,6 +144,8 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
     adapter.on('event', calls.observe);
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
       importedPrefixLength: record.importedPrefixLength || 0, onMessages: persistence.onMessages, onSelection: persistence.onSelection,
+      /* #4: o reenvio do "tentar de novo" resolve a referência do anexo. */
+      resolveImages: parts => attachments.resolveImageParts(parts, {runtime, descriptor: descriptorAtConnect}),
       /* #164: o descritor guarda o `msg_…` da pergunta e o serviço o lê para
          o revert do "tentar de novo". */
       lastTurn: persistence.lastTurn, onTurn: persistence.onTurn});
@@ -180,6 +183,7 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
     });
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
       onMessages: persistence.onMessages, onSelection: persistence.onSelection,
+      resolveImages: parts => attachments.resolveImageParts(parts, {runtime, descriptor}),
       lastTurn: persistence.lastTurn, onTurn: persistence.onTurn});
   }
 

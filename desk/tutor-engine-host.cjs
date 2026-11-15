@@ -4,6 +4,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const history=require('./src/agents/history.cjs');
 const {metadata:agentMetadata}=require('./src/agents/service.cjs');
 const {DescriptorCache}=require('./src/agents/descriptor-cache.cjs');
@@ -218,7 +219,9 @@ function createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID}){
     record=descriptorCache.get(live.session,{messages});}}catch{/* registro nulo chega à tela como conversationStatus.invalid */}
   const facts=engineFacts();
   const legacyMessages=kind==='pi'&&messages?legacyHistory(live.session):[];
-  return {...agentMetadata(kind,native?live.bridge?.adapter?.controlsSnapshot?.():null),conversationStatus:native?{uncertain:record?.delivery?.status==='uncertain'||!!live.bridge?.uncertain,invalid:!record}:null,detectedClaude:claudeBinary(),detectedOpenCode:openCodeBinary(),detectedOpenCodeOldVersion:facts.opencodeOld||'',visibleEngines:visible(),...(native&&messages?{messages:record?.messages||[]}:{}),...(legacyMessages.length?{messages:legacyMessages}:{}),cards:live.cardHost?live.cardHost.list(live.session):[]};
+  /* #4: o descritor guarda a referência; a tela/exportação precisa dos bytes. */
+  const nativeMessages=native&&messages?attachments.resolveMessages(record?.messages||[],{runtime,descriptor:live.session}):[];
+  return {...agentMetadata(kind,native?live.bridge?.adapter?.controlsSnapshot?.():null),conversationStatus:native?{uncertain:record?.delivery?.status==='uncertain'||!!live.bridge?.uncertain,invalid:!record}:null,detectedClaude:claudeBinary(),detectedOpenCode:openCodeBinary(),detectedOpenCodeOldVersion:facts.opencodeOld||'',visibleEngines:visible(),...(native&&messages?{messages:nativeMessages}:{}),...(legacyMessages.length?{messages:legacyMessages}:{}),cards:live.cardHost?live.cardHost.list(live.session):[]};
  }
  function sessionInfo(file){
   const kind=engine(file);

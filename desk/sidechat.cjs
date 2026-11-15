@@ -43,6 +43,7 @@ const core = require('./src/generated/sidechat.core.js').default;
 const {message: uiMsg} = require('./src/i18n.mjs');
 const {createCardSession} = require('./card-session.cjs');
 const {CONTEXT_END_MARKER, CORE_BY_STATUS, ID_RE, MAX_DIALOG_IDS, MAX_MESSAGE_ID, SCHEMA_VERSION, STATUS_BY_CORE, appendMessage, conversationList, descriptorPath, displayMessages, displayUserText, fail, isPlainObject, normalizeRefs, nowMs, readDescriptorRaw, readIndex, saveDescriptor, sidechatsDir, validDescriptor, writeIndex} = require('./sidechat-store.cjs');
+const attachments = require('./src/agents/conversation-attachments.cjs');
 
 /* ---------- manager ---------- */
 
@@ -266,9 +267,11 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
     if (descriptor.engine === 'pi') {
       return displayMessages(Array.isArray(descriptor.messages) ? descriptor.messages : []);
     }
-    if (channel && Array.isArray(channel.messages?.())) return displayMessages(channel.messages());
+    /* #4: o descritor/canal guarda a referência; a tela precisa dos bytes. */
+    const resolve = (messages) => attachments.resolveMessages(messages || [], {runtime, descriptor: descriptor.claude});
+    if (channel && Array.isArray(channel.messages?.())) return displayMessages(resolve(channel.messages()));
     try {
-      return displayMessages(conversations.readClaudeConversation(descriptor.claude, {runtime})?.messages || []);
+      return displayMessages(resolve(conversations.readClaudeConversation(descriptor.claude, {runtime})?.messages));
     } catch {
       return [];
     }

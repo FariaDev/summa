@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const annotations = require('./annotations.cjs');
 const {isPlainObject, readJson} = require('./package-common.cjs');
+const attachments = require('../agents/conversation-attachments.cjs');
 
 /* Pacote de matéria — coleta da origem: stores da matéria (Caderno,
    favoritos, retomada, anotações), conversas e arquivos da pasta.
@@ -138,10 +139,16 @@ function conversationEntries(runtime, courseId) {
   for (const name of claudeNames) {
     const engine = /^(claude|opencode)-.*\.json$/.exec(name)?.[1];
     if (!engine) continue;
-    const record = readJson(path.join(conversationsDir, name));
+    const file = path.join(conversationsDir, name);
+    const record = readJson(file);
     if (!isPlainObject(record)) continue;
     if (courseId && record.courseId !== courseId) continue;
-    out.push({source: path.join(conversationsDir, name), kind: 'conversations', rel: `${engine}/${name}`, engine});
+    /* #4: o pacote leva a transcrição com os bytes inline; o descritor do
+       runtime guarda só a referência ao anexo. */
+    const messages = Array.isArray(record.messages) ? record.messages : null;
+    const resolved = messages ? attachments.resolveMessages(messages, {runtime, descriptor: file}) : null;
+    const data = messages && resolved !== messages ? Buffer.from(`${JSON.stringify({...record, messages: resolved}, null, 2)}\n`) : null;
+    out.push({source: file, kind: 'conversations', rel: `${engine}/${name}`, engine, ...(data ? {data} : {})});
   }
   return out;
 }

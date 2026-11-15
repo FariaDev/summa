@@ -83,7 +83,7 @@ function buildPackage({
   const conversations = {included: include.conversations === true, items: []};
   if (conversations.included) {
     for (const item of conversationEntries(runtime, courseId)) {
-      const data = fs.readFileSync(item.source);
+      const data = item.data || fs.readFileSync(item.source);
       const hash = add('conversations', item.rel, data, {engine: item.engine, originalName: path.basename(item.source)});
       conversations.items.push({
         archivePath: `payload/conversations/${item.rel}`,

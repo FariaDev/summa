@@ -59,11 +59,12 @@ class NativeService extends EventEmitter{
   *   onInit?: (event: import('../../types/agent').AgentInitEvent) => void, onSelection?: (patch: object) => void,
   *   lastTurn?: () => ({user: string, messageId: string}|null),
   *   onTurn?: (turn: {user: string, messageId: string, retry?: boolean}) => void,
+  *   resolveImages?: (parts: object[]) => object[],
   *   uncertain?: boolean, messages?: import('../../types/agent').AgentMessage[], importedPrefixLength?: number}} options
   */
- constructor({adapter,engine='claude',onEvent,onMessages,onInit,onSelection,lastTurn=null,onTurn=null,uncertain=false,messages=[],importedPrefixLength=0}){
+ constructor({adapter,engine='claude',onEvent,onMessages,onInit,onSelection,lastTurn=null,onTurn=null,resolveImages=null,uncertain=false,messages=[],importedPrefixLength=0}){
   super();this.engine=engine;this.uncertain=uncertain===true;this.adapter=adapter;this.messages=messages;this.onMessages=onMessages;this.onSelection=onSelection;
-  this._readTurn=typeof lastTurn==='function'?lastTurn:null;this._onTurn=typeof onTurn==='function'?onTurn:null;
+  this._readTurn=typeof lastTurn==='function'?lastTurn:null;this._onTurn=typeof onTurn==='function'?onTurn:null;this._resolveImages=typeof resolveImages==='function'?resolveImages:null;
   /* Pacote exato do último envio aceito (#164): o texto montado pelo main e as
      imagens já validadas. Vive só em memória; o descritor guarda o id do motor
      e as mensagens, sem duplicar arquivo grande. */
@@ -330,7 +331,9 @@ class NativeService extends EventEmitter{
    const images=parts.filter(part=>part&&part.type==='image');
    const memory=this._lastPrompt;
    if(memory&&typeof memory.text==='string'&&memory.text===text)return {text:memory.text,images:Array.isArray(memory.images)?memory.images:images};
-   return {text,images};
+   /* #4: depois de reabrir, o descritor guarda a referência do anexo; o
+      reenvio precisa dos bytes, nunca do nome do arquivo. */
+   return {text,images:this._resolveImages?this._resolveImages(images):images};
   }
   /**
    * Refaz a última pergunta no OpenCode (#164) sem duplicá-la: marca o revert

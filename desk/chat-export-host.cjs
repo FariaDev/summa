@@ -4,6 +4,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const history=require('./src/agents/history.cjs');
 const {exportConversationMarkdown}=history;
 const {mergePriorHistory}=require('./src/agents/claude-adapter-history.cjs');
@@ -58,14 +59,16 @@ function registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,ap
    live.bridge?.flush?.();
    const record=live.bridge?conversations.readClaudeConversation(live.session,{runtime}):conversations.recoverClaudeConversation(live.session,{runtime});
    if(!record)throw Error(message(kind==='claude'?'err.claude.recordMissingShort':'err.opencode.recordMissing'));
-   let messages=record.messages||[];
+   /* #4: a exportação precisa dos bytes; o descritor guarda só a referência. */
+   const stored=attachments.resolveMessages(record.messages||[],{runtime,descriptor:live.session});
+   let messages=stored;
    /* OpenCode (#57): o descritor já guarda as mensagens que o serviço viu. */
    if(kind==='claude'&&record.nativeEstablished){
     const dir=path.join(runtime,'claude-workspaces',record.id);
     const native=await readNativeHistory({sessionId:record.nativeSessionId,dir,sdkLoader:testClaudeSdkLoader()||(()=>import('@anthropic-ai/claude-agent-sdk'))});
     /* O histórico nativo não tem a página marcada (#113): o descritor é o
        prefixo que sobrevive, e o merge não repete o que os dois já têm. */
-    if(native.length)messages=mergePriorHistory(record.messages||[],history.normalizeClaudeMessages(native));
+    if(native.length)messages=mergePriorHistory(stored,history.normalizeClaudeMessages(native));
    }
    body=exportConversationMarkdown({courseName,engine:kind,messages,labels});
   }
