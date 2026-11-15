@@ -26,7 +26,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {specHash, normalizeSpec} = require('./activity-store.cjs');
 const {invalidValue} = require('./src/error-detail.mjs');
-const {ACTIVITY_SCHEME, DETACHED_RETRY_MS, KATEX_DIST, KATEX_HOST, LIB_FILES, LIB_HOST, MAX_REGISTRY, activityArtifactUrl, activityFramesOtherThan, canTerminateActivityProcess, canTerminateSharedStalledProcess, collectActivityFrames, detachedActivityDecision, katexFile, parseActivityUrl, trackedActivityEntry} = require('./activity-protocol.cjs');
+const {ACTIVITY_SCHEME, ARTIFACT_MOUNT_GRACE_MS, DETACHED_RETRY_MS, KATEX_DIST, KATEX_HOST, LIB_FILES, LIB_HOST, MAX_REGISTRY, activityArtifactUrl, activityFramesOtherThan, canTerminateActivityProcess, canTerminateSharedStalledProcess, collectActivityFrames, detachedActivityDecision, katexFile, parseActivityUrl, trackedActivityEntry} = require('./activity-protocol.cjs');
 const {DANGEROUS_TAGS, LOCKDOWN_SCRIPT} = require('./activity-lockdown-script.cjs');
 const {HOST_CSS, RUNTIME_SCRIPT} = require('./activity-page-script.cjs');
 const {buildActivityDocument, cspFor} = require('./activity-document.cjs');
@@ -140,6 +140,9 @@ function createActivityRuntime({onWatchdog} = {}) {
     const killed = new WeakSet();
     let timer = null;
     let busy = false;
+    /* Fim da janela em que um frame de artefato pode estar a caminho: o kill
+       `detached-frameless` espera por ela (#1). */
+    let artifactMountingUntil = 0;
     const mainPid = () => {
       try { return typeof wc.getOSProcessId === 'function' ? wc.getOSProcessId() : 0; } catch { return 0; }
     };
@@ -245,6 +248,7 @@ function createActivityRuntime({onWatchdog} = {}) {
             stalled: detachedStall(entry, nowAt),
             waitedMs: nowAt - entry.detachedAt,
             framelessMs: entry.framelessAt ? nowAt - entry.framelessAt : 0,
+            mounting: nowAt < artifactMountingUntil,
           });
           if (decision === 'retry') continue;
           if (decision === 'drop') {
@@ -329,8 +333,17 @@ function createActivityRuntime({onWatchdog} = {}) {
       }
       tracked.clear();
     };
-    wc.on('did-frame-navigate', (_event, _url, _code, _text, isMainFrame) => {
-      if (!isMainFrame) ensureWatchdog();
+    wc.on('did-frame-navigate', (_event, url, _code, _text, isMainFrame) => {
+      if (isMainFrame) return;
+      /* Commit de artefato: a montagem que segurava o kill terminou. */
+      if (parseActivityUrl(String(url || ''))?.kind === 'artifact') artifactMountingUntil = 0;
+      ensureWatchdog();
+    });
+    wc.on('did-start-loading', () => {
+      /* O reload derruba os frames por desenho e o histórico restaurado reabre
+         os quadros no mesmo processo: o frameless espera o prazo (#1). */
+      if (!watchdog) return;
+      artifactMountingUntil = Math.max(artifactMountingUntil, Date.now() + ARTIFACT_MOUNT_GRACE_MS);
     });
     wc.on('destroyed', stopWatchdog);
     if (typeof win.on === 'function') win.on('closed', stopWatchdog);
@@ -351,7 +364,11 @@ function createActivityRuntime({onWatchdog} = {}) {
       const parsed = parseActivityUrl(target);
       if (!parsed || parsed.kind !== 'artifact' || !has(parsed.id, parsed.version)) {
         details.preventDefault();
+        return;
       }
+      /* Navegação autorizada de um frame novo: o processo sem frame que ele
+         pode reusar não pode ser morto até o commit aparecer (#1). */
+      artifactMountingUntil = Math.max(artifactMountingUntil, Date.now() + ARTIFACT_MOUNT_GRACE_MS);
     });
   };
 
