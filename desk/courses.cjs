@@ -48,6 +48,45 @@ function courseDropFolder(course){
  return sourceRoots(course).find(root=>{try{return fs.statSync(root).isDirectory();}catch{return false;}})||course;
 }
 
+/* A subpasta de um PDF da biblioteca, relativa à raiz que a varredura usa
+   (`Sources`/`source_roots`/a matéria), para o seletor agrupar por capítulo
+   (#74). Um PDF gerado pela Mesa em `Materiais da Mesa` fica na raiz: não é
+   subpasta do usuário. Vazio = raiz. */
+function folderBases(course){
+ return [...sourceRoots(course),path.join(course,'Materiais da Mesa')].map(base=>path.resolve(base));
+}
+function folderWithin(bases,file){
+ const target=path.resolve(file);
+ const base=bases.filter(entry=>target===entry||target.startsWith(entry+path.sep)).sort((a,b)=>b.length-a.length)[0];
+ if(!base)return '';
+ const dir=path.dirname(path.relative(base,target));
+ return dir==='.'?'':dir.split(path.sep).join('/');
+}
+/**
+ * A subpasta de um PDF relativa à raiz varrida que o contém, para o seletor de
+ * material agrupar por capítulo (#74). `''` é a raiz.
+ * @param {string} course pasta da matéria
+ * @param {string} file caminho do PDF
+ * @returns {string} ex.: `'Cap 3 - Derivadas'` ou `'Listas/2024'`
+ * @example pdfFolderOf('/vault/Calc', '/vault/Calc/Sources/Listas/2024/a.pdf') // 'Listas/2024'
+ */
+function pdfFolderOf(course,file){
+ if(!course||!file)return '';
+ return folderWithin(folderBases(course),file);
+}
+/**
+ * A biblioteca com `folder` em cada entrada, lendo as raízes da matéria uma vez
+ * só (o `initialData` e a releitura da pasta chamam isto a cada abertura).
+ * @param {string} course pasta da matéria
+ * @param {Array<{name: string, path: string}>} entries a `courseLibrary(course)`
+ * @returns {Array<{name: string, path: string, folder: string}>}
+ * @example withPdfFolders('/vault/Calc', courseLibrary('/vault/Calc'))
+ */
+function withPdfFolders(course,entries){
+ const bases=folderBases(course);
+ return (entries||[]).map(entry=>({...entry,folder:folderWithin(bases,entry.path)}));
+}
+
 function courseLibrary(course){
  if(!course||!fs.existsSync(course))return [];
  const roots=sourceRoots(course);
@@ -77,4 +116,4 @@ function mergeCourses(config){
  return fromCourses(core.mergeCourses(toCourses(discovered),toCourses(cfg)));
 }
 
-module.exports={DEFAULT_LABELS,discoverCourses,courseLibrary,courseDropFolder,mergeCourses};
+module.exports={DEFAULT_LABELS,discoverCourses,courseLibrary,courseDropFolder,pdfFolderOf,withPdfFolders,mergeCourses};

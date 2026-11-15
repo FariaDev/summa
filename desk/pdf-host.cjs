@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const {message: uiMsg}=require('./src/i18n.mjs');
 const path=require('node:path');
 const free=require('./free-workspaces.cjs');
-const {courseLibrary,courseDropFolder}=require('./courses.cjs');
+const {courseLibrary,courseDropFolder,withPdfFolders}=require('./courses.cjs');
 const {normalize,pickPdfs}=require('./config.cjs');
 const {validateDroppedPdf}=require('./pdf-drop-host.cjs');
 
@@ -35,7 +35,7 @@ function registerPdfHost({ipcMain,dialog,shell,win,runtime,freeId,pdfGrants,pdfD
  });
  ipcMain.handle('course-library',()=>{
   if(courseId()===freeId||!course())return {courseId:courseId(),library:[],preferred:[]};
-  const library=courseLibrary(course());
+  const library=withPdfFolders(course(),courseLibrary(course()));
   pdfGrants.addLibrary(library.map(p=>p.path));
   return {courseId:courseId(),library,preferred:(pickPdfs(library,normalize(config()).desk.panels)||[]).map(p=>p?.path||null)};
  });

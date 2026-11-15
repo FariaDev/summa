@@ -26,7 +26,7 @@ const out=screenshotDirectory('issue-45');
 const near=(a,b,tol=1)=>Math.abs(a-b)<=tol;
 const SIZES=[[1440,900],[900,650]];
 const THEMES=['light','dark'];
-const TESTED_CLAUDE='2.1.301';
+const TESTED_CLAUDE='2.1.325';
 
 const measureAbout=page=>page.evaluate(()=>{
  const rect=el=>{const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right,width:b.width,height:b.height};};
@@ -126,7 +126,7 @@ await withArtifacts('tool-updates-avisos',async ctx=>{
  await openAbout(page);
  m=await measureAbout(page);
  assert.deepEqual(m.notices.map(n=>n.id),['claude']);
- assert.equal(m.notices[0].text,'Claude Code 2.1.301 disponível');
+ assert.equal(m.notices[0].text,`Claude Code ${TESTED_CLAUDE} disponível`);
  assert.deepEqual(m.notices[0].buttons.map(b=>b.text),['Lembrar depois','Ignorar esta versão']);
  assert.equal(m.trigger.dot,'false','abrir o Sobre apaga o ponto');
  assert.equal(m.trigger.title,'Ajustes');
@@ -171,7 +171,7 @@ await withArtifacts('tool-updates-avisos',async ctx=>{
  m=await measureAbout(page);
  assert.deepEqual(tools.calls().map(c=>[c.tool,...c.args]),[['claude','update']],'só o claude update rodou, depois da confirmação');
  assert.match(m.run.text,/Claude Code/);
- assert.match(m.run.text,/2\.1\.301/);
+ assert.match(m.run.text,/2\.1\.325/);
  assert.ok(m.output&&/Checking for updates/.test(m.output.text),'a saída do comando aparece');
  for(const theme of THEMES){
   await setTheme(page,theme);
@@ -211,7 +211,7 @@ await withArtifacts('tool-updates-configuracoes',async ctx=>{
    const label=tag(theme,`${width}×${height}`),s=await inSettings();
    assert.equal(s.hidden,false,`${label}: a linha aparece nas Configurações`);
    assert.ok(s.first&&s.top<=28,`${label}: primeiro bloco do corpo das Configurações, só com o respiro do topo (${s.top})`);
-   assert.deepEqual(s.lines.map(l=>l.text),['Claude Code 2.1.301 disponível'],`${label}: a mesma linha do Sobre`);
+   assert.deepEqual(s.lines.map(l=>l.text),[`Claude Code ${TESTED_CLAUDE} disponível`],`${label}: a mesma linha do Sobre`);
    assert.ok(s.lines.every(l=>l.buttons.includes('Ver no Sobre')&&l.buttons.includes('Lembrar depois')&&l.overflow<=0),`${label}: ações à mão, sem rolagem lateral (${JSON.stringify(s.lines)})`);
    assert.ok(s.right<=s.dialogRight+0.5&&s.bottom<=s.dialogBottom,`${label}: a linha cabe no diálogo`);
    await reviewShot(page,out,`configuracoes-aviso-${theme}-${width}.png`);
@@ -283,14 +283,14 @@ await withArtifacts('tool-updates-offline',async ctx=>{
 });
 
 await withArtifacts('tool-updates-a-frente',async ctx=>{
- /* Claude 2.1.302 instalado, 2.1.303 disponível, mas a Mesa foi testada com a 2.1.301. */
- const {page,tools,errors}=await launch(ctx,'tool-frente',{latest:{claude:'2.1.303'},fake:{claudeVersion:'2.1.302'}});
+ /* Claude 2.1.326 instalado, 2.1.327 disponível, mas a Mesa foi testada com a 2.1.325. */
+ const {page,tools,errors}=await launch(ctx,'tool-frente',{latest:{claude:'2.1.327'},fake:{claudeVersion:'2.1.326'}});
  await openAbout(page);
  const m=await measureAbout(page);
- assert.match(m.notices[0].text,/^Claude Code 2\.1\.303 disponível · mais nova que a testada/);
+ assert.match(m.notices[0].text,/^Claude Code 2\.1\.327 disponível · mais nova que a testada/);
  await page.locator('#component-rows [data-id="claude"] .tool-ask').click();
  const confirm=await measureAbout(page);
- assert.match(confirm.run.text,/mais nova que a testada com esta versão da Summa \(2\.1\.301\)/,'a confirmação avisa');
+ assert.match(confirm.run.text,/mais nova que a testada com esta versão da Summa \(2\.1\.325\)/,'a confirmação avisa');
  assert.equal(await page.locator('#component-rows [data-id="claude"] .run-confirm').isEnabled(),true,'o aviso nunca bloqueia');
  for(const [width,height] of SIZES){
   await resize(ctx,page,width,height);

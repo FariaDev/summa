@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const conversations = require('../agents/conversations.cjs');
+const attachments = require('../agents/conversation-attachments.cjs');
 const {message: uiMsg} = require('../i18n.mjs');
 const {causeArg} = require('../error-detail.mjs');
 const {PackageError, isPlainObject, newId, posix, writeInside} = require('./package-common.cjs');
@@ -221,8 +222,12 @@ function writeClaudeTranscript({record, name, dir, newCourseId, written, log, en
     const descriptor = conversations.readClaudeConversation(staged, {runtime: staging});
     if (!descriptor) throw new PackageError(uiMsg('err.pkg.badClaude', {name}));
     if (typeof record.nativeSessionId === 'string' && record.nativeSessionId) descriptor.importedFrom = record.nativeSessionId;
+    /* #4: o descritor vira transcrição com os bytes inline; os anexos do
+       staging não atravessam a importação. A adoção externaliza de novo. */
+    const messages = Array.isArray(descriptor.messages) ? attachments.resolveMessages(descriptor.messages, {runtime: staging, descriptor: staged}) : null;
+    const exported = messages ? {...descriptor, messages} : descriptor;
     const finalName = `${engine}-${descriptor.id}.json`;
-    writeInside(dir, `${engine}/${finalName}`, `${JSON.stringify(descriptor, null, 2)}\n`);
+    writeInside(dir, `${engine}/${finalName}`, `${JSON.stringify(exported, null, 2)}\n`);
     written.push(`conversas/${engine}/${finalName}`);
     return {
       engine,

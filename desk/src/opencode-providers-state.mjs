@@ -1,7 +1,7 @@
 // @ts-check
-/* Estados e planos de entrada por provedor do OpenCode 2.2.4 (sem DOM, sem
+/* Estados e planos de entrada por provedor do OpenCode 2.x (sem DOM, sem
    rede). A fonte é a rota `GET /api/integration` do `opencode serve` — o
-   OpenAPI do binário 2.2.4 a descreve em `/openapi.json`; o `auth list` da CLI
+   OpenAPI do binário fixado a descreve em `/openapi.json`; o `auth list` da CLI
    é a mesma lista em texto. Nada aqui lê `auth.json` nem devolve credencial:
    `connections` vira só `connected`/`expired`, e o valor do token nunca é
    pedido.

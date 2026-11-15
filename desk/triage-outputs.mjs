@@ -191,7 +191,7 @@ const RUN_SHELL_RULES=Object.freeze({
  'gh issue list':'allow',
  'gh issue list *':'allow',
  /* Defesa em profundidade: o `*` do allow engolia o operador e o redirecionamento
-    executava (medido no 2.2.4). A última regra que casa decide, então estes
+    executava (medido no 2.2.7). A última regra que casa decide, então estes
     deny vêm depois dos allows; o `gh issue list --search "palavras"` simples
     não tem operador e continua liberado. */
  '*$(*':'deny',
@@ -217,9 +217,9 @@ const RUN_SHELL_RULES=Object.freeze({
    temporário vazio.
    Os deny de `read` depois do allow são defesa em profundidade — se o cwd
    voltar a ser o projeto, `.runtime`, log, JSONL, `config.json`, `auth.json`
-   e `.env` continuam negados. O 2.2.4 lê `OPENCODE_CONFIG_CONTENT` por último
+   e `.env` continuam negados. O 2.2.7 lê `OPENCODE_CONFIG_CONTENT` por último
    (`debug config`): ele vence o config da pessoa e o do projeto, então um
-   `opencode.json` que reabra o shell não derruba a trava. Medido no 2.2.4 e
+   `opencode.json` que reabra o shell não derruba a trava. Medido no 2.2.7 e
    no 1.19.5: comando fora da lista é recusado e o allow roda. */
 export const READ_DENY_PATTERNS=Object.freeze([
  /* O `read` do OpenCode usa o caminho relativo ao cwd quando o arquivo está

@@ -34,6 +34,9 @@ def Laws.composer_send_now_hidden_attr():
 def Laws.composer_clear_class():
   {==}
 
+def Laws.composer_clear_key():
+  {==}
+
 def Laws.composer_clear_click():
   {==}
 
@@ -131,6 +134,9 @@ def Laws.composer_head_actions_class():
   {==}
 
 def Laws.composer_remove_class():
+  {==}
+
+def Laws.composer_remove_key():
   {==}
 
 def Laws.composer_send_now_text():

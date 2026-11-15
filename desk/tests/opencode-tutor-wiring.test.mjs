@@ -180,7 +180,8 @@ test('connect liga o serviço OpenCode e o livro casa a atividade do MCP com o i
   const session = conversations.createClaudeConversation({runtime, courseId: 'c', engine: 'opencode'});
   const record = conversations.readClaudeConversation(session, {runtime});
   const grants = [];
-  const live = {session, opencodeHost: {keyEnv: () => ({})}, languageHost: {tutorLanguage: () => 'pt-BR', t: (key) => key === 'opencode.session.title' ? 'Summa' : key},
+  const live = {session, opencodeHost: {keyEnv: () => ({})}, languageHost: {tutorLanguage: () => 'pt-BR', t: (key) => key === 'opencode.session.title' ? 'Summa' : key,
+      tutorT: (key) => key === 'opencode.mcp.unavailableTutor' ? 'As ferramentas da Summa não estão disponíveis nesta sessão.' : key},
     activityBridge: {grant: (scope, options) => { grants.push(options); return {url: 'http://127.0.0.1:1/a', token: 't'}; }},
     tutorMaterialBridge: {grant: () => ({url: 'http://127.0.0.1:1/p', token: 'm'})}};
   const host = createOpenCodeTutorHost({live, runtime, ggbBridge: () => '/tmp/ggb.json', appendLog: () => {},
@@ -190,6 +191,8 @@ test('connect liga o serviço OpenCode e o livro casa a atividade do MCP com o i
   const service = host.connect();
   assert.equal(service.engine, 'opencode');
   assert.equal(service.adapter.options.sessionTitle, 'Summa', 'o título da sessão sai traduzido (#93)');
+  assert.equal(service.adapter.options.mcpUnavailableNote(), 'As ferramentas da Summa não estão disponíveis nesta sessão.',
+    '#55: a linha de indisponibilidade vem do idioma do tutor no host');
   assert.deepEqual(grants, [{engine: 'opencode'}]);
   const {pickPayload} = require('../activity-bridge.cjs');
   const args = {title: 'Derivada', objective: 'ver', alternativeMarkdown: 'texto', html: '<p>x</p>'};

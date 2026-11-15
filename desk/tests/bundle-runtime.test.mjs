@@ -6,7 +6,7 @@ import {execFileSync} from 'node:child_process';
 import os from 'node:os';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
-const {runtimePackages,stageBundlePayload,installBundle,recordInstallSource}=require('../bundle-runtime.cjs');
+const {runtimePackages,stageBundlePayload,installBundle,installWindowsBundle,recordInstallSource}=require('../bundle-runtime.cjs');
 const {userDataDirectory}=require('../user-data.cjs');
 
 test('payload resolve peers e versões aninhadas sem depender da fonte',()=>{
@@ -125,6 +125,35 @@ test('doctor usa userData da plataforma e respeita os overrides',()=>{
  assert.equal(userDataDirectory({platform:'linux',home:'/home',env:{}}),path.join('/home','.config','Mesa de Estudos'));
  assert.equal(userDataDirectory({platform:'linux',home:'/home',env:{XDG_CONFIG_HOME:'/xdg'}}),path.join('/xdg','Mesa de Estudos'));
  assert.equal(userDataDirectory({platform:'win32',env:{LEARNING_DESK_RUNTIME:'/runtime'}}),'/runtime');
+});
+
+/* #181: o payload do Windows é o MESMO do `.app` — `installWindowsBundle` só
+   muda o destino para `resources/app`. A lista gerenciada sai de
+   `stageBundlePayload`, sem segunda lista de arquivos. */
+test('installWindowsBundle: payload em resources/app igual ao do .app, com procedência e manifesto',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-win-payload-'));
+ try{
+  const source=path.join(root,'desk'),nm=path.join(source,'node_modules');
+  fs.mkdirSync(path.join(source,'scripts'),{recursive:true});
+  fs.mkdirSync(path.join(source,'src','locales'),{recursive:true});fs.writeFileSync(path.join(source,'src','locales','en.json'),'{}');
+  for(const name of ['index.html','ggb.html','pdf-render.html','style.css','package.json','config.example.json','free-models.json','update-signing-key.pub','scripts/install-app.mjs','main.cjs'])fs.writeFileSync(path.join(source,name),'{}');
+  const pkg=(rel)=>{const dir=path.join(nm,rel);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({name:rel,main:'index.cjs'}));};
+  for(const name of ['marked','katex','dompurify','pdfjs-dist','chart.js','@anthropic-ai/claude-agent-sdk'])pkg(name);
+  fs.mkdirSync(path.join(root,'.git'),{recursive:true});
+  const installDir=path.join(root,'Programs','Summa');
+  const out=installWindowsBundle({desk:source,root,installDir,version:'9.8.7'});
+  assert.equal(out.dest,path.join(installDir,'resources','app'));
+  assert.ok(fs.existsSync(path.join(out.dest,'main.cjs')));
+  assert.ok(fs.existsSync(path.join(out.dest,'src','locales','en.json')));
+  const manifest=JSON.parse(fs.readFileSync(path.join(out.dest,'.update-manifest.json'),'utf8'));
+  assert.equal(manifest.version,'9.8.7');
+  assert.deepEqual(manifest.files,out.managed);
+  const source_=JSON.parse(fs.readFileSync(path.join(out.dest,'install-source.json'),'utf8'));
+  assert.equal(source_.path,root,'procedência aponta para o clone: o updater cai no modo bundle');
+  /* Mesma seleção do .app: nada de lista duplicada. */
+  const asApp=stageBundlePayload(source,path.join(root,'app-payload'));
+  assert.deepEqual([...out.managed].sort(),[...asApp].sort());
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
 /* #51: a rotina do install-app sem o que toca o sistema (assinatura, atalho,

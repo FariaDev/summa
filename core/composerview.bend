@@ -158,11 +158,14 @@ def queueTextAttrs(enabled: Bool, title: String) -> List<&2, V.ViewAttr>:
 def queueTextSpan(+text: String, sending: Bool, enabled: Bool) -> V.ViewNode:
   V.viewEl("span", queueTextAttrs(enabled, queueItemTitle(text, sending)), [V.viewText(text)])
 
-def queueRemoveAttrs(enabled: Bool) -> List<&2, V.ViewAttr>:
+# O `key` é a identidade do foco no re-render da faixa (#49): o × volta para o
+# × do MESMO item; sem ele, o `preserveFocus` do host não tem como repor o foco.
+def queueRemoveAttrs(id: String, enabled: Bool) -> List<&2, V.ViewAttr>:
   V.attrConcat(
     [
       V.attrType("button"),
       V.attrClass("queue-remove"),
+      V.attrKey(id),
       V.attrTitle(M.msg("queue.remove")),
       V.attrAria("label", M.msg("queue.remove")),
       V.attrOn("click", "remove")
@@ -170,8 +173,8 @@ def queueRemoveAttrs(enabled: Bool) -> List<&2, V.ViewAttr>:
     queueDisabledAttr(enabled)
   )
 
-def queueRemoveBtn(enabled: Bool) -> V.ViewNode:
-  V.viewEl("button", queueRemoveAttrs(enabled), [V.viewText("×")])
+def queueRemoveBtn(id: String, enabled: Bool) -> V.ViewNode:
+  V.viewEl("button", queueRemoveAttrs(id, enabled), [V.viewText("×")])
 
 # "Enviar agora" da linha: manda o item guardado como steer (o payload do
 # enqueue, não o composer vivo). A dica repete o atalho do composer.
@@ -219,18 +222,18 @@ def queueItemAttrs(id: String, +sending: Bool) -> List<&2, V.ViewAttr>:
     queueBusyAttr(sending)
   )
 
-def queueItemKids(text: String, sending: Bool, +enabled: Bool, editing: Bool, steerable: Bool) -> List<&2, V.ViewNode>:
+def queueItemKids(id: String, text: String, +sending: Bool, +enabled: Bool, editing: Bool, steerable: Bool) -> List<&2, V.ViewNode>:
   match editing:
     case True{}:
-      [queueEditInput(text), queueRemoveBtn(enabled)]
+      [queueEditInput(text), queueRemoveBtn(id, enabled)]
     case False{}:
       V.viewConcat(
         [queueTextSpan(text, sending, enabled)],
-        V.viewConcat(queueSteerViews(steerable), [queueRemoveBtn(enabled)])
+        V.viewConcat(queueSteerViews(steerable), [queueRemoveBtn(id, enabled)])
       )
 
-def queueItem.body(id: String, text: String, +sending: Bool, enabled: Bool, editing: Bool, steerable: Bool) -> V.ViewNode:
-  V.viewEl("div", queueItemAttrs(id, sending), queueItemKids(text, sending, enabled, editing, steerable))
+def queueItem.body(+id: String, text: String, +sending: Bool, enabled: Bool, editing: Bool, steerable: Bool) -> V.ViewNode:
+  V.viewEl("div", queueItemAttrs(id, sending), queueItemKids(id, text, sending, enabled, editing, steerable))
 
 def queueItemView(row: QueueRow) -> V.ViewNode:
   match row:
@@ -280,6 +283,7 @@ def queueClearAttrs(canClear: Bool) -> List<&2, V.ViewAttr>:
     [
       V.attrType("button"),
       V.attrClass("queue-clear"),
+      V.attrKey("queue-clear"),
       V.attrTitle(queueClearTitle()),
       V.attrOn("click", "clear")
     ],

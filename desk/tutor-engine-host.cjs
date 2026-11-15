@@ -4,6 +4,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const history=require('./src/agents/history.cjs');
 const {metadata:agentMetadata}=require('./src/agents/service.cjs');
 const {DescriptorCache}=require('./src/agents/descriptor-cache.cjs');
@@ -16,6 +17,7 @@ const {sessionPreviewFromJsonl}=require('./lib.cjs');
 const {detectTutorEngines}=require('./tutor-default-engine.cjs');
 const {resolveTutorContract}=require('./tutor-contract.cjs');
 const {visibleEngines,defaultVisibleEngine}=require('./visible-engines.cjs');
+const {sessionModelChoice}=require('./src/model-last.mjs');
 const {oldOpenCode,readOpenCodeVersion,readOpenCodeVersionSync}=require('./src/agents/opencode-version.cjs');
 const {message}=require('./src/i18n.mjs');
 
@@ -149,11 +151,12 @@ function createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID}){
  /* Sem nenhum motor visível o padrão é OpenCode — o caminho do release —, e o
     erro de conexão já fala dele. */
  function defaultEngine(){return defaultVisibleEngine(engineFacts(),{testMode:TEST_MODE,env:process.env});}
- /* Modelo e esforço padrão da pessoa (estado de interface) para uma sessão
-    OpenCode nova; sessão aberta mantém o modelo dela. */
+ /* Modelo e esforço da sessão OpenCode nova: o padrão explícito manda sempre,
+    depois o último usado (#76); sem os dois, o padrão do OpenCode, que é o
+    próprio motor quem escolhe. Sessão aberta mantém o modelo dela. */
  function openCodeDefault(){
-  const choice=/** @type {{provider?: string, id?: string, effort?: string} | null | undefined} */ (live.state?.modelDefault);
-  return choice?.provider&&choice.id?{model:`${choice.provider}/${choice.id}`,...(choice.effort?{effort:String(choice.effort)}:{})}:{};
+  const choice=sessionModelChoice({modelDefault:live.state?.modelDefault,modelLast:live.state?.modelLast});
+  return choice?{model:`${choice.provider}/${choice.id}`,...(choice.effort?{effort:String(choice.effort)}:{})}:{};
  }
  /* Caminho de conversa nova no motor escolhido: sempre um descritor nativo
     (Claude ou OpenCode). `chosen` fora da vista cai no padrão (OpenCode neste
@@ -218,7 +221,9 @@ function createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID}){
     record=descriptorCache.get(live.session,{messages});}}catch{/* registro nulo chega à tela como conversationStatus.invalid */}
   const facts=engineFacts();
   const legacyMessages=kind==='pi'&&messages?legacyHistory(live.session):[];
-  return {...agentMetadata(kind,native?live.bridge?.adapter?.controlsSnapshot?.():null),conversationStatus:native?{uncertain:record?.delivery?.status==='uncertain'||!!live.bridge?.uncertain,invalid:!record}:null,detectedClaude:claudeBinary(),detectedOpenCode:openCodeBinary(),detectedOpenCodeOldVersion:facts.opencodeOld||'',visibleEngines:visible(),...(native&&messages?{messages:record?.messages||[]}:{}),...(legacyMessages.length?{messages:legacyMessages}:{}),cards:live.cardHost?live.cardHost.list(live.session):[]};
+  /* #4: o descritor guarda a referência; a tela/exportação precisa dos bytes. */
+  const nativeMessages=native&&messages?attachments.resolveMessages(record?.messages||[],{runtime,descriptor:live.session}):[];
+  return {...agentMetadata(kind,native?live.bridge?.adapter?.controlsSnapshot?.():null),conversationStatus:native?{uncertain:record?.delivery?.status==='uncertain'||!!live.bridge?.uncertain,invalid:!record}:null,detectedClaude:claudeBinary(),detectedOpenCode:openCodeBinary(),detectedOpenCodeOldVersion:facts.opencodeOld||'',visibleEngines:visible(),...(native&&messages?{messages:nativeMessages}:{}),...(legacyMessages.length?{messages:legacyMessages}:{}),cards:live.cardHost?live.cardHost.list(live.session):[]};
  }
  function sessionInfo(file){
   const kind=engine(file);

@@ -322,7 +322,7 @@ const figurePreview=createFigurePreview();
 /* Janela escondida, o mesmo pdf.js da janela de PDF, em `sandbox`: o main lê o
    caminho autorizado e entrega os bytes pelo canal de render — sem poppler. */
 let pdfRenderer=null;
-function renderPdfPage(request){
+function renderPdfPage(request,options){
  if(!pdfRenderer)pdfRenderer=createPdfPageRenderer({
   createWindow(){
    const hidden=new BrowserWindow({show:false,width:900,height:1200,skipTaskbar:true,focusable:false,paintWhenInitiallyHidden:true,
@@ -332,7 +332,7 @@ function renderPdfPage(request){
    return hidden;
   },
   html:path.join(__dirname,'pdf-render.html'),ipcMain});
- return pdfRenderer.render(request);
+ return pdfRenderer.render(request,options);
 }
 const pdfPageReader=createPdfPageReader({renderPage:renderPdfPage});
 /* Leitura do tutor: a pasta irmã vale só para a biblioteca; avulso (aberto,
@@ -354,7 +354,7 @@ const activityHost=createActivityHost({store:activityStore,runtime:activityRunti
 });
 activityHost.register(ipcMain);
 /* OpenCode (#57): o MCP não sabe o id da chamada; `identifyCaller` o casa pelo SSE. */
-const activityBridge=createActivityBridge({publish:async(scope,spec,caller)=>activityHost.publish(scope,spec,await openCodeTutor.identifyCaller(caller)),preview:(raw,options)=>activityPreview.preview(raw,options),figure:raw=>figurePreview.preview(raw),
+const activityBridge=createActivityBridge({publish:async(scope,spec,caller)=>activityHost.publish(scope,spec,await openCodeTutor.identifyCaller(caller)),preview:(raw,options)=>activityPreview.preview(raw,options),publishPreview:(scope,result)=>activityHost.publishPreviewResult(scope,result),figure:raw=>figurePreview.preview(raw),
  /* `ler_pdf`: biblioteca (NFC/NFD) ou PDF na mesma pasta. `validPdf` segue para o IPC da janela. */
  pdfPage:raw=>readTutorPdf(raw),notebookPage:raw=>live.readTutorNotebook(raw),
  searchMaterial:(scope,raw)=>live.studyServices.materialSearch(scope,raw),materialList:async scope=>live.studyServices.materialList(scope),

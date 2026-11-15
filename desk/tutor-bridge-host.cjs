@@ -3,6 +3,7 @@
 
 const fs=require('node:fs');
 const conversations=require('./src/agents/conversations.cjs');
+const attachments=require('./src/agents/conversation-attachments.cjs');
 const pendingCore=require('./src/generated/pending.core.js').default;
 const {ClaudeService}=require('./src/agents/service.cjs');
 const {ClaudeAdapter}=require('./src/agents/claude-adapter.cjs');
@@ -52,13 +53,16 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
    const materialScope={courseId:live.courseId,session:live.session,freeSessionId:live.freeSessionId};
    const activityScope=captureActivityScope();
    const persistence=nativePersistence({descriptor,runtime,preview:record.preview});
+   const resolveImages=parts=>attachments.resolveImageParts(parts,{runtime,descriptor});
    // The launcher follows the user's current CLI; nativeSessionId owns resume.
    // pinnedExecutable is the last observed binary, a fallback without launcher.
    const adapter=new ClaudeAdapter({conversationId:descriptor,sessionId:record.nativeSessionId,resume:record.nativeEstablished,cwd,claudePath:claudeBinary()||record.pinnedExecutable,detectClaude:claudeDetector(),systemPrompt,sdkLoader,deliveryUncertain:record.delivery?.status==='uncertain',selection:{model:record.model||null,effort:record.effort||null},
     priorMessages:record.messages||[],importedPrefixLength:record.importedPrefixLength||0,
     createMaterial:payload=>prepareTutorMaterial(materialScope,payload),
     createActivity:payload=>live.activityHost.publish(activityScope,payload,{toolCallId:payload.toolCallId,callRef:payload.callRef}),
-    previewActivity:payload=>live.activityPreview.preview(payload,{theme:payload?.theme,width:payload?.width,scope:activityScope}),
+    /* #62: prévia sem erro publica no ponto da chamada; o resultado leva o
+       `activity` e o texto do guia diz que o aluno já vê o quadro. */
+    previewActivity:async payload=>live.activityHost.publishPreviewResult(activityScope,await live.activityPreview.preview(payload,{theme:payload?.theme,width:payload?.width,scope:activityScope})),
     viewFigure:payload=>live.figurePreview.preview(payload),
     geogebra:ggb.service,readPdf:typeof live.readTutorPdf==='function'?raw=>live.readTutorPdf(raw):null,readNotebook:typeof live.readTutorNotebook==='function'?raw=>live.readTutorNotebook(raw):null,
     searchMaterial:typeof live.studyServices?.materialSearch==='function'?raw=>live.studyServices.materialSearch(null,raw):null,
@@ -70,7 +74,7 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
     persistDelivery:persistence.persistDelivery
    });
    live.bridge=new ClaudeService({adapter,uncertain:record.delivery?.status==='uncertain',messages:record.messages||[],importedPrefixLength:record.importedPrefixLength||0,
-    onMessages:persistence.onMessages,onSelection:persistence.onSelection,
+    resolveImages,onMessages:persistence.onMessages,onSelection:persistence.onSelection,
     onInit(e){const patch={};
      if(e.executable&&fs.existsSync(e.executable))patch.pinnedExecutable=fs.realpathSync(e.executable);
      if(Object.keys(patch).length)conversations.updateClaudeConversation(descriptor,patch,{runtime});
@@ -94,9 +98,11 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
     if(['auto_retry_start','summarization_retry_scheduled'].includes(e.type)&&Number(e.attempt)>Number(pendingCore.maxAutoRetries())){
      live.bridge.breakConnection(Error(message('err.tutor.retryLimit')));return;
     }
-    /* Aviso da ponte: fica no desk.log — o usuário
-       não precisa ver, e o turno segue vivo. Erro de verdade continua em
-       `desk_error`, que a UI trata como queda. */
+    /* Aviso da ponte: fica no desk.log — o usuário não precisa ver, e o turno
+       segue vivo. Exceção: `OPENCODE_MCP_FAILED` (#55) também vira toast no
+       renderer, porque as ferramentas da Summa faltando mudam o que o tutor
+       consegue fazer. Erro de verdade continua em `desk_error`, que a UI
+       trata como queda. */
     if(e.type==='desk_warn')try{appendLog('rpc',e.message,{level:'warn'});}catch{/* o log não pode falhar o tratador de eventos */}
     if(e.type==='extension_ui_request'&&['select','confirm','input','editor','question'].includes(e.method)&&typeof e.id==='string'){
      pendingDialogs.add(e.id);

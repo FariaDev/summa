@@ -18,6 +18,11 @@ export const ACTIVITY_TOOLS=Object.freeze(['mesa_criar_atividade','mcp__mesa__cr
 /* A prévia não é publicada: o slot só nasce na publicação. O nome serve para o
    fim do turno saber que houve prévia sem quadro (H4). */
 export const PREVIEW_TOOLS=Object.freeze(['mesa_previsualizar_atividade','mcp__mesa__previsualizar_atividade']);
+const PREVIEW_ID=/previaId\s+"(prv-[a-z0-9]{8,24})"/;
+/* A prévia sem erro publica na própria chamada (#62). O guia emite esta linha
+   com o id/versão do quadro; o renderer a lê para criar o slot no ponto da
+   chamada, sem esperar o fim do turno nem o H4. */
+const PUBLISHED_ACTIVITY=/Quadro publicado: (act-[a-z0-9][a-z0-9-]{2,63}) v(\d+)/;
 
 export function isActivityTool(name){
  return ACTIVITY_TOOLS.includes(String(name||''));
@@ -27,11 +32,68 @@ export function isPreviewTool(name){
  return PREVIEW_TOOLS.includes(String(name||''));
 }
 
+/* O `previaId` que o resultado da prévia devolveu, ou ''. Fonte única do
+   formato entre o fim do turno (H4) e o histórico que marca o ponto da
+   chamada para o quadro recuperado (#61).
+   @param {unknown} text resultado da ferramenta
+   @returns {string}
+   @example previewIdOfText('chame com previaId "prv-0123456789ab"') // 'prv-0123456789ab'
+*/
+export function previewIdOfText(text){
+ const match=PREVIEW_ID.exec(String(text||''));
+ return match?match[1]:'';
+}
+
+/* O quadro que a prévia (ou uma revisão dela) publicou, ou null. Fonte única
+   da marca entre o texto do guia e o slot do renderer (#62).
+   @param {unknown} text resultado da ferramenta
+   @returns {{id: string, version: number}|null}
+   @example publishedActivityOfText('Quadro publicado: act-0123456789 v2 — o aluno JÁ o vê.') // {id: 'act-0123456789', version: 2}
+*/
+export function publishedActivityOfText(text){
+ const match=PUBLISHED_ACTIVITY.exec(String(text||''));
+ return match?{id:match[1],version:Number(match[2])}:null;
+}
+
 /* Parte de artefato no histórico: o slot nasce no ponto da declaração da
    ferramenta, antes da próxima fala — e o `toolCallId` é a identidade estável
    para o renderer hidratar (`div.activity-slot[data-activity-call]`). */
 export function artifactPart(toolCallId,name='',at=0){
  return {type:'artifact',toolCallId:String(toolCallId||''),name:String(name||''),at};
+}
+
+/* Marca no histórico o PONTO da prévia (#61). A prévia não publica, então o
+   slot só existe no store (`previa:prv-…`); a marca deixa a recuperação pôr o
+   quadro ali em vez do fim do turno. Sem `previaId` (prévia com erro), não há
+   parte.
+   @param {string} toolCallId id do passo da prévia
+   @param {string} previaId id curto devolvido pela prévia
+   @param {number} [at] carimbo de parede do passo
+   @returns {{type: 'preview', toolCallId: string, previaId: string, at: number}}
+   @example previewPart('call_1', 'prv-0123456789ab', 10)
+*/
+export function previewPart(toolCallId,previaId,at=0){
+ return {type:'preview',toolCallId:String(toolCallId||''),previaId:String(previaId||''),at};
+}
+
+/* Parte de artefato que o passo de ferramenta projeta no histórico: atividade
+   publicada vira slot no ponto da chamada; prévia bem-sucedida vira marca com
+   o `previaId` para o quadro do H4 voltar ali ao reabrir (#61). Outro passo
+   não projeta nada.
+   @param {{id?: unknown, toolName?: unknown, resultText?: unknown}|null|undefined} step
+   @param {number} [at] carimbo de parede do passo
+   @returns {{type: string, toolCallId: string, name?: string, previaId?: string, at: number}|null}
+   @example historyArtifactPart({id: 'call_1', toolName: 'mesa_criar_atividade'}, 10)
+*/
+export function historyArtifactPart(step,at=0){
+ if(!step)return null;
+ const name=String(step.toolName||'');
+ /* #62: revisão de prévia não ganha slot próprio — o quadro é o da prévia e o
+    texto da revisão traz o mesmo `previaId`. */
+ if(isActivityTool(name))return previewIdOfText(step.resultText)?null:artifactPart(step.id,name,at);
+ if(!isPreviewTool(name))return null;
+ const previaId=previewIdOfText(step.resultText);
+ return previaId?previewPart(step.id,previaId,at):null;
 }
 
 /* Estado dos segmentos do turno corrente. `gen` identifica a geração (troca de

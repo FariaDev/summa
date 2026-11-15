@@ -103,9 +103,10 @@ body.chat-scroll #messages{flex:1 0 auto;min-height:0;overflow:visible;contain:n
 #context-dock{
  /* Desde #180 o painel divide a coluna com a conversa e encolhe; sem um piso,
     a conversa longa do 900×650 o esmagava até 1px (ui-smoke). O piso é a
-    cabeça mais uma linha e quem rola é o `dock-body`. */
+    cabeça, o "Resumir agora" inteiro e o respiro do corpo: com só uma linha
+    (#39) o botão ficava cortado pelo `dock-body` na janela baixa (#38). */
  position:relative;z-index:auto;display:flex;flex-direction:column;flex:0 1 auto;
- min-height:calc(var(--bar) + var(--space-6));
+ min-height:calc(var(--bar) + var(--ctl) + var(--space-5) + var(--space-hairline));
  width:auto;max-height:70%;overflow:hidden;
  background:var(--bg);border:0;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;padding:0;
 }

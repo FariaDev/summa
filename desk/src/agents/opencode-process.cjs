@@ -52,7 +52,7 @@ function expandHome(candidate, home) {
  * cópia da Mesa no runtime (#94) e os instaladores usuais; só a existência é lida.
  * @param {{envPath?: string, configuredPath?: string, runtime?: string, version?: string, home?: string, platform?: NodeJS.Platform}} [options]
  * @returns {string[]}
- * @example candidatePaths({home: '/Users/ana', runtime: '/r'}) // ['/r/opencode/2.2.4/bin/opencode', '/Users/ana/.opencode/bin/opencode', …]
+ * @example candidatePaths({home: '/Users/ana', runtime: '/r'}) // ['/r/opencode/2.2.7/bin/opencode', '/Users/ana/.opencode/bin/opencode', …]
  */
 function candidatePaths({envPath = '', configuredPath = '', runtime = '', version, home = os.homedir(), platform = process.platform} = {}) {
   /* Mesmo resolvedor para todos (CI windows-latest): `expandHome` usa `path.resolve`; um

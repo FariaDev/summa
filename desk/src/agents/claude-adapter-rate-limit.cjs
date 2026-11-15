@@ -50,7 +50,7 @@ class ClaudeAdapterRateLimit {
     else this._emit('warning', payload);
   }
 
-  /* Recusa/fallback do modelo (SDK 0.3.301): aviso com dados limitados e a
+  /* Recusa/fallback do modelo (SDK 0.3.325): aviso com dados limitados e a
      retração exposta no detalhe (UUIDs limitados/deduplicados). A evicção de
      DOM fica explicitamente ADIADA: o adaptador não remove mensagem nenhuma. */
 
@@ -178,7 +178,7 @@ class ClaudeAdapterRateLimit {
     return uiMsg(wait ? `claude.limit.${family}Wait` : `claude.limit.${family}`, {window, wait});
   }
 
-  /* Evento de primeiro nível do SDK 0.3.301 (o subtipo em `system` é legado
+  /* Evento de primeiro nível do SDK 0.3.325 (o subtipo em `system` é legado
      defensivo). NÃO encerra o turno e NÃO libera busy: o CLI pausa a própria
      janela rejeitada. Avisos são deduplicados por janela/turno; `allowed`
      libera (e emite UMA transição RESUMED se a janela estava rejeitada);

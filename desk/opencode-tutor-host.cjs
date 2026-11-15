@@ -23,6 +23,7 @@ const {createOpenCodeInkBridge} = require('./src/agents/notebook-ink-bridge.cjs'
 const {createOpenCodeClient} = require('./src/agents/opencode-http.cjs');
 const {catalogModels} = require('./src/agents/opencode-catalog.cjs');
 const conversations = require('./src/agents/conversations.cjs');
+const attachments = require('./src/agents/conversation-attachments.cjs');
 const {message} = require('./src/i18n.mjs');
 
 const MCP_SERVER = path.join(__dirname, 'src', 'extensions', 'mesa-mcp', 'server.mjs');
@@ -139,10 +140,15 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
       /* O servidor cunha o `ses_` na primeira ligação; o descritor o guarda uma vez. */
       onSessionId: (id) => { if (live.session !== descriptorAtConnect) return; conversations.updateClaudeConversation(descriptorAtConnect, {nativeSessionId: id}, {runtime}); },
       mcpConfig: () => mesaMcpConfig({execPath, ggbBridge: ggbBridge(), activityGrant, materialGrant: live.tutorMaterialGrant, cardGrant: activityGrant, tutorLanguage: live.languageHost.tutorLanguage()}),
+      /* #55: sem as ferramentas da Mesa, o tutor recebe esta linha no idioma
+         dele e diz ao aluno em vez de improvisar `read`/`skill`. */
+      mcpUnavailableNote: () => live.languageHost.tutorT('opencode.mcp.unavailableTutor'),
     });
     adapter.on('event', calls.observe);
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
       importedPrefixLength: record.importedPrefixLength || 0, onMessages: persistence.onMessages, onSelection: persistence.onSelection,
+      /* #4: o reenvio do "tentar de novo" resolve a referência do anexo. */
+      resolveImages: parts => attachments.resolveImageParts(parts, {runtime, descriptor: descriptorAtConnect}),
       /* #164: o descritor guarda o `msg_…` da pergunta e o serviço o lê para
          o revert do "tentar de novo". */
       lastTurn: persistence.lastTurn, onTurn: persistence.onTurn});
@@ -176,9 +182,11 @@ function createOpenCodeTutorHost({live, runtime, ggbBridge, appendLog, captureAc
       ...ownerSeat(), persistDelivery: persistence.persistDelivery, log, readVersion,
       onSessionId: (id) => conversations.updateClaudeConversation(descriptor, {nativeSessionId: id}, {runtime}),
       mcpConfig: () => mesaMcpConfig({execPath, ggbBridge: '', activityGrant, cardGrant, tutorLanguage: live.languageHost.tutorLanguage(), pdfOnly: true}),
+      mcpUnavailableNote: () => live.languageHost.tutorT('opencode.mcp.unavailableTutor'),
     });
     return new NativeService({adapter, engine: 'opencode', uncertain: record.delivery?.status === 'uncertain', messages: record.messages || [],
       onMessages: persistence.onMessages, onSelection: persistence.onSelection,
+      resolveImages: parts => attachments.resolveImageParts(parts, {runtime, descriptor}),
       lastTurn: persistence.lastTurn, onTurn: persistence.onTurn});
   }
 

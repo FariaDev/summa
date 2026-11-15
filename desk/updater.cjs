@@ -61,6 +61,7 @@ const {CHECK_TTL,CLAUDE_REGISTRY_URL,RELEASES_URL,TAGS_URL,XOURNAL_RELEASES_URL,
 const {LOCK_STALE_MS,acquireLock,defaultRun,doReopen,lockFileOf,needsShell,pidAlive,releaseLock,resolveNode,spawnReopen,spawnWorker,stageWorkerFiles,WORKER_FILES,waitForHandshake,waitForPid,workerEnv,writeHandshake}=require('./updater-worker.cjs');
 const {applyZip,assertRealTarget,assertSafeEntries,isProtected,isReplaceable,manifestFile,normalizeRel,readManifest,readZip,removeOrphans,restoreTree,snapshotTree,stripCommonRoot,writeManifest}=require('./updater-files.cjs');
 const {checkForUpdates,claudeLatest,defaultFetchBuffer,defaultFetchJson,releaseFromGithub,releaseFromTags,sharedFetchJson,timedFetch,xournalLatest}=require('./updater-check.cjs');
+const {defaultSleep,listElectronProcesses:defaultListElectronProcesses,npmCiWithRetry,waitForElectronProcesses}=require('./updater-npm-ci.cjs');
 const {MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,assertAppliedCommitMatches,assertTagCommitMatches,loadSignedRelease,normalizeVersion,readUpdatePublicKey,tagMissingError}=require('./updater-signature.cjs');
 
 /* ---------- aplicação ---------- */
@@ -88,8 +89,15 @@ function bundleSourceError(sourceDir){
  return REFUSED('err.update.sourceGone');
 }
 
-async function npmCi({deskDir,run}){
- await run('npm',['ci'],{cwd:deskDir,timeout:20*60*1000});
+/* #6: no Windows, `npm ci` apaga o `node_modules` e um processo do Electron
+   ainda vivo (MCP via ELECTRON_RUN_AS_NODE, chat lateral, filho do app) trava
+   `electron.exe` com EPERM/EBUSY — o rollback reabre a versão antiga. Espera
+   com prazo antes do ci e repete com espera crescente quando a falha é trava;
+   quem segurava vai para o log com pid e caminho, nunca para a mensagem do
+   Sobre. Fora do Windows nada muda. */
+async function npmCi({deskDir,run,platform=process.platform,log=()=>{},sleep=defaultSleep,listElectronProcesses=defaultListElectronProcesses}){
+ if(platform==='win32')await waitForElectronProcesses({deskDir,platform,list:listElectronProcesses,sleep,log});
+ await npmCiWithRetry({deskDir,run,platform,log,sleep});
 }
 
 /* Resultado real da aplicação, persistido no cache do runtime: é o que o
@@ -127,8 +135,17 @@ function logRunOutput(result,log){
 }
 
 async function syncBundle({mode,sourceDir,run,log,platform=process.platform}){
- if(platform!=='darwin')return;
  const installScript=path.join(sourceDir,'desk','scripts','install-app.mjs');
+ /* #181: no Windows o app instalado mora fora do clone
+    (`%LOCALAPPDATA%\Programs\Summa`), então só o modo bundle tem o
+    que re-sincronizar — o install-app copia Electron + payload para lá de
+    novo. Git/zip (rodando do código) não têm instalação para tocar. */
+ if(platform==='win32'){
+  if(mode!=='bundle')return;
+  logRunOutput(await run('node',[installScript],{cwd:path.join(sourceDir,'desk')}),log);
+  return;
+ }
+ if(platform!=='darwin')return;
  const bundle=path.join(sourceDir,'Summa.app');
  /* #190: quem atualiza da versão antiga ainda tem o bundle com o nome antigo;
     o install-app cria o novo e apaga o velho depois. */
@@ -193,6 +210,8 @@ async function applyUpdate(opts={}){
   manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES,
   snapshot=snapshotTree,restore=restoreTree, /* injeção de teste (mesma ideia do run) */
   platform=process.platform, /* injeção de teste para o sync do bundle */
+  sleep=defaultSleep, /* #6: injeção de teste da espera/retry do npm ci */
+  listElectronProcesses=defaultListElectronProcesses, /* #6: injeção de teste */
   allowOlder=false, /* só o CLI passa (`--versao` explícito): a chamada automática nunca */
  }=opts;
  const logFile=runtime?path.join(runtime,'desk.log'):'';
@@ -266,7 +285,7 @@ async function applyUpdate(opts={}){
    ?null // o payload inteiro é gerenciado pelo install-app
    :rel=>isReplaceable(rel)||normalizeRel(rel)==='.update-manifest.json';
   snapshot(snapshotRoot,backup,snapshotInclude);
-  if(mode==='bundle'){
+  if(mode==='bundle'&&platform==='darwin'){
    /* O Info.plist mora fora do payload; entra no backup com nome reservado. */
    const plist=path.join(path.resolve(deskDir,'..','..','..'),'Contents','Info.plist');
    if(fs.existsSync(plist))fs.copyFileSync(plist,path.join(backup,'__Info.plist__'));
@@ -310,7 +329,7 @@ async function applyUpdate(opts={}){
   if(lockChangedSince(lockBefore,path.join(npmCiDir,'package-lock.json'))){
    log('update: package-lock.json mudou — rodando npm ci');
    depsTouched=true;
-   await npmCi({deskDir:npmCiDir,run});
+   await npmCi({deskDir:npmCiDir,run,platform,log,sleep,listElectronProcesses});
   }
   /* A3: "vX no lugar" só depois de conferir a versão INSTALADA no
      package.json. No modo git o commit da tag pode trazer outra versão no
@@ -362,7 +381,7 @@ async function applyUpdate(opts={}){
       com dependências mexidas (npm ci morto no meio, node_modules da versão
       nova). Refaz o ci com o lock antigo e registra o motivo no desk.log. */
    if(depsTouched){
-    try{await npmCi({deskDir:npmCiDir,run});log('update: npm ci de recuperação ok (lock antigo de volta)');}
+    try{await npmCi({deskDir:npmCiDir,run,platform,log,sleep,listElectronProcesses});log('update: npm ci de recuperação ok (lock antigo de volta)');}
     catch(err2){log('update: npm ci de recuperação TAMBÉM falhou ('+String(err2&&err2.message||err2)+') — rode npm ci à mão; node_modules pode estar inconsistente');}
    }
    /* A1: as dependências do payload do bundle NÃO vivem no instantâneo (o
@@ -370,16 +389,19 @@ async function applyUpdate(opts={}){
       RE-RODAR o sync: o install-app copia os runtimeDeps do clone já
       restaurado (lock antigo, ci de recuperação acima), reescreve o payload
       e re-assina. Sem sync, o fallback re-assina a cópia devolvida e avisa
-      que as dependências podem estar inconsistentes. */
-   if(mode==='bundle'&&platform==='darwin'){
+      que as dependências podem estar inconsistentes. No Windows (#181) o
+      mesmo sync repõe a cópia instalada, sem código de assinatura. */
+   if(mode==='bundle'&&(platform==='darwin'||platform==='win32')){
     try{
      await syncBundle({mode,sourceDir,run,log,platform});
      log('update: payload do bundle re-sincronizado após o rollback (dependências refeitas do clone restaurado)');
     }catch(err2){
      log('update: sync de recuperação falhou ('+String(err2&&err2.message||err2)+') — dependências do payload podem estar inconsistentes');
-     const bundle=path.resolve(deskDir,'..','..','..');
-     try{await run('codesign',['--force','--deep','--sign','-',bundle],{timeout:120000});log('update: bundle re-assinado (ad-hoc) após o rollback');}
-     catch(err3){log('update: re-assinatura do bundle falhou ('+String(err3&&err3.message||err3)+')');}
+     if(platform==='darwin'){
+      const bundle=path.resolve(deskDir,'..','..','..');
+      try{await run('codesign',['--force','--deep','--sign','-',bundle],{timeout:120000});log('update: bundle re-assinado (ad-hoc) após o rollback');}
+      catch(err3){log('update: re-assinatura do bundle falhou ('+String(err3&&err3.message||err3)+')');}
+     }
     }
    }else if(platform==='darwin'){
     /* git/zip com bundle instalado do lado: melhor esforço — devolve o

@@ -15,7 +15,7 @@ import {createRequire} from 'node:module';
 import {
  withArtifacts,newRuntime,seedCourse,seedNativeSession,writeConfigJson,writeDeskJson,launchDesk,statusOnline,sendEnabled,
  reviewShot,screenshotDirectory,setTheme,freezeMotion,openModelPop,closeModelPop,pickModel,modelRows,selectedModelKey,
- modelPickerLocked,indicatorText,resizeWindow,effortState
+ modelPickerLocked,indicatorText,resizeWindow,effortState,pickEffort,newSession
 } from './helpers.mjs';
 import {pollUntil,nextFrames} from './waits.mjs';
 import {closeApp} from './proc-tree.mjs';
@@ -352,6 +352,42 @@ await withArtifacts('model-picker',async ctx=>{
 
  assert.deepEqual(errors,[],'nenhum erro de página');
  console.log('MODEL PICKER UI PASSED: grupos, recentes, busca, teclado, papéis ARIA, dois temas, dois tamanhos e a troca de provedor (#128).');
+});
+
+/* ---- #76: a sessão nova lembra o último modelo e esforço escolhidos numa
+    sessão OpenCode; o estado fica no desk.json, fora do config.json ---- */
+await withArtifacts('model-last',async ctx=>{
+ const runtime=ctx.runtime=newRuntime('modellast');
+ const course=seedCourse(runtime,'calc');
+ writeConfigJson(runtime,{runtimePath:runtime,vaultPath:runtime,courses:[{id:'calc',name:'Cálculo',path:course}]});
+ const session=seedNativeSession(runtime,[{role:'user',content:[{type:'text',text:'modelo inicial'}]}],{courseId:'calc',model:'opencode/big-pickle'});
+ writeDeskJson(runtime,{courseId:'calc',session});
+ const app=ctx.app=await launchDesk({runtime});
+ const page=await app.firstWindow();
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await resizeWindow(app,page,1440,900);
+ await statusOnline(page);
+ await freezeMotion(page);
+ /* Troca modelo (grátis, sem confirmação paga) e esforço pelo mesmo caminho da pessoa. */
+ await pickModel(page,'opencode','deepseek-v4.1-flash-free');
+ await pollUntil(()=>selectedModelKey(page),key=>key===JSON.stringify(['opencode','deepseek-v4.1-flash-free']),{what:'o modelo escolhido'});
+ await pickEffort(page,'high');
+ await pollUntil(()=>effortState(page),state=>state.value==='high'&&!state.locked,{what:'o esforço escolhido'});
+ await pollUntil(()=>indicatorText(page),text=>text==='DeepSeek V4.1 Flash Free · alto',{what:'o indicador com o modelo e o esforço'});
+ await closeModelPop(page);
+ const deskState=()=>{try{return JSON.parse(fs.readFileSync(path.join(runtime,'desk.json'),'utf8'));}catch{return {};}};
+ await pollUntil(deskState,state=>state.modelLast?.provider==='opencode'&&state.modelLast?.id==='deepseek-v4.1-flash-free'&&state.modelLast?.effort==='high',{what:'o último modelo e esforço no desk.json'});
+ assert.equal(Object.hasOwn(JSON.parse(fs.readFileSync(path.join(runtime,'config.json'),'utf8')),'modelLast'),false,'o último modelo não vai para o config.json');
+ /* Sessão nova sem escolha no seletor: abre com o mesmo modelo e esforço. */
+ await newSession(page);
+ await pollUntil(()=>page.locator('#session-title').getAttribute('data-session'),value=>value&&value!==session,{what:'a sessão nova'});
+ await statusOnline(page,{timeout:60000});
+ await pollUntil(()=>indicatorText(page),text=>text==='DeepSeek V4.1 Flash Free · alto',{what:'o indicador da sessão nova com o modelo e o esforço lembrados'});
+ const descriptor=conversations.readClaudeConversation(await page.locator('#session-title').getAttribute('data-session'),{runtime});
+ assert.equal(descriptor.model,'opencode/deepseek-v4.1-flash-free','o descritor da sessão nova guarda o último modelo');
+ assert.equal(descriptor.effort,'high','o descritor da sessão nova guarda o último esforço');
+ assert.deepEqual(errors,[],'nenhum erro de página');
+ console.log('MODEL LAST PASSED: a sessão nova lembra o último modelo e esforço escolhidos (#76).');
 });
 
  /* ---- #128: quem nunca conectou um segundo provedor recebe a ação, não uma

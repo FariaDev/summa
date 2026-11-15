@@ -81,6 +81,35 @@ function hasSlotIn(root, toolCallId) {
   return !!root.querySelector(`${SLOT_ATTRIBUTE}="${escaped(toolCallId)}"]`);
 }
 
+/**
+ * Marca no histórico o ponto da chamada da prévia (#61): a prévia não publica,
+ * então o slot só existe no store (`previa:prv-…`); a marca deixa a recuperação
+ * pôr o quadro ali em vez do fim do turno. Elemento vazio e oculto.
+ * @param {Document} doc
+ * @param {unknown} previaId id curto devolvido pela prévia
+ * @returns {Element|null}
+ * @example const mark = previewAnchorElement(document, 'prv-0123456789ab')
+ */
+export function previewAnchorElement(doc, previaId) {
+  const id = String(previaId || '');
+  if (!id || !doc || typeof doc.createElement !== 'function') return null;
+  const mark = doc.createElement('div');
+  mark.className = 'activity-anchor';
+  mark.dataset.previewId = id;
+  mark.hidden = true;
+  return mark;
+}
+
+/* #61: a prévia publicada no fim do turno (H4) não tem passo no transcript,
+   mas o histórico marca o ponto da chamada com `data-preview-id`; o slot
+   recuperado entra ali, não depois da fala do turno. */
+function previewAnchor(root, toolCallId) {
+  const prefix = 'previa:';
+  const id = String(toolCallId || '');
+  if (!id.startsWith(prefix) || id.length === prefix.length) return null;
+  return root.querySelector(`[data-preview-id="${escaped(id.slice(prefix.length))}"]`);
+}
+
 function insertSlot({doc, root, ranges, item}) {
   const toolCallId = String(item.toolCallId || '');
   const slot = doc.createElement('div');
@@ -88,9 +117,16 @@ function insertSlot({doc, root, ranges, item}) {
   slot.dataset.activityCall = toolCallId;
   /* O store só tem publicação terminada: não é um passo pendente do turno. */
   slot.dataset.status = 'done';
+  /* #62: a identidade da revisão acompanha o slot recuperado, como no vivo. */
+  if (item.id) slot.dataset.activityId = String(item.id);
+  if (item.version) slot.dataset.activityVersion = String(item.version);
+  const anchor = previewAnchor(root, toolCallId);
   const index = activityTurnIndex(ranges, item.createdAt);
   const tail = index >= 0 ? ranges[index] && ranges[index].tail : null;
-  if (tail && tail.isConnected && root.contains(tail)) {
+  if (anchor && anchor.isConnected && root.contains(anchor)) {
+    anchor.after(slot);
+    anchor.remove?.();
+  } else if (tail && tail.isConnected && root.contains(tail)) {
     /* Slots vizinhos do mesmo turno mantêm a ordem de chegada do store. */
     let after = tail;
     while (after.nextElementSibling && after.nextElementSibling.classList && after.nextElementSibling.classList.contains('activity-slot')) {

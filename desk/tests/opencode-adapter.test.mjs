@@ -4,29 +4,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {createFakeOpencodeServe} from './fake-opencode.mjs';
 import {parseMessage} from '../src/i18n.mjs';
+import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
+import en from '../src/locales/en.json' with {type: 'json'};
 
 const require = createRequire(import.meta.url);
 const {OpenCodeAdapter} = require('../src/agents/opencode-adapter.cjs');
+/* MCP falso da #63: uma ferramenta curta que prova o religar entre turnos. */
+const FAKE_MCP = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fake-mcp-slow.mjs');
 /* Um `ses_` como o servidor cunha (o adaptador nunca cunha o seu). */
 const SERVER_ID = 'ses_ea5e2000affeZzYyXxWwVvUuTt';
 const fakeReadVersion = async () => 'opencode v2.2.4';
 
 const PASSWORD = 'senha-de-teste';
 const SYSTEM = 'Você é o tutor da Mesa.';
+/* A linha que o host manda ao tutor vem dos catálogos; o teste usa o texto
+   real dos dois idiomas (#55). */
+const UNAVAILABLE_PT = ptBR['opencode.mcp.unavailableTutor'];
+const UNAVAILABLE_EN = en['opencode.mcp.unavailableTutor'];
 
-/** Adaptador ligado ao fake, com os eventos e as fases da entrega guardados. */
+/** Adaptador ligado ao fake, com os eventos, as fases da entrega e o log guardados. */
 function createHarness(serve, overrides = {}) {
   const events = [];
   const deliveries = [];
   const adopted = [];
+  const logs = [];
   const lease = {baseUrl: serve.url, password: PASSWORD, binary: '/fake/opencode', ...(overrides.lease || {})};
   const adapter = new OpenCodeAdapter({conversationId: 'conv-1', sessionId: '', onSessionId: (id) => adopted.push(id), acquire: async () => lease, directory: '/tmp/mesa-ws/conv-1',
-    systemPrompt: SYSTEM, persistDelivery: (patch) => deliveries.push(patch), mcpConfig: () => ({type: 'local', command: ['node', 'mesa-mcp.mjs']}), readVersion: fakeReadVersion, ...overrides});
+    systemPrompt: SYSTEM, persistDelivery: (patch) => deliveries.push(patch), mcpConfig: () => ({type: 'local', command: ['node', 'mesa-mcp.mjs']}), readVersion: fakeReadVersion,
+    log: (area, line) => logs.push({area, line}), ...overrides});
   adapter.on('event', (event) => events.push(event));
-  return {adapter, events, deliveries, lease, adopted};
+  return {adapter, events, deliveries, lease, adopted, logs};
 }
 
 /** Espera um evento que cumpra o predicado (o SSE é assíncrono). */
@@ -92,6 +104,127 @@ test('connect segue no status conectado, sem gastar o prazo do MCP nem avisar', 
   await adapter.connect();
   assert.ok(Date.now() - started < 5000, `conectou em ${Date.now() - started} ms`);
   assert.equal(JSON.stringify(events).includes('OPENCODE_MCP_FAILED'), false, 'sem aviso falso');
+});
+
+test('MCP que responde failed fica no log, avisa e o prompt do tutor leva a linha de indisponibilidade (#55)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD, mcpStatus: 'failed'});
+  t.after(() => serve.close());
+  const {adapter, events, logs} = createHarness(serve, {mcpUnavailableNote: () => UNAVAILABLE_PT});
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  const line = logs.find((item) => item.area === 'opencode' && item.line.includes('MCP mesa'));
+  assert.ok(line, `linha do MCP no log: ${JSON.stringify(logs)}`);
+  assert.match(line.line, /^MCP mesa não conectou em \d+ ms: status failed$/);
+  assert.ok(!line.line.includes('/tmp/mesa-ws'), 'sem caminho pessoal no log');
+  assert.ok(!line.line.includes(PASSWORD), 'sem segredo no log');
+  const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
+  assert.ok(warning, 'o aviso OPENCODE_MCP_FAILED chegou');
+  assert.deepEqual(parseMessage(warning.message), {key: 'opencode.mcp.failed', args: {reason: 'opencode.mcp.reason.refused'}});
+  const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
+  assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_PT}`);
+  assert.match(put.body.value, /não estão disponíveis nesta sessão/);
+});
+
+test('MCP recusado no PUT registra o HTTP no log e o tutor recebe a linha de indisponibilidade (#55)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  /* Fake nomeado: só o PUT do MCP falha, como um servidor que recusa a config. */
+  const refusingMcpPut = (url, init) => (init?.method === 'PUT' && String(url).includes('/api/experimental/mcp/mesa')
+    ? Promise.resolve(new Response(JSON.stringify({error: 'recusado'}), {status: 500, headers: {'content-type': 'application/json'}}))
+    : fetch(url, init));
+  const {adapter, events, logs} = createHarness(serve, {fetch: refusingMcpPut, mcpUnavailableNote: () => UNAVAILABLE_PT});
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  const line = logs.find((item) => item.area === 'opencode' && item.line.includes('MCP mesa'));
+  assert.match(line.line, /^MCP mesa não conectou em \d+ ms: HTTP 500$/);
+  const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
+  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed.http', args: {status: '500'}});
+  const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
+  assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_PT}`);
+});
+
+test('MCP que nunca conecta estoura o prazo injetado e o tutor recebe a linha de indisponibilidade (#55)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD, mcpStatus: 'pending'});
+  t.after(() => serve.close());
+  const {adapter, events, logs} = createHarness(serve, {mcpUnavailableNote: () => UNAVAILABLE_EN, mcpTimeoutMs: 40, mcpPollMs: 5});
+  t.after(() => adapter.stop());
+  const started = Date.now();
+  await adapter.connect();
+  assert.ok(Date.now() - started < 2000, `o prazo injetado não espera os 10 s reais (${Date.now() - started} ms)`);
+  const line = logs.find((item) => item.area === 'opencode' && item.line.includes('MCP mesa'));
+  assert.ok(line, `linha do MCP no log: ${JSON.stringify(logs)}`);
+  assert.match(line.line, /^MCP mesa não conectou em \d+ ms: timeout$/);
+  assert.ok(Number(line.line.match(/em (\d+) ms/)?.[1]) < 2000, 'o log mostra o prazo curto, não 10 s');
+  const warning = events.find((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED');
+  assert.deepEqual(parseMessage(warning?.message), {key: 'opencode.mcp.failed', args: {reason: 'opencode.mcp.reason.timeout'}});
+  assert.equal(adapter.mcpUnavailable, true);
+  const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
+  assert.equal(put.body.value, `${SYSTEM}\n\n${UNAVAILABLE_EN}`);
+  assert.match(put.body.value, /unavailable in this session/);
+});
+
+test('MCP conectado registra os ms no log, não avisa e o prompt do tutor fica sem a linha de indisponibilidade (#55)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events, logs} = createHarness(serve, {mcpUnavailableNote: () => UNAVAILABLE_PT});
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  const line = logs.find((item) => item.area === 'opencode' && item.line.includes('MCP mesa'));
+  assert.ok(line, `linha do MCP no log: ${JSON.stringify(logs)}`);
+  assert.match(line.line, /^MCP mesa conectado em \d+ ms$/);
+  assert.equal(events.some((item) => item.type === 'warning' && item.code === 'OPENCODE_MCP_FAILED'), false, 'sem aviso falso');
+  assert.equal(adapter.mcpUnavailable, false);
+  const put = serve.requests.find((item) => item.method === 'PUT' && item.url.includes('/instructions/entries/mesa'));
+  assert.equal(put.body.value, SYSTEM);
+  assert.ok(!put.body.value.includes(UNAVAILABLE_PT));
+});
+
+test('sem canal de instruções o prompt marcado também leva a linha de indisponibilidade (#55)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD, instructionsStatus: 404, mcpStatus: 'failed'});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve, {mcpUnavailableNote: () => UNAVAILABLE_PT});
+  t.after(() => adapter.stop());
+  await adapter.send({id: 'u1', text: 'primeira'});
+  await waitFor(events, (item) => item.type === 'turn_end', 'turno');
+  const prompt = serve.requests.find((item) => item.url.endsWith('/prompt')).body.text;
+  assert.match(prompt, /\[\[mesa-tutor-prompt\]\]/);
+  assert.ok(prompt.includes(UNAVAILABLE_PT), 'a linha de indisponibilidade vai no prefixo marcado');
+  assert.match(prompt, /primeira$/);
+  const history = await adapter.history();
+  assert.equal(history.find((item) => item.role === 'user').content[0].text, 'primeira', 'o prompt não volta como fala');
+});
+
+test('MCP que cai entre dois turnos é religado antes do próximo envio (#63)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD, mcpReplaceRecovers: true, mcpCall: {name: 'lento', input: {ms: 0}}});
+  t.after(() => serve.close());
+  const {adapter, events, logs} = createHarness(serve, {
+    mcpConfig: () => ({type: 'local', command: [process.execPath, FAKE_MCP], environment: {}, enabled: true, codemode: false}),
+  });
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  assert.equal(adapter.mcpUnavailable, false);
+  await adapter.send({id: 'u1', text: 'primeiro'});
+  await waitFor(events, (item) => item.type === 'turn_end', 'primeiro turno');
+  assert.equal(events.find((item) => item.type === 'tool_end')?.isError, false, 'o primeiro turno usou a ferramenta');
+  /* O processo filho do MCP morreu entre os turnos. */
+  serve.state.mcpStatus = 'failed';
+  events.length = 0;
+  const from = serve.requests.length;
+  await adapter.send({id: 'u2', text: 'segundo'});
+  await waitFor(events, (item) => item.type === 'turn_end', 'segundo turno');
+  const after = serve.requests.slice(from);
+  const getAt = after.findIndex((item) => item.method === 'GET' && item.url.startsWith('/api/mcp'));
+  const deleteAt = after.findIndex((item) => item.method === 'DELETE' && item.url.startsWith('/api/experimental/mcp/mesa'));
+  const putAt = after.findIndex((item) => item.method === 'PUT' && item.url.startsWith('/api/experimental/mcp/mesa'));
+  const promptAt = after.findIndex((item) => item.method === 'POST' && item.url.endsWith('/prompt'));
+  assert.ok(getAt >= 0, 'GET /api/mcp antes do envio');
+  assert.ok(deleteAt > getAt, 'remove a entrada failed depois de conferir');
+  assert.ok(putAt > deleteAt, 're-registra depois de remover');
+  assert.ok(promptAt > putAt, 'o prompt só sai depois do MCP religado');
+  assert.equal(events.find((item) => item.type === 'tool_end')?.isError, false, 'o segundo turno voltou com a ferramenta');
+  assert.equal(serve.state.mcpStatus, 'connected');
+  assert.ok(logs.some((item) => item.area === 'opencode' && /MCP mesa failed antes do envio; religando/.test(item.line)), 'linha do religar no log');
+  assert.ok(logs.filter((item) => /^MCP mesa conectado em \d+ ms$/.test(item.line)).length >= 2, 'o registro novo aparece no log');
 });
 
 test('o título da sessão vem da interface, não do marcador cru (#93)', async (t) => {
@@ -284,6 +417,38 @@ test('compactação manual espera o fim pelo SSE e devolve o resumo', async (t) 
   assert.equal(adapter.snapshot().compacting, false);
 });
 
+test('compactação automática vira aviso não fatal com a frase do provedor (#77)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve);
+  t.after(() => adapter.stop());
+  await adapter.connect();
+
+  serve.emit('session.compaction.started', {sessionID: adapter.sessionId, reason: 'threshold'});
+  serve.emit('session.compaction.ended', {sessionID: adapter.sessionId, reason: 'threshold', text: 'Resumo automático.'});
+  const done = await waitFor(events, (item) => item.type === 'warning' && item.code === 'OPENCODE_COMPACTED', 'aviso da compactação automática');
+  assert.equal(parseMessage(done.message)?.key, 'opencode.compacted');
+
+  serve.emit('session.compaction.failed', {sessionID: adapter.sessionId, reason: 'threshold', error: {message: 'insufficient credits'}});
+  const failed = await waitFor(events, (item) => item.type === 'error' && item.code === 'OPENCODE_COMPACT_FAILED', 'aviso da falha automática');
+  assert.equal(failed.fatal, false);
+  assert.equal(failed.message, 'insufficient credits');
+
+  serve.emit('session.compaction.failed', {sessionID: adapter.sessionId, reason: 'threshold'});
+  await waitFor(events, (item) => item.type === 'error' && item.code === 'OPENCODE_COMPACT_FAILED' && item !== failed, 'aviso da falha automática sem frase');
+  assert.equal(parseMessage(events.filter((item) => item.code === 'OPENCODE_COMPACT_FAILED').at(-1).message)?.key, 'opencode.compact.failed');
+});
+
+test('compactação manual não gera o aviso da automática (#77)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve);
+  t.after(() => adapter.stop());
+  const result = await adapter.compact({id: 'k1'});
+  assert.equal(result.accepted, true);
+  assert.equal(events.some((item) => item.code === 'OPENCODE_COMPACTED'), false);
+});
+
 test('pedido de permissão inesperado é recusado na hora, sem diálogo', async (t) => {
   const serve = await createFakeOpencodeServe({password: PASSWORD, permission: {action: 'bash', resources: ['ls *']}});
   t.after(() => serve.close());
@@ -322,6 +487,22 @@ test('controles: catálogo liga modelo e esforço, modelo fora do catálogo é r
   assert.deepEqual(saved, {model: 'opencode/deepseek-v4.1-flash-free', effort: 'max'});
   assert.deepEqual(after.levels, ['low', 'high', 'max']);
   assert.deepEqual(serve.requests.find((item) => item.method === 'POST' && item.url.endsWith('/model')).body.model, {id: 'deepseek-v4.1-flash-free', providerID: 'opencode', variant: 'max'});
+});
+
+/* #76: o modelo lembrado não é conferido quando a sessão nasce (o catálogo do
+   servidor só chega no connect). Se ele sumiu, a sessão nova cai no padrão do
+   OpenCode em vez de quebrar; a conversa aberta continua avisando. */
+test('sessão nova com modelo lembrado fora do catálogo cai no padrão do OpenCode, sem erro (#76)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve, {selection: {model: 'opencode/modelo-que-sumiu', effort: 'max'}});
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  assert.deepEqual(adapter.controlsSnapshot().selection, {model: null, effort: null}, 'a escolha lembrada sumiu: a sessão abre no padrão');
+  const created = serve.requests.find((item) => item.method === 'POST' && item.url === '/api/session');
+  assert.equal('model' in created.body, false, 'sem modelo fora do catálogo no pedido de sessão');
+  assert.ok(serve.sessions.has(adapter.sessionId), 'a sessão abre normalmente');
+  assert.equal(events.some((item) => item.type === 'warning' && item.code === 'OPENCODE_MODEL_UNAVAILABLE'), false, 'sessão nova não avisa: só cai no padrão');
 });
 
 test('reabrir conversa cuja sessão sumiu avisa e recria com o mesmo id', async (t) => {
@@ -493,6 +674,7 @@ test('a sessão temporária é apagada com a pasta na query; 404 vira log, não 
   const {adapter} = createHarness(serve, {deleteSessionOnStop: true, log: (_area, line) => logs.push(line)});
   await adapter.connect();
   const id = adapter.sessionId;
+  logs.length = 0; /* o connect registra o MCP (#55); o teste mede só a exclusão */
   assert.ok(serve.sessions.has(id));
   await adapter.stop();
   const deleted = serve.requests.find((item) => item.method === 'DELETE');

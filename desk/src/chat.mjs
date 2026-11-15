@@ -27,7 +27,9 @@ import {activitySlots,assistantAnchors,resetRetiredLedgers,turnState} from './ch
 import {applyActivityNotice,applyLimitNotice,clearNotices} from './chat-notices.mjs';
 import {clearLatestAnswer,markLatestAnswer,message,setMessageModel,setMessageTime,updateMessage} from './chat-message-view.mjs';
 import {freeLimitKey,freeLimitMessageKey,showFreeLimitNote} from './free-limit-notice.mjs';
-import {previewIdOf,showUnpublishedPreview} from './chat-preview-fallback.mjs';
+import {showUnpublishedPreview} from './chat-preview-fallback.mjs';
+import {recordActivityEnd,recordPreviewEnd} from './chat-preview-publish.mjs';
+import {ensureActivityHost} from './activity-loader.mjs';
 /* O renderer Markdown+LaTeX vive em `markdown.mjs` (compartilhado com o chat
    lateral); o realce de código e o pipeline do antigo `chat.mjs` são os mesmos.
    `markup` é reexportado pela compatibilidade dos imports antigos. */
@@ -38,7 +40,7 @@ export {hideQuoteButton,insertMainDraft} from './chat-quote.mjs';
 import {createShownHistory} from './history-shown.mjs';
 import {cachedHistoryTurns} from './history-render-cache.mjs';
 import {beginLazyHistory,finishLazyHistory} from './history-format-lazy.mjs';
-import {recoverActivitySlots} from './history-activity-slots.mjs';
+import {previewAnchorElement,recoverActivitySlots} from './history-activity-slots.mjs';
 import {openChatSearch,closeChatSearch,setChatSearchSource,addChatSearchEntry} from './chat-search-view.mjs';
 export {openChatSearch,closeChatSearch};
 
@@ -144,6 +146,8 @@ export function showHistory(messages,cards=[],identity=null){
       const el=activitySlotElement(id,status);
       historySlots.push({toolCallId:id,element:el});
       frag.append(el);
+     }else if(part.type==='preview'){ /* #61: marca do ponto da prévia; a recuperação troca pelo slot */
+      const mark=previewAnchorElement(document,part.previaId);if(mark)frag.append(mark);
      }else if(part.type==='text'){
       searchEntries.push({text:part.text,el:tagMessageIndex(message('assistant',part.text,part.images||[],frag,[],part.imageSources||[],part.time,part.model||'',part.modelName||''),part.messageIndex)});
      }
@@ -344,7 +348,11 @@ export async function send(text,images,options={}){
   if(knownNotSent)userMessage?.remove();
   if(fromComposer&&!$('#prompt').value){$('#prompt').value=text;save();}
   options.onFailure?.(safe);
-  setBusy(false);toastFailure(e);return false;
+  setBusy(false);
+  /* O Parar do usuário já tem a resposta na tela (o turno fecha e, com fila,
+     o aviso da faixa); repetir a causa como erro só apaga esse aviso (#1). */
+  if(!attempt.stopped)toastFailure(e);
+  return false;
  }finally{
   if(sendAttempt===attempt)sendAttempt=null;
   if(S.sendAttemptId===attemptId)S.sendAttemptId='';
@@ -436,6 +444,10 @@ installQuoteListeners();
    incerteza é da conversa (o host a mantém até outra conversa). */
 window.addEventListener('desk-stop',()=>{
  turnState.stoppedTurn=true;S.turnCancelled=true;if(turnState.turnLog)settleTurn({reason:'stopped'});
+ /* Parar é decisão da pessoa: o envio em voo não vira aviso de erro depois.
+    Sem a marca, o catch do `send` mostrava "Chamada ao tutor cancelada" e
+    trocava o aviso "a fila ficou segurada" da faixa (#1). */
+ if(sendAttempt)sendAttempt.stopped=true;
  /* Envio ainda no connect do renderer: aborta o connect e não deixa o prompt
     sair depois. O serviço recebe o mesmo id e desiste se o prompt já foi. */
  if(sendAttempt&&sendAttempt.stage!=='prompt'){
@@ -647,6 +659,8 @@ window.desk.onEvent(e=>{
  }
  if(e.type==='tool_execution_start'){
   if(staleEvent(e))return;
+  /* #62: o host do quadro tem de estar ligado ANTES do evento `published`, senão o slot nasce parado. */
+  if(timeline.isPreviewTool(e.toolName))void ensureActivityHost().catch(()=>{});
   if(cardToolKind(e.toolName)){
    /* O cartão já chegou pelo `desk-card` (o host registra antes de a ferramenta
       voltar); a chamada não vira passo do diário. */
@@ -662,20 +676,17 @@ window.desk.onEvent(e=>{
    const normalized=toolResultFor(e);
    const step=worklog.finishTool(turnState.turnLog,{id:e.toolCallId,result:normalized,isError:e.isError,now:Date.now()});
    const activity=activityDetailsOf(normalized);
-   /* H4: a prévia não publica nada; guarda o último rascunho para o fim do
-      turno. Publicação de quadro que deu certo dispensa o resgate. */
-   if(timeline.isPreviewTool(e.toolName)&&e.isError!==true){
-    const previaId=previewIdOf(normalized);
-    if(previaId)turnState.turnPreview={previaId};
-   }
+   /* #62: prévia limpa publica na hora (slot no ponto da chamada); prévia com
+      erro fica para o H4. Revisão de prévia atualiza o MESMO slot. */
+   if(timeline.isPreviewTool(e.toolName)&&e.isError!==true)recordPreviewEnd({result:normalized,anchor:timeline.segmentOfStep(turnState.turnTrack,step?.id)?.view?.el||null});
    if(step){
     const seg=timeline.segmentOfStep(turnState.turnTrack,step.id);
     if(seg)renderSegment(seg,{live:!seg.closed});
-    if(timeline.isActivityTool(step.toolName)){
+    if(timeline.isActivityTool(step.toolName)&&!recordActivityEnd({toolCallId:step.id,result:normalized,anchor:seg?.view?.el||null})){
      if(e.isError!==true)turnState.turnPublished=true;
      ensureActivitySlot(step.id,{status:e.isError?'error':'done',...activity});
     }
-   }else if(timeline.isActivityTool(e.toolName)){
+   }else if(timeline.isActivityTool(e.toolName)&&!recordActivityEnd({toolCallId:e.toolCallId,result:normalized})){
     if(e.isError!==true)turnState.turnPublished=true;
     ensureActivitySlot(e.toolCallId,{status:e.isError?'error':'done',...activity});
    }
@@ -717,7 +728,7 @@ window.desk.onEvent(e=>{
   if(!cancelled&&!failed&&!uncertain)window.dispatchEvent(new Event('desk-idle'));
   else if(failed||uncertain)window.dispatchEvent(new Event('desk-failed'));
   if(unpublishedPreview&&!cancelled&&!failed&&!uncertain){
-   void showUnpublishedPreview({previaId:unpublishedPreview.previaId,conversationId:turnConversation});
+   void showUnpublishedPreview({previaId:unpublishedPreview.previaId,conversationId:turnConversation,anchor:unpublishedPreview.anchor||null});
   }
   if(cancelled&&!aborted)window.dispatchEvent(new CustomEvent('desk-held',{detail:{message:uiMessage('queue.heldCancelled')}}));
   if(uncertain)toast(uiMessage('turn.uncertain'));
@@ -730,14 +741,21 @@ window.desk.onEvent(e=>{
     retry/overload/recusa/fallback (`claudeActivityNotice`) ganham faixa e toast
     concisos, deduplicados por aviso. É só visibilidade — nada aqui mexe em
     busy, conexão, fila nem reenvia; o console genérico (inclusive Pi) continua
-    igual para o que não for reconhecido. */
+    igual para o que não for reconhecido.
+    As ferramentas da Summa fora da conversa (#55) são a exceção visível: o
+    `OPENCODE_MCP_FAILED` vira toast com o texto do próprio evento (o mesmo do
+    aviso ao tutor), uma vez por conexão — o adaptador só o emite no bind. */
  if(e.type==='desk_warn'){
   console.warn('Tutor:',e.message);
-  const limit=claudeLimitNotice(e);
-  if(limit)applyLimitNotice(limit,e);
+  if(e.code==='OPENCODE_MCP_FAILED')toast(e.message);
+  else if(e.code==='OPENCODE_COMPACTED'){toast(e.message);refreshMeter();} // #77: aviso discreto + medidor relido, como o "Resumir agora"
   else{
-   const notice=claudeActivityNotice(e);
-   if(notice)applyActivityNotice(notice,e);
+   const limit=claudeLimitNotice(e);
+   if(limit)applyLimitNotice(limit,e);
+   else{
+    const notice=claudeActivityNotice(e);
+    if(notice)applyActivityNotice(notice,e);
+   }
   }
  }
  /* `fatal:false` nativo = a consulta continua utilizável (retry/result à

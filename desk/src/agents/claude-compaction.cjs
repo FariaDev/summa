@@ -4,7 +4,7 @@
 /* Compactação MANUAL do Claude Code (#58; especificação nos commits `c427f0a`
    e `a794128` da branch t3/opencode-provider). Módulo puro: sem I/O.
 
-   Mecanismo do SDK 0.3.301 (tipos em `sdk.d.ts`): não há `Query.compact()`
+   Mecanismo do SDK 0.3.325 (tipos em `sdk.d.ts`): não há `Query.compact()`
    nem control request de compactação. O CLI publica o comando local `compact`
    em `supportedCommands()`, e o pedido é a mensagem de usuário `/compact
    [instruções]` no mesmo iterável da consulta. O FIM vem no stream:

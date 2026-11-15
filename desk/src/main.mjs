@@ -19,7 +19,7 @@ import {initConferir,closeConferirNote,paintConferirField,openConferirSettings} 
 import {initFreeLimitNote} from './free-limit-notice.mjs';
 import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './free-models-loader.mjs';import {initOpenCodeProviders} from './opencode-providers-loader.mjs';import {mountReviewBoot} from './review-loader.mjs';
 import {mountTriageBoot,openTriage} from './triage-loader.mjs';
-import {initModelPicker,noteModelPicked} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
+import {initModelPicker,noteModelPicked,noteModelUsed} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
 import conferirCore from './generated/conferir.core.js';
 import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';import {attachSidechatNotebook,setSidechatNotebookThumb} from './sidechat-loader.mjs';import {isDetachedSidechat,focusDetachedSidechat} from './sidechat-detach.mjs';
 import resumeCore from './generated/resume.core.js';
@@ -250,9 +250,15 @@ initModelPicker({pick:async({provider,id,zenPaid})=>{
  /* Modelo pago do Zen (#44): a primeira escolha pede confirmação; voltar restaura o que estava em uso. */
  if(zenPaid&&!(await confirmPaidModel())){settings({});return;}
  await settings({model:{provider,id}});
- if(noteModelPicked(provider,id))save(true);/* recentes (#59): só entra o que o host confirmou */
+ /* Recentes (#59) e último modelo (#76): só entra o que o host confirmou. */
+ const picked=noteModelPicked(provider,id);
+ const remembered=S.choice.provider===provider&&S.choice.id===id&&noteModelUsed({provider,id,effort:S.choice.level});
+ if(picked||remembered)save(true);
 },favoritesChanged:()=>save(true)/* favoritos (estrela): estado de interface, como os recentes */,defaultChanged:()=>save(true)/* modelo padrão da sessão nova: estado de interface, nunca no config.json */
-});initEffortStrip({pick:level=>settings({level})});
+});initEffortStrip({pick:async level=>{
+ await settings({level});
+ if(S.choice.level===level&&noteModelUsed({provider:S.choice.provider,id:S.choice.id,effort:level}))save(true);
+}});
 /* Conversa de motor antigo (#release OpenCode): o painel no lugar do composer
    leva a uma sessão nova vazia ou continua no motor visível com o digest (#87). */
 $('#legacy-new-session')?.addEventListener('click',()=>newSession(null));

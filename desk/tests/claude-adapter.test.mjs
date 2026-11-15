@@ -1295,7 +1295,7 @@ test('#51: detector injetado passa o binário real do usuário à Query, a recon
       launcherPath: '/home/u/.local/bin/claude',
       version: '2.1.400',
       versionAhead: true,
-      range: {minimum: '2.1.296', tested: '2.1.301'},
+      range: {minimum: '2.1.296', tested: '2.1.325'},
       auth: {loggedIn: true, authMethod: 'oauth', apiProvider: 'firstParty'},
       warnings: [],
     };
@@ -1320,7 +1320,7 @@ test('#51: detector injetado passa o binário real do usuário à Query, a recon
   const init = events.of('init').at(0);
   assert.equal(init.executable, '/home/u/.local/share/claude/versions/2.1.400');
   assert.equal('executableSource' in init, false, 'sem reserva, não há de onde mais o executável viria (#51)');
-  assert.match(ptText(init.executableNote), /2\.1\.400 é mais nova que a testada com esta versão da Summa \(2\.1\.301\)/);
+  assert.match(ptText(init.executableNote), /2\.1\.400 é mais nova que a testada com esta versão da Summa \(2\.1\.325\)/);
 });
 
 test('opções do SDK: replay público, isolamento, sandbox, binário, prompt e env sem auto-update', async () => {

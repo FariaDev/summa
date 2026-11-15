@@ -19,6 +19,7 @@ const {message} = require('./src/i18n.mjs');
 const {invalidValue} = require('./src/error-detail.mjs');
 const {displayUserText} = require('./sidechat.cjs');
 const conversations = require('./src/agents/conversations.cjs');
+const attachments = require('./src/agents/conversation-attachments.cjs');
 const {selectionFromChange} = require('./src/agents/opencode-controls.cjs');
 const {ClaudeAdapter} = require('./src/agents/claude-adapter.cjs');
 const {ClaudeService} = require('./src/agents/service.cjs');
@@ -98,6 +99,7 @@ function createClaudeSideEngine({
     adapter,
     uncertain: deliveryUncertain,
     messages: record.messages || [],
+    resolveImages: parts => attachments.resolveImageParts(parts, {runtime, descriptor}),
     onMessages(messages) {
       conversations.updateClaudeConversation(descriptor, {
         messages,

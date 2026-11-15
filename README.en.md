@@ -49,7 +49,7 @@ npm start
 
 On first launch the desk walks you through one step at a time: language and color, how the desk works, course name, PDF folder (subfolders count), tutor, and done. The course is only created at the last step. OpenCode asks for your provider sign-in on first connection; the account stays in OpenCode, not in the desk.
 
-`npm run doctor` checks the installed engine, policies, fonts, the visual extension (when applicable) and persistence without opening the app. On a Mac, `npm run install-app` builds **Summa.app**.
+`npm run doctor` checks the installed engine, policies, fonts, the visual extension (when applicable) and persistence without opening the app. On a Mac, `npm run install-app` builds **Summa.app**; on Windows, it installs per user into `%LOCALAPPDATA%\Programs\Summa`, with a Start Menu shortcut and an entry in "Installed apps".
 
 For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portuguese).
 

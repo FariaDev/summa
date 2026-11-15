@@ -113,7 +113,7 @@ function contractParagraphs(text){
 
 function contractRow(file){
  const row=document.createElement('button');
- row.type='button';row.className='ctx-row contract-row';row.setAttribute('aria-haspopup','dialog');
+ row.type='button';row.className='ctx-row contract-row';row.setAttribute('aria-haspopup','dialog');row.dataset.origin=file.origin;
  const mark=document.createElement('span');mark.className='ctx-icon';mark.setAttribute('aria-hidden','true');mark.innerHTML=icon('file');
  const name=document.createElement('span');name.className='ctx-name';name.textContent=contractDisplayName(file);
  const meta=document.createElement('span');meta.className='ctx-meta';meta.textContent=contractOriginLabel(file.origin);
@@ -133,6 +133,14 @@ function paintContractLabels(){
  ui.contractBackLabel.textContent=t('context.contract.back');
  ui.dock.setAttribute('aria-label',t(ui.contractReading?'context.contract.readAria':'header.context'));
  if(ui.contractReading&&ui.contractFile)ui.contractOrigin.textContent=contractSourceLine(ui.contractFile);
+ /* #25: as linhas só são recriadas quando o contrato muda (ver paintContract);
+    sem isto a origem ficava no idioma de quando a linha nasceu. */
+ for(const meta of ui.contractItems.querySelectorAll('.contract-row .ctx-meta')){
+  const origin=/** @type {HTMLElement} */ (meta.parentElement).dataset.origin;
+  if(origin)meta.textContent=contractOriginLabel(origin);
+ }
+ const empty=ui.contractItems.querySelector('.contract-empty');
+ if(empty)empty.textContent=t('context.contract.empty');
 }
 
 function resetContractRead(){

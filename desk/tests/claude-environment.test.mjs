@@ -334,7 +334,7 @@ test('findEnvConflicts ignora vazio e variáveis alheias, mas acha as conhecidas
 test('#51: a faixa conecta do mínimo à série da testada e recusa o resto antes do login', async () => {
   await withTemp(async dir => {
     const file=join(dir,'claude');writeFileSync(file,'binário sintético');
-    const accepted={'2.1.296':false,'2.1.299':false,'2.1.301':false,'2.1.302':true,'2.1.400':true};
+    const accepted={'2.1.296':false,'2.1.299':false,'2.1.301':false,'2.1.325':false,'2.1.326':true,'2.1.400':true};
     const refused={'2.1.295':'claude.version.below','2.1.246':'claude.version.below','2.0.999':'claude.version.below','2.2.0':'claude.version.series','3.0.0':'claude.version.series','ilegível':'claude.version.unreadable'};
     for(const [version,ahead] of Object.entries(accepted)){
       const {exec,calls}=fakeExec({version:`${version} (Claude Code)`});

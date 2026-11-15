@@ -302,13 +302,30 @@ await withArtifacts('composer-box',async ctx=>{
  assert.equal(await page.locator('.queue-item .queue-remove svg.icon').count(),1,'o remover é ícone');
  assert.equal(await page.locator('.queue-item .queue-remove').getAttribute('aria-label'),'Remover da fila');
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'com uma mensagem só, sem Limpar');
- await page.locator('.queue-remove').focus();
- const removeFocus=await page.locator('.queue-remove').evaluate(el=>getComputedStyle(el).outlineStyle);
- assert.notEqual(removeFocus,'none','o × mostra o foco do teclado');
+ /* Foco do teclado no ×: focar e ler no MESMO evaluate. A faixa re-renderiza
+    quando o turno confirma (desk-busy/engine-facts) e o preserveFocus não acha
+    o × (sem key/id, `src/queue.mjs`); entre dois roundtrips do Playwright o nó
+    focado podia ser trocado e o outline vinha "none" (#1). */
+ const removeFocus=await page.evaluate(()=>{
+  const el=document.querySelector('.queue-remove');
+  if(!el)return null;
+  el.focus();
+  return {focused:document.activeElement===el,outline:getComputedStyle(el).outlineStyle};
+ });
+ assert.ok(removeFocus,'a faixa da fila mostra o ×');
+ assert.equal(removeFocus.focused,true,'o foco do teclado fica no × da fila');
+ assert.notEqual(removeFocus.outline,'none','o × mostra o foco do teclado');
  await page.locator('#prompt').fill('segunda guardada e bem comprida para a linha cortar com reticências em vez de esticar a caixa');
  await page.locator('#prompt').press('Enter');
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===2);
  assert.equal(await page.locator('.queue-clear').isVisible(),true,'com duas mensagens, Limpar entra no cabeçalho');
+ /* Parar JÁ: o turno do fake dura 15 s (`FAKE_OPENCODE_QUEUE_HOLD_MS`) e, se
+    ele terminasse antes deste clique, o `desk-idle` mandaria a fila sozinho e
+    não haveria o que segurar — era a corrida do aviso no Windows (#1). As
+    medidas da faixa abaixo rodam com a fila segurada, sem depender do relógio. */
+ await page.locator('#stop').click();
+ await toastWait(page,'a fila ficou segurada');
+ await idle();
  /* A linha é re-renderizada quando a fila confirma o item; medir por locator
     pode pegar o span já desanexado (getComputedStyle vazio). Espera o item
     comprido existir e lê tudo no mesmo evaluate (#12). */
@@ -322,9 +339,6 @@ await withArtifacts('composer-box',async ctx=>{
  await page.locator('.queue-remove').nth(1).click();
  await page.waitForFunction(()=>document.querySelectorAll('.queue-item').length===1);
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'de volta a uma mensagem, Limpar sai');
- await page.locator('#stop').click();
- await toastWait(page,'a fila ficou segurada',{timeout:20000});
- await idle();
  const ids=await sessionIds(page);
  const otherId=ids.find(id=>id===other);
  assert.ok(otherId,'a outra sessão aparece na lista');
@@ -583,6 +597,42 @@ await withArtifacts('composer-box',async ctx=>{
  await idle();
 
  assert.deepEqual(errors,[],`erros de página: ${JSON.stringify(errors)}`);
+});
+
+/* ---------- 10b. Parar no meio do envio: o aviso da fila sobrevive (#1) ---------- */
+await withArtifacts('composer-box-parar-no-envio',async ctx=>{
+ const runtime=ctx.runtime=newRuntime('composerstop');
+ const course=seedCourse(runtime,'calc');
+ writeConfigJson(runtime,{runtimePath:runtime,vaultPath:runtime,courses:[{id:'calc',name:'Cálculo I',path:course}]});
+ writeDeskJson(runtime,{courseId:'calc',courseStates:{calc:{}}});
+ /* O fake atrasa a leitura da versão (`FAKE_OPENCODE_VERSION_DELAY_MS`), que
+    todo `connect` do envio faz: o Parar chega antes de o motor receber, que é
+    o caminho da corrida do Windows — o catch do envio cancelado não pode
+    trocar o aviso da fila por um erro de cancelamento (#1). */
+ const env={...captureFixtureEnv(runtime),FAKE_OPENCODE_VERSION_DELAY_MS:'1200'};
+ const app=ctx.app=await launchDesk({runtime,env});
+ const page=await app.firstWindow();
+ await size(app,page,900,650);
+ await statusOnline(page);
+ await freezeMotion(page);
+ await page.evaluate(()=>{
+  window.__toasts=[];
+  new MutationObserver(()=>window.__toasts.push(document.querySelector('#toast').textContent)).observe(document.querySelector('#toast'),{subtree:true,childList:true,attributes:true});
+ });
+ await page.locator('#prompt').fill('pergunta com envio lento');
+ await page.locator('#send').click();
+ await page.waitForFunction(()=>!document.querySelector('#stop').hidden,undefined,{timeout:5000});
+ await page.locator('#prompt').fill('na fila antes do Parar');
+ await page.locator('#prompt').press('Enter');
+ await page.waitForSelector('.queue-item');
+ await page.locator('#stop').click();
+ await toastWait(page,'a fila ficou segurada');
+ /* O envio cancelado só rejeita depois da leitura atrasada da versão: esperar
+    o Enviar voltar deixa os avisos assentados para ler o histórico. */
+ await sendEnabled(page);
+ const toasts=await page.evaluate(()=>window.__toasts);
+ assert.ok(toasts.some(text=>text.includes('a fila ficou segurada')),`o aviso da fila aparece (${JSON.stringify(toasts)})`);
+ assert.deepEqual(toasts.filter(text=>text.includes('Chamada ao tutor cancelada')),[],`o Parar não troca o aviso da fila por um erro de cancelamento (${JSON.stringify(toasts)})`);
 });
 
 /* ---------- 11. as flags do config.json somem com os controles ---------- */

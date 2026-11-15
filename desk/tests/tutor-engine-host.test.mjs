@@ -200,6 +200,35 @@ test('newSessionPath grava a passagem no destino e sessionInfo devolve origin', 
   assert.equal(fs.readFileSync(source, 'utf8'), before, 'a origem segue intacta');
 });
 
+/* #76: a sessão OpenCode nova prefere o padrão marcado, depois o último modelo
+   e esforço usados; sem os dois, deixa o padrão do OpenCode. O Claude não muda. */
+test('sessão nova OpenCode usa o último modelo e esforço quando não há padrão (#76)', () => {
+  const conversations = require('../src/agents/conversations.cjs');
+  const live = fakeLive({state: {modelLast: {provider: 'opencode', id: 'deepseek-v4.1-flash-free', effort: 'high'}}});
+  const host = createTutorEngineHost({live, runtime, deskDir, TEST_MODE: true, FREE_ID: 'mesa-free'});
+  const last = conversations.readClaudeConversation(host.newSessionPath('calc', 'opencode'), {runtime});
+  assert.equal(last.engine, 'opencode');
+  assert.equal(last.model, 'opencode/deepseek-v4.1-flash-free');
+  assert.equal(last.effort, 'high');
+  live.state = {...live.state, modelDefault: {provider: 'opencode', id: 'gpt-5.5', effort: 'low'}};
+  const marked = conversations.readClaudeConversation(host.newSessionPath('calc', 'opencode'), {runtime});
+  assert.equal(marked.model, 'opencode/gpt-5.5', 'o padrão marcado manda mesmo com um último guardado');
+  assert.equal(marked.effort, 'low');
+  live.state = {};
+  const plain = conversations.readClaudeConversation(host.newSessionPath('calc', 'opencode'), {runtime});
+  assert.equal('model' in plain, false, 'sem padrão nem último, a sessão abre no padrão do OpenCode');
+  live.state = {modelLast: {provider: 'opencode', id: 'deepseek-v4.1-flash-free', effort: 'high'}};
+  const beforeVisible = process.env.LEARNING_DESK_VISIBLE_ENGINES;
+  try {
+    process.env.LEARNING_DESK_VISIBLE_ENGINES = 'claude,opencode';
+    const claude = conversations.readClaudeConversation(host.newSessionPath('calc', 'claude'), {runtime});
+    assert.equal(claude.engine, 'claude');
+    assert.equal('model' in claude, false, 'o Claude Code não herda o último modelo do OpenCode');
+  } finally {
+    if (beforeVisible === undefined) delete process.env.LEARNING_DESK_VISIBLE_ENGINES; else process.env.LEARNING_DESK_VISIBLE_ENGINES = beforeVisible;
+  }
+});
+
 /* Corte do tail exatamente no início de uma linha: nenhuma linha se perde e
    nenhum corte falso é contado (antes, a primeira linha inteira caía e o aviso
    somava um corte que não houve). O ajuste vai no conteúdo da ÚLTIMA linha: o
@@ -277,7 +306,7 @@ test('engineFactsPrime aquece a versão sem mudar o gate do OpenCode antigo (#de
     process.env.LEARNING_DESK_OPENCODE = path.join(deskDir, 'tests', 'fake-bun-bin', 'opencode');
     const host = createTutorEngineHost({live: fakeLive(), runtime, deskDir, TEST_MODE: false, FREE_ID: 'mesa-free'});
     assert.equal(await host.engineFactsPrime(), null);
-    assert.equal(host.engineFacts().opencode, process.env.LEARNING_DESK_OPENCODE, '2.2.4 continua sendo motor pronto');
+    assert.equal(host.engineFacts().opencode, process.env.LEARNING_DESK_OPENCODE, '2.2.7 continua sendo motor pronto');
     assert.equal(host.openCodeBinary(), process.env.LEARNING_DESK_OPENCODE);
 
     process.env.LEARNING_DESK_OPENCODE = oldBinary;

@@ -9,12 +9,55 @@ const spec={title:'Inclinação e movimento',objective:'Prever a posição em 2 
  js:'const a=document.querySelector("#a"),s=document.querySelector("#s"),g=document.querySelector("#guess"),r=document.querySelector("#result");a.oninput=()=>{s.value=(2*Number(a.value))+" m";mesa.state({a:Number(a.value)});};a.oninput();document.querySelector("#check").onclick=()=>{const obs=2*Number(a.value);r.hidden=false;r.textContent="Previsto "+g.value+" m; observado "+obs+" m. Conclusão: s cresce linearmente com a.";mesa.attempt({previsao:g.value===""?null:Number(g.value),observado:obs,conclusao:"s cresce linearmente com a"});};mesa.ready();',katex:false};
 export function query(args){
  const base=baseQuery(args),options=args.options;
+ const flow=String(process.env.FAKE_CLAUDE_PREVIEW_FLOW||'');
  const frame=(type,data,session_id)=>({type,session_id,parent_tool_use_id:null,uuid:crypto.randomUUID(),...data});
  const out=(async function*(){
   for await(const original of base){
    if(original.type==='stream_event')continue;
    if(original.type!=='assistant'){yield original;continue;}
-   const session=original.session_id,id='toolu_activity_local',messageId='msg_activity_local';
+   const session=original.session_id,messageId='msg_activity_local';
+   /* #62: prévia limpa publica na chamada; `revision` corrige pelo activityId. */
+   if(flow==='clean'||flow==='revision'||flow==='error'){
+    const previewId='toolu_preview_local',createId='toolu_activity_local';
+    const clean={html:'<p id="s">prévia limpa Claude</p>',css:'',js:flow==='error'?'mesa.ready();console.error("erro de propósito");':'mesa.ready();',theme:'escuro',width:400};
+    const stream=event=>frame('stream_event',{event},session);
+    yield stream({type:'message_start',message:{id:messageId,role:'assistant',content:[]}});
+    yield stream({type:'content_block_start',index:0,content_block:{type:'text',text:''}});
+    yield stream({type:'content_block_delta',index:0,delta:{type:'text_delta',text:'Antes da prévia Claude.'}});
+    yield stream({type:'content_block_stop',index:0});
+    yield stream({type:'content_block_start',index:1,content_block:{type:'tool_use',id:previewId,name:'mcp__mesa__previsualizar_atividade',input:clean}});
+    yield stream({type:'content_block_stop',index:1});
+    yield frame('assistant',{message:{id:messageId,role:'assistant',content:[{type:'text',text:'Antes da prévia Claude.'},{type:'tool_use',id:previewId,name:'mcp__mesa__previsualizar_atividade',input:clean}]},user_message_uuid:original.user_message_uuid},session);
+    const previewHook=await options.hooks.PreToolUse[0].hooks[0]({tool_name:'mcp__mesa__previsualizar_atividade',tool_use_id:previewId,tool_input:clean});
+    if(previewHook.hookSpecificOutput?.permissionDecision==='deny')throw Error(previewHook.hookSpecificOutput?.permissionDecisionReason||'Hook negado.');
+    const [a,b]=InMemoryTransport.createLinkedPair(),client=new Client({name:'synthetic-preview',version:'1'});
+    await options.mcpServers.mesa.instance.connect(b);await client.connect(a);
+    let preview,revision=null;
+    try{
+     preview=await client.callTool({name:'previsualizar_atividade',arguments:clean});
+     if(process.env.FAKE_CLAUDE_PREVIEW_OUT)(await import('node:fs')).writeFileSync(process.env.FAKE_CLAUDE_PREVIEW_OUT,JSON.stringify(preview));
+     if(flow==='revision'){
+      const previewText=preview.content.map(part=>part.text||'').join('\n');
+      const activityId=/Quadro publicado: (act-[a-z0-9][a-z0-9-]{2,63}) v\d+/.exec(previewText)?.[1];
+      const createInput={title:'Prévia limpa Claude',objective:'Corrigir o quadro',alternativeMarkdown:'Quadro corrigido no mesmo lugar.',activityId,html:'<p id="s">corrigido Claude</p>',css:'',js:'mesa.ready();'};
+      yield stream({type:'content_block_start',index:2,content_block:{type:'tool_use',id:createId,name:'mcp__mesa__criar_atividade',input:createInput}});
+      yield stream({type:'content_block_stop',index:2});
+      yield frame('assistant',{message:{id:messageId,role:'assistant',content:[{type:'tool_use',id:createId,name:'mcp__mesa__criar_atividade',input:createInput}]},user_message_uuid:original.user_message_uuid},session);
+      const hook=await options.hooks.PreToolUse[0].hooks[0]({tool_name:'mcp__mesa__criar_atividade',tool_use_id:createId,tool_input:createInput});
+      if(hook.hookSpecificOutput?.permissionDecision!=='allow')throw Error(hook.hookSpecificOutput?.permissionDecisionReason||'Hook negado.');
+      revision=await client.callTool({name:'criar_atividade',arguments:hook.hookSpecificOutput.updatedInput});
+      if(process.env.FAKE_CLAUDE_REVISION_OUT)(await import('node:fs')).writeFileSync(process.env.FAKE_CLAUDE_REVISION_OUT,JSON.stringify(revision));
+     }
+    }finally{await client.close();}
+    yield frame('user',{message:{role:'user',content:[{type:'tool_result',tool_use_id:previewId,is_error:preview.isError===true,content:preview.content}]}},session);
+    if(revision)yield frame('user',{message:{role:'user',content:[{type:'tool_result',tool_use_id:createId,is_error:revision.isError===true,content:revision.content}]}},session);
+    yield stream({type:'content_block_start',index:3,content_block:{type:'text',text:''}});
+    yield stream({type:'content_block_delta',index:3,delta:{type:'text_delta',text:'Depois da prévia Claude.'}});
+    yield stream({type:'content_block_stop',index:3});
+    yield frame('assistant',{message:{id:messageId,role:'assistant',content:[{type:'text',text:'Depois da prévia Claude.'}]},user_message_uuid:original.user_message_uuid},session);
+    continue;
+   }
+   const id='toolu_activity_local';
    const stream=event=>frame('stream_event',{event},session);
    yield stream({type:'message_start',message:{id:messageId,role:'assistant',content:[]}});
    yield stream({type:'content_block_start',index:0,content_block:{type:'text',text:''}});

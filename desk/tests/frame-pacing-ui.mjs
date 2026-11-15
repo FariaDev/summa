@@ -19,9 +19,14 @@ await withArtifacts('ritmo-de-quadros',async ctx=>{
  await statusOnline(page);
  const win=await pageWindow(ctx.app,page);
  assert.equal(await win.evaluate(w=>w.isVisible()),false,'a janela do teste segue escondida depois do aquecimento');
+ /* A medida começa no PRIMEIRO quadro: no Windows o primeiro callback depois
+    de uma tarefa pesada do boot chega 264–281 ms depois do pedido (CI #1, runs
+    43553110061 e 43681999693), e contar essa espera como intervalo dizia que a
+    janela estava a 1 fps quando os quadros seguintes vinham a 15–17 ms. O que
+    este teste guarda é o ritmo ENTRE quadros, não a latência do primeiro. */
  const intervals=await page.evaluate(()=>new Promise(done=>{
-  const times=[];let last=performance.now();
-  const step=()=>{const now=performance.now();times.push(now-last);last=now;if(times.length>=10)done(times);else requestAnimationFrame(step);};
+  const times=[];let last=null;
+  const step=()=>{const now=performance.now();if(last!==null)times.push(now-last);last=now;if(times.length>=10)done(times);else requestAnimationFrame(step);};
   requestAnimationFrame(step);
  }));
  const slow=intervals.filter(ms=>ms>250);

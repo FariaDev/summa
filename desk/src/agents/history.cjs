@@ -15,7 +15,12 @@
        a `source` do SDK (objeto) vira `data`+`mimeType` (strings); quando a
        origem já é uma referência string (nome de arquivo), ela fica em
        `source` — nunca sobra objeto aninhado no descritor.
-     {type:'toolCall', id?, name?, arguments?, argumentsTruncated?}
+     {type:'image', attachment, mimeType, source?, bytes}  ← #4: o descritor
+       guarda só a referência ao arquivo endereçado por conteúdo; o consumidor
+       resolve os bytes com `conversation-attachments.cjs`.
+     {type:'toolCall', id?, name?, arguments?, argumentsTruncated?,
+      result?, isError?, endedAt?}   ← resultado inline do descritor local do
+       OpenCode (#146); a normalização preserva os três últimos (#66).
      {type:'toolResult', toolCallId, text, isError}
 
    Aceita entradas cruas do SDK/CLI (com ou sem embrulho `message`, blocos
@@ -41,8 +46,11 @@ const MAX_ARGS_CHARS = 262144;
 const MAX_MODEL_CHARS = 400;
 /* Teto do imagem persistida: o mesmo do envio validado (8 MiB crus → base64
    de ceil(n/3)*4 chars). O descritor inteiro também tem teto em conversations.cjs. */
-const MAX_IMAGE_DATA_CHARS = Math.ceil((8 * 1024 * 1024) / 3) * 4;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_DATA_CHARS = Math.ceil(MAX_IMAGE_BYTES / 3) * 4;
 const MAX_SOURCE_CHARS = 2000;
+/* Nome do anexo (#4): sha256 do conteúdo + extensão curta, sem separador. */
+const ATTACHMENT_NAME_RE = /^[0-9a-f]{64}\.[a-z0-9]{1,8}$/;
 const MAX_CONTENT_PARTS = 200;
 const MAX_DETAILS_CHARS = 20000;
 const ROLES = {
@@ -141,6 +149,15 @@ function imagePart(block) {
   const nested = isPlainObject(block.source) ? block.source : null;
   let data = str(nested ? nested.data : block.data);
   let mime = str(nested ? (nested.media_type || nested.mimeType) : (block.mimeType || block.mime));
+  const attachment = str(block.attachment);
+  const ref = typeof block.source === 'string' ? block.source : (typeof block.ref === 'string' ? block.ref : '');
+  if (!data && attachment && attachment.length <= 100) {
+    const part = {type: 'image', attachment, mimeType: clip(mime || 'image/png', 100)};
+    if (ref) part.source = clip(ref, MAX_SOURCE_CHARS);
+    const size = Number(block.bytes);
+    if (Number.isInteger(size) && size > 0 && size <= MAX_IMAGE_BYTES) part.bytes = size;
+    return part;
+  }
   if (!data) return null;
   if (data.startsWith('data:')) {
     const match = /^data:([^;,]*);base64,([A-Za-z0-9+/=]*)$/.exec(data);
@@ -151,7 +168,6 @@ function imagePart(block) {
   }
   if (data.length > MAX_IMAGE_DATA_CHARS) return null;
   const part = {type: 'image', data, mimeType: clip(mime || 'image/png', 100)};
-  const ref = typeof block.source === 'string' ? block.source : (typeof block.ref === 'string' ? block.ref : '');
   if (ref) part.source = clip(ref, MAX_SOURCE_CHARS);
   return part;
 }
@@ -175,6 +191,13 @@ function toolCallPart(block) {
   const name = clip(str(block.name), MAX_TOOL_CHARS);
   if (id) part.id = id;
   if (name) part.name = name;
+  /* #146/#66: o descritor local do OpenCode guarda o resultado na própria
+     chamada; normalizar não pode descartá-lo, senão o histórico reaberto perde
+     o texto da prévia (e a âncora do quadro) antes de religar. */
+  if (block.result !== undefined) part.result = clip(str(block.result), MAX_TEXT_CHARS);
+  if (block.isError === true) part.isError = true;
+  const endedAt = Number(block.endedAt);
+  if (Number.isFinite(endedAt) && endedAt > 0) part.endedAt = endedAt;
   if (block.argumentsTruncated === true) {
     part.arguments = {};
     part.argumentsTruncated = true;
@@ -364,7 +387,7 @@ function exportConversationMarkdown({courseName, engine, messages, now, labels =
       if (part.type === 'text') text += (text ? '\n' : '') + part.text;
       else if (part.type === 'image') {
         const mark = markOf(part.source);
-        if (mark) {
+        if (mark && typeof part.data === 'string' && part.data) {
           const alt = escapeMarkdownAlt(labels.imageMarkedPage ? labels.imageMarkedPage(mark.page, mark.file) : PT_EXPORT_LABELS.imageMarkedPage(mark.page, mark.file));
           text += `${text ? '\n' : ''}![${alt}](data:${part.mimeType};base64,${part.data})`;
         } else text += (text ? '\n' : '') + labels.imageAttached;
@@ -385,6 +408,8 @@ module.exports = {
   MAX_ARGS_CHARS,
   MAX_MODEL_CHARS,
   MAX_IMAGE_DATA_CHARS,
+  MAX_IMAGE_BYTES,
   MAX_SOURCE_CHARS,
+  ATTACHMENT_NAME_RE,
   MAX_CONTENT_PARTS
 };

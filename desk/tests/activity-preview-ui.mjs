@@ -2,9 +2,9 @@
    OpenCode chama `previsualizar_atividade` no MCP real da Mesa e o texto que o
    tutor recebe traz a medida, o console e o `previaId` da janela offline. Prova
    que a largura pedida vale, que sem largura vale a da coluna de resposta, que
-   um erro no documento volta com a linha, e que a prévia não publica durante a
-   chamada: no fim do turno, o fallback do H4 publica a última prévia não
-   publicada, e o quadro aparece na conversa. O PNG e a altura são cobertos pela mesma ponte em
+   um erro no documento volta com a linha, que a prévia sem erro publica na
+   própria chamada (#62) e que a com erro não aparece: o H4 só deixa o aviso.
+   O PNG e a altura são cobertos pela mesma ponte em
    `activity-bridge.test.mjs`/`activity-tools.test.mjs` (o print vai como imagem
    ao modelo, não no texto que a janela enxerga). */
 import assert from 'node:assert/strict';
@@ -72,13 +72,12 @@ await withArtifacts('activity-preview-ui',async ctx=>{
  assert.match(broken,/Cannot set properties of null/);
  assert.match(broken,/linha \d+/,'com a linha');
 
- /* H4: a prévia não publica durante a chamada, mas o turno que termina sem
-    criar_atividade entrega a última prévia ao aluno em vez de deixar a
-    conversa sem quadro. */
+ /* #62: a prévia sem erro já publicou na chamada; a com erro não publica e o
+    H4 só deixa o aviso — o aluno não recebe um quadro quebrado. */
  await pollUntil(()=>page.locator('.activity-note').filter({hasText:/não foi publicada|not published/i}).count(),count=>count===1,{timeout:60000,interval:250,what:'o aviso da prévia com erro que não foi publicada'});
- await pollUntil(()=>page.evaluate(async()=>(await window.desk.activityList()).items.length),count=>count===2,{timeout:30000,interval:250,what:'as duas prévias sem erro virarem quadro no fim dos turnos'});
- assert.equal(await page.locator('.activity-slot[data-activity-call^="previa:"]').count(),2,'cada prévia sem erro virou quadro no fim do turno e a com erro saiu');
+ await pollUntil(()=>page.evaluate(async()=>(await window.desk.activityList()).items.length),count=>count===2,{timeout:30000,interval:250,what:'as duas prévias sem erro virarem quadro'});
+ assert.equal(await page.locator('.activity-slot[data-activity-call^="previa:"]').count(),2,'cada prévia sem erro virou quadro e a com erro saiu');
  await pollUntil(()=>page.locator('.activity-slot[data-activity-call^="previa:"] .activity-card:not(.activity-pending)').count(),count=>count===2,{timeout:60000,interval:250,what:'os quadros das prévias carregarem (pausados fora da tela contam)'});
  assert.deepEqual(errors,[]);
- console.log('activity-preview-ui: PASS — prévia real devolve medida, console e log e previaId, na largura pedida ou na da coluna, com o erro e a linha; no fim do turno sem publicação, a prévia sem erro vira quadro e a com erro avisa que não foi publicada.');
+ console.log('activity-preview-ui: PASS — prévia real devolve medida, console e log e previaId, na largura pedida ou na da coluna, com o erro e a linha; a prévia sem erro publica na chamada e a com erro avisa que não foi publicada.');
 });

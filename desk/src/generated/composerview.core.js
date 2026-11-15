@@ -371,11 +371,11 @@ function $queueTextAttrs(_enabled_0, _title_0) {
 function $queueTextSpan(_text_0, _sending_0, _enabled_0) {
   return $view_viewEl("span", $$queueTextAttrs(_enabled_0, $$queueItemTitle(_text_0, _sending_0)), { $: "Con", head: $$view_viewText(_text_0), tail: { $: "Nil" } });
 }
-function $queueRemoveAttrs(_enabled_0) {
-  return $view_attrConcat({ $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-remove"), tail: { $: "Con", head: $$view_attrTitle($$msg_msg("queue.remove")), tail: { $: "Con", head: $$view_attrAria("label", $$msg_msg("queue.remove")), tail: { $: "Con", head: $$view_attrOn("click", "remove"), tail: { $: "Nil" } } } } } }, $$queueDisabledAttr(_enabled_0));
+function $queueRemoveAttrs(_id_0, _enabled_0) {
+  return $view_attrConcat({ $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-remove"), tail: { $: "Con", head: $$view_attrKey(_id_0), tail: { $: "Con", head: $$view_attrTitle($$msg_msg("queue.remove")), tail: { $: "Con", head: $$view_attrAria("label", $$msg_msg("queue.remove")), tail: { $: "Con", head: $$view_attrOn("click", "remove"), tail: { $: "Nil" } } } } } } }, $$queueDisabledAttr(_enabled_0));
 }
-function $queueRemoveBtn(_enabled_0) {
-  return $view_viewEl("button", $$queueRemoveAttrs(_enabled_0), { $: "Con", head: $$view_viewText("×"), tail: { $: "Nil" } });
+function $queueRemoveBtn(_id_0, _enabled_0) {
+  return $view_viewEl("button", $$queueRemoveAttrs(_id_0, _enabled_0), { $: "Con", head: $$view_viewText("×"), tail: { $: "Nil" } });
 }
 function $queueSteerAttrs() {
   return { $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-steer-now"), tail: { $: "Con", head: $$view_attrTitle($$queueSteerNowTitle()), tail: { $: "Con", head: $$view_attrAria("label", $$queueSteerNowTitle()), tail: { $: "Con", head: $$view_attrOn("click", "steerNow"), tail: { $: "Nil" } } } } } };
@@ -396,15 +396,15 @@ function $queueEditInput(_text_0) {
 function $queueItemAttrs(_id_0, _sending_0) {
   return $view_attrConcat({ $: "Con", head: $$queueItemClass(_sending_0), tail: { $: "Con", head: $$view_attrData("id", _id_0), tail: { $: "Nil" } } }, $$queueBusyAttr(_sending_0));
 }
-function $queueItemKids(_text_0, _sending_0, _enabled_0, _editing_0, _steerable_0) {
+function $queueItemKids(_id_0, _text_0, _sending_0, _enabled_0, _editing_0, _steerable_0) {
   if (_editing_0) {
-    return { $: "Con", head: $$queueEditInput(_text_0), tail: { $: "Con", head: $$queueRemoveBtn(_enabled_0), tail: { $: "Nil" } } };
+    return { $: "Con", head: $$queueEditInput(_text_0), tail: { $: "Con", head: $$queueRemoveBtn(_id_0, _enabled_0), tail: { $: "Nil" } } };
   } else {
-    return $view_viewConcat({ $: "Con", head: $$queueTextSpan(_text_0, _sending_0, _enabled_0), tail: { $: "Nil" } }, $$view_viewConcat($$queueSteerViews(_steerable_0), { $: "Con", head: $$queueRemoveBtn(_enabled_0), tail: { $: "Nil" } }));
+    return $view_viewConcat({ $: "Con", head: $$queueTextSpan(_text_0, _sending_0, _enabled_0), tail: { $: "Nil" } }, $$view_viewConcat($$queueSteerViews(_steerable_0), { $: "Con", head: $$queueRemoveBtn(_id_0, _enabled_0), tail: { $: "Nil" } }));
   }
 }
 function $queueItem_body(_id_0, _text_0, _sending_0, _enabled_0, _editing_0, _steerable_0) {
-  return $view_viewEl("div", $$queueItemAttrs(_id_0, _sending_0), $$queueItemKids(_text_0, _sending_0, _enabled_0, _editing_0, _steerable_0));
+  return $view_viewEl("div", $$queueItemAttrs(_id_0, _sending_0), $$queueItemKids(_id_0, _text_0, _sending_0, _enabled_0, _editing_0, _steerable_0));
 }
 function $queueItemView(_row_0) {
   const _id_0 = _row_0["id"];
@@ -435,7 +435,7 @@ function $queueSendNowBtn(_canSendNow_0) {
   return $view_viewEl("button", $$queueSendNowAttrs(_canSendNow_0), { $: "Con", head: $$view_viewText($$queueSendNowLabel()), tail: { $: "Nil" } });
 }
 function $queueClearAttrs(_canClear_0) {
-  return $view_attrConcat({ $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-clear"), tail: { $: "Con", head: $$view_attrTitle($$queueClearTitle()), tail: { $: "Con", head: $$view_attrOn("click", "clear"), tail: { $: "Nil" } } } } }, $$queueActionHidden(_canClear_0));
+  return $view_attrConcat({ $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-clear"), tail: { $: "Con", head: $$view_attrKey("queue-clear"), tail: { $: "Con", head: $$view_attrTitle($$queueClearTitle()), tail: { $: "Con", head: $$view_attrOn("click", "clear"), tail: { $: "Nil" } } } } } }, $$queueActionHidden(_canClear_0));
 }
 function $queueClearBtn(_canClear_0) {
   return $view_viewEl("button", $$queueClearAttrs(_canClear_0), { $: "Con", head: $$view_viewText($$queueClearLabel()), tail: { $: "Nil" } });
@@ -674,13 +674,13 @@ var $$view_attrOn = $view_attrOn;
 var $$queueItemTitle = $queueItemTitle;
 var $$queueTextAttrs = $queueTextAttrs;
 var $$view_attrType = $view_attrType;
+var $$view_attrKey = $view_attrKey;
 var $$queueDisabledAttr = $queueDisabledAttr;
 var $$queueRemoveAttrs = $queueRemoveAttrs;
 var $$queueSteerNowTitle = $queueSteerNowTitle;
 var $$queueSteerAttrs = $queueSteerAttrs;
 var $$queueSteerNowLabel = $queueSteerNowLabel;
 var $$queueSteerBtn = $queueSteerBtn;
-var $$view_attrKey = $view_attrKey;
 var $$queueItemClass = $queueItemClass;
 var $$queueBusyAttr = $queueBusyAttr;
 var $$queueEditInput = $queueEditInput;
@@ -799,14 +799,14 @@ var composerview_default = {
   queueTextIdle: run_lib((a0) => run_loop($queueTextIdle(str_in(a0))), 1),
   queueTextAttrs: run_lib((a0, a1) => run_loop($queueTextAttrs(a0, str_in(a1))), 2),
   queueTextSpan: run_lib((a0, a1, a2) => run_loop($queueTextSpan(str_in(a0), a1, a2)), 3),
-  queueRemoveAttrs: run_lib((a0) => run_loop($queueRemoveAttrs(a0)), 1),
-  queueRemoveBtn: run_lib((a0) => run_loop($queueRemoveBtn(a0)), 1),
+  queueRemoveAttrs: run_lib((a0, a1) => run_loop($queueRemoveAttrs(str_in(a0), a1)), 2),
+  queueRemoveBtn: run_lib((a0, a1) => run_loop($queueRemoveBtn(str_in(a0), a1)), 2),
   queueSteerAttrs: run_lib(() => run_loop($queueSteerAttrs()), 0),
   queueSteerBtn: run_lib(() => run_loop($queueSteerBtn()), 0),
   queueSteerViews: run_lib((a0) => run_loop($queueSteerViews(a0)), 1),
   queueEditInput: run_lib((a0) => run_loop($queueEditInput(str_in(a0))), 1),
   queueItemAttrs: run_lib((a0, a1) => run_loop($queueItemAttrs(str_in(a0), a1)), 2),
-  queueItemKids: run_lib((a0, a1, a2, a3, a4) => run_loop($queueItemKids(str_in(a0), a1, a2, a3, a4)), 5),
+  queueItemKids: run_lib((a0, a1, a2, a3, a4, a5) => run_loop($queueItemKids(str_in(a0), str_in(a1), a2, a3, a4, a5)), 6),
   "queueItem.body": run_lib((a0, a1, a2, a3, a4, a5) => run_loop($queueItem_body(str_in(a0), str_in(a1), a2, a3, a4, a5)), 6),
   queueItemView: run_lib((a0) => run_loop($queueItemView(a0)), 1),
   queueItemViews: run_lib((a0) => run_loop($queueItemViews(a0)), 1),

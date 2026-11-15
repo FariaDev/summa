@@ -18,6 +18,7 @@ import {createRequire} from 'node:module';
 
 const require = createRequire(import.meta.url);
 const conversations = require('../src/agents/conversations.cjs');
+const attachments = require('../src/agents/conversation-attachments.cjs');
 const pending = require('../pending.cjs');
 
 test('cache trimming keeps the newest complete UTF-8/image suffix within the byte cap, older images dropped first (#117)',()=>{
@@ -209,7 +210,7 @@ test('update mescla só campos permitidos, ignora path/id/engine e preserva o an
   });
 });
 
-test('messages normaliza, limita a ~12 MiB tirando primeiro as imagens antigas e nunca corta a entrega', () => {
+test('messages normaliza, externaliza as imagens (#4) e nunca corta a entrega', () => {
   withRuntime((runtime) => {
     const {file} = create(runtime);
     conversations.updateClaudeConversation(file, {delivery: {id: 'envio-9', status: 'accepted'}}, {runtime});
@@ -225,7 +226,17 @@ test('messages normaliza, limita a ~12 MiB tirando primeiro as imagens antigas e
     assert.deepEqual(updated.delivery, {id: 'envio-9', status: 'accepted'}, 'entrega em voo não é cortada pelo teto de messages');
     const stored = conversations.readClaudeConversation(file, {runtime});
     assert.equal(stored.messages.at(-1).content.at(-1).text, 'm3', 'as mais novas ficam');
-    assert.deepEqual(stored.messages[0].content, [{type: 'text', text: 'm0'}], 'a mais antiga perdeu só a imagem');
+    assert.equal(stored.messages.length, 4, 'nenhuma imagem some na migração (#4)');
+    const references = stored.messages.map((message) => message.content.find((part) => part.type === 'image'));
+    assert.ok(references.every((part) => /^[0-9a-f]{64}\.png$/.test(part.attachment)), 'a mensagem guarda a referência do anexo');
+    assert.ok(references.every((part) => part.data === undefined && part.bytes > 0), 'o base64 sai do descritor');
+    assert.ok(bytesOf(stored.messages) < 100000, 'o descritor deixa de carregar os bytes das imagens');
+    const dir = attachments.conversationAttachmentsDir(runtime, file);
+    assert.ok(references.every((part) => existsSync(join(dir, part.attachment))), 'cada imagem virou arquivo');
+    const resolved = attachments.resolveMessages(stored.messages, {runtime, descriptor: file});
+    assert.deepEqual(resolved.map((message) => message.content.find((part) => part.type === 'image').data),
+      ['A'.repeat(3.5 * 1024 * 1024), 'A'.repeat(3.5 * 1024 * 1024), 'A'.repeat(3.5 * 1024 * 1024), 'A'.repeat(3.5 * 1024 * 1024)],
+      'resolver devolve os mesmos bytes');
     assert.deepEqual(stored.delivery, {id: 'envio-9', status: 'accepted'});
 
     /* Mensagem normalizada de verdade round-trip: imagem + texto + ferramenta. */

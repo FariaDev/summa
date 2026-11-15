@@ -31,6 +31,18 @@ function capabilities(engine,controls=null){
  const {$,...caps}=chosen;return {...caps,retryLastTurn:engine==='opencode'};
 }
 function metadata(engine,controls=null){const caps=capabilities(engine,controls);return {engine,caps,capabilities:caps};}
+/* Mesma parte na mensagem repetida (#66): a chamada casa pelo id, o resultado
+   pelo `toolCallId` e o texto pelo conteúdo; o resto só entra se for novo. */
+function samePart(left,right){
+ if(left===right)return true;
+ if(!left||!right||typeof left!=='object'||typeof right!=='object'||left.type!==right.type)return false;
+ if(left.type==='toolCall')return String(left.id||'')===String(right.id||'');
+ if(left.type==='toolResult')return String(left.toolCallId||'')===String(right.toolCallId||'');
+ if(left.type==='text')return String(left.text||'')===String(right.text||'');
+ if(left.type==='thinking')return String(left.thinking??left.text??'')===String(right.thinking??right.text??'');
+ if(left.type==='image')return String(left.source??left.data??left.attachment??'')===String(right.source??right.data??right.attachment??'');
+ return false;
+}
 function rendererEvent(e){
  const shared={conversationId:e.conversationId,runId:e.runId};
  switch(e.type){
@@ -59,11 +71,12 @@ class NativeService extends EventEmitter{
   *   onInit?: (event: import('../../types/agent').AgentInitEvent) => void, onSelection?: (patch: object) => void,
   *   lastTurn?: () => ({user: string, messageId: string}|null),
   *   onTurn?: (turn: {user: string, messageId: string, retry?: boolean}) => void,
+  *   resolveImages?: (parts: object[]) => object[],
   *   uncertain?: boolean, messages?: import('../../types/agent').AgentMessage[], importedPrefixLength?: number}} options
   */
- constructor({adapter,engine='claude',onEvent,onMessages,onInit,onSelection,lastTurn=null,onTurn=null,uncertain=false,messages=[],importedPrefixLength=0}){
+ constructor({adapter,engine='claude',onEvent,onMessages,onInit,onSelection,lastTurn=null,onTurn=null,resolveImages=null,uncertain=false,messages=[],importedPrefixLength=0}){
   super();this.engine=engine;this.uncertain=uncertain===true;this.adapter=adapter;this.messages=messages;this.onMessages=onMessages;this.onSelection=onSelection;
-  this._readTurn=typeof lastTurn==='function'?lastTurn:null;this._onTurn=typeof onTurn==='function'?onTurn:null;
+  this._readTurn=typeof lastTurn==='function'?lastTurn:null;this._onTurn=typeof onTurn==='function'?onTurn:null;this._resolveImages=typeof resolveImages==='function'?resolveImages:null;
   /* Pacote exato do último envio aceito (#164): o texto montado pelo main e as
      imagens já validadas. Vive só em memória; o descritor guarda o id do motor
      e as mensagens, sem duplicar arquivo grande. */
@@ -99,7 +112,7 @@ class NativeService extends EventEmitter{
     if(images.length)this._rememberMarkedImages(e,images);
    }
    if(e.type==='message_end'&&e.message&&['user','assistant'].includes(e.message.role)){
-    const m=e.message;this._settlePartial(m);if(!m.uuid||!this.messages.some(x=>x.uuid===m.uuid)){this.messages.push(m);this._deferMessages();}
+    const m=e.message;this._settlePartial(m);this._rememberMessage(m);
     if(this._markedPages)this._attachPendingMarkedImages(m);
    }
    /* O fim do turno (inclusive erro/incerteza) é o ponto único dos
@@ -108,6 +121,27 @@ class NativeService extends EventEmitter{
    if(e.type==='turn_end'){this._partials.clear();if(this._markedPages)this._flushPendingMarkedImages();this.flush();}
    onEvent?.(e);const event=rendererEvent(e);if(event)this.emit('event',event);
   });
+ }
+ /* #66: o leitor do OpenCode fecha a mensagem do passo antes da ferramenta e
+    manda o `message_end` da chamada depois com o MESMO `uuid`. Descartar o
+    segundo deixava o descritor sem o `toolCall` (e sem o resultado inline do
+    #146) até o `connect` reaplicar o histórico do servidor; reabrir antes
+    disso punha o quadro pelo `createdAt`. O dedupe por `uuid` continua: só as
+    partes que faltam entram na mensagem já gravada. */
+ _rememberMessage(message){
+  const at=message.uuid?this.messages.findLastIndex(item=>item.uuid===message.uuid):-1;
+  if(at<0){this.messages.push(message);this._deferMessages();return;}
+  const current=this.messages[at];
+  /* Conteúdo em texto puro vira parte de texto: a mescla não pode apagá-lo. */
+  const content=Array.isArray(current.content)?current.content:typeof current.content==='string'&&current.content?[{type:'text',text:current.content}]:[];
+  if(!Array.isArray(message.content))return;
+  let changed=false;
+  for(const part of message.content){
+   const known=content.find(item=>samePart(item,part));
+   if(!known){content.push(part);changed=true;continue;}
+   if(known.type==='toolCall')for(const key of ['result','isError','endedAt'])if(Object.hasOwn(part,key)&&known[key]!==part[key]){known[key]=part[key];changed=true;}
+  }
+  if(changed){current.content=content;this._deferMessages();}
  }
  /** Texto do catálogo com o nome do motor (`claude.svc.busy`, `opencode.svc.busy`…). @param {string} key */
  _t(key){return uiMsg(this.engine==='opencode'?`opencode.svc.${key}`:`claude.svc.${key}`);}
@@ -330,7 +364,9 @@ class NativeService extends EventEmitter{
    const images=parts.filter(part=>part&&part.type==='image');
    const memory=this._lastPrompt;
    if(memory&&typeof memory.text==='string'&&memory.text===text)return {text:memory.text,images:Array.isArray(memory.images)?memory.images:images};
-   return {text,images};
+   /* #4: depois de reabrir, o descritor guarda a referência do anexo; o
+      reenvio precisa dos bytes, nunca do nome do arquivo. */
+   return {text,images:this._resolveImages?this._resolveImages(images):images};
   }
   /**
    * Refaz a última pergunta no OpenCode (#164) sem duplicá-la: marca o revert

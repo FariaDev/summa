@@ -79,4 +79,4 @@ function ensureStartMenuShortcut({shell,platform,env,execPath,appPath,assetsDir,
  }
 }
 
-module.exports={WINDOWS_APP_ID,SHORTCUT_FILE,LEGACY_SHORTCUT_FILE,shortcutDetails,ensureStartMenuShortcut};
+module.exports={WINDOWS_APP_ID,SHORTCUT_FILE,LEGACY_SHORTCUT_FILE,shortcutDetails,shortcutFile,ensureStartMenuShortcut};

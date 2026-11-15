@@ -11,6 +11,7 @@ const {toNat}=require('./src/bend-nat.mjs');
 const {normalizeRecents,normalizeFavorites}=require('./src/model-picker.mjs');
 const {normalizeModelDefault}=require('./src/model-default.mjs');
 const {normalizeComposerPins,savedComposerPins}=require('./src/composer-pins.mjs');
+const {normalizeMaterialFolders}=require('./src/material-picker.mjs');
 
 /* Sanitização do desk.json (#43 fase 2: saiu do main.cjs sem mudar regra). */
 /* Estado lido é dado não confiável (arquivo editado à mão, versão antiga ou
@@ -77,6 +78,7 @@ function sanitizeCourseState(value){
   sessionStudies:isPlainObject(source.sessionStudies)?source.sessionStudies:{},
   study:isPlainObject(source.study)?source.study:{},
   pdfRotations:sanitizePdfRotations(source.pdfRotations),
+  materialFolders:normalizeMaterialFolders(source.materialFolders),
   ggbBase64:asString(source.ggbBase64)};
 }
 function sanitizeState(value){
@@ -86,6 +88,7 @@ function sanitizeState(value){
   session:asString(source.session),
   study:isPlainObject(source.study)?source.study:{},
   pdfRotations:sanitizePdfRotations(source.pdfRotations),
+  materialFolders:normalizeMaterialFolders(source.materialFolders),
   ggbBase64:asString(source.ggbBase64),
   viewLayout:layoutPolicy.normalizeViewLayout(source.viewLayout),
   layoutPresets:layoutPolicy.normalizeStore(source.layoutPresets),
@@ -105,6 +108,8 @@ function sanitizeState(value){
   modelFavorites:normalizeFavorites(source.modelFavorites),
   /* Modelo e esforço da sessão nova (#release OpenCode): estado de interface, nunca no config.json. */
   modelDefault:normalizeModelDefault(source.modelDefault),
+  /* Último modelo e esforço escolhidos numa sessão OpenCode (#76), mesmo saneamento do padrão. */
+  modelLast:normalizeModelDefault(source.modelLast),
   /* Chat solto (#157): estado de interface, fora do `config.json`. Booleano
      estrito (só `true` vale) e limites pela mesma asBounds da Mesa. */
   sidechatDetached:source.sidechatDetached===true,
@@ -144,5 +149,6 @@ function sanitizePdfPageOffsets(source){
 const sanitizeModelRecents=normalizeRecents;
 const sanitizeModelFavorites=normalizeFavorites;
 const sanitizeModelDefault=normalizeModelDefault;
+const sanitizeModelLast=normalizeModelDefault;
 
-module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeComposerPins:normalizeComposerPins,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};
+module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeModelLast,sanitizeComposerPins:normalizeComposerPins,sanitizeMaterialFolders:normalizeMaterialFolders,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};

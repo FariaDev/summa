@@ -11,8 +11,11 @@ import {withArtifacts,newRuntime,seedCourse,writeConfigJson,launchDesk,statusOnl
 const SLOW_MS=250;
 const slowIntervals=intervals=>intervals.filter(ms=>ms>SLOW_MS).map(ms=>Math.round(ms));
 const readIntervals=page=>page.evaluate(()=>new Promise(done=>{
- const times=[];let last=performance.now();
- const step=()=>{const now=performance.now();times.push(now-last);last=now;if(times.length>=10)done(times);else requestAnimationFrame(step);};
+ /* Mede ENTRE quadros, como o frame-pacing-ui (#1): a espera do primeiro
+    callback depois de uma tarefa pesada não é ritmo. Janela estrangulada
+    continua reprovando, porque todos os intervalos seguintes ficam lentos. */
+ const times=[];let last=null;
+ const step=()=>{const now=performance.now();if(last!==null)times.push(now-last);last=now;if(times.length>=10)done(times);else requestAnimationFrame(step);};
  requestAnimationFrame(step);
 }));
 const expectedFrameRate=(label,intervals)=>{
