@@ -17,7 +17,7 @@ export const RELEASE_NOTES = Object.freeze([
     lead: 'releaseNotes.summa.lead',
     groups: [
       {title: 'releaseNotes.summa.also', cards: [
-        {icon: 'download', title: 'releaseNotes.summa.reinstall', body: 'releaseNotes.summa.reinstallBody'},
+        {icon: 'check', title: 'releaseNotes.summa.nothing', body: 'releaseNotes.summa.nothingBody'},
       ]},
     ],
   },
