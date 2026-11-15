@@ -5,7 +5,7 @@ import en from '../src/locales/en.json' with {type: 'json'};
 import {createI18n} from '../src/i18n.mjs';
 import {
   STEPS, TOUR, initialSetup, stepId, setupBlocked, nextSetup, backSetup, goToStep, primaryKey, hintKey,
-  setupTrail, speechOf, pdfPreview, clearFolder, nextTourFrame,
+  setupTrail, speechOf, pdfPreview, clearFolder, nextTourFrame, tourRuns, advanceTour, goToTourFrame, tourKeyFrame,
 } from '../src/setup-flow.mjs';
 
 /* #64: a primeira abertura em tela cheia, um passo por vez. */
@@ -33,9 +33,45 @@ test('o passeio vai quadro a quadro e o Voltar refaz o caminho', () => {
   assert.equal(stepId(backSetup(initialSetup('setup'))), 'welcome', 'o primeiro não volta');
 });
 
-test('o passeio automático dá a volta nos quatro quadros', () => {
-  assert.deepEqual([0, 1, 2, 3].map(nextTourFrame), [1, 2, 3, 0]);
-  assert.equal(nextTourFrame(TOUR.length - 1), 0, 'do topo volta aos leitores, sem sair do passo');
+test('o passeio automático para no último quadro, sem dar a volta (#90)', () => {
+  assert.deepEqual([0, 1, 2, 3].map(nextTourFrame), [1, 2, 3, 3]);
+  assert.equal(nextTourFrame(TOUR.length - 1), TOUR.length - 1, 'no último quadro para; não volta aos leitores');
+  let s = at('tour');
+  for (let i = 0; i < TOUR.length + 2; i += 1) s = advanceTour(s);
+  assert.equal(s.frame, TOUR.length - 1, 'sozinho, o passeio para no último quadro');
+  assert.equal(stepId(s), 'tour', 'sozinho, o passeio não sai do passo');
+  assert.equal(tourRuns(s), false, 'no último quadro, o timer não é religado');
+});
+
+test('#90: depois de uma ação manual, o passeio automático não muda o quadro', () => {
+  const start = at('tour');
+  assert.equal(tourRuns(start), true);
+  assert.equal(advanceTour(start).frame, 1, 'sem ação, o quadro anda');
+  const next = nextSetup(start);
+  assert.equal(next.frame, 1);
+  assert.equal(tourRuns(next), false, 'Próximo parou o passeio');
+  assert.equal(advanceTour(next).frame, 1, 'Próximo: para de vez');
+  const back = backSetup({...start, frame: 2});
+  assert.equal(back.frame, 1);
+  assert.equal(tourRuns(back), false, 'Voltar parou o passeio');
+  assert.equal(advanceTour(back).frame, 1, 'Voltar: para de vez');
+  const dot = goToTourFrame(start, 2);
+  assert.equal(dot.frame, 2);
+  assert.equal(advanceTour(dot).frame, 2, 'indicador de quadro: para de vez');
+  const key = tourKeyFrame(start, 'ArrowRight');
+  assert.equal(key.frame, 1);
+  assert.equal(advanceTour(key).frame, 1, 'tecla: para de vez');
+});
+
+test('#90: as teclas de navegação andam o quadro sem sair do passeio', () => {
+  assert.equal(tourKeyFrame(at('tour'), 'ArrowRight').frame, 1);
+  assert.equal(tourKeyFrame(at('tour', {frame: 3}), 'ArrowRight').frame, 3, 'no último, não sai do passo');
+  assert.equal(tourKeyFrame(at('tour', {frame: 2}), 'ArrowLeft').frame, 1);
+  assert.equal(tourKeyFrame(at('tour'), 'ArrowLeft').frame, 0, 'no primeiro, não volta ao passo anterior');
+  assert.equal(tourKeyFrame(at('tour'), 'End').frame, 3);
+  assert.equal(tourKeyFrame(at('tour', {frame: 3}), 'Home').frame, 0);
+  assert.equal(tourKeyFrame(at('tour'), 'Tab').frame, 0, 'outra tecla só para o passeio');
+  assert.equal(stepId(tourKeyFrame(at('name'), 'ArrowRight')), 'name', 'fora do passeio, nada');
 });
 
 test('nome e pasta travam o avanço; o tutor é opcional', () => {

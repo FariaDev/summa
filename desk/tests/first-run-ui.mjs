@@ -244,7 +244,8 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.equal(fs.existsSync(s.dataDefault),false,'sugerir a pasta de dados não a cria');
 
  /* O passeio: quatro quadros, cada um acende uma região do desenho; ele
-    passa sozinho, um quadro a cada 2,6 s, e o Próximo continua valendo. */
+    passa sozinho, um quadro a cada 2,6 s, até o primeiro clique — aí só a
+    pessoa anda o quadro (#90). */
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.step,'tour');
@@ -264,6 +265,10 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.sceneRegion,'tutor');
+ /* espera fixa: o passeio anda a cada 2,6 s; passado o prazo, o clique tem de ter parado o quadro no lugar (#90). */
+ await page.waitForTimeout(3200);
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'tutor','depois do clique, o passeio automático para de vez');
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.sceneRegion,'top');
@@ -307,6 +312,13 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  /* "Como a Mesa funciona" leva de volta ao passeio; ⌘/ abre o Guia. */
  await page.locator('#first-run-help').click();
  assert.equal((await setupFacts(page)).step,'tour');
+ /* #90: o indicador de quadro leva àquele quadro; as setas andam o quadro. */
+ await page.locator('#setup-dots i').nth(2).click();
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'tutor','o indicador de quadro escolhe o quadro');
+ await page.keyboard.press('ArrowLeft');
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'writer','as setas andam o quadro');
  await page.keyboard.press('ControlOrMeta+/');
  await page.waitForSelector('#help-dialog[open]');
  await page.keyboard.press('Escape');

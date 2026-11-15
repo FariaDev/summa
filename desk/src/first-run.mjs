@@ -4,7 +4,7 @@ import {applyIcons} from './view-host.mjs';
 import {icon} from '../icons.mjs';
 import firstRun from './generated/firstrun.core.js';
 import {t,setUiLanguage,LANGUAGE_EVENT} from './ui-text.mjs';
-import {initialSetup,nextSetup,backSetup,goToStep,stepId,clearFolder,nextTourFrame} from './setup-flow.mjs';
+import {initialSetup,nextSetup,backSetup,goToStep,stepId,clearFolder,advanceTour,tourRuns,goToTourFrame,tourKeyFrame} from './setup-flow.mjs';
 import {paintSetup,focusTarget} from './setup-view.mjs';
 import {initOpenCodeProviders,refreshOpenCodeProviders,cancelOpenCodeProviderLogin} from './opencode-providers-loader.mjs';
 
@@ -36,9 +36,10 @@ let hooks={createCourse:async()=>{}};
 let benched=[];
 /** Estado vivo da instalação do OpenCode na tela (#release OpenCode). */
 let install={state:'idle',phase:'',percent:-1,errorCode:'',error:'',version:''};
-/* O passeio do "Como funciona" passa sozinho, um quadro a cada 2,6 s, em laço
-   (decisão da marca, docs/design/DECISOES.md). O clique em Próximo/Voltar
-   reinicia a contagem. */
+/* O passeio do "Como funciona" anda sozinho, um quadro a cada 2,6 s, e para de
+   vez no primeiro clique em Próximo/Voltar ou num indicador de quadro, ou na
+   primeira tecla; no último quadro não dá a volta (#90, que substitui a
+   decisão de laço registrada em docs/design/DECISOES.md). */
 const TOUR_STEP_MS=2600;
 let tourTimer=0;
 
@@ -72,11 +73,11 @@ function stopTour(){
 
 function scheduleTour(){
  stopTour();
- if(!active||stepId(state)!=='tour')return;
+ if(!active||!tourRuns(state))return;
  tourTimer=window.setTimeout(()=>{
   tourTimer=0;
-  if(!active||stepId(state)!=='tour')return;
-  state={...state,frame:nextTourFrame(state.frame)};
+  if(!active||!tourRuns(state))return;
+  state=advanceTour(state);
   paint();
   scheduleTour();
  },TOUR_STEP_MS);
@@ -306,6 +307,13 @@ function wire(){
  $('#setup-next').addEventListener('click',advance);
  $('#setup-back').addEventListener('click',()=>move(backSetup(state)));
  $('#setup-skip-tour').addEventListener('click',()=>move(goToStep(state,'name')));
+ /* #90: o indicador de quadro escolhe o quadro e para o passeio automático. */
+ $('#setup-dots').addEventListener('click',event=>{
+  if(!active||stepId(state)!=='tour')return;
+  const dot=event.target.closest?.('i');
+  if(!dot)return;
+  move(goToTourFrame(state,[...$('#setup-dots').children].indexOf(dot)));
+ });
  /* "Como a Mesa funciona" leva ao passeio; ⌘/ continua abrindo o Guia. */
  $('#first-run-help').addEventListener('click',()=>move(goToStep(state,'tour')));
  $('#setup-free').addEventListener('click',leave);
@@ -315,6 +323,15 @@ function wire(){
  setup.addEventListener('keydown',event=>{
   if(event.key!=='Enter'||stepId(state)!=='ready'||event.target.closest?.('button,input'))return;
   event.preventDefault();create();
+ });
+ /* #90: a primeira tecla para o passeio automático; as de navegação andam o
+    quadro. Na janela porque, depois de um clique no texto, o foco pode cair
+    fora do `#setup`. */
+ window.addEventListener('keydown',event=>{
+  if(!active||stepId(state)!=='tour')return;
+  if(['Shift','Control','Alt','Meta'].includes(event.key))return;
+  if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','PageDown','PageUp','Home','End'].includes(event.key))event.preventDefault();
+  move(tourKeyFrame(state,event.key));
  });
  wireDrop(setup);
  window.addEventListener(LANGUAGE_EVENT,paint);
