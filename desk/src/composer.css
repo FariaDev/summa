@@ -243,21 +243,27 @@ body>#sidechat #sidechat-box>#sidechat-prompt{
 .composer-actions [data-pinned="true"]{width:var(--ctl);padding:0;justify-content:center}
 .composer-actions [data-pinned="true"]>span{display:none}
 #composer-box .composer-actions #attach[aria-expanded="true"],#sidechat-box .composer-actions #sidechat-attach[aria-expanded="true"]{background:var(--selected);color:var(--fg-strong)}
-/* Cartão do caderno na bandeja do lateral (a página que o Ambitus manda): o
-   mesmo chip `.attachment .file` da bandeja do tutor, com a miniatura da
-   página (ou o ícone do caderno, se a renderização falhar), o nome e "pág. N". */
-.attachment .notebook-card{gap:var(--space-2);padding:0 var(--space-3) 0 var(--space-2)}
-.attachment .notebook-card img{width:34px;height:42px;flex:none;border-radius:var(--r-sm);cursor:default}
-.attachment .notebook-card span.notebook-thumb{display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:42px;color:var(--muted)}
-.attachment .notebook-card .icon{width:16px;height:16px}
-.attachment .notebook-text{display:flex;flex-direction:column;min-width:0;line-height:1.3}
-.attachment .notebook-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.attachment .notebook-page{font-size:var(--fs-xs);color:var(--muted)}
-/* Chip do caderno na bolha: o mesmo `.file` do chip de PDF, com o ícone do
-   livro e o nome/página do cartão em duas linhas (sem miniatura). */
+/* A página do caderno na bandeja é uma imagem de verdade: o mesmo quadrado
+   `.attachment img` das outras imagens (54×54, × e clique para ampliar), com a
+   etiqueta "pág. N" sobre a parte de baixo. Sem PNG, o quadrado leva o ícone
+   do caderno. O nome e a página ficam na dica e no nome acessível do cartão. */
+.notebook-card .notebook-page{
+ position:absolute;left:1px;right:1px;bottom:1px;z-index:1;padding:1px 3px;
+ border-radius:0 0 var(--r-sm) var(--r-sm);
+ background:color-mix(in oklab,var(--surface) 86%,transparent);color:var(--fg);
+ font-size:var(--fs-xs);line-height:1.25;text-align:center;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+}
+.attachment span.notebook-thumb{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:54px;height:54px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--hover);color:var(--muted)}
+.attachment span.notebook-thumb .icon{width:20px;height:20px}
+/* Chip da reserva (mensagem antiga, sem a imagem da página): o mesmo `.file`
+   do chip de PDF, com o ícone do livro e o nome/página em duas linhas. */
 .message-file .notebook-chip-file{gap:var(--space-2);max-width:240px}
 .message-file .notebook-icon{display:flex;flex:none;color:var(--muted)}
 .message-file .notebook-icon .icon{width:14px;height:14px}
+.message-file .notebook-text{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.message-file .notebook-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.message-file .notebook-page{font-size:var(--fs-xs);color:var(--muted)}
 .phone-pop{
  position:absolute;z-index:12;display:flex;flex-direction:column;gap:var(--space-2);overflow:auto;
  width:min(320px,calc(100% - var(--space-5)));padding:var(--space-3);

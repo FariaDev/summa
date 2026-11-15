@@ -59,12 +59,12 @@ await withArtifacts('ambitus-conferir',async ctx=>{
  await page.locator('#sidechat-attach').click();
  await page.locator('#sidechat-check').click();
  await page.waitForSelector('#sidechat-attachments .notebook-card img.notebook-thumb',{timeout:15000});
- const card=page.locator('#sidechat-attachments .notebook-card');
- assert.equal(await card.locator('.notebook-name').innerText(),'Limites — aula 3');
+ const card=page.locator('#sidechat-attachments .attachment.notebook-card');
+ assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o cartão diz o caderno e a página no nome acessível');
  assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/);
- assert.equal(await card.locator('img.notebook-thumb').getAttribute('src'),`data:image/png;base64,${PLOT_PNG}`,'a miniatura é a imagem que o Ambitus mandou');
+ assert.equal(await card.locator('img.notebook-thumb').getAttribute('src'),`data:image/png;base64,${PLOT_PNG}`,'a imagem é a página que o Ambitus mandou');
  assert.doesNotMatch(await page.locator('#sidechat').innerText(),/aula 3\.xopp/,'o caminho não aparece na tela');
- await card.locator('xpath=ancestor::*[contains(@class,"attachment")][1]').locator('.attachment-remove').click();
+ await card.locator('.attachment-remove').click();
 
  /* ---- 5. Caderno sem arquivo: entra no lateral como imagem ---- */
  answer={caminho:'',pagina:1,nome:'',png:PLOT_PNG};

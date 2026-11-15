@@ -169,9 +169,9 @@ await withArtifacts('mini-mode',async ctx=>{
  await pollUntil(()=>boundsOf(win),b=>sameBounds(b,moved),{timeout:10000,interval:100,what:'o mini ligar de novo'});
  assert.equal(await page.locator('#sidechat').isVisible(),false,'o chat lateral preso não aparece no mini');
  assert.equal(await sendPage({caminho:notebook,pagina:2,nome:'Limites — aula 3'}),200);
- const card=page.locator('#attachments .notebook-card');
+ const card=page.locator('#attachments .attachment.notebook-card');
  await card.waitFor({timeout:10000});
- assert.equal(await card.locator('.notebook-name').innerText(),'Limites — aula 3');
+ assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o nome acessível diz o caderno e a página');
  assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/);
  assert.equal(await page.locator('#attachments').isVisible(),true,'a bandeja do tutor aparece');
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),0,'e o chat lateral não recebeu o cartão');
@@ -187,15 +187,19 @@ await withArtifacts('mini-mode',async ctx=>{
  await page.waitForTimeout(300);// espera fixa: nada deve acontecer
  assert.equal(await card.count(),1);
 
- /* ---- 8. Enviar: o caminho vai escondido ao motor, a bolha mostra só o texto, a bandeja esvazia ---- */
+ /* ---- 8. Enviar: o caminho vai escondido ao motor, a página vira imagem na bolha, a bandeja esvazia ---- */
  const before=await page.locator('#messages .message.user').count();
  await page.locator('#prompt').fill('e se o limite não existir?');
  await page.locator('#send').click();
  await page.waitForFunction(n=>document.querySelectorAll('#messages .message.user').length>n,before,{timeout:20000});
  await page.waitForFunction(()=>!document.querySelector('#attachments .notebook-card'),undefined,{timeout:20000});// o cartão sai da bandeja quando o envio é aceito
- const bubble=await page.locator('#messages .message.user').last().innerText();
+ const lastUser=page.locator('#messages .message.user').last();
+ const bubble=await lastUser.innerText();
  assert.match(bubble,/e se o limite não existir\?/);
  assert.doesNotMatch(bubble,/Cadernos anexados|\.xopp/,'a bolha não mostra o bloco nem o caminho');
+ await lastUser.locator('img.shot').waitFor({timeout:15000});
+ assert.equal(await lastUser.locator('img.shot').getAttribute('title'),'Limites — aula 3 — pág. 2','a página aparece na bolha como imagem, com a dica');
+ assert.equal(await lastUser.locator('.message-file.notebook-chip').count(),0,'o chip de texto não fica na bolha com a imagem');
  const conversations=createRequire(import.meta.url)('../src/agents/conversations.cjs');
  const texts=()=>{try{return (conversations.readClaudeConversation(current,{runtime})?.messages||[]).filter(m=>m.role==='user').map(m=>(Array.isArray(m.content)?m.content:[]).map(c=>c.text||'').join(' '));}catch{return [];}};
  const sent=await pollUntil(()=>texts().find(text=>/e se o limite não existir\?/.test(text))||'',text=>!!text,{timeout:20000,interval:200,what:'o envio chegar ao registro da conversa'});

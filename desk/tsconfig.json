@@ -233,6 +233,7 @@
   "src/ambitus-page.mjs",
   "src/notebook-card.mjs",
   "src/notebook-facts.mjs",
+  "src/notebook-send.mjs",
   "src/attach-image-facts.mjs",
   "src/sidechat-attach.mjs",
   "src/mini-mode.mjs",

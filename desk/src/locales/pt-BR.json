@@ -2457,7 +2457,7 @@
   "sidechatctx.copied": "- copiado em: {at}",
   "sidechatctx.history": "[Chat principal até aqui]",
   "sidechatctx.main": "- conversa principal: {session}",
-  "sidechatctx.notebook": "- caderno “{name}”, pág. {page}, arquivo {path} (releia com ler_caderno)",
+  "sidechatctx.notebook": "- caderno “{name}”, pág. {page}, arquivo {path}; a imagem anexada é esta página (use ler_caderno para reler esta ou outras páginas)",
   "sidechatctx.notebookHead": "[Cadernos anexados à mensagem]",
   "sidechatctx.roleAssistant": "assistente",
   "sidechatctx.roleUser": "você",

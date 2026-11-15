@@ -11,7 +11,8 @@ import {createWorkLogView} from './worklog-view.mjs';
 import {installAssetListeners} from './chat-assets.mjs';
 import {addAttachments,clearAttachments,installAttachmentListeners} from './chat-attachments.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
-import {tutorNotebooksSnapshot,releaseTutorNotebooks} from './tutor-notebooks.mjs';
+import {tutorNotebooksSnapshot,releaseTutorNotebooks,tutorNotebookFind} from './tutor-notebooks.mjs';
+import {notebookPageImages} from './notebook-send.mjs';
 import {installQuoteListeners} from './chat-quote.mjs';
 import {showDialog,cancelDialogRequest,installDialogListeners} from './chat-dialogs.mjs';
 import {createCardBoard} from './chat-cards.mjs';
@@ -320,12 +321,14 @@ export async function send(text,images,options={}){
      isso desarma o turno; sem rearmar, uma resposta que chega junto do
      `streaming:false` (busy já caído) seria descartada como atraso. */
   turnState.promptArmed=true;
-  if(pending.length&&!S.supportsImages){turnState.promptArmed=false;setBusy(false);toast(uiMessage('send.needsImages'));return false;}
-  userMessage=message('user',text,pending.map(item=>item.dataUrl),null,pdfs,[],0,'','',notebooks);
+  const pageImages=await notebookPageImages(notebooks,{find:tutorNotebookFind});
+  const attachedImages=[...pageImages.map(item=>({dataUrl:item.dataUrl})),...pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app})];
+  if((pending.length||pageImages.length)&&!S.supportsImages){turnState.promptArmed=false;setBusy(false);toast(uiMessage('send.needsImages'));return false;}
+  userMessage=message('user',text,attachedImages.map(item=>typeof item==='string'?item:item.dataUrl),null,pdfs,[],0,'','',notebooks);
   /* A fala do aluno termina aqui: entra na fonte da busca (#122). */
   addChatSearchEntry({text,el:userMessage});
   if(fromComposer&&$('#prompt').value===text)$('#prompt').value='';
-  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app}),pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),notebooks,steer,mentions:mentionList,attemptId});
+  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:attachedImages,pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),notebooks,steer,mentions:mentionList,attemptId});
   if(result?.sent===false){knownNotSent=result.retryable===true;throw Error(result.error||uiMessage('send.refused'));}
   if(fromComposer){clearAttachments(pending,pdfs);releaseTutorNotebooks(notebooks);clearMentions(mentionList);}
   /* `streaming` só libera o composer quando o Pi DISSE que não está no turno.

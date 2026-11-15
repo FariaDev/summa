@@ -487,6 +487,15 @@ const deskApi={
   return invoke('sidechat-respond',{...value,response:clean});
  },
  onAmbitusPage:fn=>ipcRenderer.on('ambitus-page',(_e,data)=>{if(typeof fn==='function')fn(data);}),
+ /* A página do caderno renderizada pelo main (o mesmo `ler_caderno`): o envio
+    do cartão usa o PNG cheio quando só restou a miniatura reduzida no disco. */
+ readNotebookPage:p=>{
+  const raw=asPlain(p,'Caderno inválido.');
+  const caminho=asString(raw.caminho,'Caderno inválido.',MAX_SIDE_PATH);
+  const pagina=Number(raw.pagina);
+  if(!caminho||!Number.isInteger(pagina)||pagina<1)fail('Caderno inválido.');
+  return invoke('notebook-page-read',{caminho,pagina});
+ },
  onCaptureAvailability:fn=>ipcRenderer.on('capture-availability',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onAmbitusPageThumb:fn=>ipcRenderer.on('ambitus-page-thumb',(_e,data)=>{if(typeof fn==='function')fn(data);}),
  onSidechatEvent:fn=>ipcRenderer.on('sidechat-event',(_e,data)=>{if(typeof fn==='function')fn(data);}),

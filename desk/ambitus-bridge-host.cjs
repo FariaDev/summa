@@ -125,30 +125,20 @@ function readPngBody(req, res, cap = PNG_CAP) {
   });
 }
 
-/** Teto do pedido de mandar página (só caminho, página e nome). */
-const PAGE_CAP = 16 * 1024;
-
-/** Lê o corpo JSON pequeno de `/mandar-pagina`; acima do teto, null. @param {import('node:http').IncomingMessage} req @returns {Promise<Buffer|null>} */
-function readSmallBody(req) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    /** @type {Buffer[]} */
-    const chunks = [];
-    req.on('data', (chunk) => {
-      size += chunk.length;
-      if (size <= PAGE_CAP) chunks.push(chunk);
-      else if (size > 2 * PAGE_CAP) req.destroy();
-    });
-    req.on('end', () => resolve(size > PAGE_CAP ? null : Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
+/** O campo `png` (base64) de uma página: assinatura de PNG e o mesmo teto de bytes de `/pagina-atual`. @param {unknown} png @returns {boolean} */
+function validPagePng(png) {
+  if (typeof png !== 'string' || !png || !/^[A-Za-z0-9+/]+={0,2}$/.test(png)) return false;
+  const bytes = Buffer.from(png, 'base64');
+  return bytes.length <= PNG_CAP && isPng(bytes);
 }
 
 /**
  * O pedido de mandar uma página ao chat lateral: caminho absoluto de um
- * `.xopp`, página contada de 1 e o nome do caderno (opcional, só para o texto).
+ * `.xopp`, página contada de 1, o nome do caderno (opcional, só para o texto)
+ * e, opcional, o PNG já renderizado pelo Ambitus em base64 (o mesmo formato de
+ * `/pagina-atual`); com ele a Summa não renderiza do disco.
  * @param {Buffer|null} body
- * @returns {{caminho: string, pagina: number, nome: string}|null}
+ * @returns {{caminho: string, pagina: number, nome: string, png?: string}|null}
  * @example parsePageRequest(Buffer.from('{"caminho":"/c/a.xopp","pagina":2}')) // {caminho: '/c/a.xopp', pagina: 2, nome: ''}
  */
 function parsePageRequest(body) {
@@ -156,11 +146,12 @@ function parsePageRequest(body) {
   let raw;
   try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const {caminho, pagina, nome} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown}} */ (raw);
+  const {caminho, pagina, nome, png} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown}} */ (raw);
   if (typeof caminho !== 'string' || caminho.length > 4096 || !path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho) || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
+  if (png !== undefined && !validPagePng(png)) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {caminho, pagina: /** @type {number} */ (pagina), nome: name};
+  return {caminho, pagina: /** @type {number} */ (pagina), nome: name, ...(typeof png === 'string' ? {png} : {})};
 }
 
 /**
@@ -184,11 +175,9 @@ function parsePageAnswer(body) {
   if (typeof caminho !== 'string' || caminho.length > 4096 || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
   if (caminho && (!path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho))) return null;
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
-  if (typeof png !== 'string' || !png || !/^[A-Za-z0-9+/]+={0,2}$/.test(png)) return null;
-  const bytes = Buffer.from(png, 'base64');
-  if (bytes.length > PNG_CAP || !isPng(bytes)) return null;
+  if (!validPagePng(png)) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png};
+  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png: /** @type {string} */ (png)};
 }
 
 /** Host e token conferidos: só 127.0.0.1/localhost na porta da ponte (DNS rebinding) e o token do arquivo. @param {import('node:http').IncomingMessage} req @param {{token: string, port: number}} identity @returns {boolean} */
@@ -209,10 +198,12 @@ function authorized(req, identity) {
  * a rota, o desfecho e o tempo: nunca imagem, texto lido, modelo nem token.
  * Rota: `POST /ler-tinta`, corpo `image/png`, cabeçalho `x-summa-token`;
  * resposta `{text}` ou `{reason: 'disabled'|'no-model'|'no-vision'|'free'|'quota'|'busy'|'timeout'}`.
- * Rota: `POST /mandar-pagina`, corpo JSON `{caminho, pagina, nome}`: `sendPage`
- * leva a página ao chat lateral (o tutor a relê pelo `ler_caderno`); resposta
- * `{ok: true}` ou `{reason}`. Não depende de `inkReading`: é um pedido
- * explícito da pessoa e nada sai da máquina até ela enviar a mensagem.
+ * Rota: `POST /mandar-pagina`, corpo JSON `{caminho, pagina, nome, png?}`:
+ * `sendPage` leva a página ao chat lateral (o tutor a relê pelo `ler_caderno`);
+ * resposta `{ok: true}` ou `{reason}`. O `png` opcional (base64, a mesma
+ * validação e o mesmo teto de corpo de `/pagina-atual`) é usado no lugar da
+ * renderização do disco. Não depende de `inkReading`: é um pedido explícito da
+ * pessoa e nada sai da máquina até ela enviar a mensagem.
  * Rotas `GET /pedido-pagina` e `POST /pagina-atual` (o Conferir pela ponte, com
  * `pageBroker`): o Ambitus não tem servidor e segura um long-poll; a Summa o
  * responde `{pedido}` (ou 204 após ~25 s) e o Ambitus devolve a página
@@ -385,7 +376,7 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
       bridgeReply(res, 400, {reason: 'bad-request'});
       return;
     }
-    const page = parsePageRequest(await readSmallBody(req));
+    const page = parsePageRequest(await readPngBody(req, res, ANSWER_CAP));
     if (!page) {
       bridgeReply(res, 400, {reason: 'bad-request'});
       return;
@@ -459,4 +450,4 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
   return {bridgeFile, start, close};
 }
 
-module.exports = {ANSWER_CAP, BRIDGE_NAME, BRIDGE_VERSION, PAGE_CAP, PNG_CAP, REQUEST_TIMEOUT_MS, createAmbitusBridgeHost, inkReadingEnabled, isPng, parsePageAnswer, parsePageRequest};
+module.exports = {ANSWER_CAP, BRIDGE_NAME, BRIDGE_VERSION, PNG_CAP, REQUEST_TIMEOUT_MS, createAmbitusBridgeHost, inkReadingEnabled, isPng, parsePageAnswer, parsePageRequest};

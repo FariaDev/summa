@@ -12,8 +12,11 @@ import {createRequire} from 'node:module';
 import {notebookCardOf, createAmbitusPage} from '../src/ambitus-page.mjs';
 
 const require = createRequire(import.meta.url);
-const {createAmbitusBridgeHost, parsePageRequest} = require('../ambitus-bridge-host.cjs');
+const {ANSWER_CAP, createAmbitusBridgeHost, parsePageRequest} = require('../ambitus-bridge-host.cjs');
 const {sendPageToSidechat, sendPageThumbnail} = require('../ambitus-bridge-wiring.cjs');
+
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
+const PNG_B64 = PNG.toString('base64');
 
 function hostWith(t, sendPage) {
   const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-page-'));
@@ -44,6 +47,15 @@ test('o pedido é um .xopp de caminho absoluto e uma página contada de 1', () =
   assert.equal(ok({caminho: '/c/a.xopp', pagina: 1, nome: 'a\u0007b'}).nome, 'a b');
 });
 
+test('o png da página é opcional e, quando vem, tem a validação de /pagina-atual', () => {
+  const ok = (v) => parsePageRequest(Buffer.from(JSON.stringify(v)));
+  assert.deepEqual(ok({caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64}), {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64});
+  assert.equal('png' in ok({caminho: '/c/Limites.xopp', pagina: 2}), false, 'sem o campo, o pedido é o de hoje');
+  assert.equal(ok({caminho: '/c/Limites.xopp', pagina: 2, png: '***'}), null);
+  assert.equal(ok({caminho: '/c/Limites.xopp', pagina: 2, png: Buffer.from('isto não é png').toString('base64')}), null, 'base64 sem a assinatura de PNG não passa');
+  assert.equal(ok({caminho: '/c/Limites.xopp', pagina: 2, png: ''}), null);
+});
+
 test('a rota entrega a página ao main, mesmo com a leitura da tinta desligada', async (t) => {
   const got = [];
   const host = hostWith(t, (page) => { got.push(page); return {ok: true}; });
@@ -62,7 +74,19 @@ test('sem token, com outro tipo ou com corpo ruim, nada chega ao main', async (t
   assert.equal((await send(host, {caminho: '/c/a.xopp', pagina: 1}, {contentType: 'text/plain'})).status, 400);
   assert.equal((await send(host, {caminho: 'a.xopp', pagina: 1})).status, 400);
   assert.equal((await send(host, 'x'.repeat(20000))).status, 400);
+  assert.equal((await send(host, {caminho: '/c/a.xopp', pagina: 1, png: '***'})).status, 400, 'png inválido não vira pedido');
   assert.deepEqual(got, []);
+});
+
+test('com png válido a ponte entrega o PNG ao main; grande demais é 413', async (t) => {
+  const got = [];
+  const host = hostWith(t, (page) => { got.push(page); return {ok: true}; });
+  await host.start();
+  assert.deepEqual(await send(host, {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64}), {status: 200, json: {ok: true}});
+  assert.deepEqual(got, [{caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64}]);
+  const huge = JSON.stringify({caminho: '/c/a.xopp', pagina: 1, png: 'A'.repeat(ANSWER_CAP + 1024)});
+  assert.equal((await send(host, huge)).status, 413);
+  assert.equal(got.length, 1, 'o corpo grande não chega ao main');
 });
 
 test('o motivo do main volta ao Ambitus', async (t) => {
@@ -102,6 +126,21 @@ function wiredWin() {
   const sent = [];
   return {sent, win: {isDestroyed: () => false, isMinimized: () => false, restore() {}, show() {}, focus() {}, webContents: {send: (channel, data) => sent.push([channel, data])}}};
 }
+
+test('o PNG que veio no pedido vira a imagem do cartão, sem renderizar o disco', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-png-'));
+  const file = path.join(dir, 'Limites.xopp');
+  fs.writeFileSync(file, 'x');
+  try {
+    const {sent, win} = wiredWin();
+    const readNotebook = async () => assert.fail('com o PNG do Ambitus não renderiza de novo');
+    assert.deepEqual(sendPageToSidechat({caminho: file, pagina: 2, nome: 'Limites', png: PNG_B64}, {allowedXopp: new Set(), win: () => win, readNotebook}), {ok: true});
+    assert.deepEqual(sent, [
+      ['ambitus-page', {caminho: file, pagina: 2, nome: 'Limites'}],
+      ['ambitus-page-thumb', {caminho: file, pagina: 2, thumb: `data:image/png;base64,${PNG_B64}`}],
+    ]);
+  } finally { fs.rmSync(dir, {recursive: true, force: true}); }
+});
 
 test('a miniatura segue depois da resposta, num evento à parte, pelo mesmo leitor do ler_caderno', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-thumb-'));

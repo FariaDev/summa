@@ -19,7 +19,7 @@ const MAX_NOTEBOOKS = 4;
 const THUMB_MAX_WIDTH = 240;
 const PNG_DATA_URL = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 
-/** @typedef {{caminho: string, pagina: number, nome: string, thumb: string, savedThumb?: string}} TrayNotebook */
+/** @typedef {{caminho: string, pagina: number, nome: string, thumb: string, savedThumb?: string, full?: boolean}} TrayNotebook */
 
 /**
  * O estado puro da bandeja de cadernos (sem DOM): a mesma página não repete,
@@ -43,8 +43,10 @@ export function createNotebookTray() {
       const card = notebookCardOf(raw);
       if (!card) return false;
       const old = items.find((item) => keyOf(item) === keyOf(card));
+      const earlyThumb = early.get(keyOf(card)) || '';
+      const cached = old?.thumb || earlyThumb;
       items = items.filter((item) => item !== old);
-      items.push({...card, thumb: old?.thumb || early.get(keyOf(card)) || '', savedThumb: old?.savedThumb || ''});
+      items.push({...card, thumb: cached, savedThumb: old?.savedThumb || '', full: old?.full === true || !!earlyThumb});
       items = items.slice(-MAX_NOTEBOOKS);
       return true;
     },
@@ -52,7 +54,7 @@ export function createNotebookTray() {
       const {caminho, pagina, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, thumb?: unknown}} */ (raw || {});
       if (typeof thumb !== 'string' || !PNG_DATA_URL.test(thumb)) return false;
       const card = items.find((item) => item.caminho === caminho && item.pagina === pagina);
-      if (card) { card.thumb = thumb; card.savedThumb = ''; return true; }
+      if (card) { card.thumb = thumb; card.full = true; card.savedThumb = ''; return true; }
       if (typeof caminho === 'string' && typeof pagina === 'number') {
         early.set(keyOf({caminho, pagina}), thumb);
         if (early.size > MAX_NOTEBOOKS) early.delete(/** @type {string} */ (early.keys().next().value));
@@ -74,7 +76,7 @@ export function createNotebookTray() {
         const card = notebookCardOf(item);
         if (!card || items.some((other) => keyOf(other) === keyOf(card))) continue;
         const thumb = typeof item?.thumb === 'string' && PNG_DATA_URL.test(item.thumb) ? item.thumb : '';
-        items.push({...card, thumb, savedThumb: thumb});
+        items.push({...card, thumb, savedThumb: thumb, full: false});
       }
       items = items.slice(-MAX_NOTEBOOKS);
     },
@@ -110,6 +112,18 @@ function changed() {
 
 /** Quantos cartões de caderno estão na bandeja. @returns {number} @example tutorNotebookCount() // 0 */
 export function tutorNotebookCount() { return tray.list().length; }
+
+/**
+ * O cartão vivo de uma página (para o envio achar a imagem cheia da bandeja),
+ * ou `null` quando a página não está na bandeja.
+ * @param {{caminho?: unknown, pagina?: unknown}} raw
+ * @returns {TrayNotebook|null}
+ * @example tutorNotebookFind({caminho: '/c/a.xopp', pagina: 2})?.thumb
+ */
+export function tutorNotebookFind(raw) {
+  const {caminho, pagina} = raw || {};
+  return tray.list().find((item) => item.caminho === caminho && item.pagina === pagina) || null;
+}
 
 /** O que o envio leva: caminho, página e nome (a miniatura não vai). @returns {Array<{caminho: string, pagina: number, nome: string}>} @example tutorNotebooksSnapshot() // [{caminho: '/c/a.xopp', pagina: 2, nome: 'a'}] */
 export function tutorNotebooksSnapshot() { return tray.snapshot(); }

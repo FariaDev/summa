@@ -10,6 +10,7 @@ import {imageFacts} from './attach-image-facts.mjs';
 import {h} from './sidechat-message-view.mjs';
 import {notebookCardOf} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
+import {notebookPageImages} from './notebook-send.mjs';
 
 /* Clipe e bandeja de anexos do chat lateral: o MESMO desenho do compositor do
    tutor (`.attach-pop`, `#attachments`, `.attachment`, o × e a leitura da
@@ -44,11 +45,13 @@ export function sidechatAttachParts() {
 
 /**
  * Liga o clipe, o menu e a bandeja. Devolve a API que o chat lateral usa:
- * `snapshot` (o que vai no envio), `release` (tira o que foi enviado),
- * `clear`, `addNotebook` e `setThumb` (a miniatura chega depois do cartão).
+ * `snapshot` (os fatos do que está na bandeja), `forSend` (o que vai no envio,
+ * com o PNG das páginas junto das imagens), `release` (tira o que foi enviado),
+ * `clear`, `addNotebook` e `setThumb` (a imagem chega depois do cartão).
  * @param {ReturnType<typeof sidechatAttachParts>} parts
  * @param {{prompt: HTMLTextAreaElement, root: HTMLElement}} deps `prompt`: o campo, que ganha o foco e recebe o colar de imagem; `root`: o chat lateral, onde o atalho do Conferir vale
  * @returns {{snapshot: () => {images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number, nome: string}>},
+ *   forSend: () => Promise<{images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number, nome: string}>, pages: Array<{dataUrl: string}>}>,
  *   release: (sent: {images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number}>}) => void,
  *   clear: () => void, addNotebook: (raw: unknown) => boolean, setThumb: (raw: unknown) => boolean, addImages: (items: Array<{dataUrl: string, mimeType?: string, name?: string}>) => number,
  *   labels: () => void}}
@@ -58,7 +61,7 @@ export function bindSidechatAttach(parts, {prompt, root}) {
   const {tray, clip, pop, input, check, file} = parts;
   /** @type {Array<{dataUrl: string, mimeType?: string, name?: string}>} */
   let images = [];
-  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string}>} */
+  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string, full?: boolean}>} */
   let notebooks = [];
   let generation = 0;
   /* A miniatura pode chegar antes do cartão (o chat lateral ainda monta): fica guardada até ele entrar. */
@@ -125,8 +128,9 @@ export function bindSidechatAttach(parts, {prompt, root}) {
     const card = notebookCardOf(raw);
     if (!card) return false;
     const old = notebooks.find((item) => item.caminho === card.caminho && item.pagina === card.pagina);
+    const earlyThumb = early.get(`${card.caminho}#${card.pagina}`) || '';
     notebooks = notebooks.filter((item) => item !== old);
-    notebooks.push({...card, thumb: old?.thumb || early.get(`${card.caminho}#${card.pagina}`) || ''});
+    notebooks.push({...card, thumb: old?.thumb || earlyThumb || '', full: old?.full === true || !!earlyThumb});
     notebooks = notebooks.slice(-MAX_NOTEBOOKS);
     render();
     prompt.focus();
@@ -143,6 +147,7 @@ export function bindSidechatAttach(parts, {prompt, root}) {
       return false;
     }
     card.thumb = thumb;
+    card.full = true;
     render();
     return true;
   }
@@ -151,6 +156,17 @@ export function bindSidechatAttach(parts, {prompt, root}) {
     return {
       ...(images.length ? {images: images.map((item) => ({dataUrl: item.dataUrl}))} : {}),
       ...(notebooks.length ? {notebooks: notebooks.map(({caminho, pagina, nome}) => ({caminho, pagina, nome}))} : {}),
+    };
+  }
+
+  /** O envio: as imagens da bandeja e o PNG de cada página juntos, como qualquer imagem vai ao motor. */
+  async function forSend() {
+    const pages = await notebookPageImages(notebooks, {find: (item) => notebooks.find((card) => card.caminho === item.caminho && card.pagina === item.pagina) || null});
+    const all = [...pages, ...images].map((item) => ({dataUrl: item.dataUrl}));
+    return {
+      ...(all.length ? {images: all} : {}),
+      ...(notebooks.length ? {notebooks: notebooks.map(({caminho, pagina, nome}) => ({caminho, pagina, nome}))} : {}),
+      pages,
     };
   }
 
@@ -298,5 +314,5 @@ export function bindSidechatAttach(parts, {prompt, root}) {
   window.addEventListener(LANGUAGE_EVENT, labels);
   labels();
 
-  return {snapshot, release, clear, addNotebook, setThumb, addImages, labels};
+  return {snapshot, forSend, release, clear, addNotebook, setThumb, addImages, labels};
 }

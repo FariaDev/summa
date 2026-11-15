@@ -444,8 +444,8 @@ async function sendMessage(){
  /* A fala local aparece ANTES de qualquer evento do motor: com aceite tardio,
    a ordem "user antes de assistant" continua certa. O eco `role:'user'` do
    motor é suprimido pelo backend; a bolha local é a fonte. */
- const attached=attach?.snapshot()||{},watch={terminal:false};
- const localUser={role:'user',text,id:'',...(Array.isArray(attached.notebooks)&&attached.notebooks.length?{notebooks:attached.notebooks.slice(0,4).map(({nome,pagina})=>({nome,pagina}))}:{})};
+ const attached=await attach?.forSend()||{},watch={terminal:false};
+ const localUser={role:'user',text,id:'',...(Array.isArray(attached.notebooks)&&attached.notebooks.length?{notebooks:attached.notebooks.slice(0,4).map(({nome,pagina})=>({nome,pagina}))}:{}),...(attached.pages?.length?{images:attached.pages.map(({dataUrl})=>dataUrl)}:{})};
  state.messages.push(localUser);
  sideScroll?.setFollowing(true);
  renderMessages();

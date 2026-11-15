@@ -1,14 +1,17 @@
 // @ts-check
-/* O chip do caderno na bolha e o cartão compartilhado da bandeja: só nome e
-   página chegam à tela; mensagens antigas, sem o campo ou sem o bloco, abrem
-   sem chip. O cartão é o mesmo nó nos dois chats (`notebook-card.mjs`). */
+/* A página do caderno é uma imagem de verdade na bandeja e na bolha nova; o
+   chip fica só como reserva das mensagens antigas, que têm o bloco escondido e
+   nenhuma imagem. Só nome e página chegam à tela. O cartão é o mesmo nó nos
+   dois chats (`notebook-card.mjs`). */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {installDom} from './dom-shim.mjs';
-import {notebookCardNode, notebookChipNode} from '../src/notebook-card.mjs';
+import {notebookCardNode, notebookChipNode, notebookPageLabel} from '../src/notebook-card.mjs';
 import {attachedNotebooks, notebookFactsOf} from '../src/notebook-facts.mjs';
 import {historyTurns} from '../src/worklog.mjs';
+import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
+import en from '../src/locales/en.json' with {type: 'json'};
 
 const require = createRequire(import.meta.url);
 const {displayMessages} = require('../sidechat-store.cjs');
@@ -18,31 +21,38 @@ installDom();
 const PT = 'por que posso cancelar?\n\n[Cadernos anexados à mensagem]\n- caderno “Limites — aula 3”, pág. 2, arquivo /c/Limites — aula 3.xopp (releia com ler_caderno)';
 const EN = 'why can I cancel?\n\n[Notebooks attached to the message]\n- notebook “Limits”, p. 7, file /c/Limits.xopp (reread it with ler_caderno)';
 
-test('o cartão compartilhado monta o mesmo nó nos dois chats, com × e nome/página', () => {
+test('o cartão compartilhado é a imagem da página, com etiqueta e ×, nos dois chats', () => {
   let removed = 0;
   const card = notebookCardNode({nome: 'Limites', pagina: 2}, {key: 'notebook-/c/a.xopp#2', onRemove: () => { removed++; }});
-  assert.equal(card.className, 'attachment');
+  assert.equal(card.className, 'attachment notebook-card');
   assert.equal(card.getAttribute('role'), 'group');
-  assert.equal(card.getAttribute('aria-label'), 'Limites, pág. 2');
+  assert.equal(card.getAttribute('aria-label'), 'Limites — pág. 2');
+  assert.equal(card.title, 'Limites — pág. 2');
   assert.equal(card.dataset.key, 'notebook-/c/a.xopp#2');
-  const file = card.children[0];
-  assert.equal(file.className, 'file notebook-card');
-  assert.equal(file.title, 'Limites · pág. 2');
-  const thumb = file.children[0];
-  assert.equal(thumb.className, 'notebook-thumb');
-  assert.match(thumb.innerHTML, /<svg class="icon"/, 'sem miniatura, o ícone do caderno');
-  const text = file.children[1];
-  assert.equal(text.className, 'notebook-text');
-  assert.equal(text.children[0].textContent, 'Limites');
-  assert.equal(text.children[1].textContent, 'pág. 2');
-  const remove = card.children[1];
+  const icon = card.children[0];
+  assert.equal(icon.className, 'notebook-thumb');
+  assert.match(icon.innerHTML, /<svg class="icon"/, 'sem PNG, o mesmo quadrado leva o ícone do caderno');
+  assert.equal(card.children[1].className, 'notebook-page');
+  assert.equal(card.children[1].textContent, 'pág. 2');
+  const remove = card.children[2];
   assert.equal(remove.getAttribute('aria-label'), 'Remover Limites');
   remove.click();
   assert.equal(removed, 1, 'o × chama o dono do estado');
 
   const withThumb = notebookCardNode({nome: 'Aula 3', pagina: 1, thumb: 'data:image/png;base64,iVBORw0KGgo='});
-  assert.equal(withThumb.children[0].children[0].getAttribute('src'), 'data:image/png;base64,iVBORw0KGgo=');
+  const thumb = withThumb.children[0];
+  assert.equal(thumb.className, 'notebook-thumb');
+  assert.equal(thumb.getAttribute('src'), 'data:image/png;base64,iVBORw0KGgo=');
+  assert.equal(thumb.getAttribute('alt'), 'Aula 3 — pág. 1', 'a imagem carrega o mesmo nome acessível do cartão');
   assert.equal(withThumb.dataset.key, undefined, 'a bandeja do lateral não inventa chave');
+});
+
+test('o rótulo do bloco diz que a imagem é a página e que o ler_caderno relê esta ou outras', () => {
+  assert.equal(notebookPageLabel({nome: 'Limites', pagina: 2}), 'Limites — pág. 2');
+  assert.match(ptBR['sidechatctx.notebook'], /a imagem anexada é esta página/);
+  assert.match(ptBR['sidechatctx.notebook'], /reler esta ou outras páginas/);
+  assert.match(en['sidechatctx.notebook'], /the attached image is this page/);
+  assert.match(en['sidechatctx.notebook'], /reread this or other pages/);
 });
 
 test('o chip da bolha tem ícone, nome e página, sem o caminho', () => {

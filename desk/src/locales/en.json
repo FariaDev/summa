@@ -2457,7 +2457,7 @@
   "sidechatctx.copied": "- copied at: {at}",
   "sidechatctx.history": "[Main chat so far]",
   "sidechatctx.main": "- main conversation: {session}",
-  "sidechatctx.notebook": "- notebook “{name}”, p. {page}, file {path} (reread it with ler_caderno)",
+  "sidechatctx.notebook": "- notebook “{name}”, p. {page}, file {path}; the attached image is this page (use ler_caderno to reread this or other pages)",
   "sidechatctx.notebookHead": "[Notebooks attached to the message]",
   "sidechatctx.roleAssistant": "assistant",
   "sidechatctx.roleUser": "you",

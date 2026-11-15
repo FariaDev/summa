@@ -62,9 +62,10 @@ async function sendPageThumbnail(page, {readNotebook, win, log = () => {}}) {
  * Leva uma página do Ambitus ao chat lateral: o caderno precisa existir; entra
  * na lista viva (`allowedXopp`) para o tutor relê-lo pelo `ler_caderno`, e a
  * janela vem para a frente com o pedido (`ambitus-page`), que no renderer vira
- * um cartão na bandeja de anexos. Sem janela, o motivo. Com `readNotebook`, a
- * miniatura segue depois, sem segurar a resposta (`sendPageThumbnail`).
- * @param {{caminho: string, pagina: number, nome: string}} page
+ * um cartão na bandeja de anexos. Sem janela, o motivo. O PNG que veio com o
+ * pedido (`png`, base64) vira a imagem do cartão; sem ele, a miniatura é
+ * renderizada depois, sem segurar a resposta (`sendPageThumbnail`).
+ * @param {{caminho: string, pagina: number, nome: string, png?: string}} page
  * @param {{allowedXopp: Set<string>, win: () => any, isFile?: (file: string) => boolean,
  *   readNotebook?: ((raw: {caminho: string, pagina: number}) => Promise<{image?: string}>) | null, log?: (line: string) => void}} deps
  * @returns {{ok: true}|{reason: string}}
@@ -79,7 +80,11 @@ function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = 
   window.show();
   window.focus();
   window.webContents.send('ambitus-page', {caminho: page.caminho, pagina: page.pagina, nome: page.nome});
-  if (typeof readNotebook === 'function') void sendPageThumbnail(page, {readNotebook, win, log});
+  if (typeof page.png === 'string' && page.png) {
+    window.webContents.send('ambitus-page-thumb', {caminho: page.caminho, pagina: page.pagina, thumb: `data:image/png;base64,${page.png}`});
+  } else if (typeof readNotebook === 'function') {
+    void sendPageThumbnail(page, {readNotebook, win, log});
+  }
   return {ok: true};
 }
 
@@ -196,6 +201,17 @@ function registerAmbitusBridge(deps) {
   });
   guarded('ambitus-ink-status', () => inkStatus());
   guarded('ambitus-ink-set', (payload) => setInkReading(payload));
+  /* O PNG de uma página de caderno para o envio do cartão: o mesmo leitor do
+     `ler_caderno`, com a lista viva de cadernos autorizados. Só a imagem volta. */
+  guarded('notebook-page-read', async (payload) => {
+    if (typeof deps.readNotebook !== 'function') throw Error('A leitura do caderno não está disponível.');
+    const {caminho, pagina} = /** @type {{caminho?: unknown, pagina?: unknown}} */ (payload || {});
+    if (typeof caminho !== 'string' || !caminho || !Number.isInteger(pagina) || Number(pagina) < 1) {
+      throw Error(`notebook-page-read: recebido ${JSON.stringify(payload)?.slice(0, 80)}; esperado {caminho: string, pagina: número inteiro ≥ 1}`);
+    }
+    const result = await deps.readNotebook({caminho, pagina: Number(pagina)});
+    return {image: typeof result?.image === 'string' ? result.image : ''};
+  });
 
   return {close: () => host.close(), setInkReading, inkStatus, linked: () => pageBroker.connected(), requestPage: () => requestAmbitusPage(pageBroker, {allowedXopp: deps.allowedXopp})};
 }

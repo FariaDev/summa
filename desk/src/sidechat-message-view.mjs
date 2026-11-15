@@ -7,7 +7,7 @@ import {build,renderChildren} from './view-host.mjs';
 import talkCore from './generated/talkview.core.js';
 import {t as uiT,text as uiText} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';
-import {notebookChipNode} from './notebook-card.mjs';
+import {notebookChipNode,paintNotebookPageLabels} from './notebook-card.mjs';
 
 /* Cartões de mensagem do chat lateral (#43 fase 2: saíram de sidechat.mjs).
    Sem estado: o rótulo do motor entra por parâmetro; o DOM usa o mesmo
@@ -58,7 +58,7 @@ export function sidechatMessageCard(message,engineLabel){
  const card=h('article',{class:`sidechat-msg message ${message.role}${failed?' sidechat-error':''}`,role:failed?'alert':'group','aria-labelledby':voiceId},voice);
  const body=h('div',{class:'body sidechat-body'});
  paintSidechatBody(body,uiText(String(message.text??'')),false);
- if(message.role==='user')paintNotebookChips(body,message.notebooks);
+ if(message.role==='user')paintUserAttachments(body,message);
  if(failed){
   const mark=h('span',{class:'sidechat-error-icon','aria-hidden':'true'});
   mark.innerHTML=icon('alert');
@@ -86,6 +86,15 @@ export function sidechatMessageCard(message,engineLabel){
  }
  card.append(actions);
  return card;
+}
+function paintUserAttachments(body,message){
+ const images=Array.isArray(message.images)?message.images:[];
+ const notebooks=Array.isArray(message.notebooks)?message.notebooks:[];
+ if(!images.length){paintNotebookChips(body,notebooks);return;}
+ for(const src of images)body.append(h('img',{class:'shot',src,alt:uiT('talk.imageSent'),loading:'lazy',decoding:'async'}));
+ /* A página vai na bolha como as imagens do tutor; sem elas (histórico que só
+    guardou o bloco), o chip antigo continua sendo a reserva. */
+ if(!paintNotebookPageLabels(body,notebooks))paintNotebookChips(body,notebooks);
 }
 function paintNotebookChips(body,notebooks){
  const list=Array.isArray(notebooks)?notebooks:[];

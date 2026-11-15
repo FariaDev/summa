@@ -16,7 +16,7 @@ import {paintMessageBody} from './chat-stream-view.mjs';
 import {turnState} from './chat-turn-state.mjs';
 import {installMessageLinks} from './message-links.mjs';
 import {markRetryAnswer} from './chat-retry.mjs';
-import {notebookChipNode} from './notebook-card.mjs';
+import {notebookChipNode,paintNotebookPageLabels} from './notebook-card.mjs';
 import {notebookFactsOf} from './notebook-facts.mjs';
 
 /* Coluna do tutor — a bolha de mensagem: criar, pintar (Markdown + LaTeX,
@@ -124,7 +124,7 @@ function lazyShell(el,text,images,parent,imageSources,notebooks){
   if(body){
     body.prepend(document.createTextNode(displayUserText(text||'')));
     paintFiles(body,el._files,el);
-    paintNotebookChips(body,notebookFactsOf(notebooks));
+    paintNotebookFacts(body,notebookFactsOf(notebooks));
     for(const img of body.querySelectorAll('img.shot'))wrapCopy(img);
   }
   (parent||$('#messages')).append(el);
@@ -141,9 +141,11 @@ function paintMessage(el,text,images,live){
  const body=el.querySelector('.body');
  paintMessageBody(body,displayUserText(text||''),images||[],live);
  paintImageAlts(body,el._imageSources);
- window.dispatchEvent(new CustomEvent('desk-media-painted',{detail:{body}}));
  paintFiles(body,el._files,el);
- paintNotebookChips(body,el._notebooks);
+ /* Rotular a página antes do evento: o marcador do histórico copia o `alt`
+    da imagem e é ele que o `history-media` devolve ao hidratar. */
+ paintNotebookFacts(body,el._notebooks);
+ window.dispatchEvent(new CustomEvent('desk-media-painted',{detail:{body}}));
  if(!live)hydrateAssets(body);
  if(!live)linkifyRefs(body);
  for(const img of body.querySelectorAll('img.shot'))wrapCopy(img);
@@ -177,9 +179,12 @@ function paintFiles(body,files,el){
  }
  body.append(row);
 }
-function paintNotebookChips(body,notebooks){
+function paintNotebookFacts(body,notebooks){
  const list=Array.isArray(notebooks)?notebooks:[];
  if(!list.length)return;
+ /* A bolha nova traz a própria página como imagem: o chip só fica para as
+    mensagens antigas, que têm o bloco escondido e nenhuma imagem da página. */
+ if(paintNotebookPageLabels(body,list))return;
  const row=document.createElement('div');row.className='message-files';
  for(const item of list)row.append(notebookChipNode(item));
  body.append(row);
