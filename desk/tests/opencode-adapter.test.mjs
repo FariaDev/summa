@@ -489,6 +489,22 @@ test('controles: catálogo liga modelo e esforço, modelo fora do catálogo é r
   assert.deepEqual(serve.requests.find((item) => item.method === 'POST' && item.url.endsWith('/model')).body.model, {id: 'deepseek-v4.1-flash-free', providerID: 'opencode', variant: 'max'});
 });
 
+/* #76: o modelo lembrado não é conferido quando a sessão nasce (o catálogo do
+   servidor só chega no connect). Se ele sumiu, a sessão nova cai no padrão do
+   OpenCode em vez de quebrar; a conversa aberta continua avisando. */
+test('sessão nova com modelo lembrado fora do catálogo cai no padrão do OpenCode, sem erro (#76)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD});
+  t.after(() => serve.close());
+  const {adapter, events} = createHarness(serve, {selection: {model: 'opencode/modelo-que-sumiu', effort: 'max'}});
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  assert.deepEqual(adapter.controlsSnapshot().selection, {model: null, effort: null}, 'a escolha lembrada sumiu: a sessão abre no padrão');
+  const created = serve.requests.find((item) => item.method === 'POST' && item.url === '/api/session');
+  assert.equal('model' in created.body, false, 'sem modelo fora do catálogo no pedido de sessão');
+  assert.ok(serve.sessions.has(adapter.sessionId), 'a sessão abre normalmente');
+  assert.equal(events.some((item) => item.type === 'warning' && item.code === 'OPENCODE_MODEL_UNAVAILABLE'), false, 'sessão nova não avisa: só cai no padrão');
+});
+
 test('reabrir conversa cuja sessão sumiu avisa e recria com o mesmo id', async (t) => {
   const serve = await createFakeOpencodeServe({password: PASSWORD});
   t.after(() => serve.close());

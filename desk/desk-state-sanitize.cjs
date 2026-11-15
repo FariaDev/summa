@@ -108,6 +108,8 @@ function sanitizeState(value){
   modelFavorites:normalizeFavorites(source.modelFavorites),
   /* Modelo e esforço da sessão nova (#release OpenCode): estado de interface, nunca no config.json. */
   modelDefault:normalizeModelDefault(source.modelDefault),
+  /* Último modelo e esforço escolhidos numa sessão OpenCode (#76), mesmo saneamento do padrão. */
+  modelLast:normalizeModelDefault(source.modelLast),
   /* Chat solto (#157): estado de interface, fora do `config.json`. Booleano
      estrito (só `true` vale) e limites pela mesma asBounds da Mesa. */
   sidechatDetached:source.sidechatDetached===true,
@@ -141,5 +143,6 @@ function sanitizePdfPageOffsets(source){
 const sanitizeModelRecents=normalizeRecents;
 const sanitizeModelFavorites=normalizeFavorites;
 const sanitizeModelDefault=normalizeModelDefault;
+const sanitizeModelLast=normalizeModelDefault;
 
-module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeComposerPins:normalizeComposerPins,sanitizeMaterialFolders:normalizeMaterialFolders,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};
+module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeModelLast,sanitizeComposerPins:normalizeComposerPins,sanitizeMaterialFolders:normalizeMaterialFolders,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};
