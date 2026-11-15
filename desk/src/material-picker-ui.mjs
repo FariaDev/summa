@@ -1,6 +1,6 @@
 // @ts-check
 import {icon} from '../icons.mjs';
-import {t} from './ui-text.mjs';
+import {t, LANGUAGE_EVENT} from './ui-text.mjs';
 import {materialRows, materialActive, normalizeMaterialFolders, folderOpen, stepActive} from './material-picker.mjs';
 
 /* O seletor de material do leitor (#74), a parte que toca o DOM. O
@@ -347,6 +347,10 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
     paint({resetActive: true});
   });
   search.addEventListener('keydown', onKeydown);
+  /* A lista é desenhada uma vez e fica no DOM mesmo fechada; na troca de
+     idioma ela é redesenhada para "Abrir PDF…" e os rótulos acompanharem
+     (#74: a varredura de idioma achou o texto em pt-BR com a Summa em inglês). */
+  window.addEventListener(LANGUAGE_EVENT, () => paint({resetActive: false}));
   list.addEventListener('mousedown', (event) => event.preventDefault());
   list.addEventListener('click', onListClick);
   select.addEventListener('pointerdown', onSelectActivate);

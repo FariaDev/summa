@@ -22,6 +22,9 @@ const readDesk=runtime=>JSON.parse(fs.readFileSync(path.join(runtime,'desk.json'
 const readConfig=runtime=>JSON.parse(fs.readFileSync(path.join(runtime,'config.json'),'utf8'));
 const writePdf=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,tinyPdf(text));};
 
+/* O caminho vai como string CSS escapada: no Windows ele tem `\` (D:\a\...),
+   que cru no seletor vira escape e nunca casa (#74, janelas no windows-latest). */
+const rowAt=file=>`.material-row[data-path=${JSON.stringify(file)}]`;
 const GROUPS=['Cap 3 - Derivadas','Cap 10 - Integrais','Listas','2024'];
 const closedCap3=page=>page.locator('.material-pop:not([hidden]) .material-group-head[data-folder="Cap 3 - Derivadas"]');
 
@@ -70,7 +73,7 @@ await withArtifacts('seletor-material',async ctx=>{
  assert.equal(await pop.locator('.material-list > .material-group').count(),3,'só as pastas de nível 0 ficam na raiz');
  const listasTree=pop.locator('.material-group[role="group"]:has(.material-group-head[data-folder="Listas"])');
  assert.equal(await listasTree.locator('.material-group-head[data-folder="Listas/2024"]').count(),1,'o nó 2024 mora dentro do nó Listas');
- const leftOf=file=>pop.locator('.material-row[data-path="'+file+'"] .material-row-name').evaluate(el=>el.getBoundingClientRect().left);
+ const leftOf=file=>pop.locator(rowAt(file)+' .material-row-name').evaluate(el=>el.getBoundingClientRect().left);
  const lista1Left=await leftOf(path.join(course,'Listas','Lista 1.pdf'));
  const lista2Left=await leftOf(path.join(course,'Listas','2024','Lista 2.pdf'));
  assert.ok(lista2Left>lista1Left,`o arquivo de nível 2 recua mais que o de nível 1 (${lista2Left} > ${lista1Left})`);
@@ -78,7 +81,7 @@ await withArtifacts('seletor-material',async ctx=>{
  assert.equal(await pop.locator(`#${labelled}`).getAttribute('role'),'option','o grupo é rotulado pelo título que abre e fecha');
  assert.equal(await pop.locator('.material-group-head[aria-expanded="true"]').count(),4,'os grupos abrem por padrão');
  assert.deepEqual(await pop.locator('.material-list > .material-row[data-path] .material-row-name').allTextContents(),['Apostila.pdf'],'os PDFs da raiz ficam no topo, sem grupo');
- assert.equal(await pop.locator('.material-row[data-path="'+rootPdf+'"]').getAttribute('aria-selected'),'true','o material aberto está marcado');
+ assert.equal(await pop.locator(rowAt(rootPdf)).getAttribute('aria-selected'),'true','o material aberto está marcado');
  const activeId=await search.getAttribute('aria-activedescendant');
  assert.equal(await page.locator(`#${activeId}`).getAttribute('role'),'option','a linha ativa do combobox é uma opção da lista');
 
@@ -86,7 +89,7 @@ await withArtifacts('seletor-material',async ctx=>{
  const cap3=closedCap3(page);
  await cap3.click();
  assert.equal(await cap3.getAttribute('aria-expanded'),'false');
- assert.equal(await pop.locator('.material-row[data-path="'+path.join(course,'Cap 3 - Derivadas','Aula 2.pdf')+'"]').count(),0,'os arquivos do grupo fechado saem da lista');
+ assert.equal(await pop.locator(rowAt(path.join(course,'Cap 3 - Derivadas','Aula 2.pdf'))).count(),0,'os arquivos do grupo fechado saem da lista');
  await cap3.click();
  assert.equal(await cap3.getAttribute('aria-expanded'),'true','o mesmo título reabre o grupo');
  await cap3.click();
@@ -105,7 +108,7 @@ await withArtifacts('seletor-material',async ctx=>{
 
  /* ---- escolher um PDF de subpasta abre o leitor ---- */
  await search.fill('lista 10');
- const option=pop.locator('.material-row[data-path="'+lista10+'"]');
+ const option=pop.locator(rowAt(lista10));
  await option.click();
  await pop.waitFor({state:'hidden',timeout:5000});
  await pollUntil(()=>select.inputValue(),value=>value===lista10,{what:'o seletor com o PDF da subpasta'});
