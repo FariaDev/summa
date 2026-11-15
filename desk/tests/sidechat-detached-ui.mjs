@@ -67,15 +67,13 @@ await withArtifacts('lateral-solto',async ctx=>{
  const inMain=await sidechatFacts(page);
  assert.equal(inMain.count,0,'a coluna sumiu da Mesa enquanto solto');
 
- /* A faixa e o botão do tutor focam a filha, sem abrir outra. */
+ /* O botão do tutor foca a filha, sem abrir outra. (A faixa traz o chat de
+    volta; isso é testado em `sidechat-detached-return-ui.mjs`.) */
  assert.equal(await page.locator('#support-restore').isVisible(),true,'faixa "Chat em outra janela" aparece');
  assert.match((await page.locator('#support-restore .pdf-restore-label').textContent())||'',/Chat em outra janela/);
  await page.locator('#sidechat-toggle').click();
  await page.waitForTimeout(300);// espera fixa: o botão do tutor não pode abrir segunda janela — prova de ausência em 300 ms
  assert.equal(ctx.app.windows().filter(p=>p!==page).length,1,'o botão do tutor não abre segunda janela');
- await page.locator('#support-restore').click();
- await page.waitForTimeout(300);// espera fixa: a faixa "Chat em outra janela" não pode abrir segunda janela — prova de ausência em 300 ms
- assert.equal(ctx.app.windows().filter(p=>p!==page).length,1,'a faixa não abre segunda janela');
 
  /* Na filha: tema e acento acompanham a Mesa ao vivo, e o menu obedece ao documento novo. */
  await child.locator('#sidechat-more').click();

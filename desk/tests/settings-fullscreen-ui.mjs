@@ -120,7 +120,7 @@ await withArtifacts('settings-fullscreen', async (ctx) => {
     return {appearance: s.appearance, radius: s.borderRadius, width: r.width, height: r.height, checked: el.checked};
   });
   assert.equal(switchBox.appearance, 'none', 'o checkbox vira o interruptor do protótipo');
-  assert.equal(switchBox.radius, '50%', 'interruptor em pílula (--r-round)');
+  assert.equal(switchBox.radius, '999px', 'interruptor em pílula (--r-round)');
   assert.deepEqual([Math.round(switchBox.width), Math.round(switchBox.height)], [40, 20], 'interruptor de 40×20');
   assert.equal(switchBox.checked, true, 'a calculadora começa ligada');
   await page.locator('#cfg-desk-calculator').click();

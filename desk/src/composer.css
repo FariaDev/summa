@@ -66,7 +66,7 @@
 /* Fila, anexos e chips começam na coluna do texto do campo, sem o recuo que
    tinham quando a caixa não existia (o respiro agora é o da caixa). */
 #composer-box>.queue-strip .queue-label{padding-left:0}
-#composer-box>#attachments{padding:var(--space-3) 0 0}
+#composer-box>#attachments,#sidechat-box>#sidechat-attachments{padding:var(--space-3) 0 0}
 #composer-box>.mention-chips{padding:var(--space-3) 0 0}
 .goes-along button{
  /* 24px: o menor alvo aceitável (WCAG 2.2 · 2.5.8); a linha tem 28px. */
@@ -128,7 +128,8 @@
    alinharem sem o lateral mudar. Na caixa (e não no composer) para valer em
    qualquer altura de janela. */
 body:not(.chat-full) #composer-box{padding-top:24px}
-#attachments{display:flex;gap:var(--space-3);flex-wrap:wrap;margin:0;padding:var(--space-3) 0 0}
+#attachments,#sidechat-attachments{display:flex;gap:var(--space-3);flex-wrap:wrap;margin:0;padding:var(--space-3) 0 0}
+#sidechat-attachments[hidden]{display:none}
 .attachment{position:relative}
 .attachment img{width:54px;height:54px;object-fit:contain;display:block;background:var(--mix-white);border:1px solid var(--border);border-radius:var(--r-sm);cursor:zoom-in}
 .attachment .file{display:flex;align-items:center;box-sizing:border-box;max-width:190px;height:54px;padding:0 var(--space-3);border:1px solid var(--border);border-radius:var(--r-sm);background:var(--hover);color:var(--fg);font-size:var(--fs-sm);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -189,11 +190,9 @@ body>#sidechat #sidechat-box>#sidechat-prompt{
  overflow:auto;
 }
 .composer-box .composer-field:focus{outline:none;border-color:transparent;box-shadow:none}
-/* Foco do campo na janela solta (#157, rodada 1, achado 5): o contorno do painel
-   (`#sidechat:focus-within::after`) é desligado no layout da filha e o
-   substituto `:has(:focus-visible)` não repõe `display`; o campo ganha o mesmo
-   anel de --ring do resto da Mesa. */
-body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+/* Foco do campo na janela solta: igual ao da Mesa — só a linha de cima do
+   compositor pinta (`:is(#composer,#sidechat-composer):focus-within`, acima), sem
+   anel de 2px em volta do campo, que existia só na filha. */
 .composer-actions{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-1) 0 0}
 .composer-actions button{
  flex:none;height:32px;padding:0 var(--space-3);gap:var(--space-2);white-space:nowrap;
@@ -205,8 +204,8 @@ body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outl
 .composer-actions .icon{width:14px;height:14px}
 /* Anexar é só o clipe (o nome acessível vem do aria-label); as outras duas
    mantêm o rótulo enquanto cabem. */
-.composer-actions #attach{width:32px;padding:0}
-.composer-actions #attach span{display:none}
+.composer-actions :is(#attach,#sidechat-attach){width:32px;padding:0}
+.composer-actions :is(#attach,#sidechat-attach) span{display:none}
 /* Referências é sempre só o ícone (#90); o estado ligado/desligado continua na
    forma do botão. */
 #composer-box .composer-actions #include-refs{width:32px;padding:0;justify-content:center}
@@ -230,8 +229,8 @@ body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outl
 .attach-pop button:disabled{opacity:.45;background:transparent}
 .attach-pop button .icon{flex:none;width:14px;height:14px;color:var(--muted)}
 .attach-pop #phone-photo[hidden]{display:none}
-.attach-pop #check .label-short{display:none}
-.attach-pop #check:disabled{opacity:1;background:transparent;color:var(--muted)}
+.attach-pop :is(#check,#sidechat-check) .label-short{display:none}
+.attach-pop :is(#check,#sidechat-check):disabled{opacity:1;background:transparent;color:var(--muted)}
 /* Escolha de fixos (#99): o mesmo popover do Anexar, com a marca de fixado
    antes do nome. O check é decorativo; o estado vai no aria-checked. */
 .attach-pin-pop{min-width:216px}
@@ -243,7 +242,28 @@ body>#sidechat #sidechat-prompt:focus-visible{outline:2px solid var(--ring);outl
    estreita. */
 .composer-actions [data-pinned="true"]{width:var(--ctl);padding:0;justify-content:center}
 .composer-actions [data-pinned="true"]>span{display:none}
-#composer-box .composer-actions #attach[aria-expanded="true"]{background:var(--selected);color:var(--fg-strong)}
+#composer-box .composer-actions #attach[aria-expanded="true"],#sidechat-box .composer-actions #sidechat-attach[aria-expanded="true"]{background:var(--selected);color:var(--fg-strong)}
+/* A página do caderno na bandeja é uma imagem de verdade: o mesmo quadrado
+   `.attachment img` das outras imagens (54×54, × e clique para ampliar), com a
+   etiqueta "pág. N" sobre a parte de baixo. Sem PNG, o quadrado leva o ícone
+   do caderno. O nome e a página ficam na dica e no nome acessível do cartão. */
+.notebook-card .notebook-page{
+ position:absolute;left:1px;right:1px;bottom:1px;z-index:1;padding:1px 3px;
+ border-radius:0 0 var(--r-sm) var(--r-sm);
+ background:color-mix(in oklab,var(--surface) 86%,transparent);color:var(--fg);
+ font-size:var(--fs-xs);line-height:1.25;text-align:center;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+}
+.attachment span.notebook-thumb{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:54px;height:54px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--hover);color:var(--muted)}
+.attachment span.notebook-thumb .icon{width:20px;height:20px}
+/* Chip da reserva (mensagem antiga, sem a imagem da página): o mesmo `.file`
+   do chip de PDF, com o ícone do livro e o nome/página em duas linhas. */
+.message-file .notebook-chip-file{gap:var(--space-2);max-width:240px}
+.message-file .notebook-icon{display:flex;flex:none;color:var(--muted)}
+.message-file .notebook-icon .icon{width:14px;height:14px}
+.message-file .notebook-text{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.message-file .notebook-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.message-file .notebook-page{font-size:var(--fs-xs);color:var(--muted)}
 .phone-pop{
  position:absolute;z-index:12;display:flex;flex-direction:column;gap:var(--space-2);overflow:auto;
  width:min(320px,calc(100% - var(--space-5)));padding:var(--space-3);

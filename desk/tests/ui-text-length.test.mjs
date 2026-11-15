@@ -21,8 +21,9 @@ const TRANSIENT_PREFIX = /^(?:guide|err|toast|activity|update|phone)\.|^backup\.
 /* Tooltips (`title`), dicas (`tip`) e nomes acessíveis (`aria-*`). */
 const NON_VISIBLE_SUFFIX = /(?:Title|title|Tip|tip|Aria[A-Za-z]*|aria[A-Za-z]*)$/;
 
-/* Texto que vai ao modelo, não à pessoa. */
-const MODEL_TEXT = /prompt|instruction|checkPrompt/;
+/* Texto que vai ao modelo, não à pessoa (`sidechatctx.*` é o envelope do chat
+   lateral que a tela e a busca cortam). */
+const MODEL_TEXT = /prompt|instruction|checkPrompt|^sidechatctx\./;
 
 /** Exceções com o motivo de cada uma. */
 export const EXCEPTIONS = new Map([

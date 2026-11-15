@@ -245,7 +245,7 @@ def Laws.tutor_indicador_desligado_texto():
 def Laws.tutor_cabecalho_controles():
   {==}
 
-def Laws.tutor_cabecalho_seis_controles():
+def Laws.tutor_cabecalho_sete_controles():
   {==}
 
 def Laws.tutor_indicador_rotulo_desligado_sem_rotulo():

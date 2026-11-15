@@ -39,7 +39,11 @@ const MAX_EXERCISE = 240;
 const MAX_APP = 120;
 const MAX_ID = 80;
 const MAX_PATH = 4096;
+const MAX_NOTEBOOKS = 4;
+const MAX_NOTEBOOK_NAME = 200;
+const MAX_NOTEBOOK_THUMB = 1200000;
 const IMAGE_DATA_URL = /^data:([^;]*);base64,([A-Za-z0-9+/=]+)$/;
+const NOTEBOOK_PNG = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 const NIL = {$: 'Nil'};
 
 const fileOf = (runtime) => path.join(runtime, FILENAME);
@@ -66,6 +70,33 @@ function provenance(raw) {
   /* Programa da captura (Conferir com outros programas): só o nome, aparado e cortado. */
   const app = typeof raw?.app === 'string' ? raw.app.trim().slice(0, MAX_APP) : '';
   if (app) out.app = app;
+  return out;
+}
+
+/* Caderno da bandeja do tutor: nome e página para a tela, caminho para o
+   `ler_caderno` e a miniatura (já reduzida pelo renderer). Sem o arquivo no
+   disco o cartão é descartado em silêncio, como o restore pede. */
+function notebookFact(raw) {
+  if (!isPlainObject(raw)) return null;
+  const caminho = typeof raw.caminho === 'string' ? raw.caminho.trim() : '';
+  if (!caminho || caminho.length > MAX_PATH) return null;
+  try { if (!fs.statSync(caminho).isFile()) return null; } catch { return null; }
+  const page = Math.trunc(Number(raw.pagina));
+  if (!Number.isFinite(page) || page < 1) return null;
+  const name = (typeof raw.nome === 'string' ? raw.nome.replace(/\s+/g, ' ').trim() : '').slice(0, MAX_NOTEBOOK_NAME)
+    || path.basename(caminho).replace(/\.xopp$/i, '');
+  const thumb = typeof raw.thumb === 'string' && NOTEBOOK_PNG.test(raw.thumb) && raw.thumb.length <= MAX_NOTEBOOK_THUMB ? raw.thumb : '';
+  return {caminho, pagina: Math.min(page, 100000), nome: name, ...(thumb ? {thumb} : {})};
+}
+
+function normalizeNotebooks(raw) {
+  const out = [];
+  for (const item of Array.isArray(raw) ? raw : []) {
+    if (out.length >= MAX_NOTEBOOKS) break;
+    const fact = notebookFact(item);
+    if (!fact || out.some((other) => other.caminho === fact.caminho && other.pagina === fact.pagina)) continue;
+    out.push(fact);
+  }
   return out;
 }
 
@@ -133,9 +164,14 @@ function normalizeItem(raw, index) {
   /* PDF é referência (caminho/nome/páginas), não bytes: conta como anexo para a
      mensagem só de PDF não virar item vazio na fila. */
   const pdfs = normalizePdfFacts(raw.pdfs);
-  if (!pendingCore.keepItem(text, toNat(images.length + pdfs.length))) return null;
+  const notebooks = normalizeNotebooks(raw.notebooks);
+  if (!pendingCore.keepItem(text, toNat(images.length + pdfs.length + notebooks.length))) return null;
   const mentions = normalizeMentions(raw.mentions);
-  return mentions.length ? {id, text, refs, images, pdfs, mentions} : {id, text, refs, images, pdfs};
+  return {
+    id, text, refs, images, pdfs,
+    ...(notebooks.length ? {notebooks} : {}),
+    ...(mentions.length ? {mentions} : {}),
+  };
 }
 
 function normalizeItems(raw) {
@@ -150,7 +186,7 @@ function normalizeItems(raw) {
 
 function normalizeEntry(value) {
   const source = isPlainObject(value) ? value : {};
-  return {items: normalizeItems(source.items), attachments: normalizeImages(source.attachments), pdfs: normalizePdfFacts(source.pdfs), held: source.held === true};
+  return {items: normalizeItems(source.items), attachments: normalizeImages(source.attachments), pdfs: normalizePdfFacts(source.pdfs), notebooks: normalizeNotebooks(source.notebooks), held: source.held === true};
 }
 
 /* ---------- arquivo ---------- */
@@ -177,7 +213,7 @@ function readStore(runtime) {
   for (const [key, value] of Object.entries(raw)) {
     if (!key || key === '__proto__' || !isPlainObject(value)) continue;
     const entry = normalizeEntry(value);
-    if (entry.items.length || entry.attachments.length || entry.pdfs.length) out[key] = entry;
+    if (entry.items.length || entry.attachments.length || entry.pdfs.length || entry.notebooks.length) out[key] = entry;
   }
   return out;
 }
@@ -207,7 +243,7 @@ const fits = (entry) => !pendingCore.overStored(bytes(entry));
 /* A fila entra primeiro e é o que fica: ela só é cortada do FIM quando sozinha
    não cabe (o começo é o que está mais perto de ser enviado). A bandeja que já
    estava guardada perde as últimas imagens até caber — nunca encolhe a fila. */
-function fitQueue(items, attachments, pdfs) {
+function fitQueue(items, attachments, pdfs, notebooks) {
   const kept = items.slice();
   let dropped = 0;
   while (kept.length && !fits({items: kept, attachments: [], pdfs: []})) {
@@ -221,26 +257,39 @@ function fitQueue(items, attachments, pdfs) {
     refs.pop();
     pdfsDropped = true;
   }
+  /* Cadernos são fatos pequenos (a miniatura já vem reduzida): entram antes
+     das imagens, que são o que não cabe primeiro. */
+  const books = (Array.isArray(notebooks) ? notebooks : []).slice();
+  let notebooksDropped = false;
+  while (books.length && !fits({items: kept, attachments: [], pdfs: refs, notebooks: books})) {
+    books.pop();
+    notebooksDropped = true;
+  }
   const tray = attachments.slice();
   let trayDropped = false;
-  while (tray.length && !fits({items: kept, attachments: tray, pdfs: refs})) {
+  while (tray.length && !fits({items: kept, attachments: tray, pdfs: refs, notebooks: books})) {
     tray.pop();
     trayDropped = true;
   }
-  return {items: kept, attachments: tray, pdfs: refs, dropped, trayDropped, pdfsDropped};
+  return {items: kept, attachments: tray, pdfs: refs, notebooks: books, dropped, trayDropped, pdfsDropped, notebooksDropped};
 }
 
 /* A bandeja não encolhe a fila: um anexo maior perde as últimas imagens até
    caber (e o que não caiu continua na sessão). */
-function fitTray(items, images, pdfs) {
+function fitTray(items, images, pdfs, notebooks) {
   const tray = images.slice();
   const refs = (Array.isArray(pdfs) ? pdfs : []).slice();
-  let trayDropped = false;
-  while (tray.length && !fits({items, attachments: tray, pdfs: refs})) {
+  const books = (Array.isArray(notebooks) ? notebooks : []).slice();
+  let trayDropped = false, notebooksDropped = false;
+  while (books.length && !fits({items, attachments: [], pdfs: refs, notebooks: books})) {
+    books.pop();
+    notebooksDropped = true;
+  }
+  while (tray.length && !fits({items, attachments: tray, pdfs: refs, notebooks: books})) {
     tray.pop();
     trayDropped = true;
   }
-  return {items, attachments: tray, pdfs: refs, dropped: 0, trayDropped, pdfsDropped: false};
+  return {items, attachments: tray, pdfs: refs, notebooks: books, dropped: 0, trayDropped, pdfsDropped: false, notebooksDropped};
 }
 
 /* Sessões gravadas por esta execução: o que veio de outra execução é
@@ -252,23 +301,25 @@ const touched = new Set();
 function commit(runtime, session, fitted, held) {
   const store = readStore(runtime);
   const previous = store[session];
-  const entry = {items: fitted.items, attachments: fitted.attachments, pdfs: fitted.pdfs, held: typeof held === 'boolean' ? held : !!previous?.held};
-  if (entry.items.length || entry.attachments.length || entry.pdfs.length) store[session] = entry;
+  const entry = {items: fitted.items, attachments: fitted.attachments, pdfs: fitted.pdfs, notebooks: fitted.notebooks || [], held: typeof held === 'boolean' ? held : !!previous?.held};
+  if (entry.items.length || entry.attachments.length || entry.pdfs.length || entry.notebooks.length) store[session] = entry;
   else delete store[session];
   pruneStore(store, session);
   writeStore(runtime, store);
   touched.add(session);
-  return {items: entry.items, attachments: entry.attachments, pdfs: entry.pdfs, held: entry.held, dropped: fitted.dropped, trayDropped: fitted.trayDropped, pdfsDropped: fitted.pdfsDropped};
+  return {items: entry.items, attachments: entry.attachments, pdfs: entry.pdfs, notebooks: entry.notebooks, held: entry.held, dropped: fitted.dropped, trayDropped: fitted.trayDropped, pdfsDropped: fitted.pdfsDropped, notebooksDropped: fitted.notebooksDropped === true};
 }
 
 /* O que está guardado para uma conversa (o renderer hidrata no boot e a cada
    troca de conversa). Nunca escreve. `live` diz se a gravação é desta execução. */
 function readPending(runtime, session) {
   const entry = readStore(runtime)[session];
+  const notebooks = entry?.notebooks || [];
   return {
     items: entry ? entry.items : [],
     attachments: entry ? entry.attachments : [],
     pdfs: entry ? entry.pdfs : [],
+    ...(notebooks.length ? {notebooks} : {}),
     held: !!entry?.held,
     live: touched.has(session),
   };
@@ -277,13 +328,13 @@ function readPending(runtime, session) {
 /* Save da fila (a cada mudança: enfileirar, remover, editar, enviar). */
 function saveQueue(runtime, session, items, held) {
   const current = readPending(runtime, session);
-  return commit(runtime, session, fitQueue(normalizeItems(items), current.attachments, current.pdfs), held);
+  return commit(runtime, session, fitQueue(normalizeItems(items), current.attachments, current.pdfs, current.notebooks || []), held);
 }
 
 /* Save da bandeja do composer (anexar, remover, limpar). */
-function saveTray(runtime, session, images, pdfs) {
+function saveTray(runtime, session, images, pdfs, notebooks) {
   const current = readPending(runtime, session);
-  return commit(runtime, session, fitTray(current.items, normalizeImages(images), normalizePdfFacts(pdfs)));
+  return commit(runtime, session, fitTray(current.items, normalizeImages(images), normalizePdfFacts(pdfs), normalizeNotebooks(notebooks)));
 }
 
-module.exports = {readPending, saveQueue, saveTray, FILENAME, MAX_STORED_BYTES};
+module.exports = {readPending, saveQueue, saveTray, FILENAME, MAX_STORED_BYTES, MAX_NOTEBOOKS};

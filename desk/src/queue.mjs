@@ -1,6 +1,6 @@
 import {$,S,connect,toast,refs,mayAdvanceQueue,supportsCapability} from './state.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
-import {send,isComposerCommand,resetAttachments,persistTray} from './chat.mjs';
+import {send,isComposerCommand,resetAttachments,persistTray,tutorNotebooksSnapshot,queuedNotebooks} from './chat.mjs';
 import core from './generated/composerview.core.js';
 import pendingCore from './generated/pending.core.js';
 import {createQueueRetry} from './queue-retry.mjs';
@@ -94,7 +94,7 @@ function idFromEvent(e){
 /* O que vai para o arquivo: texto, referências e anexos do item (o snapshot do
    composer no momento do enqueue), nunca o estado vivo do DOM. */
 function snapshot(){
- return queue.map(item=>({id:item.id,text:item.text,refs:item.payload.refs,images:item.payload.images,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions}));
+ return queue.map(item=>({id:item.id,text:item.text,refs:item.payload.refs,images:item.payload.images,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions}));
 }
 
 /* Escrita imediata nas mudanças discretas (enfileirar, remover, enviar, limpar)
@@ -159,7 +159,7 @@ const handlers={
   renderQueue();
   persist(true);
   let safe=false;
-  const posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions||[],steer:true,onFailure:value=>{safe=value;}})===true;
+  const posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions||[],steer:true,onFailure:value=>{safe=value;}})===true;
   /* A conversa trocou durante o envio: a fila viva agora é de outra sessão. */
   if(owner!==generationOwner)return;
   const outcome=steerQueuedOutcome(posted,safe);
@@ -318,7 +318,7 @@ function enqueue(text){
     o composer esvazia: o payload desta mensagem não pode vazar para as próximas
     nem ser capturado pelo envio anterior (que ainda não voltou). A bandeja
     esvaziada também vai para o disco — senão o anexo ficaria nos dois lugares. */
- queue.push({id:`fila-${Date.now()}-${seq}`,text,payload:{images:S.attachments.slice(),pdfs:S.pdfAttachments.slice(),refs:refs(),mentions:mentionIds()}});
+ queue.push({id:`fila-${Date.now()}-${seq}`,text,payload:{images:S.attachments.slice(),pdfs:S.pdfAttachments.slice(),notebooks:tutorNotebooksSnapshot(),refs:refs(),mentions:mentionIds()}});
  clearMentions();
  resetAttachments();
  persistTray();
@@ -366,7 +366,7 @@ async function flushQueue({force=false}={}){
  let posted,retryable=false;
  const generationOwner=owner;
  try{
-  posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],mentions:item.payload.mentions||[],onFailure:safe=>{retryable=safe;}})===true;
+  posted=await send(item.text,item.payload.images,{refs:item.payload.refs,pdfs:item.payload.pdfs||[],notebooks:item.payload.notebooks||[],mentions:item.payload.mentions||[],onFailure:safe=>{retryable=safe;}})===true;
  }finally{
   sendingId='';
   flushing=false;
@@ -429,8 +429,8 @@ export function adopt(data){
  sendingId='';editingId='';editDraft='';editJustStarted=false;
  for(const raw of items){
   const text=typeof raw?.text==='string'?raw.text:'';
-  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
-  if(!text.trim()&&!payload.images.length&&!payload.pdfs.length)continue;
+  const payload={images:Array.isArray(raw?.images)?raw.images:[],pdfs:Array.isArray(raw?.pdfs)?raw.pdfs:[],notebooks:queuedNotebooks(raw?.notebooks),refs:Array.isArray(raw?.refs)?raw.refs:[],mentions:Array.isArray(raw?.mentions)?raw.mentions.filter(id=>typeof id==='string'):[]};
+  if(!text.trim()&&!payload.images.length&&!payload.pdfs.length&&!payload.notebooks.length)continue;
   seq++;
   queue.push({id:typeof raw?.id==='string'&&raw.id?raw.id:`fila-${Date.now()}-${seq}`,text,payload});
  }

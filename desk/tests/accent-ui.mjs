@@ -144,7 +144,7 @@ await withArtifacts('cor-de-acento',async ctx=>{
  });
  assert.equal(sizes.count,2,'dois círculos de acento');
  assert.deepEqual([Math.round(sizes.width),Math.round(sizes.height)],[24,24],`círculo de 24×24 (${sizes.width}×${sizes.height})`);
- assert.equal(sizes.radius,'50%','o círculo usa --r-round');
+ assert.equal(sizes.radius,'999px','o círculo usa --r-round');
  assert.equal(sizes.labelSize,'12px','o nome embaixo usa 12px');
  assert.ok(sizes.dotBottom<=sizes.nameTop+0.5,`o nome fica embaixo do círculo (${sizes.dotBottom} ≤ ${sizes.nameTop})`);
  assert.equal(sizes.border,'0px','a opção não tem caixa com borda');

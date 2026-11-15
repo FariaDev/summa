@@ -9,6 +9,8 @@ import {isPdfFile} from './pdf-drop.mjs';
 import {renderChildren} from './view-host.mjs';
 import {bendList,openImageDialog} from './chat-assets.mjs';
 import {PIN_IDS,PIN_LIMIT,normalizeComposerPins,toggleComposerPin} from './composer-pins.mjs';
+import {imageFacts} from './attach-image-facts.mjs';
+import {appendTutorNotebookCards,tutorNotebookCount,onTutorNotebooksChange,onTutorNotebooksPersist,clearTutorNotebooks,restoreTutorNotebooks,tutorNotebooksForSave} from './tutor-notebooks.mjs';
 
 /* Bandeja de anexos de imagem do composer (extraído de chat.mjs, #29): estado
    vivo em `S.attachments`, compressão, persistência por conversa, colar e
@@ -55,13 +57,7 @@ const attachmentHandlers={
   persistTray();
  }
 };
-function attachmentFacts(){
- return bendList(S.attachments.map((item,at)=>({
-  $:'AttachImage',key:`img-${at}`,dataUrl:item.dataUrl,
-  alt:item.name?t('attach.alt',{name:item.name}):t('attach.altImage'),
-  removeLabel:t('attach.remove',{name:item.name||t('attach.imageWord')}),removeTitle:'',handler:'RemoveAttachment',lazy:false
- })));
-}
+function attachmentFacts(){return imageFacts(S.attachments);}
 function pdfFacts(){
  return bendList(S.pdfAttachments.map((item,at)=>({
   $:'AttachFile',key:`pdf-${at}`,name:t('chatpdf.chip',{name:item.name,count:item.pages}),
@@ -71,15 +67,37 @@ function pdfFacts(){
 function renderAttachments(){
   const box=$('#attachments');
   renderChildren(box,attachview.attachmentViews(attachmentFacts(),pdfFacts()),attachmentHandlers);
-  box.hidden=!S.attachments.length&&!S.pdfAttachments.length;
+  /* Cartões de caderno (a página do Ambitus no modo mini): estado e nó em tutor-notebooks.mjs, no fim da bandeja. */
+  appendTutorNotebookCards(box);
+  box.hidden=!S.attachments.length&&!S.pdfAttachments.length&&!tutorNotebookCount();
   paintComposerSend();
 }
+onTutorNotebooksChange(renderAttachments);
+onTutorNotebooksPersist(persistTray);
 /* A bandeja sobrevive ao fechamento: as imagens pendentes são guardadas por
    conversa (`desk/pending.cjs`, núcleo `core/pending.bend`) e voltam no boot.
    Quem esvazia a bandeja (enfileirar, enviar, remover) também persiste — o
    arquivo não pode ficar com um anexo que já foi para um item da fila. */
 export function persistTray(){
- window.desk.traySave({images:S.attachments,pdfs:S.pdfAttachments}).catch(e=>toast(e.message));
+ window.desk.traySave({images:S.attachments,pdfs:S.pdfAttachments,notebooks:tutorNotebooksForSave()}).catch(e=>toast(e.message));
+}
+/* Lê UMA imagem para a bandeja: reduz se for grande, confere o teto de bytes e vira data URL. Devolve
+   o anexo, `null` quando a imagem foi recusada (o aviso já saiu) ou `undefined` quando `stale()` diz que a
+   bandeja mudou no meio. A bandeja do chat lateral usa a mesma leitura (`sidechat-attach.mjs`). */
+export async function loadImageAttachment(file,stale){
+ const name=file.name||'imagem';
+ let blob=file,mime=file.type||'image/png';
+ const prepared=await prepareAttachment(file);
+ if(stale())return undefined;
+ if(prepared){blob=prepared;mime=prepared.type||mime;}
+ if(blob.size>MAX_ATTACH_BYTES){toast(t('attach.tooBig',{mb:Math.round(MAX_ATTACH_BYTES/1024/1024),name:file.name||t('attach.imageFallbackName')}));return null;}
+ const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();
+  reader.onload=()=>resolve(reader.result);
+  reader.onerror=()=>reject(reader.error||Error(t('attach.readFailed')));
+  reader.readAsDataURL(blob);}).catch(()=>'');
+ if(stale())return undefined;
+ if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:image/')){toast(t('attach.unreadable'));return null;}
+ return {dataUrl,mimeType:mime,name};
 }
 /* `provenance` marca de onde o anexo veio (captura do Xournal++: horário e
    exercício do momento). O main usa isso para avisar que a captura não é do
@@ -88,20 +106,11 @@ export async function addAttachments(list,provenance){
  const gen=S.attachGen;let added=0,imagesAdded=0;
  const images=imageFiles(list),pdfs=pdfFiles(list);
  for(const file of images){
-  const name=file.name||'imagem';
-  let blob=file,mime=file.type||'image/png';
-  const prepared=await prepareAttachment(file);
-  if(gen!==S.attachGen)return 0;
-  if(prepared){blob=prepared;mime=prepared.type||mime;}
-  if(blob.size>MAX_ATTACH_BYTES){toast(t('attach.tooBig',{mb:Math.round(MAX_ATTACH_BYTES/1024/1024),name:file.name||t('attach.imageFallbackName')}));continue;}
-  const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();
-   reader.onload=()=>resolve(reader.result);
-   reader.onerror=()=>reject(reader.error||Error(t('attach.readFailed')));
-   reader.readAsDataURL(blob);}).catch(()=>'');
-  if(gen!==S.attachGen)return 0;
-  if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:image/')){toast(t('attach.unreadable'));continue;}
+  const item=await loadImageAttachment(file,()=>gen!==S.attachGen);
+  if(item===undefined)return 0;
+  if(!item)continue;
   if(S.attachments.length>=MAX_ATTACH){toast(t('pdf.attach.max',{max:MAX_ATTACH}));break;}
-  S.attachments.push({dataUrl,mimeType:mime,name,capturedAt:provenance?.capturedAt,exercise:provenance?.exercise,app:provenance?.app});added++;imagesAdded++;
+  S.attachments.push({...item,capturedAt:provenance?.capturedAt,exercise:provenance?.exercise,app:provenance?.app});added++;imagesAdded++;
  }
  for(const file of pdfs){
   if(S.pdfAttachments.length>=MAX_CHAT_PDFS){toast(t('chatpdf.max',{max:MAX_CHAT_PDFS}));break;}
@@ -130,7 +139,7 @@ export function clearAttachments(items,pdfs){
  }
  renderAttachments();persistTray();
 }
-export function resetAttachments(){S.attachGen++;S.attachments=[];S.pdfAttachments=[];renderAttachments();}
+export function resetAttachments(){S.attachGen++;S.attachments=[];S.pdfAttachments=[];clearTutorNotebooks();renderAttachments();}
 /* Anexos guardados de uma conversa (o payload `pending` do main): entram na
    bandeja depois do `resetAttachments` do boot/troca — sem regravar. */
 export function restoreAttachments(pending){
@@ -147,11 +156,12 @@ export function restoreAttachments(pending){
   path:typeof item?.path==='string'?item.path:'',
   pages:Math.max(1,Math.trunc(Number(item?.pages))||1),
  })).filter(item=>item.path);
- if(!list.length&&!pdfs.length)return;
+ const notebooks=Array.isArray(pending?.notebooks)?pending.notebooks:[];
+ if(!list.length&&!pdfs.length&&!notebooks.length)return;
  S.attachGen++;
  S.attachments=list;
  S.pdfAttachments=pdfs;
- renderAttachments();
+ restoreTutorNotebooks(notebooks);
 }
 /* Os listeners entram na mesma posição em que o chat sempre os registrou
    (depois do handler de eventos do composer): o chat chama esta função. */

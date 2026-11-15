@@ -1,17 +1,17 @@
 import {contentParts} from '../text.mjs';
-import {$,S,toast,toastFailure,conferirAppName,activity,activityLive,applyChatScroll,revealInChat,connectionState,distanceFromEnd,messageScroller,refs,save,layoutSnapshot,setBusy,refreshMeter,connect,cancelConnect,supportsCapability,syncChatScrollMode,paintComposerSend} from './state.mjs';
+import {$,S,toast,toastFailure,activity,activityLive,applyChatScroll,revealInChat,connectionState,distanceFromEnd,messageScroller,refs,save,layoutSnapshot,setBusy,refreshMeter,connect,cancelConnect,supportsCapability,syncChatScrollMode,paintComposerSend} from './state.mjs';
 import tutorStateCore from './generated/tutorstate.core.js';
 import {t as uiT,text as uiText,tutorText} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';
-import conferirCore from './generated/conferir.core.js';
-import {captureFileName} from './capture-name.mjs';
-import {playShutter} from './icon-motion.mjs';
-import {beginCaptureLock,captureLockValid,endCaptureLock} from './capture-lock.mjs';
 import {createWorkLogView} from './worklog-view.mjs';
 import {installAssetListeners} from './chat-assets.mjs';
-import {addAttachments,clearAttachments,installAttachmentListeners} from './chat-attachments.mjs';
+import {clearAttachments,installAttachmentListeners} from './chat-attachments.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
+import {tutorNotebooksSnapshot,releaseTutorNotebooks,tutorNotebookFind} from './tutor-notebooks.mjs';
+import {notebookPageImages} from './notebook-send.mjs';
 import {installQuoteListeners} from './chat-quote.mjs';
+import {conferir} from './chat-conferir.mjs';
+export {conferir};
 import {showDialog,cancelDialogRequest,installDialogListeners} from './chat-dialogs.mjs';
 import {createCardBoard} from './chat-cards.mjs';
 import {revealMessageBubble} from './reveal-message.mjs';
@@ -34,6 +34,7 @@ import {ensureActivityHost} from './activity-loader.mjs';
 export {markup,markupInline};
 /* Os importadores antigos (main, pdf, queue, state, ggb, testes) seguem pelo chat. */
 export {MAX_ATTACH,MAX_ATTACH_BYTES,persistTray,addAttachments,resetAttachments,restoreAttachments} from './chat-attachments.mjs';
+export {tutorNotebooksSnapshot,queuedNotebooks} from './tutor-notebooks.mjs';
 export {hideQuoteButton,insertMainDraft} from './chat-quote.mjs';
 import {createShownHistory} from './history-shown.mjs';
 import {cachedHistoryTurns} from './history-render-cache.mjs';
@@ -119,7 +120,7 @@ export function showHistory(messages,cards=[],identity=null){
  try{
   for(const turn of turns){
    flushCards(turn.userTime||turn.startedAt||turn.time||0);
-   if(turn.userText||turn.userImages.length||turn.userPdfs?.length)searchEntries.push({text:turn.userText,el:tagMessageIndex(message('user',turn.userText,turn.userImages,frag,turn.userPdfs||[]),turn.userIndex)});
+   if(turn.userText||turn.userImages.length||turn.userPdfs?.length||turn.userNotebooks?.length)searchEntries.push({text:turn.userText,el:tagMessageIndex(message('user',turn.userText,turn.userImages,frag,turn.userPdfs||[],[],0,'','',turn.userNotebooks||[]),turn.userIndex)});
    /* E3: o diário reconstruído começa aberto quando traz motivo e o turno
       não tem resposta. O histórico de hoje não carrega motivo (`reason`
       vazio mantém o recolhido de sempre); a resposta do turno decide. */
@@ -293,6 +294,7 @@ export async function send(text,images,options={}){
  const fromComposer=images===undefined;
  const pending=fromComposer?S.attachments.slice():images;
  const pdfs=Array.isArray(options.pdfs)?options.pdfs:(fromComposer?S.pdfAttachments.slice():[]);
+ const notebooks=Array.isArray(options.notebooks)?options.notebooks:(fromComposer?tutorNotebooksSnapshot():[]);/* cartões de caderno do modo mini; o caminho segue escondido ao motor */
  if(!text.trim()&&!pending.length&&!pdfs.length)return false;
  if(images===undefined&&COMPACT_CMD.test(text.trim())){if(!supportsCapability('compact')){toast(uiMessage('compact.notAvailable'));
    return false;}if(S.busy){toast(uiMessage('compact.stopFirst'));
@@ -322,14 +324,16 @@ export async function send(text,images,options={}){
      isso desarma o turno; sem rearmar, uma resposta que chega junto do
      `streaming:false` (busy já caído) seria descartada como atraso. */
   turnState.promptArmed=true;
-  if(pending.length&&!S.supportsImages){turnState.promptArmed=false;setBusy(false);toast(uiMessage('send.needsImages'));return false;}
-  userMessage=message('user',text,pending.map(item=>item.dataUrl),null,pdfs);
+  const pageImages=await notebookPageImages(notebooks,{find:tutorNotebookFind});
+  const attachedImages=[...pageImages.map(item=>({dataUrl:item.dataUrl})),...pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app})];
+  if((pending.length||pageImages.length)&&!S.supportsImages){turnState.promptArmed=false;setBusy(false);toast(uiMessage('send.needsImages'));return false;}
+  userMessage=message('user',text,attachedImages.map(item=>typeof item==='string'?item:item.dataUrl),null,pdfs,[],0,'','',notebooks);
   /* A fala do aluno termina aqui: entra na fonte da busca (#122). */
   addChatSearchEntry({text,el:userMessage});
   if(fromComposer&&$('#prompt').value===text)$('#prompt').value='';
-  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:pending.map(item=>typeof item==='string'?item:{dataUrl:item.dataUrl,capturedAt:item.capturedAt,exercise:item.exercise,app:item.app}),pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),steer,mentions:mentionList,attemptId});
+  const result=await window.desk.prompt({text,refs:options.refs||refs(),images:attachedImages,pdfs:pdfs.map(item=>({name:item.name,path:item.path,pages:item.pages})),notebooks,steer,mentions:mentionList,attemptId});
   if(result?.sent===false){knownNotSent=result.retryable===true;throw Error(result.error||uiMessage('send.refused'));}
-  if(fromComposer){clearAttachments(pending,pdfs);clearMentions(mentionList);}
+  if(fromComposer){clearAttachments(pending,pdfs);releaseTutorNotebooks(notebooks);clearMentions(mentionList);}
   /* `streaming` só libera o composer quando o Pi DISSE que não está no turno.
      Estado desconhecido (a leitura falhou depois do aceite) NÃO é envio falho:
      o item sai da fila e o aviso aparece — quem fecha o turno, nesse caso, são
@@ -352,55 +356,6 @@ export async function send(text,images,options={}){
   if(sendAttempt===attempt)sendAttempt=null;
   if(S.sendAttemptId===attemptId)S.sendAttemptId='';
  }
-}
-/* dataURL → File sem `fetch` (o CSP do index.html não deixa `connect-src data:`):
-   o base64 é decodificado na mão. */
-function dataUrlFile(dataUrl,name){
- if(typeof dataUrl!=='string'||!dataUrl.startsWith('data:image/'))return null;
- const mime=/^data:([^;,]+)/.exec(dataUrl)?.[1]||'image/png';
- try{
-  const bin=atob(dataUrl.slice(dataUrl.indexOf(',')+1));
-  const bytes=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return new File([bytes],name,{type:mime});
- }catch{return null;}
-}
-/* Conferir virou anexo: captura a janela do Xournal++ (ou do programa escolhido) e entrega a
-   imagem na bandeja (`addAttachments` herda re-encode, teto de bytes e o aviso
-   de modelo sem visão). Nada vai para o Pi sozinho — o usuário escreve e envia
-   junto; uma imagem por captura no JSONL. O requisito de visão é do envio.
-   B6: clique duplo engole o segundo clique (uma captura em voo por vez) e a
-   matéria/sessão de destino fica FIXADA — se ela mudou durante a captura, a
-   imagem é descartada em vez de pousar na conversa de outra matéria. */
-export async function conferir(){
- if(S.busy)return;
- if(S.appConfig.desk?.conferir===false)return;
- const appNow=conferirAppName();
- if(!S.captureOk){toast(uiMessage('check.unavailableToast',{label:uiText(conferirCore.buttonLabel(appNow))}));return;}
- const lock=beginCaptureLock(S);
- if(!lock)return;
- /* O exercício anotado é o que estava ativo no momento da captura: se o usuário
-    trocar de exercício antes de enviar, o contexto avisa em vez de deixar a
-    captura passar por tentativa do exercício de agora. */
- const exerciseAtCapture=S.appConfig.desk?.studyContext===false?'':(layoutSnapshot().study?.title||'');
- try{
-  /* Quem decide a janela é o host/núcleo (`core/conferir.bend`): o app salvo ou
-     o Xournal++. Escolher outro programa é nas Configurações (#38). */
-  const shot=await window.desk.captureReady();
-  if(!captureLockValid(S,lock)){toast(uiMessage('capture.courseChanged'));return;}
-  /* App ausente: o núcleo nunca captura outra janela no lugar. A lista abre
-     com a frase do motivo e a pessoa escolhe de propósito. */
-  if(shot?.absent){window.dispatchEvent(new CustomEvent('desk-conferir-absent',{detail:shot}));return;}
-  const app=String(shot?.app||'').trim()||conferirCore.defaultApp();
-  const file=dataUrlFile(shot?.dataUrl,captureFileName(app));
-  if(!file){toast(uiMessage('capture.invalid'));return;}
-  const added=await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
-  if(!added)return;
-  playShutter($('#attach'));
-  toast(uiText(conferirCore.attachedText(app)));
-  $('#prompt').focus();
- }catch(e){toast(e.message);}
- finally{endCaptureLock(S,lock);}
 }
 export async function conferirGeogebra(){
  if(S.busy||S.connecting||S.switching)return;

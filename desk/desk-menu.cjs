@@ -52,12 +52,12 @@ function normalizeKeymap(raw){
 
 /**
  * Cria o menu nativo com os atalhos do usuário por cima dos padrões.
- * @param {{live: import('./main.cjs').DeskLive, Menu: typeof import('electron').Menu, captureAvailable: () => boolean}} options
+ * @param {{live: import('./main.cjs').DeskLive, Menu: typeof import('electron').Menu, captureAvailable: () => boolean, writingApp?: () => string}} options
  *   `live` traz config, estado, janela e o host de idioma do main
  * @returns {{buildMenu:()=>void, setKeymap:(raw:unknown)=>{ok:true, menu:number}, register:(ipcMain:{handle:Function})=>void}}
  * @example const deskMenu=createDeskMenu({live,Menu,captureAvailable});deskMenu.register(ipcMain);deskMenu.buildMenu();
  */
-function createDeskMenu({live,Menu,captureAvailable}){
+function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++'}){
  let keymap={};
  function accelFor(id){
   return Object.prototype.hasOwnProperty.call(keymap,id)?keymap[id]:MENU_ACCEL[id];
@@ -75,7 +75,7 @@ function createDeskMenu({live,Menu,captureAvailable}){
      não dependem dela. `save-config` chama este buildMenu, então ligar/desligar
      nas Configurações reflete no menu na hora. */
   const study=[];
-  if(live.config.desk?.conferir!==false)study.push({label:live.languageHost.t('menu.check',{app:live.state.conferirApp?.app||'Xournal++'}),...accelProps('check'),enabled:captureAvailable(),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-check');}});
+  if(live.config.desk?.conferir!==false)study.push({label:live.languageHost.t('menu.check',{app:live.state.conferirApp?.app||writingApp()}),...accelProps('check'),enabled:captureAvailable(),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-check');}});
   study.push({label:live.languageHost.t('menu.checkGeogebra'),...accelProps('ggb-check'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-geogebra');}},{label:live.languageHost.t('menu.toggleTutor'),...accelProps('chat-toggle'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-chat-toggle');}},{label:live.languageHost.t('menu.stop'),...accelProps('stop'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-stop');}});
   Menu.setApplicationMenu(Menu.buildFromTemplate([
    {label:'Summa',submenu:[{label:live.languageHost.t('menu.aboutApp'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}},{label:live.languageHost.t('menu.settingsItem'),...accelProps('settings'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-settings');}},{type:'separator'},{role:'quit'}]},

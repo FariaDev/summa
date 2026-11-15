@@ -94,7 +94,7 @@ function ensureSlot(grid){
  restore.id='support-restore';
  restore.hidden=true;
  restore.innerHTML=`<span class="pdf-restore-icon">${icon('chevronLeft')}</span><span class="pdf-restore-label"></span>`;
- restore.addEventListener('click',()=>{if(isDetachedSidechat()){focusDetachedSidechat();return;}selectTab('form');});
+ restore.addEventListener('click',()=>{if(isDetachedSidechat()){attachSidechat();return;}selectTab('form');});
  slot.append(restore,body);
  grid.append(slot);
  if(sidechatElement()&&!isDetachedSidechat()&&!document.body.classList.contains('sidechat-panel'))body.append(sidechatElement());
@@ -143,8 +143,9 @@ function paintRestore(collapsed){
  restore.hidden=!(collapsed||detached);
  if(detached){
   const strip=t('sidechat.detachedStrip');
-  restore.title=strip;
-  restore.setAttribute('aria-label',strip);
+  const hint=t('sidechat.detachedStripHint');
+  restore.title=hint;
+  restore.setAttribute('aria-label',`${strip}. ${hint}`);
   const text=restore.querySelector('.pdf-restore-label');
   if(text&&text.textContent!==strip)text.textContent=strip;
   return;
