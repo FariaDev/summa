@@ -108,6 +108,21 @@ test('compaction_failed resolve failed com o erro marcado como notSent false', a
   assert.equal(settled.error.notSent, false);
 });
 
+test('compactação automática avisa pelo onAuto; a manual não duplica (#77)', async () => {
+  const signals = [];
+  const tracker = new CompactionTracker({onAuto: (signal, payload) => signals.push([signal, payload])});
+
+  tracker.receive('compaction_end', {text: 'sozinho'});
+  tracker.receive('compaction_failed', {message: 'sem cota'});
+  assert.deepEqual(signals.map(([signal]) => signal), ['auto-ended', 'auto-failed']);
+  assert.equal(signals[1][1].message, 'sem cota');
+
+  const manual = tracker.begin();
+  tracker.receive('compaction_end', {text: 'manual'});
+  await manual.promise;
+  assert.equal(signals.length, 2, 'o pedido manual não gera aviso');
+});
+
 test('abandon resolve abandoned', async () => {
   const tracker = new CompactionTracker();
   const waiter = tracker.begin();

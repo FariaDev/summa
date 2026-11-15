@@ -154,12 +154,19 @@ export function longStreamText() {
   *   tokens?: object, failTurn?: 'free-tier'|'free-limit'|'desk-error', turnDelayMs?: number, stream?: {deltas?: number, delayMs?: number}, log?: (entry: object) => void,
  *   queueLog?: (entry: object) => void, refusalLog?: (entry: object) => void,
  *   promptLog?: (value: string) => void, chaos?: string[], reviewDraft?: string, reviewDelayMs?: number,
- *   mcpBefore?: string, mcpAfter?: string, historyHoldFile?: string, mcpReplaceRecovers?: boolean}} [options]
+ *   mcpBefore?: string, mcpAfter?: string, historyHoldFile?: string, mcpReplaceRecovers?: boolean,
+ *   autoCompact?: ''|'ended'|'failed', autoCompactAfter?: number, autoCompactDelayMs?: number, autoCompactText?: string, autoCompactMessage?: string}} [options]
+ *   `autoCompact` emite a compactação que o servidor faz sozinho (sem POST `/compact`) depois do turno `autoCompactAfter`; `failed` leva `autoCompactMessage` como a frase do provedor (#77).
  * @example const serve = await createFakeOpencodeServe({password: 'p'}); // serve.url, serve.requests, serve.close()
  */
 export async function createFakeOpencodeServe(options = {}) {
   const {password = '', models = DEFAULT_MODELS, commands = DEFAULT_COMMANDS, reply = (text) => `Resposta do OpenCode falso: ${text.slice(-40)}`,
     log = () => {}, queueLog = () => {}, refusalLog = () => {}, promptLog = () => {}, reviewDraft = '', reviewDelayMs = 0, mcpBefore = '', mcpAfter = ''} = options;
+  const autoCompact = options.autoCompact === 'failed' ? 'failed' : options.autoCompact === 'ended' ? 'ended' : '';
+  const autoCompactAfter = Math.max(1, Number(options.autoCompactAfter) || 1);
+  const autoCompactDelayMs = Math.max(0, Number(options.autoCompactDelayMs ?? 50));
+  const autoCompactText = String(options.autoCompactText || 'Resumo automático da conversa.');
+  const autoCompactMessage = String(options.autoCompactMessage || '');
   const state = {promptStatus: options.promptStatus || 200, instructionsStatus: options.instructionsStatus || 0, instructionMaxBytes: options.instructionMaxBytes || 0, dropAfterAccept: !!options.dropAfterAccept, ask: !!options.ask, permission: options.permission || null, permissionEvent: options.permissionEvent || 'asked', permissionReply: options.permissionReply || 'decision', tool: options.tool || null, steps: options.steps || null, mcpCall: options.mcpCall || null, mcpStatus: options.mcpStatus || 'connected', mcpPendingFile: options.mcpPendingFile || '', mcpReplaceRecovers: !!options.mcpReplaceRecovers, mcpDeleted: false, failTurn: options.failTurn || '', pageSize: options.pageSize || 0, turnDelay: options.turnDelayMs ?? 10, stream: options.stream || null, mcpCalls: Array.isArray(options.mcpCalls) ? [...options.mcpCalls] : null, tokens: options.tokens || {input: 900, output: 100, reasoning: 0, cache: {read: 0, write: 0}}, chaos: new Set(Array.isArray(options.chaos) ? options.chaos : []), refusePrefix: options.refusePrefix || '', revertStatus: options.revertStatus ?? 200, reviewDraft: String(reviewDraft || ''), reviewDelay: reviewDelayMs, mcpBefore: String(mcpBefore || ''), mcpAfter: String(mcpAfter || ''), historyHoldFile: String(options.historyHoldFile || ''), lastMcpResult: ''};
   const requests = [];
   const sessions = new Map();
@@ -199,6 +206,25 @@ export async function createFakeOpencodeServe(options = {}) {
     clearTurn(session);
     session.busy = false;
     session.turn = '';
+    scheduleAutoCompact(session);
+  }
+
+  /* Compactação automática (#77): o `opencode serve` compacta sozinho quando o
+     contexto enche. O fake emite UMA por sessão, sem POST nosso, depois do
+     turno `autoCompactAfter` terminar; `failed` leva a frase do provedor. */
+  function scheduleAutoCompact(session) {
+    session.turns = (session.turns || 0) + 1;
+    if (!autoCompact || session.autoCompacted || session.turns !== autoCompactAfter) return;
+    session.autoCompacted = true;
+    setTimeout(() => {
+      emit('session.compaction.started', {sessionID: session.id, reason: 'threshold'});
+      if (autoCompact === 'failed') {
+        emit('session.compaction.failed', {sessionID: session.id, reason: 'threshold', error: autoCompactMessage ? {message: autoCompactMessage} : {}});
+        return;
+      }
+      emit('session.compaction.ended', {sessionID: session.id, reason: 'threshold', text: autoCompactText});
+      session.messages.push({id: `msg_ac${Date.now()}`, type: 'compaction', status: 'completed'});
+    }, autoCompactDelayMs).unref?.();
   }
 
   /* Revert por fronteira (#164), conferido no `opencode serve` 2.2.4 real em
@@ -934,7 +960,11 @@ async function runAsBinary(argv) {
     historyHoldFile: process.env.FAKE_OPENCODE_HISTORY_HOLD_FILE || '',
     mcpStatus: process.env.FAKE_OPENCODE_MCP_STATUS || undefined,
     stream: process.env.FAKE_OPENCODE_STREAM === 'long' ? {deltas: Number(process.env.FAKE_OPENCODE_STREAM_DELTAS || 240), delayMs: Number(process.env.FAKE_OPENCODE_STREAM_DELTA_MS || 25)} : null,
-    steps: process.env.FAKE_OPENCODE_STEPS ? JSON.parse(process.env.FAKE_OPENCODE_STEPS) : null});
+    steps: process.env.FAKE_OPENCODE_STEPS ? JSON.parse(process.env.FAKE_OPENCODE_STEPS) : null,
+    autoCompact: process.env.FAKE_OPENCODE_AUTO_COMPACT || '', autoCompactAfter: Number(process.env.FAKE_OPENCODE_AUTO_COMPACT_AFTER || 1),
+    autoCompactDelayMs: Number(process.env.FAKE_OPENCODE_AUTO_COMPACT_DELAY_MS || 50),
+    autoCompactText: process.env.FAKE_OPENCODE_AUTO_COMPACT_TEXT || undefined,
+    autoCompactMessage: process.env.FAKE_OPENCODE_AUTO_COMPACT_MESSAGE || ''});
   seedSessions(serve, process.env.FAKE_OPENCODE_SEED || '');
   process.stdout.write(`server listening on ${serve.url}\n`);
   setInterval(() => {}, 1 << 30);
