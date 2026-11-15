@@ -1,15 +1,24 @@
 // @ts-check
 /* O seletor de material do leitor (#74), a parte pura: a raiz da pasta da
-   matéria no topo, um grupo por subpasta (título = caminho relativo), busca
-   pelo nome do arquivo e o estado aberto/fechado de cada grupo. A organização é
-   a do disco: nada de cadastro de capítulo dentro da Summa. Agrupar, ordenar e
-   filtrar é interface sem consequência de domínio, então fica em JS com teste
-   (ADR 0003). Nada aqui toca o DOM, o idioma ou o estado de interface. */
+   matéria no topo, cada subpasta como um nó dentro da pasta mãe (título = último
+   pedaço do caminho), busca pelo nome do arquivo e o estado aberto/fechado de
+   cada grupo. A organização é a do disco: nada de cadastro de capítulo dentro
+   da Summa. Agrupar, ordenar e filtrar é interface sem consequência de domínio,
+   então fica em JS com teste (ADR 0003). Nada aqui toca o DOM, o idioma ou o
+   estado de interface. */
 
 import {foldSearch, stepActive} from './model-picker.mjs';
 
 /** @typedef {{name: string, path: string, folder?: string}} MaterialEntry */
-/** @typedef {{kind: 'group', folder: string, label: string, open: boolean, count: number} | {kind: 'file', entry: MaterialEntry, folder: string}} MaterialRow */
+/** @typedef {{kind: 'group', folder: string, label: string, open: boolean, count: number, depth: number} | {kind: 'file', entry: MaterialEntry, folder: string, depth: number}} MaterialRow */
+/**
+ * @typedef {object} FolderNode
+ * @property {string} folder
+ * @property {string} label
+ * @property {MaterialEntry[]} files
+ * @property {FolderNode[]} children
+ * @property {number} count
+ */
 
 /* Ordem natural de nome, em pt-BR: "Cap 3" antes de "Cap 10" e acento sem
    peso. É a mesma régua da busca do seletor de modelo (#59). */
@@ -76,20 +85,86 @@ export function matchesMaterialQuery(name, query) {
   return !needle || foldSearch(name).includes(needle);
 }
 
+const byName = (left, right) => NAME_ORDER.compare(left.name, right.name);
+const parentFolder = (folder) => folder.split('/').slice(0, -1).join('/');
+
 /**
- * As linhas do seletor na ordem de leitura: arquivos da raiz, depois os grupos
- * de subpasta em ordem natural, cada um com seus arquivos (também naturais).
- * A busca filtra pelo NOME do arquivo e força os grupos abertos, para o achado
- * aparecer com a pasta de origem; grupo sem achado não entra.
+ * A árvore de pastas da biblioteca, com os arquivos de cada pasta e as
+ * subpastas. Pasta intermediária que só tem descendentes também nasce (senão
+ * `Semestre 1/Cap 3/x.pdf` perderia o nó "Semestre 1"); a busca já filtrou os
+ * arquivos, então pasta sem achado em descendente nem aparece (#74).
+ * @param {MaterialEntry[]} entries
+ * @returns {FolderNode[]} as pastas de nível 0, já ordenadas
+ */
+function folderTree(entries) {
+  /** @type {Map<string, FolderNode>} */
+  const nodes = new Map();
+  for (const entry of entries) {
+    const parts = entry.folder.split('/');
+    for (let end = 1; end <= parts.length; end += 1) {
+      const folder = parts.slice(0, end).join('/');
+      if (!nodes.has(folder)) nodes.set(folder, {folder, label: parts[end - 1], files: [], children: [], count: 0});
+    }
+    const node = /** @type {FolderNode} */ (nodes.get(entry.folder));
+    node.files.push(entry);
+  }
+  /** @type {FolderNode[]} */
+  const roots = [];
+  for (const node of nodes.values()) {
+    node.files.sort(byName);
+    const parent = nodes.get(parentFolder(node.folder));
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+  for (const node of nodes.values()) node.children.sort((left, right) => NAME_ORDER.compare(left.label, right.label));
+  for (const root of roots) countFolder(root);
+  roots.sort((left, right) => NAME_ORDER.compare(left.label, right.label));
+  return roots;
+}
+
+/**
+ * A contagem do grupo é o total de arquivos visíveis nele e nas subpastas.
+ * @param {FolderNode} node
+ * @returns {number}
+ */
+function countFolder(node) {
+  node.count = node.files.length + node.children.reduce((sum, child) => sum + countFolder(child), 0);
+  return node.count;
+}
+
+/**
+ * Uma pasta e tudo abaixo dela, na ordem de leitura: subpastas antes dos
+ * arquivos da própria pasta, todas em ordem natural. Grupo fechado esconde o
+ * que está abaixo; a busca força aberto para o achado aparecer.
+ * @param {FolderNode} node
+ * @param {number} depth
+ * @param {MaterialRow[]} rows
+ * @param {{folders: Record<string, boolean>, searching: boolean}} state
+ */
+function emitFolder(node, depth, rows, state) {
+  const open = state.searching || folderOpen(state.folders, node.folder);
+  rows.push({kind: 'group', folder: node.folder, label: node.label, open, count: node.count, depth});
+  if (!open) return;
+  for (const child of node.children) emitFolder(child, depth + 1, rows, state);
+  for (const entry of node.files) rows.push({kind: 'file', entry, folder: node.folder, depth: depth + 1});
+}
+
+/**
+ * As linhas do seletor na ordem de leitura: arquivos da raiz no topo, depois
+ * cada subpasta como nó dentro da pasta mãe, com as subpastas antes dos
+ * arquivos da pasta (todos em ordem natural). A busca filtra pelo NOME do
+ * arquivo e força abertos os ancestrais do achado; pasta sem achado em
+ * descendente não entra.
  * @param {MaterialEntry[]} library
  * @param {{folders?: Record<string, boolean>, query?: string}} [options]
  * @returns {MaterialRow[]}
  */
 export function materialRows(library, {folders = {}, query = ''} = {}) {
   const searching = String(query ?? '').trim().length > 0;
+  /** @type {MaterialEntry[]} */
   const root = [];
-  /** @type {Map<string, MaterialEntry[]>} */
-  const groups = new Map();
+  /** @type {MaterialEntry[]} */
+  const nested = [];
   for (const raw of Array.isArray(library) ? library : []) {
     if (!raw || typeof raw.path !== 'string' || !raw.path) continue;
     const entry = {
@@ -98,26 +173,12 @@ export function materialRows(library, {folders = {}, query = ''} = {}) {
       folder: normalizeFolder(raw.folder),
     };
     if (!matchesMaterialQuery(entry.name, query)) continue;
-    if (!entry.folder) {
-      root.push(entry);
-      continue;
-    }
-    const items = groups.get(entry.folder) || [];
-    items.push(entry);
-    groups.set(entry.folder, items);
+    (entry.folder ? nested : root).push(entry);
   }
-  root.sort((left, right) => NAME_ORDER.compare(left.name, right.name));
-  const foldersNamed = [...groups.keys()].sort((left, right) => NAME_ORDER.compare(left, right));
+  root.sort(byName);
   /** @type {MaterialRow[]} */
-  const rows = root.map((entry) => ({kind: 'file', entry, folder: ''}));
-  for (const folder of foldersNamed) {
-    const items = /** @type {MaterialEntry[]} */ (groups.get(folder));
-    items.sort((left, right) => NAME_ORDER.compare(left.name, right.name));
-    const open = searching || folderOpen(folders, folder);
-    rows.push({kind: 'group', folder, label: folder, open, count: items.length});
-    if (!open) continue;
-    for (const entry of items) rows.push({kind: 'file', entry, folder});
-  }
+  const rows = root.map((entry) => ({kind: 'file', entry, folder: '', depth: 0}));
+  for (const node of folderTree(nested)) emitFolder(node, 0, rows, {folders, searching});
   return rows;
 }
 

@@ -1,7 +1,8 @@
 /* O seletor de material (#74), a parte pura: raiz da pasta da matéria no topo,
-   um grupo por subpasta em ordem natural (pt-BR, numérica), busca pelo nome do
-   arquivo mostrando o grupo de cada achado e o estado aberto/fechado por pasta.
-   Inclui a pasta relativa que o host entrega (`pdfFolderOf`). */
+   cada subpasta como nó dentro da pasta mãe, em ordem natural (pt-BR,
+   numérica), busca pelo nome do arquivo mostrando o caminho de cada achado e o
+   estado aberto/fechado por pasta. Inclui a pasta relativa que o host entrega
+   (`pdfFolderOf`). */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -35,13 +36,55 @@ const library = [
   entry('Lista 1.pdf', 'Listas'),
 ];
 
-test('raiz no topo e um grupo por subpasta, em ordem natural de nome', () => {
+test('raiz no topo e cada subpasta aninhada na pasta mãe, em ordem natural de nome', () => {
   const rows = materialRows(library);
   assert.deepEqual(rows.slice(0, 2).map((row) => row.kind === 'file' && row.entry.name), ['Apostila 2.pdf', 'Apostila 10.pdf'], 'os PDFs da raiz vêm primeiro, sem grupo, na ordem numérica');
-  assert.deepEqual(labels(rows), ['Cap 3 - Derivadas', 'Cap 10 - Integrais', 'Listas', 'Listas/2024'], 'um grupo por pasta, com o caminho relativo no título; Cap 3 antes de Cap 10');
+  assert.deepEqual(rows.filter((row) => row.kind === 'group').map((row) => [row.label, row.folder, row.depth]), [
+    ['Cap 3 - Derivadas', 'Cap 3 - Derivadas', 0],
+    ['Cap 10 - Integrais', 'Cap 10 - Integrais', 0],
+    ['Listas', 'Listas', 0],
+    ['2024', 'Listas/2024', 1],
+  ], 'o título é o último pedaço do caminho, Cap 3 antes de Cap 10, e 2024 dentro de Listas');
   const cap3 = rows.find((row) => row.kind === 'group' && row.folder === 'Cap 3 - Derivadas');
   assert.deepEqual({open: cap3.open, count: cap3.count}, {open: true, count: 2}, 'o grupo abre por padrão e conta os arquivos');
-  assert.deepEqual(files(rows), ['Apostila 2.pdf', 'Apostila 10.pdf', 'Aula 2.pdf', 'Aula 10.pdf', 'Cap 10 - Integrais.pdf', 'Lista 1.pdf', 'Lista 2.pdf', 'Lista 10.pdf'], 'dentro do grupo também vale a ordem natural');
+  assert.deepEqual(files(rows), ['Apostila 2.pdf', 'Apostila 10.pdf', 'Aula 2.pdf', 'Aula 10.pdf', 'Cap 10 - Integrais.pdf', 'Lista 2.pdf', 'Lista 10.pdf', 'Lista 1.pdf'], 'subpastas antes dos arquivos da pasta e ordem natural dentro de cada uma');
+});
+
+test('árvore: o nó da subpasta vem depois do nó da pasta mãe e o arquivo recua um nível', () => {
+  const rows = materialRows(library);
+  const listas = rows.findIndex((row) => row.kind === 'group' && row.folder === 'Listas');
+  const year = rows.findIndex((row) => row.kind === 'group' && row.folder === 'Listas/2024');
+  assert.ok(listas >= 0 && year > listas, '2024 vem depois de Listas, dentro dele');
+  const lista1 = rows.find((row) => row.kind === 'file' && row.entry.name === 'Lista 1.pdf');
+  const lista2 = rows.find((row) => row.kind === 'file' && row.entry.name === 'Lista 2.pdf');
+  assert.deepEqual([lista1.depth, lista2.depth], [1, 2], 'o arquivo da pasta recua um nível e o da subpasta, dois');
+});
+
+test('pasta intermediária sem arquivo próprio aparece como nó, com a contagem dos descendentes', () => {
+  const rows = materialRows([
+    entry('Aula.pdf', 'Semestre 1/Cap 3'),
+    entry('Lista.pdf', 'Semestre 1/Cap 3'),
+    entry('Extra.pdf', 'Semestre 1/Cap 10'),
+  ]);
+  assert.deepEqual(rows.filter((row) => row.kind === 'group').map((row) => [row.label, row.folder, row.depth, row.count]), [
+    ['Semestre 1', 'Semestre 1', 0, 3],
+    ['Cap 3', 'Semestre 1/Cap 3', 1, 2],
+    ['Cap 10', 'Semestre 1/Cap 10', 1, 1],
+  ], 'Semestre 1 nasce só pelos descendentes e soma os arquivos de todas as subpastas');
+});
+
+test('ordem dentro da pasta: subpastas antes dos arquivos, em ordem natural (Cap 3 antes de Cap 10)', () => {
+  const rows = materialRows([
+    entry('Arquivo.pdf', 'Pasta'),
+    entry('Cap 10.pdf', 'Pasta/Cap 10'),
+    entry('Cap 3.pdf', 'Pasta/Cap 3'),
+  ]);
+  assert.deepEqual(rows.filter((row) => row.kind === 'group').map((row) => row.label), ['Pasta', 'Cap 3', 'Cap 10'], 'subpastas em ordem natural');
+  assert.deepEqual(rows.filter((row) => row.kind === 'file').map((row) => [row.entry.name, row.depth]), [
+    ['Cap 3.pdf', 2],
+    ['Cap 10.pdf', 2],
+    ['Arquivo.pdf', 1],
+  ], 'as subpastas vêm antes do arquivo da pasta, e o arquivo da pasta fica um nível acima');
 });
 
 test('matéria sem subpastas: a lista é a de hoje, sem grupo', () => {
@@ -51,10 +94,10 @@ test('matéria sem subpastas: a lista é a de hoje, sem grupo', () => {
   assert.deepEqual(files(rows), ['Apostila 2.pdf', 'Apostila 10.pdf', 'Lista.pdf']);
 });
 
-test('busca: filtra pelo nome do arquivo, sem caixa nem acento, e mostra o grupo de cada achado', () => {
+test('busca: filtra pelo nome do arquivo, sem caixa nem acento, e mostra o caminho de cada achado', () => {
   const rows = materialRows(library, {folders: {'Listas/2024': false}, query: 'LISTA'});
-  assert.deepEqual(labels(rows), ['Listas', 'Listas/2024'], 'o grupo sem achado some e os achados ficam com o grupo');
-  assert.deepEqual(files(rows), ['Lista 1.pdf', 'Lista 2.pdf', 'Lista 10.pdf']);
+  assert.deepEqual(labels(rows), ['Listas', '2024'], 'o grupo sem achado some e os achados ficam com os ancestrais');
+  assert.deepEqual(files(rows), ['Lista 2.pdf', 'Lista 10.pdf', 'Lista 1.pdf']);
   assert.ok(rows.filter((row) => row.kind === 'group').every((row) => row.open), 'com busca ativa os grupos aparecem abertos mesmo fechados no estado');
   assert.deepEqual(files(materialRows(library, {query: 'aula'})), ['Aula 2.pdf', 'Aula 10.pdf'], 'a busca acha sem caixa');
   assert.equal(matchesMaterialQuery('Ética.pdf', 'etica'), true, 'sem acento também');
@@ -63,12 +106,32 @@ test('busca: filtra pelo nome do arquivo, sem caixa nem acento, e mostra o grupo
   assert.equal(matchesMaterialQuery('Aula 3.pdf', ''), true, 'busca vazia mostra tudo');
 });
 
+test('busca: força abertos os ancestrais do achado e esconde pasta sem achado em descendente', () => {
+  const rows = materialRows(library, {folders: {'Listas': false, 'Listas/2024': false}, query: 'lista 2'});
+  assert.deepEqual(rows.filter((row) => row.kind === 'group').map((row) => [row.folder, row.open, row.depth, row.count]), [
+    ['Listas', true, 0, 1],
+    ['Listas/2024', true, 1, 1],
+  ], 'Listas abre mesmo fechado no estado, e a contagem é a dos achados');
+  assert.deepEqual(files(rows), ['Lista 2.pdf']);
+  assert.equal(rows.some((row) => row.kind === 'group' && row.folder === 'Cap 3 - Derivadas'), false, 'pasta sem achado em descendente não aparece');
+});
+
 test('busca vazia respeita o estado fechado e o grupo fechado não mostra os arquivos', () => {
   const rows = materialRows(library, {folders: {'Cap 3 - Derivadas': false}});
   const cap3 = rows.find((row) => row.kind === 'group' && row.folder === 'Cap 3 - Derivadas');
   assert.equal(cap3.open, false);
   assert.equal(files(rows).includes('Aula 2.pdf'), false, 'grupo fechado esconde os arquivos');
-  assert.deepEqual(labels(rows), ['Cap 3 - Derivadas', 'Cap 10 - Integrais', 'Listas', 'Listas/2024'], 'os outros grupos continuam');
+  assert.deepEqual(labels(rows), ['Cap 3 - Derivadas', 'Cap 10 - Integrais', 'Listas', '2024'], 'os outros grupos continuam');
+});
+
+test('grupo fechado esconde as subpastas e os arquivos abaixo dele', () => {
+  const rows = materialRows(library, {folders: {'Listas': false}});
+  assert.deepEqual(labels(rows), ['Cap 3 - Derivadas', 'Cap 10 - Integrais', 'Listas'], 'o nó 2024 some junto com os arquivos');
+  assert.equal(files(rows).some((name) => name.startsWith('Lista')), false);
+  const listas = rows.find((row) => row.kind === 'group' && row.folder === 'Listas');
+  assert.equal(listas.count, 3, 'a contagem continua sendo a da pasta inteira');
+  const onlyYearClosed = materialRows(library, {folders: {'Listas/2024': false}});
+  assert.deepEqual(files(onlyYearClosed).filter((name) => name.startsWith('Lista')), ['Lista 1.pdf'], 'fechar o filho esconde só o que está dentro dele');
 });
 
 test('estado aberto/fechado: aberto por padrão, só booleano por pasta entra', () => {

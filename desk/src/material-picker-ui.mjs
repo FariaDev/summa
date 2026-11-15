@@ -7,11 +7,12 @@ import {materialRows, materialActive, normalizeMaterialFolders, folderOpen, step
    `<select class="pdf-select">` continua sendo o valor, o nome acessível e o
    contrato dos testes existentes; o clique/teclado nele abre este popover —
    busca (`role=combobox`, o foco fica nela) e lista (`role=listbox`) com os
-   PDFs da raiz no topo e um grupo por subpasta, no jeito do seletor de modelo
-   (#59): ↑↓ com volta, ⏎ escolhe, Esc fecha e devolve o foco ao seletor. Nos
-   grupos, ⏎ no título abre e fecha; a busca abre todos os grupos para o achado
-   aparecer com a pasta de origem. O estado aberto/fechado mora no `desk.json`
-   (estado de interface, por matéria, fora do `config.json`).
+   PDFs da raiz no topo e cada subpasta como nó dentro da pasta mãe, no jeito do
+   seletor de modelo (#59): ↑↓ com volta, ⏎ escolhe, Esc fecha e devolve o foco
+   ao seletor. Nos grupos, ⏎ no título abre e fecha; a busca abre os ancestrais
+   do achado para ele aparecer com a pasta de origem. O estado aberto/fechado
+   mora no `desk.json` (estado de interface, por matéria, fora do
+   `config.json`).
 
    A organização (raiz no topo, ordem natural, filtro) é a função pura de
    `material-picker.mjs`; aqui só entram DOM, teclado e a leitura do idioma. */
@@ -128,7 +129,8 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
       } else {
         const group = groupNode(row, index);
         groups.set(row.folder, group);
-        fragment.append(group);
+        const parent = row.folder.includes('/') ? groups.get(row.folder.split('/').slice(0, -1).join('/')) : null;
+        (parent || fragment).append(group);
       }
       index += 1;
     }
@@ -156,6 +158,7 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
     node.dataset.path = row.entry.path;
     node.setAttribute('aria-selected', String(row.entry.path === currentPath()));
     node.title = row.entry.name;
+    node.style.setProperty('--material-depth', String(row.depth));
     const name = document.createElement('span');
     name.className = 'material-row-name';
     name.textContent = row.entry.name;
@@ -192,6 +195,7 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
     head.setAttribute('aria-expanded', String(row.open));
     head.dataset.row = String(index);
     head.dataset.folder = row.folder;
+    head.style.setProperty('--material-depth', String(row.depth));
     const chevron = document.createElement('span');
     chevron.className = 'material-chevron';
     chevron.setAttribute('aria-hidden', 'true');

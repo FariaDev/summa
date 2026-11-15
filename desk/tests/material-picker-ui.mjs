@@ -2,9 +2,10 @@
 // janela: a matéria de exemplo é inventada (PDFs gerados no teste, nada de
 // material de curso). O `.pdf-select` continua sendo o valor e o nome acessível;
 // o clique/teclado nele abre a busca (`role=combobox`) e a lista
-// (`role=listbox`) com os PDFs da raiz no topo e grupos por subpasta (título =
-// caminho relativo, em ordem natural), abertos/fechados pelo título. A busca
-// filtra pelo nome e mostra o grupo de cada achado; escolher um PDF de subpasta
+// (`role=listbox`) com os PDFs da raiz no topo e cada subpasta como nó dentro da
+// pasta mãe (título = último pedaço do caminho, em ordem natural),
+// abertos/fechados pelo título. A busca filtra pelo nome e mostra o caminho de
+// cada achado; escolher um PDF de subpasta
 // abre o leitor. O fechamento de um grupo fica no estado de interface
 // (`desk.json` → `courseStates`), fora do `config.json`, e sobrevive a reabrir a
 // Mesa.
@@ -21,7 +22,7 @@ const readDesk=runtime=>JSON.parse(fs.readFileSync(path.join(runtime,'desk.json'
 const readConfig=runtime=>JSON.parse(fs.readFileSync(path.join(runtime,'config.json'),'utf8'));
 const writePdf=(file,text)=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,tinyPdf(text));};
 
-const GROUPS=['Cap 3 - Derivadas','Cap 10 - Integrais','Listas','Listas/2024'];
+const GROUPS=['Cap 3 - Derivadas','Cap 10 - Integrais','Listas','2024'];
 const closedCap3=page=>page.locator('.material-pop:not([hidden]) .material-group-head[data-folder="Cap 3 - Derivadas"]');
 
 async function openPicker(page){
@@ -66,6 +67,13 @@ await withArtifacts('seletor-material',async ctx=>{
  assert.match(await search.getAttribute('aria-label'),/^Buscar material$/);
  assert.deepEqual(await pop.locator('.material-group-title').allTextContents(),GROUPS,'um grupo por subpasta, em ordem natural (Cap 3 antes de Cap 10)');
  assert.equal(await pop.locator('.material-group[role="group"]').count(),4);
+ assert.equal(await pop.locator('.material-list > .material-group').count(),3,'só as pastas de nível 0 ficam na raiz');
+ const listasTree=pop.locator('.material-group[role="group"]:has(.material-group-head[data-folder="Listas"])');
+ assert.equal(await listasTree.locator('.material-group-head[data-folder="Listas/2024"]').count(),1,'o nó 2024 mora dentro do nó Listas');
+ const leftOf=file=>pop.locator('.material-row[data-path="'+file+'"] .material-row-name').evaluate(el=>el.getBoundingClientRect().left);
+ const lista1Left=await leftOf(path.join(course,'Listas','Lista 1.pdf'));
+ const lista2Left=await leftOf(path.join(course,'Listas','2024','Lista 2.pdf'));
+ assert.ok(lista2Left>lista1Left,`o arquivo de nível 2 recua mais que o de nível 1 (${lista2Left} > ${lista1Left})`);
  const labelled=await pop.locator('.material-group').first().getAttribute('aria-labelledby');
  assert.equal(await pop.locator(`#${labelled}`).getAttribute('role'),'option','o grupo é rotulado pelo título que abre e fecha');
  assert.equal(await pop.locator('.material-group-head[aria-expanded="true"]').count(),4,'os grupos abrem por padrão');
@@ -86,9 +94,9 @@ await withArtifacts('seletor-material',async ctx=>{
 
  /* ---- busca: filtra pelo nome e mostra o grupo de cada achado ---- */
  await search.fill('lista');
- await pollUntil(()=>pop.locator('.material-group-title').allTextContents(),titles=>titles.join()==='Listas,Listas/2024',{what:'só os grupos com achado'});
- assert.deepEqual(await pop.locator('.material-row[data-path] .material-row-name').allTextContents(),['Lista 1.pdf','Lista 2.pdf','Lista 10.pdf'],'ordem natural dentro dos grupos');
- assert.deepEqual(await pop.locator('.material-row[data-path] .material-row-folder').allTextContents(),['Listas','Listas/2024','Listas/2024'],'cada achado mostra a pasta de origem');
+ await pollUntil(()=>pop.locator('.material-group-title').allTextContents(),titles=>titles.join()==='Listas,2024',{what:'só os grupos com achado, com o 2024 dentro de Listas'});
+ assert.deepEqual(await pop.locator('.material-row[data-path] .material-row-name').allTextContents(),['Lista 2.pdf','Lista 10.pdf','Lista 1.pdf'],'subpastas antes dos arquivos da pasta, ordem natural em cada uma');
+ assert.deepEqual(await pop.locator('.material-row[data-path] .material-row-folder').allTextContents(),['Listas/2024','Listas/2024','Listas'],'cada achado mostra o caminho completo da pasta de origem');
  assert.equal(await pop.locator('.material-group-head[aria-expanded="true"]').count(),2,'com busca ativa os grupos aparecem abertos mesmo com o Cap 3 fechado');
  await search.fill('zzz');
  assert.equal(await pop.locator('.material-row[data-path]').count(),0);
@@ -140,5 +148,5 @@ await withArtifacts('seletor-material',async ctx=>{
  assert.equal(await closedCap3(page).getAttribute('aria-expanded'),'false','o grupo fechado antes de reabrir a Mesa continua fechado');
 
  assert.deepEqual(errors,[]);
- console.log('material-picker-ui: PASS — raiz no topo, grupos por subpasta em ordem natural, abre/fecha, busca com a pasta de cada achado, escolha de PDF de subpasta abre o leitor e o grupo fechado sobrevive ao reabrir (desk.json, fora do config.json).');
+ console.log('material-picker-ui: PASS — raiz no topo, subpastas aninhadas em ordem natural com recuo por nível, abre/fecha, busca com o caminho de cada achado, escolha de PDF de subpasta abre o leitor e o grupo fechado sobrevive ao reabrir (desk.json, fora do config.json).');
 });

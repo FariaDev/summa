@@ -1,8 +1,11 @@
 /* Seletor de material do leitor (#74): a busca e a lista que abrem do
    `.pdf-select`, no meio da barra única. Uma superfície só, como o "Mais
    opções" do mesmo leitor e o seletor de modelo (#59): PDFs da raiz no topo e
-   um grupo por subpasta, com o título na cor discreta e a seta de abrir/fechar.
-   O `<select>` nativo continua na barra e é o contrato do nome acessível. */
+   cada subpasta como nó dentro da pasta mãe, com o título na cor discreta e a
+   seta de abrir/fechar. O `<select>` nativo continua na barra e é o contrato do
+   nome acessível. O recuo de cada linha vem de `--material-depth` (a árvore
+   decide o nível): um degrau por pasta, e o arquivo cai depois da seta, na
+   coluna do nome do grupo. */
 .material-pop{
  position:absolute;top:calc(var(--bar) - var(--space-1));left:var(--space-2);z-index:12;
  display:flex;flex-direction:column;width:min(360px,calc(100% - var(--space-5)));
@@ -29,6 +32,9 @@
 }
 .material-empty[hidden]{display:none}
 .material-list{
+ --material-step:16px;
+ --material-arrow:calc(14px + var(--space-2));
+ --material-file-offset:calc(var(--material-arrow) - var(--material-step));
  display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;
  padding:var(--space-1) var(--space-1) var(--space-2);
  scrollbar-width:thin;scrollbar-color:transparent transparent;
@@ -39,14 +45,20 @@
  display:flex;align-items:center;gap:var(--space-2);min-height:30px;padding:0 var(--space-2);
  border-radius:var(--r-sm);cursor:pointer;color:var(--fg);
 }
-.material-group-head{color:var(--muted);font-size:var(--fs-sm);font-weight:600}
+.material-group-head{
+ padding-left:calc(var(--space-2) + var(--material-depth, 0) * var(--material-step));
+ color:var(--muted);font-size:var(--fs-sm);font-weight:600;
+}
 .material-group-head.active,.material-row.active{background:var(--hover-row)}
 .material-row[aria-selected="true"]{background:var(--selected);color:var(--fg-strong)}
 .material-chevron{display:inline-flex;flex:none;color:var(--faint)}
 .material-chevron .icon{width:14px;height:14px}
 .material-group-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .material-group-count{flex:none;font-size:var(--fs-xs);color:var(--faint)}
-.material-row{padding-left:var(--space-5);font-size:var(--fs-md)}
+.material-row{
+ padding-left:calc(var(--space-2) + var(--material-depth, 0) * var(--material-step) + var(--material-file-offset));
+ font-size:var(--fs-md);
+}
 .material-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .material-row-folder{
  flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
