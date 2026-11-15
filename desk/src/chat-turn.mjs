@@ -292,6 +292,17 @@ function ensureActivitySlot(toolCallId,{status='pending',anchor=null,artifactId=
  if(created)window.dispatchEvent(new CustomEvent('desk-activity-slot',{detail:{toolCallId:id,element:el}}));
  return el;
 }
+/* Revisão de uma prévia publicada (#62): a chamada de `criar_atividade` não
+   ganha slot próprio; o quadro é o MESMO, no ponto da prévia. */
+function removeActivitySlot(toolCallId){
+ const id=String(toolCallId||'');
+ if(!id)return false;
+ const el=activitySlots.get(id);
+ if(el?.isConnected)el.remove();
+ activitySlots.delete(id);
+ turnState.turnActivityCalls.delete(id);
+ return !!el;
+}
 function activitySlotElement(toolCallId,status='pending'){
  const el=document.createElement('div');
  el.className='activity-slot';
@@ -410,4 +421,4 @@ function settleTurn({reason=''}={}){
  clearTimeout(turnState.renderTimer);turnState.renderTimer=0;
 }
 
-export {resetAssistantBuffers,nextAssistantId,ensureAssistantId,toolResultFor,staleEvent,resetAssistantBlock,appendAssistantDelta,settleAssistantBlock,rememberToolAnchors,assistantAnchorAfter,openTurnLog,openSegment,renderSegment,declareTool,ensureActivitySlot,activitySlotElement,activityDetailsOf,paintLive,paintMarkedPageImages,renderTurn,closeSegment,scheduleTurn,settleTurn};
+export {resetAssistantBuffers,nextAssistantId,ensureAssistantId,toolResultFor,staleEvent,resetAssistantBlock,appendAssistantDelta,settleAssistantBlock,rememberToolAnchors,assistantAnchorAfter,openTurnLog,openSegment,renderSegment,declareTool,ensureActivitySlot,removeActivitySlot,activitySlotElement,activityDetailsOf,paintLive,paintMarkedPageImages,renderTurn,closeSegment,scheduleTurn,settleTurn};

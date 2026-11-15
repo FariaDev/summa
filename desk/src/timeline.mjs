@@ -19,6 +19,10 @@ export const ACTIVITY_TOOLS=Object.freeze(['mesa_criar_atividade','mcp__mesa__cr
    fim do turno saber que houve prévia sem quadro (H4). */
 export const PREVIEW_TOOLS=Object.freeze(['mesa_previsualizar_atividade','mcp__mesa__previsualizar_atividade']);
 const PREVIEW_ID=/previaId\s+"(prv-[a-z0-9]{8,24})"/;
+/* A prévia sem erro publica na própria chamada (#62). O guia emite esta linha
+   com o id/versão do quadro; o renderer a lê para criar o slot no ponto da
+   chamada, sem esperar o fim do turno nem o H4. */
+const PUBLISHED_ACTIVITY=/Quadro publicado: (act-[a-z0-9][a-z0-9-]{2,63}) v(\d+)/;
 
 export function isActivityTool(name){
  return ACTIVITY_TOOLS.includes(String(name||''));
@@ -38,6 +42,17 @@ export function isPreviewTool(name){
 export function previewIdOfText(text){
  const match=PREVIEW_ID.exec(String(text||''));
  return match?match[1]:'';
+}
+
+/* O quadro que a prévia (ou uma revisão dela) publicou, ou null. Fonte única
+   da marca entre o texto do guia e o slot do renderer (#62).
+   @param {unknown} text resultado da ferramenta
+   @returns {{id: string, version: number}|null}
+   @example publishedActivityOfText('Quadro publicado: act-0123456789 v2 — o aluno JÁ o vê.') // {id: 'act-0123456789', version: 2}
+*/
+export function publishedActivityOfText(text){
+ const match=PUBLISHED_ACTIVITY.exec(String(text||''));
+ return match?{id:match[1],version:Number(match[2])}:null;
 }
 
 /* Parte de artefato no histórico: o slot nasce no ponto da declaração da
@@ -73,7 +88,9 @@ export function previewPart(toolCallId,previaId,at=0){
 export function historyArtifactPart(step,at=0){
  if(!step)return null;
  const name=String(step.toolName||'');
- if(isActivityTool(name))return artifactPart(step.id,name,at);
+ /* #62: revisão de prévia não ganha slot próprio — o quadro é o da prévia e o
+    texto da revisão traz o mesmo `previaId`. */
+ if(isActivityTool(name))return previewIdOfText(step.resultText)?null:artifactPart(step.id,name,at);
  if(!isPreviewTool(name))return null;
  const previaId=previewIdOfText(step.resultText);
  return previaId?previewPart(step.id,previaId,at):null;

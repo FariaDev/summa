@@ -1,7 +1,7 @@
-/* H4: o tutor pré-visualiza a atividade e termina a resposta sem publicar
-   (às vezes dizendo que publicou). O aluno não pode ficar sem nada: no fim do
-   turno normal, a última prévia vira quadro na conversa.
-   Reproduz o caso real medido no Mac: só `mesa_previsualizar_atividade`.
+/* #62: o tutor pré-visualiza a atividade sem erro e não precisa chamar
+   `criar_atividade`. A prévia publica na própria chamada, no ponto em que o
+   aluno a vê — não no fim do turno. Reproduz o caso real medido no Mac: só
+   `mesa_previsualizar_atividade`.
    Roda da pasta desk: `node --test tests/preview-fallback-ui.mjs`. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -37,11 +37,11 @@ await withArtifacts('preview-fallback-ui',async ctx=>{
  };
  await send('Crie uma atividade.');
  await page.waitForFunction(()=>document.querySelector('#messages').textContent.includes('a atividade foi publicada'),undefined,{timeout:60000});
- assert.match(await page.locator('#messages').textContent(),/Prévia da atividade/,'a prévia rodou antes da publicação de fim de turno');
+ assert.match(await page.locator('#messages').textContent(),/Prévia da atividade/,'a prévia publicou na própria chamada, sem criar_atividade');
  const slot=page.locator('.activity-slot[data-activity-call^="previa:"]');
  await slot.locator('.activity-card[data-state="ready"]').waitFor({timeout:30000});
  const item=(await page.evaluate(()=>window.desk.activityList())).items.find(entry=>String(entry.toolCallId).startsWith('previa:'));
- assert.ok(item,'a prévia não publicada virou atividade no fim do turno');
+ assert.ok(item,'a prévia sem erro virou atividade no ponto da chamada');
  assert.equal(item.title,PREVIEW.title,'a atividade publicada é a prévia que o tutor montou');
  const frame=page.frames().find(candidate=>candidate.url().startsWith('mesa-activity://act-'));
  assert.ok(frame,'o quadro da prévia montou o artefato');

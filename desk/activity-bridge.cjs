@@ -184,10 +184,9 @@ function pickPayload(raw) {
   return {spec, toolCallId, callRef, paramsHash: hashOf(canonicalSpec(spec) + '\n' + activityId), activityId, previewId: ''};
 }
 
-
 /**
  * @param {{publish?: (scope: object, spec: object, caller: {toolCallId: string, callRef?: string}) => Promise<unknown>,
- *   preview?: ((raw: unknown, options: object) => Promise<unknown>) | null,
+ *   preview?: ((raw: unknown, options: object) => Promise<unknown>) | null, publishPreview?: ((scope: object, result: object) => Promise<object>) | null,
  *   figure?: ((raw: unknown) => Promise<unknown>) | null, pdfPage?: ((raw: {path?: unknown, first?: unknown, last?: unknown, imagem?: unknown, girar?: unknown, recorte?: unknown, ampliar?: unknown, marcas?: unknown}) => Promise<object>) | null,
  *   notebookPage?: ((raw: {caminho?: unknown, pagina?: unknown}) => Promise<object>) | null,
  *   searchMaterial?: ((scope: object, raw: {consulta?: unknown, limite?: unknown}) => Promise<object>) | null,
@@ -198,7 +197,7 @@ function pickPayload(raw) {
  *   `tutorText` põe a mensagem marcada no idioma do tutor: a resposta vai ao
  *   modelo, que não lê a marca U+E000 (#43 fase 3).
  */
-function createActivityBridge({publish, preview = null, figure = null, pdfPage = null, notebookPage = null, searchMaterial = null, materialList = null, reviewProposal = null, card = null, engine = 'opencode', maxBodyBytes = MAX_BODY_BYTES, tutorText = (raw) => raw} = {}) {
+function createActivityBridge({publish, preview = null, publishPreview = null, figure = null, pdfPage = null, notebookPage = null, searchMaterial = null, materialList = null, reviewProposal = null, card = null, engine = 'opencode', maxBodyBytes = MAX_BODY_BYTES, tutorText = (raw) => raw} = {}) {
   if (typeof publish !== 'function') throw new Error(invalidValue('publish', publish, 'function'));
   const grants = new Map();
   let port = 0;
@@ -314,7 +313,7 @@ function createActivityBridge({publish, preview = null, figure = null, pdfPage =
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ActivityStoreError('BAD_INPUT', message('err.bridge.badPayload', {what: 'preview', received: describeReceived(raw)}));
         assertActivityArgsFit(raw);
         const result = await preview(raw, {theme: raw.theme, width: raw.width, scope: grant.scope});
-        reply(res, 200, {previewed: true, ...result});
+        reply(res, 200, {previewed: true, ...(typeof publishPreview === 'function' ? await publishPreview({...grant.scope}, result) : result)}); // #62: prévia sem erro publica na própria chamada
         return;
       }
       const {spec, toolCallId, callRef, paramsHash, activityId} = pickPayload(raw);
@@ -333,6 +332,7 @@ function createActivityBridge({publish, preview = null, figure = null, pdfPage =
         title: result.title,
         ...(result.view ? {view: result.view} : {}),
         ...(result.measureFailed ? {measureFailed: true} : {}),
+        ...(result.previaId ? {previaId: result.previaId} : {}),
         reused: result.reused === true,
         reviewRequired: false,
       });
