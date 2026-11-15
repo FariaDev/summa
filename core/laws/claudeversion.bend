@@ -6,7 +6,7 @@ import ../claudeversion.bend as C
 # ---------------------------------------------------------------------------
 # Contrato da faixa de versões do Claude Code (#51). Prefixo `cv_`.
 #
-# O que se garante, com o mínimo 2.1.296 e a testada 2.1.301 da tabela de hoje
+# O que se garante, com o mínimo 2.1.296 e a testada 2.1.325 da tabela de hoje
 # (os números são concretos porque a comparação fecha por computação):
 #   1. o mínimo, a testada e o meio são aceitos, sem aviso;
 #   2. depois da testada, na mesma série, é aceito com "mais nova que a

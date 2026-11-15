@@ -38,11 +38,11 @@ test('as Configurações mostram o mesmo texto da linha do Sobre e acrescentam "
 });
 
 test('uma linha por aviso, na ordem recebida, nas duas superfícies', () => {
-  const facts = list([line('pi', 'Pi', '1.3.0'), line('claude', 'Claude Code', '2.1.301', true)]);
+  const facts = list([line('pi', 'Pi', '1.3.0'), line('claude', 'Claude Code', '2.1.326', true)]);
   for (const surface of [About, Settings]) {
     const nodes = array(noticeCore.noticeLinesFor(surface, facts));
     assert.equal(nodes.length, 2, `${surface.$}: duas linhas`);
-    assert.match(textOf(nodes[1]), /Claude Code 2\.1\.301 disponível · mais nova que a testada/);
+    assert.match(textOf(nodes[1]), /Claude Code 2\.1\.326 disponível · mais nova que a testada/);
   }
   assert.deepEqual(array(noticeCore.noticeLinesFor(Settings, Nil)), [], 'sem aviso, sem linha');
 });

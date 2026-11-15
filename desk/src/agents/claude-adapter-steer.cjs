@@ -7,7 +7,7 @@
    O segundo item entra na consulta que JÁ está aberta: a mesma `MessageQueue`
    que o SDK consome como `prompt` iterável. Nenhum método novo do SDK, nenhuma
    segunda sessão. O item leva `priority: 'now'` (campo de `SDKUserMessage` no
-   SDK 0.3.301), que pede ao CLI para tratar a mensagem já, sem esperar a
+   SDK 0.3.325), que pede ao CLI para tratar a mensagem já, sem esperar a
    ferramenta em curso terminar.
 
    Regras de entrega (as mesmas do turno):

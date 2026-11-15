@@ -4,7 +4,7 @@
 /* Comandos `/` e compactação manual do ClaudeAdapter (#58; especificação nos
    commits `12de58f`, `c427f0a` e `a794128` da branch t3/opencode-provider).
 
-   Catálogo: `Query.supportedCommands()` do SDK 0.3.301 (embutidos, skills e
+   Catálogo: `Query.supportedCommands()` do SDK 0.3.325 (embutidos, skills e
    plugins), guardado por consulta e trocado pelo `system/commands_changed`.
    Leitura que falha é lista VAZIA: a Mesa nunca inventa comando.
 

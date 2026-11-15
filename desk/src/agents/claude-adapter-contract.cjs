@@ -55,7 +55,7 @@ const RATE_LIMIT_WINDOWS = Object.freeze({
   overage: 'overage',
 });
 
-/* Erros que o CLI carimba na mensagem assistente (SDK 0.3.301
+/* Erros que o CLI carimba na mensagem assistente (SDK 0.3.325
    `SDKAssistantMessageError`) e o código canônico mostrado à Mesa. */
 const ASSISTANT_ERROR_CODES = Object.freeze({
   rate_limit: 'CLAUDE_RATE_LIMITED',
