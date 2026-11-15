@@ -71,7 +71,7 @@ For an agent setting up the computer: [`desk/SETUP.md`](desk/SETUP.md) (in Portu
 
 **About → Update and restart** (from 0.4.0 on), or `npm run update` in `desk/`. Your `config.json` keeps working as it is. What changed in each version is in the [Releases](https://github.com/FariaDev/summa/releases) and in the [CHANGELOG](CHANGELOG.md).
 
-If you installed from the old repository (`mesa-de-estudos`), reinstall once from Summa; the app warns you.
+If you installed from the old repository (`mesa-de-estudos`), reinstall once from Summa; the 1.3.0 release there says so.
 
 ## Settings
 

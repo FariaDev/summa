@@ -7,8 +7,7 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 ### Antes de atualizar
 
 - **Nome e repositório novos:** a Mesa de Estudos agora é **Summa**, com a integral a pincel como logo, em grafite e violeta, e vive em `github.com/FariaDev/summa`. Matérias, PDFs, caderno e progresso ficam onde estão.
-- **Quem instalou pelo clone do mesa-de-estudos** precisa baixar e instalar de novo a partir do Summa para continuar recebendo atualizações. Não apague a pasta antiga: a Summa continua lendo os dados dela, e o app avisa quando a instalação é antiga.
-- **Os cadernos saem da Summa:** a biblioteca, a busca e o índice de tinta dos cadernos agora vivem no Xournal++ modificado (Ambitus). O Caderno de revisão e a leitura de `.xopp` pelo tutor continuam na Summa.
+- **Quem instalou pelo clone do mesa-de-estudos** precisa baixar e instalar de novo a partir do Summa para continuar recebendo atualizações. Não apague a pasta antiga: seus dados podem estar nela, e a Summa continua lendo de lá. O aviso está na release 1.3.0 do mesa-de-estudos, porque o clone antigo não recebe esta versão.
 - **Acento:** ficam só **Grafite** e **Violeta**; azul, verde, laranja e rosa saem. Quem usava um deles volta ao Grafite.
 
 ### Novidades
@@ -33,7 +32,7 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 ### Melhorias
 
 - **Instalação mais clara:** os textos batem com as versões reais (Node 22, OpenCode 2.2.7); no Windows, o setup explica a falta do Visual C++ Redistributable.
-- **Atualização:** a instalação por zip registra a origem e se atualiza pelo zip; no Windows, a atualização espera os processos do Electron; o app instalado avisa que usa o runtime do clone; quem veio do repositório antigo vê o aviso para reinstalar do Summa.
+- **Atualização:** a instalação por zip registra a origem e se atualiza pelo zip; no Windows, a atualização espera os processos do Electron; o app instalado avisa que usa o runtime do clone.
 - **Janela:** a Summa volta para a tela quando o monitor é desconectado; em janela baixa, o painel Contexto e a fala da primeira abertura continuam inteiros.
 - **Primeira abertura:** fonte maior e a cena acompanha a altura.
 - **Conferir no Linux:** com o Ambitus conectado, o Conferir pede a página pela ponte também no Linux.
@@ -61,7 +60,7 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 
 - Quem instalou pelo clone do mesa-de-estudos precisa reinstalar uma vez pelo Summa.
 - A leitura da escrita à mão no Ambitus precisa de um modelo pago com visão e fica desligada por padrão.
-- No Windows, esta versão passou por testes automáticos; a instalação e o primeiro uso em conta limpa ainda serão provados.
+- No Windows, a instalação e a primeira conversa foram provadas numa conta limpa; o uso do dia a dia ainda foi testado à mão só no macOS.
 - No macOS com ícones em preto e branco, o ícone da Summa fica colorido enquanto ela está aberta.
 - O instalador do Windows começa por `npm run install-app` num clone: ainda não há instalador gráfico para quem não tem Node.
 

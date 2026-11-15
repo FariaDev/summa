@@ -71,7 +71,7 @@ Para um agente configurar o computador: [`desk/SETUP.md`](desk/SETUP.md).
 
 **Sobre → Atualizar e reiniciar** (de 0.4.0 em diante), ou `npm run update` em `desk/`. O `config.json` continua valendo como está. O que mudou em cada versão fica nas [Releases](https://github.com/FariaDev/summa/releases) e no [CHANGELOG](CHANGELOG.md).
 
-Quem instalou pelo repositório antigo (`mesa-de-estudos`) precisa reinstalar uma vez pelo Summa; o app avisa.
+Quem instalou pelo repositório antigo (`mesa-de-estudos`) precisa reinstalar uma vez pelo Summa; o aviso está na release 1.3.0 de lá.
 
 ## Configurações
 
