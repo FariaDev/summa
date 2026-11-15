@@ -14,6 +14,7 @@ import {offsetFacts,offsetFromRecord,labelsList,readDocLabels} from './pdf-label
 import {bindPdfDrop,isPdfFile} from './pdf-drop.mjs';
 import {rememberPdfReader} from './pdf-zoom.mjs';
 import {fitReaderStatus,observeReaderStatus} from './reader-status-fit.mjs';
+import {createMaterialPicker} from './material-picker-ui.mjs';
 import {text as uiText,t as uiT} from './ui-text.mjs';
 import {message as uiMessage,parseMessage} from './i18n.mjs';
 import {roundNat, toNat} from './bend-nat.mjs';
@@ -114,7 +115,7 @@ async function refreshSheetLibrary(){
   const fresh=await window.desk.courseLibrary();
   if(!fresh||fresh.courseId!==courseId||S.currentCourseId!==courseId||S.switching)return;
   let added=false;
-  for(const item of fresh.library||[])if(item?.path&&!S.library.some(p=>p.path===item.path)){S.library.push({name:item.name,path:item.path});added=true;}
+  for(const item of fresh.library||[])if(item?.path&&!S.library.some(p=>p.path===item.path)){S.library.push({name:item.name,path:item.path,folder:item.folder||''});added=true;}
   if(added)S.panels.forEach(p=>p.populate());
   for(const panel of waiting){
    const path=(fresh.preferred||[])[panel.index];
@@ -129,11 +130,13 @@ if(typeof window!=='undefined')window.addEventListener('focus',()=>{refreshSheet
    menu como popover, então fechar o menu nunca cancela o turno do tutor. */
 const openMore=()=>(S.panels||[]).filter(panel=>panel.q?.('.pdf-more-pop')?.hidden===false);
 document.addEventListener('click',event=>{
+ for(const panel of S.panels||[])panel.materialPicker?.closeOutside(event.target);
  if(event.target?.closest?.('.pdf-more-pop,.more'))return;
  for(const panel of openMore())panel.setMore(false);
 });
 document.addEventListener('keydown',event=>{
  if(event.key!=='Escape')return;
+ for(const panel of S.panels||[])panel.materialPicker?.close(false);
  for(const panel of openMore()){
   panel.setMore(false);
   panel.q('.more')?.focus();
@@ -193,6 +196,16 @@ export class PdfPanel {
   iconize(this.el);
   this.el.addEventListener('pointerdown',()=>rememberPdfReader(this));
   $('#pdf-grid').append(this.el);this.q=s=>this.el.querySelector(s);
+  /* Seletor de material (#74): o `<select>` continua sendo o valor e o nome
+     acessível; clique/teclado nele abrem a busca e os grupos por subpasta. */
+  this.materialPicker=createMaterialPicker({
+   select:this.q('.pdf-select'),
+   label:this.label,
+   library:()=>S.library,
+   onPick:path=>{const select=this.q('.pdf-select');select.value=path;select.dispatchEvent(new Event('change',{bubbles:true}));},
+   onOpenFile:()=>this.openFile(),
+   onFoldersChanged:()=>save()
+  });
   /* P1 da rodada 6: o status do leitor vazio some de vista quando não cabe. */
   observeReaderStatus(this.el);
   // O contrato antigo já nascia com `aria-pressed="false"` no botão de inverter
@@ -284,7 +297,7 @@ export class PdfPanel {
  askTutor(){
   window.dispatchEvent(new CustomEvent('desk-reader-sheet',{detail:{action:'tutor',seed:uiText(readerSheet.tutorSeed(String(S.activeCourseName||'')))}}));
  }
-  populate(){const selected=this.path;renderChildren(this.q('.pdf-select'),pdfPage.optionNodes(this.optionList(),this.path||''));if(selected)this.q('.pdf-select').value=selected;this.titleSelect();fitReaderStatus(this.el);}
+  populate(){const selected=this.path;renderChildren(this.q('.pdf-select'),pdfPage.optionNodes(this.optionList(),this.path||''));if(selected)this.q('.pdf-select').value=selected;this.titleSelect();this.materialPicker?.refresh();fitReaderStatus(this.el);}
  /* Rótulo + nome inteiro do material na dica: a barra estreita encurta o nome com
     reticências e, num leitor de ~250px, esconde o rótulo. */
  titleSelect(){const select=this.q('.pdf-select');if(select)select.title=[this.label,select.selectedOptions[0]?.textContent].filter(Boolean).join(' · ');}

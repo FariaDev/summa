@@ -74,6 +74,7 @@ const SELECTORS = {
   '#sidechat-context-pop:not([hidden])': 'sidechat',
   '.pdf-nav-pop:not([hidden])': 'navpop',
   '.pdf-more-pop:not([hidden])': 'morepop',
+  '.material-pop:not([hidden])': 'materialpop',
   '#quote-btn:not([hidden])': 'quote',
   '.pdf-find:not([hidden])': 'find',
   '#chat-find:not([hidden])': 'chatfind',
@@ -108,6 +109,13 @@ test('collector mapeia cada camada ao seu seletor exato', () => {
 
 test('o menu Mais opções do leitor aberto conta como popover (Esc fecha e não cancela o turno)', () => {
   const facts = collectEscapeFacts(fakeDoc(['morepop']), {busy: true, panels: []});
+  assert.equal(facts.popover, true);
+  assert.equal(decideEscape(facts), 'popover');
+  assert.equal(stopsTutor(decideEscape(facts)), false);
+});
+
+test('o seletor de material do leitor aberto conta como popover (Esc fecha e não cancela o turno)', () => {
+  const facts = collectEscapeFacts(fakeDoc(['materialpop']), {busy: true, panels: []});
   assert.equal(facts.popover, true);
   assert.equal(decideEscape(facts), 'popover');
   assert.equal(stopsTutor(decideEscape(facts)), false);

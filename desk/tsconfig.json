@@ -66,6 +66,8 @@
   "src/release-notes-ui.mjs",
   "src/model-picker-ui.mjs",
   "src/model-picker-rows.mjs",
+  "src/material-picker.mjs",
+  "src/material-picker-ui.mjs",
   "src/provider-icons.mjs",
   "src/activity-loader.mjs",
   "src/backup-panel-loader.mjs",
