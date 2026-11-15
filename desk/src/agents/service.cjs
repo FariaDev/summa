@@ -31,6 +31,18 @@ function capabilities(engine,controls=null){
  const {$,...caps}=chosen;return {...caps,retryLastTurn:engine==='opencode'};
 }
 function metadata(engine,controls=null){const caps=capabilities(engine,controls);return {engine,caps,capabilities:caps};}
+/* Mesma parte na mensagem repetida (#66): a chamada casa pelo id, o resultado
+   pelo `toolCallId` e o texto pelo conteúdo; o resto só entra se for novo. */
+function samePart(left,right){
+ if(left===right)return true;
+ if(!left||!right||typeof left!=='object'||typeof right!=='object'||left.type!==right.type)return false;
+ if(left.type==='toolCall')return String(left.id||'')===String(right.id||'');
+ if(left.type==='toolResult')return String(left.toolCallId||'')===String(right.toolCallId||'');
+ if(left.type==='text')return String(left.text||'')===String(right.text||'');
+ if(left.type==='thinking')return String(left.thinking??left.text??'')===String(right.thinking??right.text??'');
+ if(left.type==='image')return String(left.source??left.data??left.attachment??'')===String(right.source??right.data??right.attachment??'');
+ return false;
+}
 function rendererEvent(e){
  const shared={conversationId:e.conversationId,runId:e.runId};
  switch(e.type){
@@ -100,7 +112,7 @@ class NativeService extends EventEmitter{
     if(images.length)this._rememberMarkedImages(e,images);
    }
    if(e.type==='message_end'&&e.message&&['user','assistant'].includes(e.message.role)){
-    const m=e.message;this._settlePartial(m);if(!m.uuid||!this.messages.some(x=>x.uuid===m.uuid)){this.messages.push(m);this._deferMessages();}
+    const m=e.message;this._settlePartial(m);this._rememberMessage(m);
     if(this._markedPages)this._attachPendingMarkedImages(m);
    }
    /* O fim do turno (inclusive erro/incerteza) é o ponto único dos
@@ -109,6 +121,27 @@ class NativeService extends EventEmitter{
    if(e.type==='turn_end'){this._partials.clear();if(this._markedPages)this._flushPendingMarkedImages();this.flush();}
    onEvent?.(e);const event=rendererEvent(e);if(event)this.emit('event',event);
   });
+ }
+ /* #66: o leitor do OpenCode fecha a mensagem do passo antes da ferramenta e
+    manda o `message_end` da chamada depois com o MESMO `uuid`. Descartar o
+    segundo deixava o descritor sem o `toolCall` (e sem o resultado inline do
+    #146) até o `connect` reaplicar o histórico do servidor; reabrir antes
+    disso punha o quadro pelo `createdAt`. O dedupe por `uuid` continua: só as
+    partes que faltam entram na mensagem já gravada. */
+ _rememberMessage(message){
+  const at=message.uuid?this.messages.findLastIndex(item=>item.uuid===message.uuid):-1;
+  if(at<0){this.messages.push(message);this._deferMessages();return;}
+  const current=this.messages[at];
+  /* Conteúdo em texto puro vira parte de texto: a mescla não pode apagá-lo. */
+  const content=Array.isArray(current.content)?current.content:typeof current.content==='string'&&current.content?[{type:'text',text:current.content}]:[];
+  if(!Array.isArray(message.content))return;
+  let changed=false;
+  for(const part of message.content){
+   const known=content.find(item=>samePart(item,part));
+   if(!known){content.push(part);changed=true;continue;}
+   if(known.type==='toolCall')for(const key of ['result','isError','endedAt'])if(Object.hasOwn(part,key)&&known[key]!==part[key]){known[key]=part[key];changed=true;}
+  }
+  if(changed){current.content=content;this._deferMessages();}
  }
  /** Texto do catálogo com o nome do motor (`claude.svc.busy`, `opencode.svc.busy`…). @param {string} key */
  _t(key){return uiMsg(this.engine==='opencode'?`opencode.svc.${key}`:`claude.svc.${key}`);}

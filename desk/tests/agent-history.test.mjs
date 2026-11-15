@@ -35,6 +35,18 @@ test('normalize desembrulha o SDK e separa texto de toolCall', () => {
   }]);
 });
 
+test('toolCall do descritor local preserva o resultado inline (#146/#66)', () => {
+  const out = normalizeClaudeMessages({role: 'assistant', content: [
+    {type: 'toolCall', id: 'call_prev_1', name: 'mesa_previsualizar_atividade', arguments: {html: '<p/>'}, result: 'previaId "prv-1"', isError: false, endedAt: 123}
+  ]});
+  assert.deepEqual(out, [{
+    role: 'assistant',
+    content: [
+      {type: 'toolCall', id: 'call_prev_1', name: 'mesa_previsualizar_atividade', arguments: {html: '<p/>'}, result: 'previaId "prv-1"', endedAt: 123}
+    ]
+  }], 'o histórico reaberto antes de religar ainda acha o previaId');
+});
+
 test('imagem: source do SDK vira data/mimeType strings; data URL é desmembrado', () => {
   const sdk = {type: 'user', message: {role: 'user', content: [
     {type: 'image', source: {type: 'base64', media_type: 'image/jpeg', data: 'QUJD'}}

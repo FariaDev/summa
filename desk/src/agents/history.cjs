@@ -18,7 +18,9 @@
      {type:'image', attachment, mimeType, source?, bytes}  ← #4: o descritor
        guarda só a referência ao arquivo endereçado por conteúdo; o consumidor
        resolve os bytes com `conversation-attachments.cjs`.
-     {type:'toolCall', id?, name?, arguments?, argumentsTruncated?}
+     {type:'toolCall', id?, name?, arguments?, argumentsTruncated?,
+      result?, isError?, endedAt?}   ← resultado inline do descritor local do
+       OpenCode (#146); a normalização preserva os três últimos (#66).
      {type:'toolResult', toolCallId, text, isError}
 
    Aceita entradas cruas do SDK/CLI (com ou sem embrulho `message`, blocos
@@ -189,6 +191,13 @@ function toolCallPart(block) {
   const name = clip(str(block.name), MAX_TOOL_CHARS);
   if (id) part.id = id;
   if (name) part.name = name;
+  /* #146/#66: o descritor local do OpenCode guarda o resultado na própria
+     chamada; normalizar não pode descartá-lo, senão o histórico reaberto perde
+     o texto da prévia (e a âncora do quadro) antes de religar. */
+  if (block.result !== undefined) part.result = clip(str(block.result), MAX_TEXT_CHARS);
+  if (block.isError === true) part.isError = true;
+  const endedAt = Number(block.endedAt);
+  if (Number.isFinite(endedAt) && endedAt > 0) part.endedAt = endedAt;
   if (block.argumentsTruncated === true) {
     part.arguments = {};
     part.argumentsTruncated = true;
