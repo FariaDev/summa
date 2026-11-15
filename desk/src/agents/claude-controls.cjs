@@ -2,7 +2,7 @@
  *
  * Módulo PURO: não importa o SDK, não faz I/O, não cria timer, não abre rede e
  * NUNCA inicia consulta/inferência. Ele só transforma dados que o host já tem:
- * o catálogo nativo do SDK pinado (@anthropic-ai/claude-agent-sdk 0.3.301,
+ * o catálogo nativo do SDK pinado (@anthropic-ai/claude-agent-sdk 0.3.325,
  * `Query.supportedModels()` → `ModelInfo[]`, ou
  * `Query.initializationResult()` → `SDKControlInitializeResponse.models`),
  * mais a escolha do usuário persistida no descritor da conversa.
@@ -34,7 +34,7 @@
  */
 'use strict';
 
-/* União exata de `EffortLevel`/`ModelInfo.supportedEffortLevels` no SDK 0.3.301. */
+/* União exata de `EffortLevel`/`ModelInfo.supportedEffortLevels` no SDK 0.3.325. */
 const EFFORT_LEVELS = Object.freeze(['low', 'medium', 'high', 'xhigh', 'max']);
 
 const MAX_MODELS = 200;
@@ -111,7 +111,7 @@ function looksLikeRouterModelId(value) {
   return ROUTER_PREFIX_RE.test(clean) || ROUTER_CLOUD_RE.test(clean);
 }
 
-/* Uma linha de `ModelInfo` (SDK 0.3.301) validada e limitada. Campos fora da
+/* Uma linha de `ModelInfo` (SDK 0.3.325) validada e limitada. Campos fora da
    união nativa viram `false`/vazio — nunca "provavelmente suportado". */
 function sanitizeModel(raw) {
   if (!isPlainObject(raw)) return null;

@@ -2,7 +2,7 @@
 
 Integração local da Mesa com o Claude Code pelo Agent SDK oficial. A segunda rodada usa o T3 Code como referência de comportamento. O código foi testado com SDK e dados artificiais; inferência autenticada ainda não foi validada. O aplicativo instalado não foi sincronizado.
 
-Referência pública: `pingdotgg/t3code`, commit `1604ccc9d79f5270fb8e14d60664184bf142c4cb`. As implementações desta rodada adaptam conceitos; não copiaram código do T3. A licença da referência é MIT, © 2026 T3 Tools Inc. O T3 observado usa um SDK mais novo; a Mesa valida suas chamadas contra o pin local `@anthropic-ai/claude-agent-sdk@0.3.301`, testado com Claude Code `2.1.301`.
+Referência pública: `pingdotgg/t3code`, commit `1604ccc9d79f5270fb8e14d60664184bf142c4cb`. As implementações desta rodada adaptam conceitos; não copiaram código do T3. A licença da referência é MIT, © 2026 T3 Tools Inc. O T3 observado usa um SDK mais novo; a Mesa valida suas chamadas contra o pin local `@anthropic-ai/claude-agent-sdk@0.3.325`, testado com Claude Code `2.1.301`.
 
 Desde o #51 a Mesa aceita uma **faixa** de versões do Claude Code, não mais o par exato do #28: versão fora da faixa é recusada antes de consultar login ou iniciar Query (`notSent:true`). A Mesa não atualiza nem faz downgrade do CLI do usuário; mudar a faixa exige revisar o protocolo e rodar os harnesses (`docs/agents/release.md`).
 

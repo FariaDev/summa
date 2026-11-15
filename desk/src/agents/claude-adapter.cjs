@@ -1,7 +1,7 @@
 /* Ponte isolada Mesa ↔ Claude Code original (fase 1, experimental — rodada 3).
  *
  * Esta é a única superfície que o main deve importar do motor Claude. O
- * transporte é o Agent SDK OFICIAL (@anthropic-ai/claude-agent-sdk 0.3.301,
+ * transporte é o Agent SDK OFICIAL (@anthropic-ai/claude-agent-sdk 0.3.325,
  * testado com o CLI 2.1.301), com `import()` dinâmico e
  * `pathToClaudeCodeExecutable` apontando sempre para o Claude Code do usuário,
  * numa versão dentro da faixa aceita (#51, ver claude-environment.cjs) — nunca
@@ -46,7 +46,7 @@
  * descritor já contém mensagens nativas. Sem a opção, `history()` continua
  * devolvendo só o histórico nativo.
  *
- * Modelo/esforço (controles da rodada 3, somente APIs do SDK PINADO 0.3.301):
+ * Modelo/esforço (controles da rodada 3, somente APIs do SDK PINADO 0.3.325):
  * a escolha desejada vive em `selection` e é separada do modelo OBSERVADO
  * (`_model`, vindo do init nativo). `initializeControls()` é a única porta que
  * cria a Query sem prompt; `connect()`/health continuam só versão/auth. O
@@ -101,7 +101,7 @@
  * hidratada (`deliveryUncertain`) é PEGAJOSA: envio, `initializeControls` e
  * `setControls` recusam antes de consulta/nativo/disco até um adaptador novo.
  *
- * Limite de uso: `rate_limit_event` de PRIMEIRO NÍVEL (o SDK 0.3.301 declara
+ * Limite de uso: `rate_limit_event` de PRIMEIRO NÍVEL (o SDK 0.3.325 declara
  * esse tipo fora de `system`; o subtipo em `system` fica como leitura legada
  * defensiva) NÃO encerra o turno: rejected sem overage vira aviso
  * deduplicado `CLAUDE_RATE_LIMITED` com janela/reset; `allowed` libera e

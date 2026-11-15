@@ -4,7 +4,7 @@
 /* Medidor de contexto do Claude Code → objeto `contextUsage` da Mesa (#58;
    especificação no commit `c988f59` da branch t3/opencode-provider).
 
-   Fatos do SDK pinado 0.3.301:
+   Fatos do SDK pinado 0.3.325:
    - os TOKENS saem do uso da ÚLTIMA resposta do assistente, já normalizado no
      `message_end` (`input`/`output`/`cacheRead`/`cacheWrite`). A soma é
      entrada + saída + cache, a mesma conta do Pi;
