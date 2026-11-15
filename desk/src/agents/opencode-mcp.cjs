@@ -7,6 +7,7 @@
    recebe quando as ferramentas não entram. */
 
 const {stringStatus} = require('./opencode-delivery.cjs');
+const {message} = require('../i18n.mjs');
 
 const MCP_TIMEOUT_MS = 10000;
 const MCP_POLL_MS = 100;
@@ -61,6 +62,23 @@ async function waitMesaMcp({request, location, timeoutMs, pollMs}) {
 }
 
 /**
+ * Mensagem marcada do motivo da falha do MCP `mesa` (#55). Código HTTP vira
+ * `HTTP {status}`; `timeout` e `failed`/`error` ganham a frase legível, sem o
+ * `(HTTP timeout)`/`(HTTP status failed)` de antes. O aviso ao tutor e o toast
+ * leem ESTA mensagem — uma fonte só.
+ * @param {string|undefined} status
+ * @returns {string}
+ * @example mcpFailureMessage('timeout') // marcador de opencode.mcp.failed com reason.timeout
+ */
+function mcpFailureMessage(status) {
+  const raw = String(status ?? '').trim();
+  if (/^\d{3}$/.test(raw)) return message('opencode.mcp.failed.http', {status: raw});
+  if (raw === 'timeout') return message('opencode.mcp.failed', {reason: 'opencode.mcp.reason.timeout'});
+  if (raw === 'failed' || raw === 'error') return message('opencode.mcp.failed', {reason: 'opencode.mcp.reason.refused'});
+  return message('opencode.mcp.failed', {reason: 'opencode.mcp.reason.noAnswer'});
+}
+
+/**
  * Registra o MCP `mesa` na pasta da conversa e espera o handshake. O resultado
  * vai ao `log` sem caminho nem segredo; falhar aqui não derruba o estudo.
  * @param {{request: McpRequest, location: () => Record<string, string>, config: Record<string, unknown>,
@@ -80,4 +98,4 @@ async function registerMesaMcp({request, location, config, log, timeoutMs, pollM
   return outcome;
 }
 
-module.exports = {MCP_TIMEOUT_MS, registerMesaMcp, waitMesaMcp};
+module.exports = {MCP_TIMEOUT_MS, mcpFailureMessage, registerMesaMcp, waitMesaMcp};

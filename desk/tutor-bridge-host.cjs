@@ -96,9 +96,11 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
     if(['auto_retry_start','summarization_retry_scheduled'].includes(e.type)&&Number(e.attempt)>Number(pendingCore.maxAutoRetries())){
      live.bridge.breakConnection(Error(message('err.tutor.retryLimit')));return;
     }
-    /* Aviso da ponte: fica no desk.log — o usuário
-       não precisa ver, e o turno segue vivo. Erro de verdade continua em
-       `desk_error`, que a UI trata como queda. */
+    /* Aviso da ponte: fica no desk.log — o usuário não precisa ver, e o turno
+       segue vivo. Exceção: `OPENCODE_MCP_FAILED` (#55) também vira toast no
+       renderer, porque as ferramentas da Summa faltando mudam o que o tutor
+       consegue fazer. Erro de verdade continua em `desk_error`, que a UI
+       trata como queda. */
     if(e.type==='desk_warn')try{appendLog('rpc',e.message,{level:'warn'});}catch{/* o log não pode falhar o tratador de eventos */}
     if(e.type==='extension_ui_request'&&['select','confirm','input','editor','question'].includes(e.method)&&typeof e.id==='string'){
      pendingDialogs.add(e.id);

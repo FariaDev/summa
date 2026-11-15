@@ -34,7 +34,7 @@ const {OpenCodeEventReader} = require('./opencode-events.cjs');
 const {CompactionTracker, runCompaction} = require('./opencode-compaction.cjs');
 const {listCommands} = require('./opencode-commands.cjs');
 const {OpenCodeControls} = require('./opencode-controls.cjs');
-const {registerMesaMcp} = require('./opencode-mcp.cjs');
+const {registerMesaMcp, mcpFailureMessage} = require('./opencode-mcp.cjs');
 const {allMessages, messageList, normalizeHistory} = require('./opencode-history.cjs');
 const {reinsertMarkedImages} = require('../marked-pages.mjs');
 const {publishSessionInstructions} = require('./opencode-instructions.cjs');
@@ -236,7 +236,9 @@ class OpenCodeAdapter extends EventEmitter {
 
   /* As ferramentas da Mesa (GeoGebra, atividades) entram como MCP `mesa` na
      pasta da conversa. Falhar aqui não derruba o estudo: o resultado vai ao
-     log e a indisponibilidade acompanha o prompt do tutor (#55). */
+     log e a indisponibilidade acompanha o prompt do tutor (#55). O aviso sai
+     UMA vez por conexão (`openSession` chama isto uma vez por bind); os turnos
+     seguintes reusam o mesmo cliente e não repetem o toast. */
   async registerMcp() {
     const config = this.options.mcpConfig?.() || null;
     this.mcpUnavailable = false;
@@ -251,7 +253,7 @@ class OpenCodeAdapter extends EventEmitter {
     });
     this.mcpUnavailable = !outcome.connected;
     if (outcome.connected) return;
-    this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: message('opencode.mcp.failed', {status: outcome.status})});
+    this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: mcpFailureMessage(outcome.status)});
   }
 
   /* ---------- eventos ---------- */

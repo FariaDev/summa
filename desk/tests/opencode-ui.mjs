@@ -126,4 +126,53 @@ await withArtifacts('opencode-motor',async ctx=>{
  await pollUntil(()=>processExists(ledger.pid),alive=>alive===false,{what:'o servidor encerrado',timeout:15000});
  assert.equal(fs.existsSync(path.join(runtime,LEDGER_FILE)),false,'o ledger esvazia');
 });
+
+/* Aviso visível do MCP que não entrou (#55): o toast é o MESMO texto do aviso
+   ao tutor, com o motivo legível, e sai UMA vez por conexão — dois turnos na
+   mesma conversa não o repetem. O servidor falso responde `failed` no MCP. */
+await withArtifacts('opencode-mcp-aviso',async ctx=>{
+ const runtime=ctx.runtime=newRuntime('opencode-mcp-aviso'),folder=seedCourse(runtime,'Calculo');
+ const serveLog=path.join(trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(),'mesa-oc-mcp-'))),'serve.jsonl');
+ writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Calculo',name:'Cálculo',path:folder}]});
+ const first=conversations.createClaudeConversation({runtime,courseId:'Calculo',engine:'opencode'});
+ writeDeskJson(runtime,{courseId:'Calculo',session:first,courseStates:{Calculo:{session:first,sessions:[{path:first}]}}});
+ fs.chmodSync(FAKE_OPENCODE_BIN,0o755);
+ const app=ctx.app=await launchDesk({runtime,opencode:false,env:{LEARNING_DESK_OPENCODE:FAKE_OPENCODE_BIN,FAKE_OPENCODE_LOG:serveLog,FAKE_OPENCODE_MCP_STATUS:'failed'}});
+ const page=await app.firstWindow();
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await statusOnline(page,{timeout:60000});
+ /* Observa o #toast a partir daqui: a conexão da conversa nova é quem pinta o
+    aviso, e o registro conta cada item novo (um repetido contaria de novo). */
+ await page.evaluate(()=>{
+  window.__toastItems=[];
+  new MutationObserver(records=>{
+   for(const record of records)for(const node of record.addedNodes){
+    if(node.nodeType===1&&node.classList?.contains('toast-item'))window.__toastItems.push(node.textContent||'');
+   }
+  }).observe(document.querySelector('#toast'),{childList:true});
+ });
+ await newSession(page,{opencode:true});
+ await pollUntil(()=>page.locator('#session-title').getAttribute('data-session'),value=>value&&value!==first,{what:'a sessão nova',timeout:30000});
+ await pollUntil(()=>page.evaluate(()=>window.__toastItems.some(text=>text.includes('As ferramentas da Summa não entraram nesta conversa'))),ok=>ok,{what:'o aviso das ferramentas na tela',timeout:30000});
+ const shown=await page.evaluate(()=>window.__toastItems.filter(text=>text.includes('As ferramentas da Summa não entraram nesta conversa')));
+ assert.equal(shown.length,1,`o aviso aparece uma vez por conexão: ${JSON.stringify(shown)}`);
+ assert.match(shown[0],/o servidor recusou/,'o motivo sai legível, sem "HTTP status failed"');
+ assert.match(shown[0],/Abra a conversa de novo para tentar/,'o aviso diz como tentar de novo');
+ /* Dois turnos na mesma conexão: nenhum toast novo do MCP. */
+ await sendEnabled(page,{timeout:30000});
+ const turn=async text=>{
+  const before=await page.locator('.message.assistant').count();
+  await page.locator('#prompt').fill(text);
+  await page.locator('#send').click();
+  await page.waitForFunction(n=>document.querySelectorAll('.message.assistant').length>n,before,{timeout:30000});
+  await sendEnabled(page,{timeout:30000});
+ };
+ await turn('primeira');
+ await turn('segunda');
+ const after=await page.evaluate(()=>window.__toastItems.filter(text=>text.includes('As ferramentas da Summa não entraram nesta conversa')));
+ assert.equal(after.length,1,`sem aviso repetido por turno: ${JSON.stringify(after)}`);
+ assert.deepEqual(errors,[],'sem erro de página');
+});
+console.log('ok opencode-mcp-aviso-ui');
+
 console.log('ok opencode-ui');

@@ -888,6 +888,7 @@ async function runAsBinary(argv) {
     reviewDraft: process.env.FAKE_OPENCODE_REVIEW_DRAFT || '', reviewDelayMs: Number(process.env.FAKE_OPENCODE_REVIEW_DELAY || 0),
     mcpBefore: process.env.FAKE_OPENCODE_MCP_BEFORE || '', mcpAfter: process.env.FAKE_OPENCODE_MCP_AFTER || '',
     mcpPendingFile: process.env.FAKE_OPENCODE_MCP_PENDING_FILE || '',
+    mcpStatus: process.env.FAKE_OPENCODE_MCP_STATUS || undefined,
     stream: process.env.FAKE_OPENCODE_STREAM === 'long' ? {deltas: Number(process.env.FAKE_OPENCODE_STREAM_DELTAS || 240), delayMs: Number(process.env.FAKE_OPENCODE_STREAM_DELTA_MS || 25)} : null,
     steps: process.env.FAKE_OPENCODE_STEPS ? JSON.parse(process.env.FAKE_OPENCODE_STEPS) : null});
   seedSessions(serve, process.env.FAKE_OPENCODE_SEED || '');
