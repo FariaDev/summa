@@ -34,7 +34,7 @@ import {normalizeComposerPins} from './composer-pins.mjs';
 import {applyComposerHeight} from './composer-resize.mjs';
 
 export function $(s){return document.querySelector(s);}
-export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
+export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,windowCaptureOk:false,ambitusLink:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
 /* Fatos do indicador de modelo e esforço (ticket #14): o estado de conexão
    (`state` + rótulo que o host já usa no ponto) e a escolha em uso. Quem mostra
    é o `tutor-header.mjs`; o evento `desk-tutor-link` evita o ciclo de imports.
@@ -389,7 +389,23 @@ function conferirEnabled(){return S.captureOk&&!S.busy;}
 /* O Conferir captura o Xournal++ ou o programa que a pessoa escolheu (#35). O
    nome vem de `S.conferirApp` (`{app,key}` ou nulo = Xournal++); o texto do
    botão e a dica são do `core/conferir.bend`. */
-export function conferirAppName(){return S.conferirApp?.app||conferirCore.defaultApp();}
+export function conferirAppName(){return S.conferirApp?.app||(S.ambitusLink?AMBITUS_APP:conferirCore.defaultApp());}
+/* Com o Ambitus pendurado na ponte e nenhum outro programa escolhido, o Conferir pede a página a ele (conferir-host.cjs). */
+const AMBITUS_APP='Ambitus';
+export function conferirViaAmbitus(){return !S.conferirApp&&S.ambitusLink;}
+/* A dica do botão: pelo Ambitus a imagem é a página, não a janela (o núcleo só conhece a janela). */
+export function conferirHintText(busy,app){
+ if(!busy&&conferirViaAmbitus())return t('check.hint.ambitus',{shortcut:conferirShortcut()});
+ return translate(conferirCore.hintFor(!!busy,app,conferirShortcut()));
+}
+/* O Ambitus (des)conectou na ponte: a disponibilidade do Conferir e o nome do botão acompanham. */
+export function applyCaptureAvailability(data){
+ S.captureOk=!!data?.captureAvailable;
+ S.windowCaptureOk=!!data?.windowCaptureAvailable;
+ S.ambitusLink=!!data?.ambitusLinked;
+ updateCheckButton();
+ window.dispatchEvent(new Event('desk-capture-availability'));
+}
 export function conferirShortcut(){return `${IS_MAC?'⌘':'Ctrl+'}⇧C`;}
 function paintCheckLabel(el,app){
  const paintedAs=`${currentLanguage()}|${app}`;
@@ -409,7 +425,7 @@ export function updateCheckButton(){
  /* Em degrau `compact` o botão fica só com o ícone: o nome acessível segue completo (#43 ajustes pós-41). */
  el.setAttribute('aria-label',translate(conferirCore.buttonLabel(app)));
  /* Durante a resposta o botão segue travado, mas legível e com o motivo (#42). */
- el.title=S.captureOk?translate(conferirCore.hintFor(!!S.busy,app,conferirShortcut())):t('check.unavailable',{label:translate(conferirCore.buttonLabel(app))});
+ el.title=S.captureOk?conferirHintText(!!S.busy,app):t('check.unavailable',{label:translate(conferirCore.buttonLabel(app))});
  el.classList.toggle('waiting',!!S.busy&&!!S.captureOk);
  paintWritingProgramLabels();
 }
@@ -602,7 +618,7 @@ export async function loadCourse(data,{publishWorkspace=true}={}){
  S.workspace=data.workspace||{kind:data.courseId==='mesa-free'?'free':'course',id:data.courseId||''};
  updateCourseFacts(data);
  resetAttachments();
- S.visibleEngines=Array.isArray(data.visibleEngines)?data.visibleEngines:null;S.captureOk=!!data.captureAvailable;S.conferirApp=data.state?.conferirApp||null;S.appConfig={...(data.config||S.appConfig),platform:data.platform||S.appConfig.platform};
+ S.visibleEngines=Array.isArray(data.visibleEngines)?data.visibleEngines:null;S.captureOk=!!data.captureAvailable;S.windowCaptureOk=data.windowCaptureAvailable===undefined?S.captureOk:!!data.windowCaptureAvailable;S.ambitusLink=!!data.ambitusLinked;S.conferirApp=data.state?.conferirApp||null;S.appConfig={...(data.config||S.appConfig),platform:data.platform||S.appConfig.platform};
  S.deskVersion=data.deskVersion||S.deskVersion;
  const desk=applyDesk(S.appConfig.desk);
  fillSessions(data);

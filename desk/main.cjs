@@ -187,6 +187,8 @@ let lastContextKey='';
 let freeMutation=false,navInFlight=false,deferredPersist=false;
 let freeMutationIdle=Promise.resolve(),releaseFreeMutation=null;
 let tutorMaterialGrant=null,quitting=false;
+/** Modo mini (mini-mode-host.cjs): só existe depois que a janela abre. @type {{windowBounds: () => {x: number, y: number, width: number, height: number} | null, isOn: () => boolean} | null} */
+let miniMode=null;
 let activityGeneration=1,activityGrant=null,cardHost=null;
 /* Estado vivo do main (#43 fase 2): as variáveis continuam aqui e os hosts as
    leem e trocam por estes acessores, no padrão dos `*-host.cjs`. */
@@ -225,6 +227,7 @@ const live={
  get sidechatManager(){return sidechatManager;},
  get studyServices(){return studyServices;},
  get tutorMaterialBridge(){return tutorMaterialBridge;},
+ get miniMode(){return miniMode;},
 };
 /** O estado vivo que os hosts recebem (#43 fase 3: o tipo deles sai daqui). @typedef {typeof live} DeskLive */
 const {engine,isNative,openCodeBinary,claudeBinary,claudeDetector,defaultEngine,newSessionPath,resumeSession,visibleEngines,descriptorCache,conversationData,sessionInfo,prepareClaude,prepareOpenCode,prepareClaudeSide,prepareOpenCodeSide,testClaudeSdkLoader,previewFile,engineFacts,engineFactsPrime,legacyHistory}=createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID});
@@ -242,12 +245,16 @@ if(bootFree)hydrateFreeRecord(bootFree);/* depois dos hosts: a hidratação perg
 function captureHelper(){return [path.join(__dirname,'..','visual-check','windows'),path.join(installRoot(),'visual-check','windows')].filter(Boolean).find(p=>fs.existsSync(p));}
 /* A captura existe no macOS (helper visual-check + screencapture -l) e no
    Windows (PowerShell/.NET do sistema — capture-win.cjs); fora disso, some. */
-function captureAvailable(){return (TEST_MODE&&!!process.env.LEARNING_DESK_CAPTURE_FIXTURE)||process.platform==='win32'||(process.platform==='darwin'&&!!captureHelper());}
+function windowCaptureAvailable(){return (TEST_MODE&&!!process.env.LEARNING_DESK_CAPTURE_FIXTURE)||process.platform==='win32'||(process.platform==='darwin'&&!!captureHelper());}
+/* Com um Ambitus pendurado na ponte o Conferir pede a página a ele, em qualquer plataforma (conferir-host.cjs); a ponte troca isto ao subir. */
+let ambitusLinked=()=>false;
+function captureAvailable(){return windowCaptureAvailable()||ambitusLinked();}
+function captureAvailabilityPayload(){return {captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked()};}
 
 function validPdf(p){if(typeof p!=='string'||!allowed.has(p))throw Error(message('err.pdf.pick'));return p;}
 /* chat lateral: o gerenciador mora em sidechat-host.cjs; o main entrega o que
    lê do principal por acessores (as variáveis são reatribuídas aqui). */
-const sidechatManager=createMesaSidechat({runtime,activityBridge:()=>activityBridge,freeId:FREE_ID,session:()=>session,courseId:()=>courseId,courses:()=>courses,config:()=>config,state:()=>state,bridge:()=>bridge,engine,validPdf,allowedXopp,descriptorCache,prepareClaudeSide,connectOpenCodeSide:side=>openCodeTutor.connectSide(side),testClaudeSdkLoader,claudeBinary,claudeDetector,win:()=>win,appendLog,languageHost:{tutorT:(...args)=>languageHost.tutorT(...args),tutorLanguage:()=>languageHost.tutorLanguage()},readPdf:raw=>live.readTutorPdf(raw),readNotebook:raw=>live.readTutorNotebook(raw),searchMaterial:raw=>live.studyServices.materialSearch(null,raw),listMaterials:()=>live.studyServices.materialList(null)});
+const sidechatManager=createMesaSidechat({runtime,activityBridge:()=>activityBridge,freeId:FREE_ID,session:()=>session,courseId:()=>courseId,courses:()=>courses,config:()=>config,state:()=>state,bridge:()=>bridge,engine,validPdf,allowedXopp,promptImages,descriptorCache,prepareClaudeSide,connectOpenCodeSide:side=>openCodeTutor.connectSide(side),testClaudeSdkLoader,claudeBinary,claudeDetector,win:()=>win,appendLog,languageHost:{tutorT:(...args)=>languageHost.tutorT(...args),tutorLanguage:()=>languageHost.tutorLanguage()},readPdf:raw=>live.readTutorPdf(raw),readNotebook:raw=>live.readTutorNotebook(raw),searchMaterial:raw=>live.studyServices.materialSearch(null,raw),listMaterials:()=>live.studyServices.materialList(null)});
 /* ---------- aba Livre (workspace virtual `mesa-free`) ----------
    Cada conversa Livre tem workspace próprio no store (`free-workspaces.cjs`):
    título/rascunho/materiais/nativePath ficam lá; layout, estudo e rotações
@@ -393,7 +400,7 @@ async function prepareTutorMaterial(scope,{title,markdown,modelo,opcoes,signal}=
 
 
 
-const deskMenu=createDeskMenu({live,Menu,captureAvailable});
+const deskMenu=createDeskMenu({live,Menu,captureAvailable,writingApp:()=>ambitusLinked()?'Ambitus':'Xournal++'});
 deskMenu.register(ipcMain);
 const {buildMenu}=deskMenu;
 
@@ -418,7 +425,7 @@ app.whenReady().then(async()=>{
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
  win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:path.join(__dirname,'assets',process.platform==='win32'?'mesa.ico':'mesa-1024.png'),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
- keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line)});
+ keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line),skip:()=>miniMode?.isOn()===true});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));
  /* Recarregar a página fecha o popover da Foto do celular (#36) e derruba o
@@ -445,6 +452,8 @@ app.whenReady().then(async()=>{
   activityRuntime.installSessionGuards(win.webContents.session, fileGuardOptions({appRoot:deskDir,runtimeRoot:runtime,live}));
  activityRuntime.attachWindow(win);
  require('./sidechat-window-host.cjs').registerSidechatWindowGuard(win,undefined,{screen,loadState:()=>({sidechatBounds:state.sidechatBounds,sidechatAlwaysOnTop:state.sidechatAlwaysOnTop}),saveState:patch=>{state={...state,...patch};persist();},ipcMain});win.webContents.on('will-navigate',(e,url)=>{if(url!==win.webContents.getURL())e.preventDefault();});
+ /* Modo mini: a mesma janela encolhe para o chat; fica ANTES do `win.on('close',persist)` para o fechar voltar à Mesa antes de gravar os limites. */
+ miniMode=require('./mini-mode-host.cjs').registerMiniModeHost({win,screen,ipcMain,trusted:trustedMainSender,loadState:()=>({miniBounds:state.miniBounds,miniAlwaysOnTop:state.miniAlwaysOnTop}),saveState:patch=>{state={...state,...patch};persist();},log:line=>appendLog('janela',line)});
  buildMenu();
  ggb.start();
  win.on('resize',()=>{ggb.captureConstruction();ggb.placeView();});win.on('move',ggb.placeView);
@@ -471,7 +480,7 @@ ipcMain.handle('switch-course',async(_e,id)=>withHostNav(async()=>{
  persist();stopBridge();applyCourse(id);persist();return initialData();
 }));
 /* PDFs e imagens da mesa (open-pdf … open-image): pdf-host.cjs, mesma posição de registro. */
-registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});
+registerPdfHost({ipcMain,dialog,shell,win:()=>win,runtime,freeId:FREE_ID,pdfGrants,pdfDisk,course:()=>course,courseId:()=>courseId,config:()=>config,state:()=>state,freeSessionId:()=>freeSessionId,isPlainObject,isFree,validPdf,readableImage,assertNoFreeMutation,assertNoNav,assertIdle,freeMutate,focusFreeMaterial,persist,initialData});const ambitusBridge=require('./ambitus-bridge-wiring.cjs').registerAmbitusBridge({ipcMain,runtime,state:()=>state,patchState:patch=>{state={...state,...patch};},persist,session:()=>session,engine,openCodeTutor,language:()=>languageHost.tutorLanguage()==='en'?'en':'pt-BR',allowSender:trustedMainSender,allowedXopp,win:()=>win,readNotebook:raw=>live.readTutorNotebook(raw),log:line=>appendLog('ambitus',line),onLinkChange:()=>{if(win&&!win.isDestroyed()){buildMenu();win.webContents.send('capture-availability',captureAvailabilityPayload());}}});ambitusLinked=ambitusBridge.linked;
 ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
  assertNoNav();
  return chatPdfHost.attach(rawPath);
@@ -479,7 +488,7 @@ ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
 createDeskStateHost({ipcMain,live,allowed,allowedXopp,assertNoFreeMutation,assertNoNav,persist,win:()=>win,appIcon:()=>appIcon}).register();
 const {cancelReviewDraft}=registerStudyRecordsHost({ipcMain,live,runtime,allowed,allowedXopp,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,openCodeDraft:options=>openCodeTutor.draft(options),bookmarksPayload,reviewPayload,assertNoFreeMutation,assertNoNav});
 registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,appendLog,engine,testClaudeSdkLoader});
-ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
+ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
 ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory']});return r.canceled?null:r.filePaths[0];});
 /* Primeira abertura dentro do app (ticket #21). O que a pessoa soltou na folha
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
@@ -630,6 +639,7 @@ const conferirHost=createConferirHost({
  setChoice:value=>{state.conferirApp=value;persist();if(win&&!win.isDestroyed())buildMenu();},
  selfNames:()=>[app.getName(),'Summa',...(app.isPackaged?[]:['Electron'])],
  fixture:conferirFixture(),
+ ambitus:{linked:()=>ambitusLinked(),request:()=>ambitusBridge.requestPage()},
  ensurePermission:async()=>{
   if(process.platform!=='darwin')return;
   let status=systemPreferences.getMediaAccessStatus('screen');
@@ -722,7 +732,7 @@ app.on('before-quit',(event)=>{quitting=true;
  for(const controller of freeJobs)try{controller.abort();}catch{/* encerrando: a geração já terminou */}bridge?.removeAllListeners();
  bridge?.stop();
  serveStopStarted=true;
- const stopping=Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */});
+ const stopping=Promise.all([Promise.resolve(openCodeTutor.stop()).catch(()=>{/* encerrando: o serve já saiu */}),ambitusBridge.close().catch(()=>{/* encerrando: a ponte já fechou */})]);
  ggb.close();
  persist();
  event.preventDefault();

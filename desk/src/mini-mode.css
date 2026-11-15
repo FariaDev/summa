@@ -1,0 +1,28 @@
+/* Modo mini (passo 9, protótipo r7): a mesma janela da Mesa encolhe para só o
+   chat do tutor (`mini-mode.mjs` liga `body.mini-mode` junto de `body.chat-full`,
+   que já esconde os leitores). Aqui saem o cabeçalho e as abas da Mesa, o
+   cabeçalho do tutor, a calculadora e o chat lateral preso; entra o cabeçalho
+   mini: o título da conversa (a matéria em cinza), "Sempre por cima" e "Voltar
+   à Mesa". A barra serve para arrastar a janela. Movimento: --t-base e
+   --ease-move; com "reduzir movimento" a troca é imediata. */
+#mini-head{display:none}
+body.mini-mode>header,body.mini-mode #chat .chat-top,body.mini-mode #calc-divider,body.mini-mode #calculator,body.mini-mode #sidechat,body.mini-mode #chat-restore{display:none}
+body.mini-mode main{height:100vh}
+/* O painel lateral da tela inteira reservava a borda direita; no mini ele não existe. */
+body.mini-mode.chat-full.sidechat-panel.sidechat-docked #sidebar{padding-right:0}
+/* Com 480px de altura a coluna entra no modo de janela baixa (conversations-dividers.css): o #chat é o
+   scroller e o cabeçalho fica colado ao topo, como o `.chat-top` que ele substitui. */
+body.mini-mode #mini-head{
+ display:flex;align-items:center;gap:var(--space-1);position:sticky;top:0;z-index:6;flex:none;height:var(--bar);padding:0 var(--space-2) 0 var(--space-5);
+ border-bottom:1px solid var(--border);background:var(--side);-webkit-app-region:drag;user-select:none;
+}
+#mini-head button{-webkit-app-region:no-drag;border:0;background:transparent;box-shadow:none}
+#mini-head .icon-btn:hover{background:var(--hover)}
+#mini-head #mini-pin[aria-pressed="true"]{background:var(--selected);color:var(--fg-strong)}
+#mini-head .mini-title{display:flex;align-items:baseline;gap:var(--space-2);flex:1;min-width:0;font-size:var(--fs-md);font-weight:600;color:var(--fg)}
+#mini-head .mini-title-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mini-head .mini-course{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-sm);font-weight:400;color:var(--faint)}
+#mini-head .mini-course:empty{display:none}
+@keyframes mini-in{from{opacity:0;transform:var(--from-zoom)}}
+body.mini-mode #sidebar{animation:mini-in var(--t-base) var(--ease-move)}
+@media (prefers-reduced-motion:reduce){body.mini-mode #sidebar{animation:none}}

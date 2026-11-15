@@ -1,9 +1,9 @@
 import {bindPointerDrag} from './pointer-drag.mjs';
 import {icon} from '../icons.mjs';
-import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
+import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,applyCaptureAvailability,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
 import {visibleEngines,setLegacySession,legacyContinueEngine,relabelLegacySession} from './visible-engines-ui.mjs';
 import {conferir,conferirGeogebra,send,hideQuoteButton,doCompact,openChatSearch,closeChatSearch} from './chat.mjs';
-import {toggleReferencePanel,selectTab as selectSupportTab,supportState,setOpen as setSupportOpen} from './support.mjs';
+import {toggleReferencePanel,selectTab as selectSupportTab,supportState,setOpen as setSupportOpen,sidechatOpen,toggleSidechat} from './support.mjs';
 import {openStudyDestination} from './study-result-destination.mjs';
 import {studyToolHandlers} from './study-tools.mjs';
 import {mountStudySearchBoot,openStudySearch,closeStudySearch} from './study-search-loader.mjs';
@@ -21,7 +21,7 @@ import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './free-mod
 import {mountTriageBoot,openTriage} from './triage-loader.mjs';
 import {initModelPicker,noteModelPicked,noteModelUsed} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
 import conferirCore from './generated/conferir.core.js';
-import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';
+import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';import {attachSidechatNotebook,setSidechatNotebookThumb} from './sidechat-loader.mjs';import {isDetachedSidechat,focusDetachedSidechat} from './sidechat-detach.mjs';
 import resumeCore from './generated/resume.core.js';
 
 import {sendGgbRect,freezeGgbView,thawGgbView} from './ggb.mjs';
@@ -39,7 +39,7 @@ import {t,text,setUiLanguage,currentLanguage,LANGUAGE_EVENT,uiTextReady} from '.
 import {localizeFreeCourse} from './free-names.mjs';
 import {initTutorHeader,closeTutorPops,syncTutorMenus} from './tutor-header.mjs';
 import {initPhonePhoto,closePhonePop} from './phone-photo.mjs';
-import {initChatFull,setChatFull} from './chat-full.mjs';
+import {initChatFull,setChatFull} from './chat-full.mjs';import {initMiniMode,isMiniMode,toggleMiniMode} from './mini-mode.mjs';import {attachTutorNotebook,setTutorNotebookThumb} from './tutor-notebooks.mjs';
 import {appendCourseRow,relabelCourseRows,clearEndDay,renderAboutLead,renderCourseRows,renderEndDay,renderHelpVersion} from './dialogs.mjs';
 import {initToolNotices,noticesOpened} from './tool-notices.mjs';
 import * as slash from './slash.mjs';
@@ -68,7 +68,10 @@ const syncFirstRun=(data,hooks)=>firstRunBoot.sync(data,hooks);
 const isFirstRun=()=>firstRunBoot.isActive();
 /* Idioma (#41): o texto estático e o <html lang> seguem antes do primeiro desenho; o catálogo ativo entra sob demanda (#desempenho) e é esperado aqui, antes de montar/pintar texto, para não haver chave crua nem idioma de fallback. O markup do #setup entra antes do primeiro `setUiLanguage` para ser traduzido junto. */
 await uiTextReady;
-mountSetupMarkup();mountAccentOptions();mountReadingSettings();
+mountSetupMarkup();mountAccentOptions();mountReadingSettings();mountInkSettings();
+const inkSettings=initInkSettings({status:()=>window.desk.ambitusInkStatus(),set:p=>window.desk.ambitusInkSet(p)});
+/* A página mandada pelo Ambitus vai ao chat lateral; com o modo mini ligado, à bandeja do tutor (ambitus-page.mjs). */
+window.desk.onAmbitusPage?.(createAmbitusPage({ready:()=>supportState.ready,open:()=>{if(isDetachedSidechat())focusDetachedSidechat();else if(!sidechatOpen())toggleSidechat();},attach:attachSidechatNotebook,toast,mini:isMiniMode,attachTutor:attachTutorNotebook}));window.desk.onAmbitusPageThumb?.(data=>{if(!(isMiniMode()&&setTutorNotebookThumb(data)))setSidechatNotebookThumb(data);});window.desk.onCaptureAvailability?.(applyCaptureAvailability);
 setUiLanguage(currentLanguage());
 initNavMenus();
 initHeaderTabs({openSettings:(...args)=>openSettings(...args),syncPaletteField:()=>syncPaletteField(),menu:{ToggleReference:toggleReference,OpenXournal:openXournal,OpenHelp:openHelp,OpenSettings:()=>openSettings(),OpenShortcuts:()=>openShortcuts().catch(err=>toast(err.message)),OpenAbout:openAbout,OpenReleaseNotes:()=>openReleaseNotes().catch(err=>toast(err.message)),OpenTriage:()=>openTriage().catch(error=>toast(error.message)),OpenEndDay:openEndDay}});
@@ -171,6 +174,7 @@ function setChatCollapsed(value){
 function toggleChat(){const now=Date.now();if(now-lastChatToggle<150)return;lastChatToggle=now;setChatCollapsed(!chatCollapsed);}
 /* #98: estado global da execução, sem persistir; a tecla mora no módulo. */
 initChatFull({expandTutor:()=>setChatCollapsed(false)});
+initMiniMode({expandTutor:()=>setChatCollapsed(false),prepare:()=>{closeTutorPops();closeConferirNote();closePhonePop();},onError:toastFailure});
 function focusPdfFind(){(S.panels.find(p=>p.el.contains(document.activeElement))||S.panels[0])?.setFind(true);}
 /* Fecha a busca do PDF da camada ativa: o formulário focado primeiro; senão o
    primeiro leitor com termo — o mesmo comportamento de antes, agora decidido
@@ -434,6 +438,7 @@ async function openSettings({section='',focus=''}={}){
  await fillSettingsForm(info.config||{});
  settingsBaseline=JSON.stringify(readSettingsForm());
  settings.prepareSettings({section});
+ void inkSettings.refresh();
  settings.setSettingsFooter({busy:!!S.busy,dirty:false});
  /* Dica do campo Claude: o caminho detectado quando o host manda um; senão o
     placeholder padrão continua. Nada de login/credencial na UI. */
@@ -737,6 +742,7 @@ function paletteAvailableActions(){
  command('export-chat',t('palette.exportSession'),'download',{search:t('palette.exportSession.search'),run:()=>exportSession()});
  command('session-library',t('palette.sessionLibrary'),'search',{search:t('palette.sessionLibrary.search'),run:()=>conversationLibrary.open().catch(error=>toast(error.message))});
  command('chat-toggle',t(chatCollapsed?'palette.tutor.show':'palette.tutor.hide'),'columns',{kbd:paletteKey('chat-toggle','⌘\\'),run:()=>toggleChat()});
+ command('mini-mode',t(isMiniMode()?'palette.miniMode.leave':'palette.miniMode'),isMiniMode()?'maximize2':'pictureInPicture2',{kbd:paletteKey('mini-mode','⌘⇧M'),search:t('palette.miniMode.search'),run:()=>toggleMiniMode()});
  actions.push({id:'layout-save',label:t('palette.layoutSave'),icon:'download',section:'layouts',disabled:!layoutPresetsUi,reason:t('palette.reason.noLayout'),run:()=>layoutPresetsUi?.open()});
  const presets=[...builtinPresets(),...(layoutPresetsUi?.list().presets||[])];
  for(const preset of presets){

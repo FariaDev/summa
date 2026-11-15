@@ -106,7 +106,26 @@ export function paintDetachButton(){
   if(pin.getAttribute('aria-label')!==pinLabel)pin.setAttribute('aria-label',pinLabel);
   if(pin.title!==pinLabel)pin.title=pinLabel;
  }
+ paintReturnButton(root,doc,detached);
  return button;
+}
+
+/* Botão "Trazer de volta à Mesa" ao lado do × (só na janela solta): mesmo
+   `icon-btn` dos vizinhos, devolve o chat à coluna; o × segue fechando. */
+function paintReturnButton(root,doc,detached){
+ let back=root.querySelector('#sidechat-return');
+ if(!back){
+  const close=root.querySelector('#sidechat-close');if(!close)return;
+  back=doc.createElement('button');
+  back.type='button';back.id='sidechat-return';back.className='icon-btn';
+  back.innerHTML=icon('panelRightClose');
+  close.before(back);
+  back.addEventListener('click',()=>attachSidechat());
+ }
+ back.hidden=!detached;
+ const label=t('sidechat.attachToDesk');
+ if(back.title!==label)back.title=label;
+ if(back.getAttribute('aria-label')!==label)back.setAttribute('aria-label',label);
 }
 window.addEventListener(LANGUAGE_EVENT,()=>paintDetachButton());
 

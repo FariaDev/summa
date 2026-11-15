@@ -34,14 +34,14 @@ def kidAt(n: V.ViewNode, i: Nat) -> V.ViewNode:
 
 # ---------- o cabeçalho (#42) ----------
 
-# Título, linha de contexto, chat lateral, chat na tela inteira, sessão nova e
-# Mais opções — o indicador de modelo e esforço não mora mais aqui (foi para a
+# Título, linha de contexto, chat lateral, chat na tela inteira, modo mini,
+# sessão nova e Mais opções — o indicador de modelo e esforço não mora mais aqui (foi para a
 # caixa de mensagem).
 law tutor_cabecalho_controles:
-  {H.headIds() == ["session-title", "context-line", "sidechat-toggle", "chat-full", "new-session", "chat-more"] : List<&2, String>}
+  {H.headIds() == ["session-title", "context-line", "sidechat-toggle", "chat-full", "chat-mini", "new-session", "chat-more"] : List<&2, String>}
 
-law tutor_cabecalho_seis_controles:
-  {List.length(&2, String, H.headIds()) == 6n : Nat}
+law tutor_cabecalho_sete_controles:
+  {List.length(&2, String, H.headIds()) == 7n : Nat}
 
 # ---------- mais opções ----------
 

@@ -142,7 +142,9 @@ await withArtifacts('lateral-acessibilidade',async ctx=>{
  assert.equal(await activeId(child),'sidechat-context','o menu reabre pelo teclado');
  await child.keyboard.press('Tab');
  await child.locator('#sidechat-more-pop').waitFor({state:'hidden'});
- assert.equal(await activeId(child),'sidechat-close','Tab fecha o menu e segue para o próximo controle');
+ assert.equal(await activeId(child),'sidechat-return','Tab fecha o menu e segue para o próximo controle (o "Trazer de volta à Mesa" da filha)');
+ await child.keyboard.press('Tab');
+ assert.equal(await activeId(child),'sidechat-close','o Tab seguinte chega ao ×');
 
  const detachIcon=await child.locator('#sidechat-detach').evaluate(el=>({name:el.dataset.icon||'',svg:!!el.querySelector('svg')}));
  assert.equal(detachIcon.name,'undo','Trazer de volta usa o ícone de retorno, não o de soltar');
