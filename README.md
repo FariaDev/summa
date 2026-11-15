@@ -32,7 +32,7 @@ O nome é o mesmo nas duas línguas: **Summa**.
 
 ## Requisitos
 
-- Node **22.23.5+** só para instalar a partir do código (`npm ci`, `npm run setup`, `npm start`). O app e o servidor MCP do tutor rodam no Node embutido do Electron, então estudar não depende do Node do sistema.
+- Node **22+** só para instalar a partir do código (`npm ci`, `npm run setup`, `npm start`). O app e o servidor MCP do tutor rodam no Node embutido do Electron, então estudar não depende do Node do sistema.
 - **OpenCode 2.2.7** (a Mesa instala na primeira abertura, com o pacote fixado). O código do Claude Code ainda aceita a faixa 2.1.296 até a série 2.1, mas ele não aparece nesta versão; sessões Pi antigas abrem só para leitura.
 - Os PDFs da matéria numa pasta qualquer.
 - macOS ou Windows. O Conferir funciona nos dois; o resto do dia a dia foi testado à mão no macOS.

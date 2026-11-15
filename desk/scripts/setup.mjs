@@ -17,7 +17,8 @@ function log(msg){console.log(msg);}
 function fail(msg){console.error(msg);process.exitCode=1;}
 
 /* #84: a versão mínima mora só no `engines.node` do desk; o setup repete o
-   valor para o texto não envelhecer. A checagem continua pelo major. */
+   valor para o texto não envelhecer. O piso é o major (22): o 22.23.5 da #10
+   só alinhava com a CI, e a instalação limpa no Windows rodou inteira no 22.19. */
 const minimumNode=JSON.parse(fs.readFileSync(path.join(desk,'package.json'),'utf8')).engines.node.replace(/[^0-9.]/g,'');
 const major=Number(process.versions.node.split('.')[0]);
 if(major<Number(minimumNode.split('.')[0])){
