@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.19.0'
+          node-version: '22.23.5'
 
       - name: Instalar a versão de partida, como quem baixou o zip
         run: |

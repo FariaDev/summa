@@ -8,7 +8,7 @@ A Mesa é um app Electron local: dois leitores de PDF, calculadora e tutor na me
 
 1. Node **20 ou mais novo** para instalar a partir do código (`npm ci`, `npm run setup`, `npm start`). O app em si e o servidor MCP do tutor rodam no Node embutido do Electron (`ELECTRON_RUN_AS_NODE`); a versão instalada no sistema não é usada em tempo de estudo.
 2. Uma pasta com os PDFs da matéria (enunciados, formulário, o que for).
-3. **OpenCode 2.2.4** (a Mesa baixa e instala na primeira abertura, com integridade conferida). O código do [Claude Code](https://code.claude.com/) continua no repositório (faixa aceita em `src/tested-versions.json`), mas não aparece nesta versão. Sem o OpenCode, a primeira abertura oferece instalá-lo.
+3. **OpenCode 2.2.7** (a Mesa baixa e instala na primeira abertura, com integridade conferida). O código do [Claude Code](https://code.claude.com/) continua no repositório (faixa aceita em `src/tested-versions.json`), mas não aparece nesta versão. Sem o OpenCode, a primeira abertura oferece instalá-lo.
 Não peça Homebrew nem o vault Obsidian de outra pessoa.
 
 ## Passos
@@ -22,7 +22,7 @@ npm run doctor
 npm start
 ```
 
-`npm run setup` instala as dependências se faltarem, **detecta** o motor visível (OpenCode) sem instalá-lo nem executá-lo (o Claude Code fica no código, oculto), compila a integração visual no macOS e copia um `TUTOR.md` / `LEARNER.md` mínimos para `desk/.runtime/starter`. No fim ele diz qual motor será o padrão. O OpenCode é instalado pela própria Mesa na primeira abertura: baixa o pacote fixado 2.2.4 do npm, confere a integridade SRI e copia o binário verificado para `~/.opencode/bin` (no Windows, `%USERPROFILE%\.opencode\bin\opencode.exe`), com troca atômica e sem mexer no PATH. Um `opencode` que já esteja rodando continua no arquivo antigo; se o destino for um link simbólico, a Mesa só substitui o alvo dentro da própria pasta. A tela mostra o comando de login com o caminho completo do binário. Conversas Pi antigas continuam abrindo, só para leitura.
+`npm run setup` instala as dependências se faltarem, **detecta** o motor visível (OpenCode) sem instalá-lo nem executá-lo (o Claude Code fica no código, oculto), compila a integração visual no macOS e copia um `TUTOR.md` / `LEARNER.md` mínimos para `desk/.runtime/starter`. No fim ele diz qual motor será o padrão. O OpenCode é instalado pela própria Mesa na primeira abertura: baixa o pacote fixado 2.2.7 do npm, confere a integridade SRI e copia o binário verificado para `~/.opencode/bin` (no Windows, `%USERPROFILE%\.opencode\bin\opencode.exe`), com troca atômica e sem mexer no PATH. Um `opencode` que já esteja rodando continua no arquivo antigo; se o destino for um link simbólico, a Mesa só substitui o alvo dentro da própria pasta. A tela mostra o comando de login com o caminho completo do binário. Conversas Pi antigas continuam abrindo, só para leitura.
 
 ### GeoGebra offline (opcional)
 

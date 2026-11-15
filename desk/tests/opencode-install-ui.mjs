@@ -138,7 +138,7 @@ await withArtifacts('opencode-install-ui',async ctx=>{
  await shot(page,'instalando-fase-escuro-1440x900.png');
  await setTheme(page,'light');
  await page.waitForSelector('#setup-install-done',{timeout:15000});
- assert.equal(await page.locator('#setup-install-done').textContent(),'OpenCode 2.2.4 instalado.');
+ assert.equal(await page.locator('#setup-install-done').textContent(),'OpenCode 2.2.7 instalado.');
  assert.equal(await page.locator('#setup-tutor-actions #connect').textContent(),'Chamar o tutor');
  assert.equal(await page.locator('#setup-tutor-actions #install-opencode').count(),0,'depois de instalar, o botão de instalar sai');
  await shot(page,'instalado-claro-1440x900.png');
@@ -196,7 +196,7 @@ await withArtifacts('opencode-install-ui',async ctx=>{
  });
  await toTutor(page,old.app,old.pdfs);
  assert.match(await page.locator('#setup-pi').innerText(),/1\.19\.5/);
- assert.equal(await page.locator('#setup-tutor-actions #install-opencode').textContent(),'Atualizar para a 2.2.4');
+ assert.equal(await page.locator('#setup-tutor-actions #install-opencode').textContent(),'Atualizar para a 2.2.7');
  await shot(page,'atualizacao-1x-claro-1440x900.png');
  await setTheme(page,'dark');
  await shot(page,'atualizacao-1x-escuro-1440x900.png');
@@ -207,7 +207,7 @@ await withArtifacts('opencode-install-ui',async ctx=>{
  await page.locator('#setup-tutor-actions #install-opencode').click();
  await page.waitForSelector('#setup-install-done',{timeout:30000});
  assert.match(await page.evaluate(()=>window.__confirmMsg),/1\.19\.5/,'a confirmação nomeia a versão antiga');
- assert.equal(await page.locator('#setup-install-done').textContent(),'OpenCode 2.2.4 instalado.');
+ assert.equal(await page.locator('#setup-install-done').textContent(),'OpenCode 2.2.7 instalado.');
  assert.deepEqual(old.errors,[],'sem erro de página na atualização');
  await old.app.close();ctx.app=null;
 

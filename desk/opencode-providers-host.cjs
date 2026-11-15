@@ -2,7 +2,7 @@
 'use strict';
 
 /* Entrada por provedor do OpenCode, do lado do main (#login no app). A lista e
-   o login usam a API v2 do `opencode serve` 2.2.4 (`/api/integration`,
+   o login usam a API v2 do `opencode serve` 2.2.7 (`/api/integration`,
    `/connect/oauth`, `/connect/key`), a mesma que o `/connect` do TUI usa. Nunca
    lemos `auth.json`, nunca pedimos o `credential.list` (que devolve o segredo)
    e nunca devolvemos token ao renderer.

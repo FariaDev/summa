@@ -408,7 +408,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
     caminho fica no `config.json` e a detecção refeita já reconhece o motor. */
  const chosen=path.join(s.runtime,'bin','opencode-do-bun');
  fs.mkdirSync(path.dirname(chosen),{recursive:true});
- fs.writeFileSync(chosen,'#!/bin/sh\necho 2.2.4\n',{mode:0o755});
+ fs.writeFileSync(chosen,'#!/bin/sh\necho 2.2.7\n',{mode:0o755});
  await stubPicker(ctx.app,[chosen]);
  await page.locator('#setup-tutor-actions #pick-opencode').click();
  await page.waitForSelector('#setup-pi[data-pi="found"]');
@@ -427,7 +427,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.equal((await setupFacts(page)).firstRun,'true','cancelar não cria matéria nem sai da primeira abertura');
 
  /* OpenCode 1.x: a tela mostra a versão incompatível, manda atualizar para a
-    2.2.4 e não conta o motor como pronto. */
+    2.2.7 e não conta o motor como pronto. */
  await page.evaluate(async()=>{
   const mod=await import('./src/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedOpenCode:'',detectedOpenCodeOldVersion:'1.19.5',config:{}},{});
@@ -443,7 +443,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.equal(f.sceneTone,'no-engine','OpenCode 1.x não conta como motor');
  assert.match(f.tutorStatus,/Sua versão do OpenCode \(1\.19\.5\) é antiga para a Summa/);
  assert.equal(f.connect,null,'1.x não ganha botão de conectar');
- assert.equal(f.install,'Atualizar para a 2.2.4');
+ assert.equal(f.install,'Atualizar para a 2.2.7');
  assert.equal(await page.locator('#setup-tutor-actions #free-models').count(),0);
 
  /* Com OpenCode: "Chamar o tutor" e os Ajustes; nada de convite aos

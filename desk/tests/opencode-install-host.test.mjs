@@ -27,9 +27,9 @@ test('uma instalação por vez, progresso na janela e detecção refeita', async
    calls++;
    onProgress({phase:'download',percent:42});
    await new Promise(resolve=>setTimeout(resolve,5));
-   return {ok:true,binary:'/tmp/mesa-runtime/opencode/2.2.4/bin/opencode',version:'2.2.4'};
+   return {ok:true,binary:'/tmp/mesa-runtime/opencode/2.2.7/bin/opencode',version:'2.2.7'};
   },
-  detect:()=>({detectedOpenCode:'/tmp/mesa-runtime/opencode/2.2.4/bin/opencode'}),
+  detect:()=>({detectedOpenCode:'/tmp/mesa-runtime/opencode/2.2.7/bin/opencode'}),
  });
  const one=bus.call('opencode-install');
  const two=bus.call('opencode-install');
@@ -53,7 +53,7 @@ test('erro volta em uma frase, preserva o código e libera a próxima', async()=
   ipcMain:bus,win:()=>null,
   install:async()=>{
    if(fail)throw Object.assign(Error('sem rede'),{code:'network'});
-   return {ok:true,binary:'/bin/opencode',version:'2.2.4'};
+   return {ok:true,binary:'/bin/opencode',version:'2.2.7'};
   },
   supported:()=>false,
   log:(area,line)=>logs.push([area,line]),

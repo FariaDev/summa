@@ -33,7 +33,7 @@ function cpu({avx2=true,musl=false}={}){
  };
 }
 
-function sourceBinary(root,text='#!/bin/sh\necho 2.2.4\n'){
+function sourceBinary(root,text='#!/bin/sh\necho 2.2.7\n'){
  const file=path.join(root,'opencode-download');
  fs.writeFileSync(file,text);
  fs.chmodSync(file,0o755);
@@ -76,7 +76,7 @@ test('installOpenCode baixa o pacote fixado, confere o SRI e instala a cópia da
   const sentinelHash=hashOf(sentinel);
   fs.mkdirSync(path.join(work,'package','bin'),{recursive:true});
   const binary=path.join(work,'package','bin','opencode');
-  fs.writeFileSync(binary,'#!/bin/sh\necho 2.2.4\n');
+  fs.writeFileSync(binary,'#!/bin/sh\necho 2.2.7\n');
   fs.chmodSync(binary,0o755);
   const archive=path.join(root,'opencode.tgz');
   const packed=spawnSync('tar',['-czf',archive,'-C',work,'package'],{encoding:'utf8'});
@@ -110,7 +110,7 @@ test('installOpenCode baixa o pacote fixado, confere o SRI e instala a cópia da
   assert.equal(result.ok,true);
   assert.equal(result.version,PINNED_VERSION);
   assert.equal(result.binary,path.join(runtime,'opencode',PINNED_VERSION,'bin','opencode'));
-  assert.equal(fs.readFileSync(result.binary,'utf8'),'#!/bin/sh\necho 2.2.4\n');
+  assert.equal(fs.readFileSync(result.binary,'utf8'),'#!/bin/sh\necho 2.2.7\n');
   assert.deepEqual(filesIn(path.dirname(result.binary)),['opencode','opencode2'],'sem temporário sobrando');
   assert.equal(hashOf(sentinel),sentinelHash,'o binário da pessoa não foi tocado');
   assert.deepEqual(binFiles(home),['opencode'],'nada foi criado nem apagado na pasta do OpenCode da pessoa');
@@ -138,8 +138,8 @@ test('installOpenCode recusa SRI que não confere e plataforma desconhecida',asy
 });
 
 test('a confirmação da atualização avisa que a Mesa instala a própria cópia e não mexe na do aluno',()=>{
- assert.equal(ptBR['firstrun.tutor.opencodeOldConfirm'],'Atualizar o OpenCode {version}? A Summa instala a própria cópia da versão 2.2.4 e não altera o OpenCode que você já tem. Suas conversas e preferências continuam.');
- assert.equal(en['firstrun.tutor.opencodeOldConfirm'],'Update OpenCode {version}? Summa installs its own copy of version 2.2.4 and does not change the OpenCode you already have. Your conversations and preferences stay.');
+ assert.equal(ptBR['firstrun.tutor.opencodeOldConfirm'],'Atualizar o OpenCode {version}? A Summa instala a própria cópia da versão 2.2.7 e não altera o OpenCode que você já tem. Suas conversas e preferências continuam.');
+ assert.equal(en['firstrun.tutor.opencodeOldConfirm'],'Update OpenCode {version}? Summa installs its own copy of version 2.2.7 and does not change the OpenCode you already have. Your conversations and preferences stay.');
  assert.doesNotMatch(ptBR['firstrun.tutor.opencodeOldConfirm'],/T3 Code|~\/\.opencode/);
  assert.doesNotMatch(en['firstrun.tutor.opencodeOldConfirm'],/T3 Code|~\/\.opencode/);
 });
@@ -159,7 +159,7 @@ test('placeBinary troca por rename atômico e quem está rodando segue no arquiv
  try{
   const home=path.join(root,'home'),bin=path.join(home,'.opencode','bin');
   fs.mkdirSync(bin,{recursive:true});
-  const installed=path.join(bin,'opencode'),old='#!/bin/sh\necho 1.19.5\n',fresh='#!/bin/sh\necho 2.2.4\n';
+  const installed=path.join(bin,'opencode'),old='#!/bin/sh\necho 1.19.5\n',fresh='#!/bin/sh\necho 2.2.7\n';
   fs.writeFileSync(installed,old);fs.chmodSync(installed,0o755);
   const fd=fs.openSync(installed,'r');
   try{
@@ -183,7 +183,7 @@ test('placeBinary preserva symlink para dentro da pasta e recusa link para fora'
   fs.symlinkSync('opencode-2.2.3',path.join(bin,'opencode'));
   await placeBinary({binary:sourceBinary(root),home,platform:'linux'});
   assert.equal(fs.lstatSync(path.join(bin,'opencode')).isSymbolicLink(),true,'o symlink continua symlink');
-  assert.equal(fs.readFileSync(target,'utf8'),'#!/bin/sh\necho 2.2.4\n','o alvo dentro da pasta foi trocado');
+  assert.equal(fs.readFileSync(target,'utf8'),'#!/bin/sh\necho 2.2.7\n','o alvo dentro da pasta foi trocado');
   assert.deepEqual(binFiles(home),['opencode','opencode-2.2.3','opencode2'],'sem temporário sobrando');
 
   const outside=path.join(root,'outside'),outsideFile=path.join(outside,'opencode');

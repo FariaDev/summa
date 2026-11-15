@@ -8,7 +8,7 @@
    sobe com o MESMO JSON em `OPENCODE_CONFIG_CONTENT`, nunca com permissão
    `ask` herdada de outro app.
 
-   Achado de 2026-11-05 (Zen/Go, OpenCode 2.2.4): o servidor responde 429
+   Achado de 2026-11-05 (Zen/Go, OpenCode 2.2.4; reconferido no 2.2.7): o servidor responde 429
    `FreeUsageLimitError` a qualquer modelo — grátis sem chave ou Go com chave —
    quando a ferramenta `read` NÃO é oferecida. A bisseção com o binário real
    mostrou que só `read` destrava; a chave `tools` não resolve. Por isso este
@@ -19,12 +19,12 @@
    oferecida, mas `permission.read` nega TODOS os caminhos reais com
    `'*': 'deny'`. A única regra `allow` é o sentinela `/mesa-nada-existe/*`,
    que não existe e que ninguém cria — o modelo não tem `write`/`edit`/`bash`.
-   Sem essa regra `allow`, o 2.2.4 retira `read` da lista (medido), e o grátis
+   Sem essa regra `allow`, o 2.2.7 retira `read` da lista (medido), e o grátis
    volta ao 429; por isso o sentinela fica. Leitura real deu
    "Permission denied: read" dentro do workspace e "external_directory" fora;
    symlink e `..` também são negados, e nenhum conteúdo chega ao modelo.
 
-   O `skill` ainda aparece na lista (o 2.2.4 o injeta), mas `'*': 'deny'`
+   O `skill` ainda aparece na lista (o 2.2.7 o injeta), mas `'*': 'deny'`
    recusa a chamada e a descoberta só vê as skills embutidas: nada de `HOME`,
    do projeto nem do workspace. O 1.19.5 também lê `tools` e `permission`, mas
    não roda o turno da Mesa: o adaptador fala a API v2 do `serve` e ele
@@ -35,17 +35,17 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {readPersonalConfig, sanitizePersonalConfig} = require('./opencode-personal-config.cjs');
 
-/* O caminho que só existe para o 2.2.4 manter `read` na lista. É absoluto,
+/* O caminho que só existe para o 2.2.7 manter `read` na lista. É absoluto,
    fora do workspace e não é criado por nenhuma ferramenta da Mesa. A barreira
    não depende de ele não existir: no Windows ele resolve para `C:\\mesa-nada-
    existe`, que um usuário comum pode criar. O que nega é `external_directory`
    sob `*: deny` (medido no Linux com a pasta existindo; Windows não foi medido). */
 const READ_SENTINEL = '/mesa-nada-existe/*';
 
-/* O `permission` é a trava e a forma que o 2.2.4 resolve. A ORDEM importa: a
+/* O `permission` é a trava e a forma que o 2.2.7 resolve. A ORDEM importa: a
    última regra que casa decide. `*: deny` fecha tudo e vem primeiro;
    `mesa_*: allow` e o objeto do `read` vêm depois, senão o `*` desfaria o
-   `allow` do sentinela e o 2.2.4 retiraria `read` da lista (medido). */
+   `allow` do sentinela e o 2.2.7 retiraria `read` da lista (medido). */
 const PERMISSION = Object.freeze({
   '*': 'deny',
   'mesa_*': 'allow',
@@ -108,10 +108,10 @@ function serveEnv(env, configDir, personal = {}) {
   delete out.OPENCODE_CLI_CONFIG_CONTENT;
   /* O `opencode.json` da pasta da conversa (e dos ancestrais) sobrepõe o
      config da Mesa: com um `{"permission":{"shell":"allow"}}` ali, o shell
-     roda de verdade. Medido no 2.2.4; o mesmo config é resolvido pelo 1.19.5,
+     roda de verdade. Medido no 2.2.4 e no 2.2.7; o mesmo config é resolvido pelo 1.19.5,
      que não chega ao turno pela API v2. */
   out.OPENCODE_DISABLE_PROJECT_CONFIG = '1';
-  /* O 2.2.4 também lê `~/.claude` e `~/.agents` como instruções; o tutor da
+  /* O 2.2.7 também lê `~/.claude` e `~/.agents` como instruções; o tutor da
      Mesa não herda CLAUDE.md/AGENTS.md de outro app (#93). */
   out.OPENCODE_DISABLE_CLAUDE_CODE = '1';
   const allowed = sanitizePersonalConfig(personal);

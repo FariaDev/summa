@@ -489,7 +489,7 @@ class OpenCodeAdapter extends EventEmitter {
     if (this.options.deleteSessionOnStop !== true || !this.sessionId || !this.client) return;
     const id = this.sessionId;
     try {
-      /* O 2.2.4 só acha a sessão com a pasta na query: sem ela o DELETE dá 404
+      /* O 2.2.7 só acha a sessão com a pasta na query: sem ela o DELETE dá 404
          e a sessão fica (medido no binário real). */
       const response = await this.client.request('DELETE', `/api/session/${encodeURIComponent(id)}`, {timeoutMs: 5000, query: this.location()});
       if (!response.ok) this.log('opencode', `sessão temporária ${id} não apagada: HTTP ${response.status}`);
