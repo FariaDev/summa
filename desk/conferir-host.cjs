@@ -10,6 +10,7 @@ const {message: uiMsg} = require('./src/i18n.mjs');
 
    Canais:
    - `capture-ready`    → {title, dataUrl, app} | {absent, app, saved, message}
+                          | {title, dataUrl, app: 'Ambitus', ambitus: {caminho, pagina, nome}} (pela ponte)
    - `capture-windows`  → {windows:[fatos], choice, canGoBack}
    - `capture-choose`   → {id} captura a janela escolhida e guarda o APP dela
    - `capture-default`  → volta ao Xournal++ (esquece a escolha)
@@ -20,6 +21,7 @@ const {message: uiMsg} = require('./src/i18n.mjs');
 const core = require('./src/generated/conferir.core.js').default;
 
 const MAX_APP = 120;
+const AMBITUS_APP = 'Ambitus';
 const MIN_SIDE = 100; // janela de verdade: o que o Conferir sempre exigiu
 const NONE = /** @type {const} */ ({$: 'None'});
 
@@ -63,7 +65,7 @@ function windowFact(raw, selfKeys) {
 function createConferirHost(deps) {
   const {
     ipcMain, platform = process.platform, state, setChoice, selfNames = () => [],
-    listWindows, captureWindow, ensurePermission = async () => {}, fixture = null,
+    listWindows, captureWindow, ensurePermission = async () => {}, fixture = null, ambitus = null,
   } = deps;
 
   const selfKeys = () => new Set(selfNames().map(normKey).filter(Boolean));
@@ -93,7 +95,25 @@ function createConferirHost(deps) {
     return {title: shot.title || fact.title || core.displayName(fact.app, fact.key), dataUrl: shot.dataUrl, app: core.displayName(fact.app, fact.key)};
   }
 
+  /* Com o Ambitus pendurado na ponte e nenhum outro programa escolhido, a página
+     vem dele, renderizada do documento em memória: nítida, sem barra de
+     ferramentas, com a tinta ainda não salva. Escolher outro programa
+     (`conferirApp`) mantém a captura de janela de sempre. */
+  const viaAmbitus = () => !!ambitus && !currentChoice() && ambitus.linked();
+
+  async function ambitusPage() {
+    const result = await /** @type {NonNullable<typeof ambitus>} */ (ambitus).request();
+    if (!result.ok) throw Error(uiMsg(`err.ambitus.${result.reason === 'no-page' ? 'noPage' : 'noAnswer'}`));
+    return {
+      title: result.nome ? uiMsg('conferir.ambitusTitle', {name: result.nome, page: result.pagina}) : uiMsg('conferir.ambitusUntitledTitle', {page: result.pagina}),
+      dataUrl: `data:image/png;base64,${result.png}`,
+      app: AMBITUS_APP,
+      ambitus: {caminho: result.caminho, pagina: result.pagina, nome: result.nome},
+    };
+  }
+
   async function ready() {
+    if (viaAmbitus()) return ambitusPage();
     const {raw, facts} = await list();
     const choice = currentChoice();
     const decision = core.decide(toList(facts), choiceFact(choice));

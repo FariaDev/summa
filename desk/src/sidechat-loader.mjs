@@ -8,7 +8,7 @@ import {createLazyModule} from './lazy-module.mjs';
  * Cria a fachada do chat lateral. `mount`/`openSaved` esperam o import; `element`
  * e `setVisible` respondem sem carregar — quem só quer saber o que já veio.
  * @param {() => Promise<typeof import('./sidechat.mjs')>} [importModule]
- * @returns {{load: () => Promise<typeof import('./sidechat.mjs')>, current: () => typeof import('./sidechat.mjs') | null, mount: (container: HTMLElement) => Promise<HTMLElement>, element: () => HTMLElement | null, setVisible: (visible: boolean) => void, rebindDocument: () => void, openSaved: (payload: any) => Promise<void>, reveal: (index: unknown, snippet?: unknown) => boolean}}
+ * @returns {{load: () => Promise<typeof import('./sidechat.mjs')>, current: () => typeof import('./sidechat.mjs') | null, mount: (container: HTMLElement) => Promise<HTMLElement>, element: () => HTMLElement | null, setVisible: (visible: boolean) => void, rebindDocument: () => void, openSaved: (payload: any) => Promise<void>, reveal: (index: unknown, snippet?: unknown) => boolean, attachNotebook: (card: unknown) => Promise<boolean>, setNotebookThumb: (data: unknown) => boolean}}
  * @example const sidechat = createSidechatLoader(); await sidechat.mount(document.body);
  */
 export function createSidechatLoader(importModule = () => import('./sidechat.mjs')) {
@@ -22,6 +22,8 @@ export function createSidechatLoader(importModule = () => import('./sidechat.mjs
     rebindDocument: () => lazy.current()?.rebindSidechatDocument(),
     openSaved: async (payload) => (await lazy.load()).openSavedSidechat(payload),
     reveal: (index, snippet) => lazy.current()?.revealSidechatMessage(index, snippet) ?? false,
+    attachNotebook: async (card) => lazy.current()?.attachSidechatNotebook(card) ?? false,
+    setNotebookThumb: (data) => lazy.current()?.setSidechatNotebookThumb(data) ?? false,
   };
 }
 
@@ -58,3 +60,13 @@ export const openSavedSidechat = (payload) => sidechat.openSaved(payload);
  * @example revealSidechatMessage(41, 'trecho')
  */
 export const revealSidechatMessage = (index, snippet) => sidechat.reveal(index, snippet);
+/** Põe a página do Ambitus na bandeja do lateral já montado, como cartão; false antes de ele montar.
+ * @param {unknown} card `{caminho, pagina, nome}` @returns {Promise<boolean>}
+ * @example await attachSidechatNotebook({caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites'})
+ */
+export const attachSidechatNotebook = (card) => sidechat.attachNotebook(card);
+/** Põe a miniatura no cartão da página, quando o cartão ainda está na bandeja.
+ * @param {unknown} data `{caminho, pagina, thumb}` @returns {boolean}
+ * @example setSidechatNotebookThumb({caminho: '/c/Limites.xopp', pagina: 2, thumb: 'data:image/png;base64,AA=='})
+ */
+export const setSidechatNotebookThumb = (data) => sidechat.setNotebookThumb(data);

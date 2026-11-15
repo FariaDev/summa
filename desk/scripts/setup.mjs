@@ -16,9 +16,13 @@ const starter=path.join(desk,'.runtime','starter');
 function log(msg){console.log(msg);}
 function fail(msg){console.error(msg);process.exitCode=1;}
 
+/* #84: a versão mínima mora só no `engines.node` do desk; o setup repete o
+   valor para o texto não envelhecer. O piso é o major (22): o 22.23.5 da #10
+   só alinhava com a CI, e a instalação limpa no Windows rodou inteira no 22.19. */
+const minimumNode=JSON.parse(fs.readFileSync(path.join(desk,'package.json'),'utf8')).engines.node.replace(/[^0-9.]/g,'');
 const major=Number(process.versions.node.split('.')[0]);
-if(major<20){
- fail('Node 20 ou mais novo é necessário. Versão atual: '+process.version);
+if(major<Number(minimumNode.split('.')[0])){
+ fail('Node '+minimumNode+' ou mais novo é necessário. Versão atual: '+process.version);
  process.exit(1);
 }
 
@@ -66,5 +70,5 @@ log('Próximos passos:');
 log('  1. npm start');
 log('  2. Na primeira abertura, escolha a pasta de dados e pelo menos uma matéria (nome + pasta de PDFs).');
 log('  3. O motor escolhido pede as credenciais na primeira conexão (ficam nele, não na Mesa).');
-log('  4. Windows: Conferir Xournal++ não está disponível; PDFs, calculadora e tutor funcionam.');
+log('  4. Windows: PDFs, calculadora, tutor e Conferir Xournal++ funcionam (captura por PowerShell); o helper visual-check é só macOS.');
 if(process.platform==='darwin')log('  5. Mac (opcional): npm run install-app monta o Summa.app ao lado de desk/.');

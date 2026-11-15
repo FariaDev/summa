@@ -9,7 +9,8 @@ import {pollUntil} from './waits.mjs';
    - o composer da janela solta fica no campo de 3 linhas, sem a altura do
      tutor nem vazio no topo;
    - as ações de mensagem passam AA (4,5:1) nos dois temas;
-   - o foco do campo na janela solta tem anel de --ring com 3:1;
+   - o foco do campo na janela solta é igual ao do preso: sem anel, só a linha
+     de cima do compositor em --ring (com 3:1);
    - as opções do quiz parecem botão (borda, hover, foco);
    - o Enviar desligado é legível (texto ≥ 4,5:1);
    - a bolha do usuário respeita os 85% do tutor.
@@ -39,6 +40,25 @@ const luminance=({r,g,b})=>{
 };
 const contrast=(a,b)=>{const [hi,lo]=[luminance(a),luminance(b)].sort((x,y)=>y-x);return (hi+0.05)/(lo+0.05);};
 const shown=({r,g,b})=>`rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+
+/* Foco do campo da janela solta = o do preso: sem anel de 2px em volta do campo;
+   o foco pinta só a linha de cima do compositor, em --ring, com 3:1. */
+function focusFacts(page){
+ return page.evaluate(()=>{
+  const el=document.querySelector('#sidechat-prompt'),composer=document.querySelector('#sidechat-composer');
+  const style=getComputedStyle(el),box=getComputedStyle(composer);
+  const probe=document.createElement('i');probe.style.color='var(--ring)';document.body.append(probe);
+  const ring=getComputedStyle(probe).color;probe.remove();
+  return {focusVisible:el.matches(':focus-visible'),outlineStyle:style.outlineStyle,outlineWidth:Number.parseFloat(style.outlineWidth)||0,top:box.borderTopColor,topWidth:Number.parseFloat(box.borderTopWidth)||0,background:box.backgroundColor,ring};
+ });
+}
+function assertFocusLikeDocked(focus){
+ assert.ok(focus.outlineStyle==='none'||focus.outlineWidth===0,`sem anel de 2px na janela solta (outline ${focus.outlineStyle} ${focus.outlineWidth}px)`);
+ assert.ok(focus.topWidth>0,'o compositor tem a linha de cima');
+ assert.equal(focus.top,focus.ring,`o foco pinta a linha de cima do compositor em --ring (veio ${focus.top}, esperado ${focus.ring})`);
+ const ratio=contrast(parseColor(focus.top),parseColor(focus.background));
+ assert.ok(ratio>=3,`linha ${focus.top} sobre ${focus.background} dá ${ratio.toFixed(2)}:1, esperado ≥ 3:1`);
+}
 
 /** Cor efetiva do texto (com a opacidade dos ancestrais) e o fundo efetivo. */
 function contrastFacts(page,selector){
@@ -213,17 +233,9 @@ await block('chat-solto-visual-composer',async ctx=>{
  });
  await check(`foco no campo ${narrowLabel}`,async()=>{
   await child.locator('#sidechat-prompt').focus();
-  const focus=await child.evaluate(()=>{
-   const el=document.querySelector('#sidechat-prompt');
-   const style=getComputedStyle(el);
-   return {focusVisible:el.matches(':focus-visible'),style:style.outlineStyle,width:Number.parseFloat(style.outlineWidth)||0,color:style.outlineColor,background:getComputedStyle(document.querySelector('#sidechat-composer')).backgroundColor};
-  });
+  const focus=await focusFacts(child);
   assert.equal(focus.focusVisible,true,'o campo está com foco visível');
-  assert.notEqual(focus.style,'none',`outline do campo: ${focus.style}`);
-  assert.ok(focus.width>=2,`anel de foco com ${focus.width}px; esperado ≥ 2px`);
-  const [fg,bg]=[parseColor(focus.color),parseColor(focus.background)];
-  const ratio=contrast(fg,bg);
-  assert.ok(ratio>=3,`anel ${focus.color} sobre ${focus.background} dá ${ratio.toFixed(2)}:1, esperado ≥ 3:1`);
+  assertFocusLikeDocked(focus);
  });
  await check(`bolha do usuário ${narrowLabel}`,async()=>{
   const facts=await child.evaluate(()=>{
@@ -245,14 +257,7 @@ await block('chat-solto-visual-composer',async ctx=>{
  await check(`composer ${narrowLabel} escuro`,()=>assertComposerThreeLines(child,`janela solta ${narrowLabel} escuro`));
  await check('foco no campo escuro',async()=>{
   await child.locator('#sidechat-prompt').focus();
-  const focus=await child.evaluate(()=>{
-   const el=document.querySelector('#sidechat-prompt');
-   const style=getComputedStyle(el);
-   return {style:style.outlineStyle,width:Number.parseFloat(style.outlineWidth)||0,color:style.outlineColor,background:getComputedStyle(document.querySelector('#sidechat-composer')).backgroundColor};
-  });
-  assert.notEqual(focus.style,'none',`outline do campo: ${focus.style}`);
-  const ratio=contrast(parseColor(focus.color),parseColor(focus.background));
-  assert.ok(ratio>=3,`anel ${focus.color} sobre ${focus.background} dá ${ratio.toFixed(2)}:1, esperado ≥ 3:1`);
+  assertFocusLikeDocked(await focusFacts(child));
  });
  await check('ações no escuro (janela solta)',()=>assertContrast(child,'.sidechat-msg-actions button',4.5,'ações de mensagem na janela solta, escuro'));
 

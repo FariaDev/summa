@@ -43,7 +43,7 @@ export function paintConferirField(){
  const el=field();
  if(!el)return;
  const expanded=listOpen();
- const tree=conferirCore.fieldView(conferirAppName(),!!S.conferirApp,!!S.captureOk);
+ const tree=conferirCore.fieldView(conferirAppName(),!!S.conferirApp,!!S.windowCaptureOk);
  el.replaceChildren(build(tree,fieldHandlers));
  $('#cfg-conferir-choose')?.setAttribute('aria-expanded',String(expanded));
 }
@@ -80,7 +80,7 @@ const listHandlers={
 
 const fieldHandlers={
  Choose:async()=>{
-  if(!S.captureOk)return;
+  if(!S.windowCaptureOk)return;
   if(listOpen()){setListOpen(false);return;}
   try{
    await paintList();
@@ -153,6 +153,8 @@ function showAbsent({app,saved}){
 }
 
 export function initConferir(){
+ /* O Ambitus (des)conectou: o nome do programa no campo muda junto do botão. */
+ window.addEventListener('desk-capture-availability',()=>paintConferirField());
  window.addEventListener(LANGUAGE_EVENT,()=>{paintConferirField();if(listOpen())paintList().catch(()=>{});});
  document.addEventListener('click',event=>{
   if(!conferirNoteOpen())return;

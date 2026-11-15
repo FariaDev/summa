@@ -5,6 +5,7 @@ import {choiceIcon} from './provider-icons.mjs';
 import {build,renderChildren} from './view-host.mjs';
 import {sidechatOpen,toggleSidechat} from './support.mjs';
 import {isChatFull,toggleChatFull} from './chat-full.mjs';
+import {miniMenuItem,toggleMiniMode} from './mini-mode.mjs';
 import {resetModelSearch} from './model-picker-ui.mjs';
 import core from './generated/tutorheader.core.js';
 import boxCore from './generated/composerbox.core.js';
@@ -198,6 +199,8 @@ function renderMenus(){
  if(morePop){
   renderChildren(morePop,core.moreItems(host.endDayEnabled()),handlers);
   iconize(morePop);
+  /* Modo mini (mini-mode.mjs): o item é da Mesa, fora do núcleo do menu; o clique fecha o menu e liga o modo. */
+  const mini=miniMenuItem();mini.addEventListener('click',()=>{closeTutorPops();toggleMiniMode();});morePop.append(mini);
  }
  syncMore();
 }
@@ -343,6 +346,7 @@ function wire(){
   });
  }
  $('#chat-full').addEventListener('click',()=>toggleChatFull());
+ $('#chat-mini').addEventListener('click',()=>toggleMiniMode());
  /* O lateral abre e fecha nos dois modos (#193): na tela inteira ele é o painel
     da borda direita; ao lado, a área de apoio. */
  $('#sidechat-toggle').addEventListener('click',()=>toggleSidechat());
@@ -383,7 +387,7 @@ function wire(){
 
 export function initTutorHeader(hostApi){
  host=hostApi;
- labelBtn($('#sidechat-toggle'),'messageSquare');labelBtn($('#chat-full'),'maximize');
+ labelBtn($('#sidechat-toggle'),'messageSquare');labelBtn($('#chat-full'),'maximize');labelBtn($('#chat-mini'),'pictureInPicture2');
  labelBtn($('#new-session'),'plus');
  labelBtn($('#chat-more'),'more');
  /* A seta do título é do host (asset do ícone), fora do texto. */

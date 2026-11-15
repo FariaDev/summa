@@ -116,9 +116,11 @@
  --ring-shadow:0 0 0 3px color-mix(in oklab,var(--ring) 16%,transparent);
  --ring-shadow-inset:inset 0 0 0 2px color-mix(in oklab,var(--ring) 30%,transparent);
  /* Raios: dois cantos de uso (controle/cartão pequeno e superfície flutuante)
-    e o círculo por natureza. O portão tests/radius-tokens.test.mjs recusa
+    e o círculo por natureza. O redondo é 999px, não 50%: num
+    quadrado dá o mesmo círculo, e numa caixa mais larga que alta (o
+    interruptor de 40×20) dá a pílula — 50% ali virava elipse. O portão tests/radius-tokens.test.mjs recusa
     qualquer outro token ou px literal nas folhas. */
- --r-sm:4px;--r-md:8px;--r-round:50%;
+ --r-sm:4px;--r-md:8px;--r-round:999px;
  /* Tipografia (piso de legibilidade em 11px: auditoria de UI/UX, rodada 1, D2;
     escala única sem meios pixels: 11, 12, 13, 14, 15, 18 e 22) */
  --fs-2xs:11px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:15px;--fs-2xl:18px;--fs-3xl:22px;--fs-display:30px;

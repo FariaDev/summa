@@ -37,6 +37,8 @@
 .sidechat-pin{flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
 .sidechat-pin[hidden]{display:none}
 .sidechat-pin .icon{width:14px;height:14px}
+/* "Trazer de volta à Mesa": botão do cabeçalho que só existe na janela solta. */
+#sidechat-return[hidden]{display:none}
 /* Coluna estreita (auditoria de UI/UX, rodada 2, D4): o selo do motor espremia
    o título até "Chat l…". Mede o cabeçalho, não a janela: arrastar o divisor
    estreita a coluna em qualquer janela. A seção segue nomeada por `aria-label`. */

@@ -61,7 +61,9 @@ function registerStudyRecordsHost({ipcMain,live,runtime,allowed,allowedXopp,engi
   if(!Array.isArray(images)||images.length>16)throw Error(invalidRequest('tray-save','images',images,'array(0..16)'));
   const pdfs=payload?.pdfs===undefined?[]:payload.pdfs;
   if(!Array.isArray(pdfs)||pdfs.length>16)throw Error(invalidRequest('tray-save','pdfs',pdfs,'array(0..16)'));
-  return pending.saveTray(runtime,live.session,images,pdfs);
+  const notebooks=payload?.notebooks===undefined?[]:payload.notebooks;
+  if(!Array.isArray(notebooks)||notebooks.length>pending.MAX_NOTEBOOKS)throw Error(invalidRequest('tray-save','notebooks',notebooks,`array(0..${pending.MAX_NOTEBOOKS})`));
+  return pending.saveTray(runtime,live.session,images,pdfs,notebooks);
  });
  /* Registro do "Encerrar por hoje": grava LOCAL primeiro (é o ponto do módulo) e
     o host só aceita o que é da matéria: páginas da biblioteca aberta e `.xopp`

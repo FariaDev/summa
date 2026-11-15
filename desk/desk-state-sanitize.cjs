@@ -114,6 +114,10 @@ function sanitizeState(value){
      estrito (só `true` vale) e limites pela mesma asBounds da Mesa. */
   sidechatDetached:source.sidechatDetached===true,
   sidechatAlwaysOnTop:source.sidechatAlwaysOnTop===true,
+  /* Modo mini: "sempre por cima" ligado por padrão (só `false` desliga); o lugar do mini fica em `miniBounds`, abaixo. */
+  miniAlwaysOnTop:source.miniAlwaysOnTop!==false,
+  /* Leitura da tinta para o Ambitus por opt-in (#158): estado de interface, nunca no config.json. */
+  inkReading:source.inkReading===true,
   /* Ações do menu Anexar fixadas no composer (#99): estado de interface, até duas. */
   composerPins:normalizeComposerPins(source.composerPins),
   /* Novidades: a última versão cuja janela já abriu (`src/release-notes.mjs`). */
@@ -127,6 +131,8 @@ function sanitizeState(value){
  if(bounds)out.bounds=bounds;else delete out.bounds;
  const sidechatBounds=asBounds(source.sidechatBounds);
  if(sidechatBounds)out.sidechatBounds=sidechatBounds;else delete out.sidechatBounds;
+ const miniBounds=asBounds(source.miniBounds);
+ if(miniBounds)out.miniBounds=miniBounds;else delete out.miniBounds;
  return out;
 }
 /* Preferências pessoais por arquivo, fora dos PDFs e dos defaults do autor:

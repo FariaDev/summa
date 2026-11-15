@@ -25,7 +25,7 @@ const FLAGS=['endDay','studyContext','calculator','xournal','conferir','refsTogg
 const INVENTORY={
  materias:['#cfg-courses','#cfg-add-course'],
  leitores:['#cfg-layout','#layout-presets-open'],
- mesa:['#cfg-title',...FLAGS.map(key=>'#cfg-desk-'+key)],
+ mesa:['#cfg-title',...FLAGS.map(key=>'#cfg-desk-'+key),'#cfg-ambitus-ink'],
  avisos:['#ui-language','#tutor-language','#theme-mode','#accent-mode','#density-mode','#reading-size','#reading-width','#code-size','#pdf-dark','#notify-sound','#notify-desktop','#notify-focused'],
  pastas:['#cfg-vault','#cfg-vault-browse','#cfg-claude','#cfg-claude-browse','#cfg-claude-clear','#cfg-xournal','#cfg-xournal-browse','#cfg-xournal-clear','#cfg-opencode-key','#cfg-opencode-save','#cfg-opencode-create','#cfg-opencode-provider-select']
 };

@@ -37,14 +37,14 @@ function rescueBounds({bounds,displays,primary}){
 
 /** Liga a janela principal aos eventos de tela; devolve o `reconcile` para o
  * teste dirigir uma mudança sem depender do Electron.
- * @param {{screenLike?: object, window?: {isDestroyed?: () => boolean, getBounds?: () => {x: number, y: number, width: number, height: number}, setBounds?: (bounds: {x: number, y: number, width: number, height: number}) => void}, log?: (line: string) => void}} [host] telas, janela e log (todos injetáveis)
+ * @param {{screenLike?: object, window?: {isDestroyed?: () => boolean, getBounds?: () => {x: number, y: number, width: number, height: number}, setBounds?: (bounds: {x: number, y: number, width: number, height: number}) => void}, log?: (line: string) => void, skip?: () => boolean}} [host] telas, janela e log (todos injetáveis); `skip` true deixa a janela como está (o modo mini cuida do próprio resgate)
  * @returns {{reconcile: () => ({x: number, y: number, width: number, height: number} | null)}} confere a janela agora e a resgata se preciso
  * @example const guard=keepWindowOnDisplays({screenLike: screen, window: win}); guard.reconcile();
  */
-function keepWindowOnDisplays({screenLike,window,log}={}){
+function keepWindowOnDisplays({screenLike,window,log,skip}={}){
  const reconcile=()=>{
   try{
-   if(!window||window.isDestroyed?.())return null;
+   if(!window||window.isDestroyed?.()||skip?.())return null;
    const bounds=window.getBounds?.();
    if(!bounds)return null;
    const placed=rescueBounds({bounds,displays:displaysOf(screenLike),primary:primaryOf(screenLike)});
