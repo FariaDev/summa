@@ -12,6 +12,16 @@
 /** @type {readonly ReleaseNote[]} */
 export const RELEASE_NOTES = Object.freeze([
   {
+    version: '1.3.0',
+    title: 'releaseNotes.summa.title',
+    lead: 'releaseNotes.summa.lead',
+    groups: [
+      {title: 'releaseNotes.summa.also', cards: [
+        {icon: 'download', title: 'releaseNotes.summa.reinstall', body: 'releaseNotes.summa.reinstallBody'},
+      ]},
+    ],
+  },
+  {
     version: '1.2.0',
     title: 'releaseNotes.comfort.title',
     lead: 'releaseNotes.comfort.lead',
