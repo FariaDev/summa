@@ -5,15 +5,13 @@
    recusa), fica um aviso visível no lugar: o aluno nunca termina sem nada.
 
    O host resolve o rascunho e publica com um id sintético `previa:prv-…`; o
-   slot nasce no fim de `#messages`, porque a prévia não tem passo de
-   publicação no diário. */
+   slot nasce no ponto da chamada da prévia (#61), não no fim de `#messages`. */
 
 import {ensureActivitySlot} from './chat-turn.mjs';
 import {ensureActivityHost} from './activity-loader.mjs';
+import {previewIdOfText} from './timeline.mjs';
 import {S} from './state.mjs';
 import {t} from './ui-text.mjs';
-
-const PREVIEW_ID = /previaId\s+"(prv-[a-z0-9]{8,24})"/;
 
 /** Texto do resultado de uma ferramenta (string ou `{content}` do Claude/OpenCode).
  * @param {unknown} result
@@ -34,8 +32,7 @@ export function resultText(result) {
  * @example previewIdOf({content: [{type: 'text', text: 'chame com previaId "prv-0123456789ab"'}]}) // 'prv-0123456789ab'
  */
 export function previewIdOf(result) {
-  const match = PREVIEW_ID.exec(resultText(result));
-  return match ? match[1] : '';
+  return previewIdOfText(resultText(result));
 }
 
 function visibleNote(messages) {
@@ -51,12 +48,14 @@ function visibleNote(messages) {
 
 /**
  * Publica o rascunho da última prévia no fim do turno; falha vira aviso.
- * @param {{previaId: string, conversationId?: string|null}} preview
+ * O `anchor` é o segmento da chamada `previsualizar_atividade`: o quadro entra
+ * ali, não no fim de `#messages` (#61).
+ * @param {{previaId: string, conversationId?: string|null, anchor?: Element|null}} preview
  * @param {{desk?: object, messages?: Element|null, session?: () => string|null}} [deps]
  * @returns {Promise<object|null>} a atividade publicada, ou null
- * @example await showUnpublishedPreview({previaId: 'prv-0123456789ab', conversationId: 'conv'})
+ * @example await showUnpublishedPreview({previaId: 'prv-0123456789ab', conversationId: 'conv', anchor: article})
  */
-export async function showUnpublishedPreview({previaId, conversationId = null} = {}, {desk = window.desk, messages = null, session = () => S.currentSession} = {}) {
+export async function showUnpublishedPreview({previaId, conversationId = null, anchor = null} = {}, {desk = window.desk, messages = null, session = () => S.currentSession} = {}) {
   if (!previaId) return null;
   const stillHere = () => !conversationId || session() === conversationId;
   /* O host precisa estar ligado antes da publicação: o evento chega antes do
@@ -72,7 +71,7 @@ export async function showUnpublishedPreview({previaId, conversationId = null} =
     visibleNote(messages);
     return null;
   }
-  const slot = ensureActivitySlot(`previa:${previaId}`, {status: 'pending'});
+  const slot = ensureActivitySlot(`previa:${previaId}`, {status: 'pending', anchor});
   try {
     const activity = await desk.activityPublishPreview({scopeRef: scope.scopeRef, previaId});
     if (!stillHere()) {

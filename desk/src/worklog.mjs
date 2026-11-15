@@ -14,7 +14,7 @@ import {contentParts,displayUserText,imageSources} from '../text.mjs';
 import {attachedPdfs} from './chat-pdf.mjs';
 import {headlineElapsed,headBase} from './worklog-head.mjs';
 import {formatDuration,isPdfRead} from './worklog-tools.mjs';
-import {artifactPart,isActivityTool} from './timeline.mjs';
+import {historyArtifactPart} from './timeline.mjs';
 import {cardToolKind} from './cards/toolnames.mjs';
 import {t} from './ui-text.mjs';
 import {wholeNat} from './bend-nat.mjs';
@@ -465,7 +465,7 @@ export function historyTurns(messages){
      if(result)applyResult(step,result,inline?part.isError===true:result.isError,inline?(Number(part.endedAt)||at):stampOf(result));
      else{step.status='stopped';step.endedAt=at;}
      pushStep(step);
-     if(isActivityTool(part.name))turn.parts.push(artifactPart(step.id,step.toolName,at));
+     const artifact=historyArtifactPart(step,at);if(artifact)turn.parts.push(artifact);
     }else if(part.type==='text'){
      const text=String(part.text||'').trim();
      if(!text)continue;

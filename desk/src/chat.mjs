@@ -36,7 +36,7 @@ export {hideQuoteButton,insertMainDraft} from './chat-quote.mjs';
 import {createShownHistory} from './history-shown.mjs';
 import {cachedHistoryTurns} from './history-render-cache.mjs';
 import {beginLazyHistory,finishLazyHistory} from './history-format-lazy.mjs';
-import {recoverActivitySlots} from './history-activity-slots.mjs';
+import {previewAnchorElement,recoverActivitySlots} from './history-activity-slots.mjs';
 import {openChatSearch,closeChatSearch,setChatSearchSource,addChatSearchEntry} from './chat-search-view.mjs';
 export {openChatSearch,closeChatSearch};
 
@@ -142,6 +142,8 @@ export function showHistory(messages,cards=[],identity=null){
       const el=activitySlotElement(id,status);
       historySlots.push({toolCallId:id,element:el});
       frag.append(el);
+     }else if(part.type==='preview'){ /* #61: marca do ponto da prévia; a recuperação troca pelo slot */
+      const mark=previewAnchorElement(document,part.previaId);if(mark)frag.append(mark);
      }else if(part.type==='text'){
       searchEntries.push({text:part.text,el:tagMessageIndex(message('assistant',part.text,part.images||[],frag,[],part.imageSources||[],part.time,part.model||'',part.modelName||''),part.messageIndex)});
      }
@@ -661,7 +663,8 @@ window.desk.onEvent(e=>{
       turno. Publicação de quadro que deu certo dispensa o resgate. */
    if(timeline.isPreviewTool(e.toolName)&&e.isError!==true){
     const previaId=previewIdOf(normalized);
-    if(previaId)turnState.turnPreview={previaId};
+    /* #61: o quadro do H4 nasce no fim do turno, ancorado no segmento da prévia. */
+    if(previaId)turnState.turnPreview={previaId,anchor:timeline.segmentOfStep(turnState.turnTrack,step?.id)?.view?.el||null};
    }
    if(step){
     const seg=timeline.segmentOfStep(turnState.turnTrack,step.id);
@@ -712,7 +715,7 @@ window.desk.onEvent(e=>{
   if(!cancelled&&!failed&&!uncertain)window.dispatchEvent(new Event('desk-idle'));
   else if(failed||uncertain)window.dispatchEvent(new Event('desk-failed'));
   if(unpublishedPreview&&!cancelled&&!failed&&!uncertain){
-   void showUnpublishedPreview({previaId:unpublishedPreview.previaId,conversationId:turnConversation});
+   void showUnpublishedPreview({previaId:unpublishedPreview.previaId,conversationId:turnConversation,anchor:unpublishedPreview.anchor||null});
   }
   if(cancelled&&!aborted)window.dispatchEvent(new CustomEvent('desk-held',{detail:{message:uiMessage('queue.heldCancelled')}}));
   if(uncertain)toast(uiMessage('turn.uncertain'));
