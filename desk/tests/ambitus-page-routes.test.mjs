@@ -34,12 +34,18 @@ async function startedBridge(t, brokerOptions = {}) {
   return {host, pageBroker, poll, answer, file};
 }
 
+/** Espera o long-poll chegar ao broker (uma espera fixa perdia a corrida com a máquina carregada). @param {{connected: () => boolean}} pageBroker */
+async function untilConnected(pageBroker) {
+  for (let i = 0; i < 400 && !pageBroker.connected(); i++) await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(pageBroker.connected(), true, 'o long-poll chegou ao broker');
+}
+
 const good = (pedido, extra = {}) => ({pedido, caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64, ...extra});
 
 test('long-poll sem pedido: 204 depois do tempo de espera, e o Ambitus conta como conectado', async (t) => {
   const {poll, pageBroker} = await startedBridge(t);
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   assert.equal(pageBroker.connected(), true);
   const response = await pending;
   assert.equal(response.status, 204);
@@ -49,7 +55,7 @@ test('long-poll sem pedido: 204 depois do tempo de espera, e o Ambitus conta com
 test('o Conferir pede: o long-poll recebe {pedido} e a resposta chega ao Conferir', async (t) => {
   const {poll, answer, pageBroker} = await startedBridge(t);
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const asking = pageBroker.request();
   const response = await pending;
   assert.equal(response.status, 200);
@@ -65,7 +71,7 @@ test('o Conferir pede: o long-poll recebe {pedido} e a resposta chega ao Conferi
 test('sem documento aberto o Ambitus responde {pedido, erro: "sem-pagina"}', async (t) => {
   const {poll, answer, pageBroker} = await startedBridge(t);
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const asking = pageBroker.request();
   const {pedido} = await (await pending).json();
   assert.equal((await answer({pedido, erro: 'sem-pagina'})).status, 200);
@@ -84,7 +90,7 @@ test('pedido desconhecido ou já respondido: 404 unknown-request', async (t) => 
   const {poll, answer, pageBroker} = await startedBridge(t);
   assert.deepEqual(await answer(good('0123456789abcdef')), {status: 404, json: {reason: 'unknown-request'}});
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const asking = pageBroker.request();
   const {pedido} = await (await pending).json();
   assert.equal((await answer(good(pedido))).status, 200);
@@ -95,7 +101,7 @@ test('pedido desconhecido ou já respondido: 404 unknown-request', async (t) => 
 test('timeout: depois de answerMs a resposta é recusada e o Conferir recebe timeout', async (t) => {
   const {poll, answer, pageBroker} = await startedBridge(t, {answerMs: 60});
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const asking = pageBroker.request();
   const {pedido} = await (await pending).json();
   assert.deepEqual(await asking, {ok: false, reason: 'timeout'});
@@ -105,7 +111,7 @@ test('timeout: depois de answerMs a resposta é recusada e o Conferir recebe tim
 test('PNG inválido: 400, e o pedido falha na hora em vez de esperar o teto', async (t) => {
   const {poll, answer, pageBroker} = await startedBridge(t, {answerMs: 5000});
   const pending = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const asking = pageBroker.request();
   const {pedido} = await (await pending).json();
   const notPng = Buffer.from('isto não é um png de jeito nenhum').toString('base64');
@@ -123,7 +129,7 @@ test('corpo grande demais: 413 sem chegar ao Conferir', async (t) => {
 test('só um long-poll vale: o novo substitui o anterior (409 no antigo)', async (t) => {
   const {poll, pageBroker} = await startedBridge(t, {holdMs: 2000});
   const first = poll();
-  await new Promise((resolve) => setTimeout(resolve, 30));
+  await untilConnected(pageBroker);
   const second = poll();
   const replaced = await first;
   assert.equal(replaced.status, 409);
