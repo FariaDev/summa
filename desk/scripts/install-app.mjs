@@ -17,6 +17,8 @@ import legacyBundle from '../legacy-bundle.cjs';
 import windowsInstall from '../windows-install.cjs';
 import {ensureElectronBinary} from './electron-binary.mjs';
 import {ensureVisualHelper} from './visual-helper.mjs';
+import {doctorContext} from '../doctor-checks.mjs';
+import {runtimeKeepNotice} from './runtime-notice.mjs';
 
 const desk=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const root=path.resolve(desk,'..');
@@ -35,6 +37,7 @@ if(process.platform==='win32'){
  console.log('Instalado:',installed.installDir);
  console.log('Atalho:',installed.shortcut);
  console.log('Para desinstalar: Configurações → Aplicativos → Summa.');
+ console.log(runtimeKeepNotice(doctorContext().runtime));
  process.exit(0);
 }
 
@@ -107,3 +110,4 @@ execFileSync('osascript',['-e',[
 execFileSync('/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister',['-f',app]);
 console.log('Atualizado:',app);
 console.log('Atalho:',alias);
+console.log(runtimeKeepNotice(doctorContext().runtime));
