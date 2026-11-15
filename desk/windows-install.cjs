@@ -21,6 +21,7 @@ const {psLiteral}=require('./capture-win.cjs');
 const INSTALL_DIR_NAME='Summa';
 const UNINSTALL_KEY='HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Summa';
 const UNINSTALL_SCRIPT='uninstall.ps1';
+const OPEN_APP_MESSAGE='A Summa está aberta. Feche a Summa e tente desinstalar de novo.';
 const PUBLISHER='Lucas Faria';
 
 /* O WScript.Shell grava alvo, argumentos, pasta e ícone, mas não expõe o
@@ -174,6 +175,17 @@ function uninstallScript({env}){
   `$parent = [System.IO.Path]::GetFullPath(${psQuote(parent)}) + [System.IO.Path]::DirectorySeparatorChar`,
   `if (-not $full.StartsWith($parent, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'recusado: a pasta de instalação não está em %LOCALAPPDATA%\\Programs' }`,
   `if (-not [System.StringComparer]::OrdinalIgnoreCase.Equals([System.IO.Path]::GetFileName($full), ${psQuote(INSTALL_DIR_NAME)})) { throw 'recusado: a pasta de instalação não é a da Summa' }`,
+  /* Com a Summa aberta, o `Directory.Delete` apagava o payload (e este
+     script) e parava numa DLL travada: atalho e chave ficavam apontando para
+     um desinstalador que não existe mais (#11, prova na VM). Recusa antes de
+     mexer em qualquer coisa. */
+  `$running = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($full + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })`,
+  `if ($running.Count -gt 0) {`,
+  ` $message = ${psQuote(OPEN_APP_MESSAGE)}`,
+  ` if ((Get-Process -Id $PID).SessionId -ne 0) { Add-Type -AssemblyName System.Windows.Forms; [void][System.Windows.Forms.MessageBox]::Show($message, ${psQuote(INSTALL_DIR_NAME)}) }`,
+  ` [Console]::Error.WriteLine($message)`,
+  ` exit 1`,
+  `}`,
   `if (Test-Path -LiteralPath $full) {`,
   ` $item = Get-Item -LiteralPath $full -Force`,
   ` if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {`,
@@ -292,10 +304,12 @@ function installWindows({desk,root,electronDir,env,version,deps={}}){
  const payload=installPayload({desk,root,installDir:target,version});
  const uninstallFile=path.join(payload.dest,'scripts',UNINSTALL_SCRIPT);
  fs.mkdirSync(path.dirname(uninstallFile),{recursive:true});
- fs.writeFileSync(uninstallFile,uninstallScript({env}));
+ /* BOM: o PowerShell 5.1 lê `.ps1` sem BOM como ANSI e estragaria os acentos
+    da mensagem de recusa (#11). */
+ fs.writeFileSync(uninstallFile,'\ufeff'+uninstallScript({env}));
  runPowerShell(shortcutScript({env,execPath:path.join(target,'electron.exe'),appPath:payload.dest,assetsDir:path.join(payload.dest,'assets')}));
  runPowerShell(registryScript({env,version}));
  return {installDir:target,payloadDir:payload.dest,shortcut:shortcutFile(env)};
 }
 
-module.exports={INSTALL_DIR_NAME,UNINSTALL_KEY,UNINSTALL_SCRIPT,PUBLISHER,installDir,payloadDir,shortcutScript,registryValues,registryScript,uninstallScript,uninstallTargets,installWindows,copyElectronDist};
+module.exports={INSTALL_DIR_NAME,OPEN_APP_MESSAGE,UNINSTALL_KEY,UNINSTALL_SCRIPT,PUBLISHER,installDir,payloadDir,shortcutScript,registryValues,registryScript,uninstallScript,uninstallTargets,installWindows,copyElectronDist};

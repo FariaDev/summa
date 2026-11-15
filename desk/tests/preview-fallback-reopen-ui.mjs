@@ -1,9 +1,6 @@
-/* H4, 2ª rodada: o quadro publicado no fim do turno a partir da prévia
-   (`previa:prv-…`) fica no store, mas não tem passo de ferramenta no
-   transcript. Ao reabrir, o histórico não criava slot e o quadro sumia — o
-   mesmo bug que o aluno via antes (aparece e depois desaparece).
-   Reproduz o caso real: publica pelo fim do turno, recarrega o renderer e o
-   quadro tem de continuar lá, uma vez só, depois da fala do turno.
+/* #62: a prévia sem erro publica na própria chamada (`previa:prv-…`), então
+   o quadro nasce antes da fala seguinte. Ao reabrir, o histórico marca o ponto
+   da chamada e o slot recuperado volta ali, uma vez só — não no fim do turno.
    Roda da pasta desk: `node --test tests/preview-fallback-reopen-ui.mjs`. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -47,12 +44,14 @@ await withArtifacts('preview-fallback-reopen-ui',async ctx=>{
  await page.locator('#send').click();
  await page.waitForFunction(()=>document.querySelector('#messages').textContent.includes('Resposta do OpenCode falso'),undefined,{timeout:60000});
 
- /* Reabrir como o aluno: o renderer recarrega e o histórico é remontado. */
+ /* Reabrir como o aluno: o renderer recarrega, reconecta e remonta o histórico
+    com o resultado da prévia, que marca o ponto da chamada (#62). */
  await page.reload();
  await enterFree(page);
+ await page.evaluate(async()=>{await (await import('./src/state.mjs')).connect();});
  await page.waitForFunction(()=>document.querySelector('#messages').textContent.includes('a atividade foi publicada'),undefined,{timeout:60000});
  const reopened=page.locator('.activity-slot[data-activity-call^="previa:"]');
- await reopened.locator('.activity-card').waitFor({timeout:30000});
+ await reopened.locator('[data-act="open"]').waitFor({timeout:30000});
  assert.equal(await reopened.count(),1,'ao reabrir, o quadro do store volta uma vez só');
  /* Histórico monta a casca parada, como qualquer quadro antigo; abrir monta. */
  await reopened.locator('[data-act="open"]').click();
@@ -65,9 +64,9 @@ await withArtifacts('preview-fallback-reopen-ui',async ctx=>{
   const speech=[...document.querySelectorAll('#messages .message.assistant')].find(node=>node.textContent.includes('a atividade foi publicada'));
   const nextUser=[...document.querySelectorAll('#messages .message.user')].at(-1);
   const follows=(left,right)=>!!left&&!!right&&(left.compareDocumentPosition(right)&Node.DOCUMENT_POSITION_FOLLOWING)!==0;
-  return {speech:follows(speech,board),turn:follows(board,nextUser)};
+  return {call:follows(board,speech),turn:follows(board,nextUser)};
  });
- assert.deepEqual(order,{speech:true,turn:true},'o quadro fica depois da fala do turno em que nasceu e antes do turno seguinte');
+ assert.deepEqual(order,{call:true,turn:true},'o quadro fica no ponto da chamada, antes da fala seguinte e antes do turno seguinte');
  const frame=page.frames().find(candidate=>candidate.url().startsWith('mesa-activity://act-'));
  assert.ok(frame,'o quadro recuperado monta o artefato');
  await frame.waitForSelector('#m',{timeout:15000});

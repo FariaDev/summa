@@ -27,6 +27,14 @@ const DETACHED_RETRY_MS = 3000;
    No primeiro tick o frame novo pode ainda não ter feito o commit e não
    aparece no pid; matar ali derrubaria a carga legítima. */
 const FRAMELESS_CONFIRM_MS = 1000;
+/* Um frame novo de artefato ainda não aparece na árvore do pid (`osProcessId`
+   só depois do commit). No run 43677111900 do Windows o reload soltou o frame
+   antigo, a reabertura montou o novo e o watchdog matou o processo que ele ia
+   reusar 24 ms depois — o quadro ficou 8 s carregando e virou timeout (#1).
+   A montagem em andamento segura o `frameless` até este prazo; o kill de um
+   processo realmente órfão só atrasa. O prazo acompanha o watchdog de carga
+   do card (8 s): passado ele, o próprio quadro já desistiu. */
+const ARTIFACT_MOUNT_GRACE_MS = 8000;
 const KATEX_DIST = path.join(__dirname, 'node_modules', 'katex', 'dist');
 const KATEX_FILES = new Set(['katex.min.css', 'katex.min.js', 'contrib/auto-render.min.js', 'contrib/mhchem.min.js']);
 /* Bibliotecas embutidas para gráficos (#42), servidas pelo próprio esquema —
@@ -103,15 +111,22 @@ function activityFramesOtherThan(frames, entry) {
      demais); antes do prazo, `retry`;
    - `stalled`: ainda há outros frames no pid e a entrada destacada passou dos
      dois pings falhos + 2,5 s sem resposta — caminho de travamento de sempre;
-   - `retry`: pid ainda desconhecido ou enumeração incompleta; guarda a entrada
-     por até `retryMs` sem deixar o timer do watchdog parar;
+   - `retry`: pid ainda desconhecido, enumeração incompleta ou montagem de
+     artefato em andamento; guarda a entrada por até `retryMs` sem deixar o
+     timer do watchdog parar;
    - `drop`: enumeração completa sem motivo para kill (ou prazo estourado). */
-function detachedActivityDecision({pid, complete, frames, frame, stalled, waitedMs, framelessMs = 0, retryMs = DETACHED_RETRY_MS, confirmMs = FRAMELESS_CONFIRM_MS} = {}) {
+function detachedActivityDecision({pid, complete, frames, frame, stalled, waitedMs, framelessMs = 0, retryMs = DETACHED_RETRY_MS, confirmMs = FRAMELESS_CONFIRM_MS, mounting = false} = {}) {
   const identified = Number.isInteger(pid) && pid > 0;
   if (!identified || complete !== true || !Array.isArray(frames)) {
     return Number.isFinite(waitedMs) && waitedMs >= retryMs ? 'drop' : 'retry';
   }
-  if (frames.filter((candidate) => candidate !== frame).length === 0) return framelessMs >= confirmMs ? 'frameless' : 'retry';
+  if (frames.filter((candidate) => candidate !== frame).length === 0) {
+    /* `mounting`: uma navegação de artefato começou agora e o frame novo pode
+       ainda não ter commit. Matar o processo que ele vai reusar derrubava a
+       carga (#1); espera o prazo em vez de decidir `frameless`. */
+    if (mounting) return 'retry';
+    return framelessMs >= confirmMs ? 'frameless' : 'retry';
+  }
   return stalled === true ? 'stalled' : 'drop';
 }
 function activityArtifactUrl(id, version, theme = 'system', accent = '') {
@@ -173,4 +188,4 @@ function katexFile(relative) {
   return null;
 }
 
-module.exports = {ACTIVITY_SCHEME, KATEX_HOST, MAX_REGISTRY, KATEX_DIST, LIB_HOST, LIB_FILES, canTerminateActivityProcess, canTerminateSharedStalledProcess, collectActivityFrames, trackedActivityEntry, activityFramesOtherThan, detachedActivityDecision, DETACHED_RETRY_MS, activityArtifactUrl, parseActivityUrl, katexFile};
+module.exports = {ACTIVITY_SCHEME, ARTIFACT_MOUNT_GRACE_MS, KATEX_HOST, MAX_REGISTRY, KATEX_DIST, LIB_HOST, LIB_FILES, canTerminateActivityProcess, canTerminateSharedStalledProcess, collectActivityFrames, trackedActivityEntry, activityFramesOtherThan, detachedActivityDecision, DETACHED_RETRY_MS, activityArtifactUrl, parseActivityUrl, katexFile};

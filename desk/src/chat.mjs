@@ -25,7 +25,9 @@ import {activitySlots,assistantAnchors,resetRetiredLedgers,turnState} from './ch
 import {applyActivityNotice,applyLimitNotice,clearNotices} from './chat-notices.mjs';
 import {clearLatestAnswer,markLatestAnswer,message,setMessageModel,setMessageTime,updateMessage} from './chat-message-view.mjs';
 import {freeLimitKey,freeLimitMessageKey,showFreeLimitNote} from './free-limit-notice.mjs';
-import {previewIdOf,showUnpublishedPreview} from './chat-preview-fallback.mjs';
+import {showUnpublishedPreview} from './chat-preview-fallback.mjs';
+import {recordActivityEnd,recordPreviewEnd} from './chat-preview-publish.mjs';
+import {ensureActivityHost} from './activity-loader.mjs';
 /* O renderer Markdown+LaTeX vive em `markdown.mjs` (compartilhado com o chat
    lateral); o realce de código e o pipeline do antigo `chat.mjs` são os mesmos.
    `markup` é reexportado pela compatibilidade dos imports antigos. */
@@ -644,6 +646,8 @@ window.desk.onEvent(e=>{
  }
  if(e.type==='tool_execution_start'){
   if(staleEvent(e))return;
+  /* #62: o host do quadro tem de estar ligado ANTES do evento `published`, senão o slot nasce parado. */
+  if(timeline.isPreviewTool(e.toolName))void ensureActivityHost().catch(()=>{});
   if(cardToolKind(e.toolName)){
    /* O cartão já chegou pelo `desk-card` (o host registra antes de a ferramenta
       voltar); a chamada não vira passo do diário. */
@@ -659,21 +663,17 @@ window.desk.onEvent(e=>{
    const normalized=toolResultFor(e);
    const step=worklog.finishTool(turnState.turnLog,{id:e.toolCallId,result:normalized,isError:e.isError,now:Date.now()});
    const activity=activityDetailsOf(normalized);
-   /* H4: a prévia não publica nada; guarda o último rascunho para o fim do
-      turno. Publicação de quadro que deu certo dispensa o resgate. */
-   if(timeline.isPreviewTool(e.toolName)&&e.isError!==true){
-    const previaId=previewIdOf(normalized);
-    /* #61: o quadro do H4 nasce no fim do turno, ancorado no segmento da prévia. */
-    if(previaId)turnState.turnPreview={previaId,anchor:timeline.segmentOfStep(turnState.turnTrack,step?.id)?.view?.el||null};
-   }
+   /* #62: prévia limpa publica na hora (slot no ponto da chamada); prévia com
+      erro fica para o H4. Revisão de prévia atualiza o MESMO slot. */
+   if(timeline.isPreviewTool(e.toolName)&&e.isError!==true)recordPreviewEnd({result:normalized,anchor:timeline.segmentOfStep(turnState.turnTrack,step?.id)?.view?.el||null});
    if(step){
     const seg=timeline.segmentOfStep(turnState.turnTrack,step.id);
     if(seg)renderSegment(seg,{live:!seg.closed});
-    if(timeline.isActivityTool(step.toolName)){
+    if(timeline.isActivityTool(step.toolName)&&!recordActivityEnd({toolCallId:step.id,result:normalized,anchor:seg?.view?.el||null})){
      if(e.isError!==true)turnState.turnPublished=true;
      ensureActivitySlot(step.id,{status:e.isError?'error':'done',...activity});
     }
-   }else if(timeline.isActivityTool(e.toolName)){
+   }else if(timeline.isActivityTool(e.toolName)&&!recordActivityEnd({toolCallId:e.toolCallId,result:normalized})){
     if(e.isError!==true)turnState.turnPublished=true;
     ensureActivitySlot(e.toolCallId,{status:e.isError?'error':'done',...activity});
    }

@@ -117,6 +117,9 @@ function insertSlot({doc, root, ranges, item}) {
   slot.dataset.activityCall = toolCallId;
   /* O store só tem publicação terminada: não é um passo pendente do turno. */
   slot.dataset.status = 'done';
+  /* #62: a identidade da revisão acompanha o slot recuperado, como no vivo. */
+  if (item.id) slot.dataset.activityId = String(item.id);
+  if (item.version) slot.dataset.activityVersion = String(item.version);
   const anchor = previewAnchor(root, toolCallId);
   const index = activityTurnIndex(ranges, item.createdAt);
   const tail = index >= 0 ? ranges[index] && ranges[index].tail : null;

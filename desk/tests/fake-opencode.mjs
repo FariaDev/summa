@@ -154,13 +154,13 @@ export function longStreamText() {
   *   tokens?: object, failTurn?: 'free-tier'|'free-limit'|'desk-error', turnDelayMs?: number, stream?: {deltas?: number, delayMs?: number}, log?: (entry: object) => void,
  *   queueLog?: (entry: object) => void, refusalLog?: (entry: object) => void,
  *   promptLog?: (value: string) => void, chaos?: string[], reviewDraft?: string, reviewDelayMs?: number,
- *   mcpBefore?: string, mcpAfter?: string}} [options]
+ *   mcpBefore?: string, mcpAfter?: string, historyHoldFile?: string, mcpReplaceRecovers?: boolean}} [options]
  * @example const serve = await createFakeOpencodeServe({password: 'p'}); // serve.url, serve.requests, serve.close()
  */
 export async function createFakeOpencodeServe(options = {}) {
   const {password = '', models = DEFAULT_MODELS, commands = DEFAULT_COMMANDS, reply = (text) => `Resposta do OpenCode falso: ${text.slice(-40)}`,
     log = () => {}, queueLog = () => {}, refusalLog = () => {}, promptLog = () => {}, reviewDraft = '', reviewDelayMs = 0, mcpBefore = '', mcpAfter = ''} = options;
-  const state = {promptStatus: options.promptStatus || 200, instructionsStatus: options.instructionsStatus || 0, instructionMaxBytes: options.instructionMaxBytes || 0, dropAfterAccept: !!options.dropAfterAccept, ask: !!options.ask, permission: options.permission || null, permissionEvent: options.permissionEvent || 'asked', permissionReply: options.permissionReply || 'decision', tool: options.tool || null, steps: options.steps || null, mcpCall: options.mcpCall || null, mcpStatus: options.mcpStatus || 'connected', mcpPendingFile: options.mcpPendingFile || '', failTurn: options.failTurn || '', pageSize: options.pageSize || 0, turnDelay: options.turnDelayMs ?? 10, stream: options.stream || null, mcpCalls: Array.isArray(options.mcpCalls) ? [...options.mcpCalls] : null, tokens: options.tokens || {input: 900, output: 100, reasoning: 0, cache: {read: 0, write: 0}}, chaos: new Set(Array.isArray(options.chaos) ? options.chaos : []), refusePrefix: options.refusePrefix || '', revertStatus: options.revertStatus ?? 200, reviewDraft: String(reviewDraft || ''), reviewDelay: reviewDelayMs, mcpBefore: String(mcpBefore || ''), mcpAfter: String(mcpAfter || '')};
+  const state = {promptStatus: options.promptStatus || 200, instructionsStatus: options.instructionsStatus || 0, instructionMaxBytes: options.instructionMaxBytes || 0, dropAfterAccept: !!options.dropAfterAccept, ask: !!options.ask, permission: options.permission || null, permissionEvent: options.permissionEvent || 'asked', permissionReply: options.permissionReply || 'decision', tool: options.tool || null, steps: options.steps || null, mcpCall: options.mcpCall || null, mcpStatus: options.mcpStatus || 'connected', mcpPendingFile: options.mcpPendingFile || '', mcpReplaceRecovers: !!options.mcpReplaceRecovers, mcpDeleted: false, failTurn: options.failTurn || '', pageSize: options.pageSize || 0, turnDelay: options.turnDelayMs ?? 10, stream: options.stream || null, mcpCalls: Array.isArray(options.mcpCalls) ? [...options.mcpCalls] : null, tokens: options.tokens || {input: 900, output: 100, reasoning: 0, cache: {read: 0, write: 0}}, chaos: new Set(Array.isArray(options.chaos) ? options.chaos : []), refusePrefix: options.refusePrefix || '', revertStatus: options.revertStatus ?? 200, reviewDraft: String(reviewDraft || ''), reviewDelay: reviewDelayMs, mcpBefore: String(mcpBefore || ''), mcpAfter: String(mcpAfter || ''), historyHoldFile: String(options.historyHoldFile || ''), lastMcpResult: ''};
   const requests = [];
   const sessions = new Map();
   const mcp = new Map();
@@ -370,8 +370,27 @@ export async function createFakeOpencodeServe(options = {}) {
      no registro, o modelo só a alcança por dentro da `execute` (é o nome que o
      SSE mostra); com ele, o nome é `mesa_<ferramenta>`. A chamada vai de
      verdade ao servidor registrado, depois do `tool.called`. */
+  /* `previaId: "$last"`/`activityId: "$last"` no input de um teste resolve para
+     o id que a chamada MCP anterior devolveu (#62: prévia e a revisão dela). */
+  function mcpInputOf(input) {
+    if (!input || typeof input !== 'object') return input;
+    const next = {...input};
+    const preview = /previaId\s+"(prv-[a-z0-9]{8,24})"/.exec(state.lastMcpResult);
+    const activity = /Quadro publicado: (act-[a-z0-9][a-z0-9-]{2,63}) v\d+/.exec(state.lastMcpResult);
+    if (next.previaId === '$last' && preview) next.previaId = preview[1];
+    if (next.activityId === '$last' && activity) next.activityId = activity[1];
+    return next;
+  }
+
   async function mcpTurn(session, text, assistantID, call = state.mcpCall) {
-    const {name, input} = call;
+    const {name} = call;
+    const input = mcpInputOf(call.input);
+    /* Sem `connected` o servidor real tira as ferramentas da sessão (#63):
+       o turno vira só texto, como o modelo sem `mesa_*`. */
+    if (state.mcpStatus !== 'connected' && state.mcpStatus !== 'ready') {
+      answer(session, 'As ferramentas da Summa não estão disponíveis nesta sessão.', assistantID);
+      return;
+    }
     /* Texto antes e depois da ferramenta (#42): o quadro precisa achar o lugar
        dele no meio da fala do tutor, não só no fim da mensagem. */
     const beforeID = state.mcpBefore ? `${assistantID}b` : '';
@@ -394,17 +413,18 @@ export async function createFakeOpencodeServe(options = {}) {
     emit('session.tool.called', {sessionID: session.id, id: callID, input: toolInput});
     const toolContent = config ? await callMcpTool(config, name, input) : [{type: 'text', text: 'MCP mesa não registrado.'}];
     const result = toolContent.map((part) => part.text || '').join('\n');
+    state.lastMcpResult = result;
     if (process.env.FAKE_OPENCODE_MCP_LOG) { try { fs.appendFileSync(process.env.FAKE_OPENCODE_MCP_LOG, `${JSON.stringify({name, result})}\n`); } catch { /* log opcional */ } }
     const output = toolContent;
     emit('session.tool.success', {sessionID: session.id, id: callID, content: output});
     const toolPart = {type: 'tool', id: callID, name: toolName, state: {status: 'completed', input: toolInput, content: output, structured: {}}, time: {created: Date.now(), completed: Date.now()}};
-    const answer = state.mcpAfter || reply(text);
+    const answerText = state.mcpAfter || reply(text);
     emit('session.step.started', {sessionID: session.id, assistantMessageID: afterID});
     emit('session.text.started', {sessionID: session.id, assistantMessageID: afterID});
-    emit('session.text.delta', {sessionID: session.id, assistantMessageID: afterID, delta: answer.slice(0, 8)});
-    emit('session.text.ended', {sessionID: session.id, assistantMessageID: afterID, text: answer});
+    emit('session.text.delta', {sessionID: session.id, assistantMessageID: afterID, delta: answerText.slice(0, 8)});
+    emit('session.text.ended', {sessionID: session.id, assistantMessageID: afterID, text: answerText});
     emit('session.step.ended', {sessionID: session.id, assistantMessageID: afterID});
-    const content = [...(state.mcpBefore ? [{type: 'text', text: state.mcpBefore}] : []), toolPart, {type: 'text', text: answer}];
+    const content = [...(state.mcpBefore ? [{type: 'text', text: state.mcpBefore}] : []), toolPart, {type: 'text', text: answerText}];
     session.messages.push({id: assistantID, type: 'assistant', content, time: {created: Date.now()}, tokens: state.tokens, model: session.model || {id: models[0]?.id, providerID: 'opencode'}});
     endTurn(session);
     emit('session.execution.succeeded', {sessionID: session.id});
@@ -532,13 +552,26 @@ export async function createFakeOpencodeServe(options = {}) {
     if (req.method === 'PATCH' && tail === '') return json(res, 204);
     if (req.method === 'POST' && tail === '/model') { session.model = body?.model; return json(res, 204); }
     if (req.method === 'GET' && tail.startsWith('/message')) {
-      /* O 2.2.4 não esconde o histórico no GET durante o revert pendente. */
-      const list = tail.includes('order=desc') ? [...session.messages].reverse() : session.messages;
-      if (!state.pageSize) return json(res, 200, {data: list, cursor: {previous: null, next: null}});
-      /* Paginado como o servidor real: o cursor aqui é só o índice. */
-      const start = Number(new URLSearchParams(tail.split('?')[1] || '').get('cursor') || 0);
-      const end = start + state.pageSize;
-      return json(res, 200, {data: list.slice(start, end), cursor: {previous: null, next: end < list.length ? String(end) : null}});
+      const reply = () => {
+        /* O 2.2.4 não esconde o histórico no GET durante o revert pendente. */
+        const list = tail.includes('order=desc') ? [...session.messages].reverse() : session.messages;
+        if (!state.pageSize) return json(res, 200, {data: list, cursor: {previous: null, next: null}});
+        /* Paginado como o servidor real: o cursor aqui é só o índice. */
+        const start = Number(new URLSearchParams(tail.split('?')[1] || '').get('cursor') || 0);
+        const end = start + state.pageSize;
+        return json(res, 200, {data: list.slice(start, end), cursor: {previous: null, next: end < list.length ? String(end) : null}});
+      };
+      /* Reabrir antes de religar (#66): o teste segura o histórico do servidor
+         enquanto confere a pintura que veio do descritor local. */
+      if (!state.historyHoldFile || !fs.existsSync(state.historyHoldFile)) { reply(); return; }
+      const started = Date.now();
+      const timer = setInterval(() => {
+        if (fs.existsSync(state.historyHoldFile) && Date.now() - started < 60000) return;
+        clearInterval(timer);
+        reply();
+      }, 25);
+      timer.unref?.();
+      return;
     }
     if (req.method === 'POST' && tail === '/interrupt') {
       /* Interromper cancela o turno em voo de verdade: sem isso o timer longo
@@ -740,9 +773,19 @@ export async function createFakeOpencodeServe(options = {}) {
     if (req.method === 'GET' && bare === '/api/command') return json(res, 200, {location: {directory: process.cwd()}, data: commands});
     if (req.method === 'GET' && url.startsWith('/api/mcp')) { const pending = state.mcpPendingFile && fs.existsSync(state.mcpPendingFile); return json(res, 200, {data: [...new Set([...mcp.keys()].map((key) => key.split('\0')[1]))].map((name) => ({name, status: {status: pending ? 'pending' : state.mcpStatus}}))}); }
     const mcpPut = /^\/api\/experimental\/mcp\/([^/?]+)/.exec(url);
+    if (req.method === 'DELETE' && mcpPut) {
+      const directory = new URLSearchParams(url.split('?')[1] || '').get('location[directory]') || '';
+      mcp.delete(mcpKey(directory, decodeURIComponent(mcpPut[1])));
+      state.mcpDeleted = true;
+      return json(res, 204, {});
+    }
     if (req.method === 'PUT' && mcpPut) {
       const directory = new URLSearchParams(url.split('?')[1] || '').get('location[directory]') || '';
       mcp.set(mcpKey(directory, decodeURIComponent(mcpPut[1])), body?.config);
+      /* O PUT num servidor `failed` não o revive (#63); só o DELETE + PUT,
+         como o fake da recuperação. */
+      if (state.mcpDeleted && state.mcpReplaceRecovers) state.mcpStatus = 'connected';
+      state.mcpDeleted = false;
       return json(res, 200, {data: {}});
     }
     if (req.method === 'POST' && url === '/api/session') {
@@ -888,6 +931,7 @@ async function runAsBinary(argv) {
     reviewDraft: process.env.FAKE_OPENCODE_REVIEW_DRAFT || '', reviewDelayMs: Number(process.env.FAKE_OPENCODE_REVIEW_DELAY || 0),
     mcpBefore: process.env.FAKE_OPENCODE_MCP_BEFORE || '', mcpAfter: process.env.FAKE_OPENCODE_MCP_AFTER || '',
     mcpPendingFile: process.env.FAKE_OPENCODE_MCP_PENDING_FILE || '',
+    historyHoldFile: process.env.FAKE_OPENCODE_HISTORY_HOLD_FILE || '',
     mcpStatus: process.env.FAKE_OPENCODE_MCP_STATUS || undefined,
     stream: process.env.FAKE_OPENCODE_STREAM === 'long' ? {deltas: Number(process.env.FAKE_OPENCODE_STREAM_DELTAS || 240), delayMs: Number(process.env.FAKE_OPENCODE_STREAM_DELTA_MS || 25)} : null,
     steps: process.env.FAKE_OPENCODE_STEPS ? JSON.parse(process.env.FAKE_OPENCODE_STEPS) : null});

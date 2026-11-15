@@ -84,6 +84,42 @@ test('A3: previaId resolve no host; id desconhecido não publica',async()=>{
  }finally{f.cleanup();}
 });
 
+/* #62: a prévia sem erro publica durante a própria chamada, com o id
+   sintético `previa:prv-…`; a revisão (previaId ou activityId) troca o MESMO
+   quadro no lugar. */
+test('#62: publishPreviewResult publica a prévia limpa e não publica a com erro',async()=>{
+ const draft={title:'Prévia',objective:'Objetivo',alternativeMarkdown:'Alternativa',html:'<p>prévia</p>',css:'',js:'',kind:'atividade'};
+ const f=fixture({draftFor:(scope,previaId)=>previaId==='prv-0123456789ab'?draft:null,resolvePreview:(scope,raw)=>raw});
+ try{
+  const clean=await f.host.publishPreviewResult(f.scope(),{previaId:'prv-0123456789ab',consoleMessages:[{level:'log',text:'ok'}],width:390,theme:'claro',contentHeight:200});
+  assert.equal(clean.activity.version,1);
+  assert.equal(f.store.list(f.scope()).length,1,'a prévia limpa publica na própria chamada');
+  assert.equal(f.store.list(f.scope())[0].toolCallId,'previa:prv-0123456789ab');
+  assert.equal(f.events.length,1,'o evento hidrata o slot no ponto da chamada');
+  const broken=await f.host.publishPreviewResult(f.scope(),{previaId:'prv-0123456789ab',consoleMessages:[{level:'error',text:'TypeError: x'}],width:390,theme:'claro',contentHeight:200});
+  assert.equal(broken.activity,undefined,'prévia com erro não aparece para o aluno');
+  assert.equal(f.store.list(f.scope()).length,1,'e não cria segunda publicação');
+ }finally{f.cleanup();}
+});
+
+test('#62: previaId e activityId de prévia publicada revisam o MESMO slot',async()=>{
+ const draft={title:'Prévia',objective:'Objetivo',alternativeMarkdown:'Alternativa',html:'<p>v1</p>',css:'',js:'',kind:'atividade'};
+ const f=fixture({draftFor:(scope,previaId)=>previaId==='prv-0123456789ab'?draft:null,resolvePreview:(scope,raw)=>raw});
+ try{
+  const first=await f.host.publishPreviewResult(f.scope(),{previaId:'prv-0123456789ab',consoleMessages:[]});
+  const byPreview=await f.host.publish(f.scope(),{...draft,html:'<p>v2</p>',previaId:'prv-0123456789ab'},{toolCallId:'call-create-1'});
+  assert.equal(byPreview.id,first.activity.id);
+  assert.equal(byPreview.version,2);
+  assert.equal(byPreview.toolCallId,'previa:prv-0123456789ab','a revisão mantém o id da prévia');
+  assert.equal(byPreview.previaId,'prv-0123456789ab');
+  const byActivity=await f.host.publish(f.scope(),{...draft,html:'<p>v3</p>',activityId:first.activity.id},{toolCallId:'call-create-2'});
+  assert.equal(byActivity.version,3);
+  assert.equal(byActivity.toolCallId,'previa:prv-0123456789ab','pelo activityId, o slot continua sendo o da prévia');
+  assert.equal(byActivity.previaId,'prv-0123456789ab');
+  assert.equal(f.store.list(f.scope()).length,3,'uma versão por revisão, nunca um segundo quadro');
+ }finally{f.cleanup();}
+});
+
 /* H4: o fim do turno publica o rascunho da prévia com id sintético
    `previa:prv-…`; o quadro não fica preso a nenhum passo do diário. */
 test('H4: publishPreview grava o rascunho com id sintético e recusa id desconhecido',async()=>{
