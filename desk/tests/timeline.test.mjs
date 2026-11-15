@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
  ACTIVITY_TOOLS,PREVIEW_TOOLS,addStep,artifactPart,beginTrack,closeAll,closeSegment,createTrack,
- isActivityTool,isPreviewTool,joinStep,openSegment,removeSegment,resetTrack,segmentCount,
+ historyArtifactPart,isActivityTool,isPreviewTool,joinStep,openSegment,previewIdOfText,previewPart,removeSegment,resetTrack,segmentCount,
  segmentEmpty,segmentOfStep,segmentSteps,
 } from '../src/timeline.mjs';
 
@@ -30,6 +30,26 @@ test('isPreviewTool reconhece a prévia sem confundir com a publicação (H4)', 
 test('artifactPart carrega a identidade estável do slot', () => {
  assert.deepEqual(artifactPart('t1','mesa_criar_atividade',123),{type:'artifact',toolCallId:'t1',name:'mesa_criar_atividade',at:123});
  assert.deepEqual(artifactPart(null),{type:'artifact',toolCallId:'',name:'',at:0});
+});
+
+test('previewPart leva o previaId do resultado para o ponto da prévia (#61)', () => {
+ assert.deepEqual(previewPart('t1','prv-0123456789ab',123),{type:'preview',toolCallId:'t1',previaId:'prv-0123456789ab',at:123});
+ assert.deepEqual(previewPart(null),{type:'preview',toolCallId:'',previaId:'',at:0});
+});
+
+test('historyArtifactPart projeta atividade e prévia no ponto da chamada (#61)', () => {
+ assert.deepEqual(historyArtifactPart({id:'a',toolName:'mesa_criar_atividade'},10),artifactPart('a','mesa_criar_atividade',10));
+ assert.deepEqual(historyArtifactPart({id:'p',toolName:'mesa_previsualizar_atividade',resultText:'chame com previaId "prv-0123456789ab"'},20),previewPart('p','prv-0123456789ab',20));
+ assert.equal(historyArtifactPart({id:'p',toolName:'mesa_previsualizar_atividade',resultText:'sem id'},20),null);
+ assert.equal(historyArtifactPart({id:'x',toolName:'web_search'},20),null);
+ assert.equal(historyArtifactPart(null),null);
+});
+
+test('previewIdOfText reconhece só o id curto que a prévia devolve (#61)', () => {
+ assert.equal(previewIdOfText('Para publicar, chame com previaId "prv-0123456789ab" no lugar de html.'),'prv-0123456789ab');
+ assert.equal(previewIdOfText('sem prévia'),'');
+ assert.equal(previewIdOfText(''),'');
+ assert.equal(previewIdOfText(undefined),'');
 });
 
 test('segmento aberto reusa; fechar fixa to/endedAt; o próximo abre embaixo', () => {

@@ -3,7 +3,7 @@
    de ferramenta e sem quebrar quando a lista chega depois de outra abertura. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {activityItemsWithoutSlot, activityTurnIndex, recoverActivitySlots} from '../src/history-activity-slots.mjs';
+import {activityItemsWithoutSlot, activityTurnIndex, previewAnchorElement, recoverActivitySlots} from '../src/history-activity-slots.mjs';
 
 const slot = (toolCallId, version = 1, createdAt = 0) => ({toolCallId, version, createdAt});
 
@@ -41,6 +41,14 @@ function fakeNode() {
       for (let current = node; current; current = current.parent) if (current === this) return true;
       return false;
     },
+    remove() {
+      const siblings = this.parent ? this.parent.children : [];
+      const at = siblings.indexOf(this);
+      if (at >= 0) siblings.splice(at, 1);
+      this.parent = null;
+      this.isConnected = false;
+      return this;
+    },
     querySelector() { return null; },
   };
 }
@@ -49,12 +57,13 @@ function fakeRoot() {
   const root = fakeNode();
   root.classList = {contains: () => false};
   root.querySelector = (selector) => {
-    const match = /^\.activity-slot\[data-activity-call="(.*)"\]$/.exec(String(selector));
-    if (!match) return null;
-    const wanted = match[1];
+    const slot = /^\.activity-slot\[data-activity-call="(.*)"\]$/.exec(String(selector));
+    const preview = /^\[data-preview-id="(.*)"\]$/.exec(String(selector));
+    if (!slot && !preview) return null;
     const walk = (node) => {
       for (const child of node.children) {
-        if (child.className === 'activity-slot' && child.dataset.activityCall === wanted) return child;
+        if (slot && child.className === 'activity-slot' && child.dataset.activityCall === slot[1]) return child;
+        if (preview && child.className === 'activity-anchor' && child.dataset.previewId === preview[1]) return child;
         const found = walk(child);
         if (found) return found;
       }
@@ -132,6 +141,34 @@ test('recoverActivitySlots: insere depois da fala do turno, no fim sem carimbo, 
 
   const again = await recoverActivitySlots({root, ranges, doc, list: async () => ({items: [slot('previa:prv-1', 1, 0)]})});
   assert.deepEqual(again, [], 'quem já tem slot não ganha segundo');
+});
+
+test('previewAnchorElement marca o ponto oculto da prévia com o previaId (#61)', () => {
+  const mark = previewAnchorElement(newDoc(), 'prv-1');
+  assert.equal(mark.className, 'activity-anchor');
+  assert.equal(mark.dataset.previewId, 'prv-1');
+  assert.equal(mark.hidden, true);
+  assert.equal(previewAnchorElement(newDoc(), ''), null);
+});
+
+test('recoverActivitySlots: prévia publicada no fim do turno volta no ponto da chamada (#61)', async () => {
+  const doc = newDoc();
+  const root = fakeRoot();
+  const firstSpeech = root.append(fakeNode());
+  const mark = root.append(fakeNode());
+  mark.className = 'activity-anchor';
+  mark.dataset.previewId = 'prv-1';
+  mark.hidden = true;
+  const secondSpeech = root.append(fakeNode());
+  const result = await recoverActivitySlots({
+    root,
+    ranges: [{start: 100, tail: secondSpeech}],
+    doc,
+    list: async () => ({items: [slot('previa:prv-1', 1, 150)]}),
+  });
+  assert.deepEqual(result.map((entry) => entry.toolCallId), ['previa:prv-1']);
+  const order = root.children.map((node) => node.dataset.activityCall || node.dataset.previewId || (node === firstSpeech ? 'fala-1' : node === secondSpeech ? 'fala-2' : 'outro'));
+  assert.deepEqual(order, ['fala-1', 'previa:prv-1', 'fala-2'], 'o quadro entra no ponto da prévia e a marca sai do DOM');
 });
 
 test('recoverActivitySlots: o id de fallback do OpenCode usa a mesma recuperação', async () => {
