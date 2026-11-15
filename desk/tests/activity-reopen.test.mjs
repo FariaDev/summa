@@ -179,3 +179,11 @@ test('OpenCode: o toolCall e o resultado ficam na conversa antes de religar (#66
   assert.ok(Object.hasOwn(call, 'result'), 'o resultado chega junto da chamada, como no descritor local');
   assert.ok(Number(call.endedAt) > 0, 'o carimbo do resultado acompanha a chamada');
 });
+
+test('OpenCode: mensagem repetida não apaga o texto puro já gravado (#66)', () => {
+  const service = Object.create(NativeService.prototype);
+  service.messages = [{uuid: 'm1', role: 'user', content: 'Crie a atividade.'}];
+  service._deferMessages = () => {};
+  service._rememberMessage({uuid: 'm1', role: 'user', content: [{type: 'image', attachment: 'a1'}]});
+  assert.deepEqual(service.messages[0].content, [{type: 'text', text: 'Crie a atividade.'}, {type: 'image', attachment: 'a1'}]);
+});

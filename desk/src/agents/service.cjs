@@ -132,7 +132,8 @@ class NativeService extends EventEmitter{
   const at=message.uuid?this.messages.findLastIndex(item=>item.uuid===message.uuid):-1;
   if(at<0){this.messages.push(message);this._deferMessages();return;}
   const current=this.messages[at];
-  const content=Array.isArray(current.content)?current.content:[];
+  /* Conteúdo em texto puro vira parte de texto: a mescla não pode apagá-lo. */
+  const content=Array.isArray(current.content)?current.content:typeof current.content==='string'&&current.content?[{type:'text',text:current.content}]:[];
   if(!Array.isArray(message.content))return;
   let changed=false;
   for(const part of message.content){
