@@ -81,13 +81,16 @@ function mcpFailureMessage(status) {
 /**
  * Registra o MCP `mesa` na pasta da conversa e espera o handshake. O resultado
  * vai ao `log` sem caminho nem segredo; falhar aqui não derruba o estudo.
+ * `replace` remove antes a entrada morta: no 2.2.4 o PUT num servidor `failed`
+ * devolve 204 e o estado continua `failed`, sem novo handshake (medido na #63).
  * @param {{request: McpRequest, location: () => Record<string, string>, config: Record<string, unknown>,
- *   log: (line: string) => void, timeoutMs?: number, pollMs?: number}} options
+ *   log: (line: string) => void, timeoutMs?: number, pollMs?: number, replace?: boolean}} options
  * @returns {Promise<McpOutcome>}
  * @example const outcome = await registerMesaMcp({request, location, config, log: console.log});
  */
-async function registerMesaMcp({request, location, config, log, timeoutMs, pollMs}) {
+async function registerMesaMcp({request, location, config, log, timeoutMs, pollMs, replace = false}) {
   const started = Date.now();
+  if (replace) await request('DELETE', '/api/experimental/mcp/mesa', {query: location()}).catch(() => null);
   const response = await request('PUT', '/api/experimental/mcp/mesa', {body: {config}, query: location()})
     .catch(() => ({ok: false, status: 0}));
   const outcome = response.ok
@@ -98,4 +101,4 @@ async function registerMesaMcp({request, location, config, log, timeoutMs, pollM
   return outcome;
 }
 
-module.exports = {MCP_TIMEOUT_MS, mcpFailureMessage, registerMesaMcp, waitMesaMcp};
+module.exports = {MCP_TIMEOUT_MS, mcpFailureMessage, mesaMcpStatus, registerMesaMcp, waitMesaMcp};
