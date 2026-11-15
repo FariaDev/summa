@@ -9,7 +9,7 @@
    guarda (a Mesa não copia credencial): o servidor continua autenticando os
    providers da pessoa pelo ambiente dela.
 
-   O parceiro de leitura é o 2.2.4: `opencode.json[c]` no diretório global
+   O parceiro de leitura é o 2.2.7: `opencode.json[c]` no diretório global
    (XDG/config do macOS/AppData do Windows), mais o arquivo de
    `OPENCODE_CONFIG` e o JSON de `OPENCODE_CONFIG_CONTENT`, se a pessoa os
    definiu. O config do projeto (`.opencode/` e `opencode.json` da pasta) não
@@ -23,8 +23,8 @@ const path = require('node:path');
 const PERSONAL_KEYS = Object.freeze(['provider', 'model', 'small_model']);
 
 /* Lista permitida em toda a árvore de `provider` (#93). `options` vira corpo
-   da requisição no 2.2.4, então chave desconhecida nunca é copiada: um
-   `instructions`/`system`/`prompt` ali chegaria ao modelo. O schema do 2.2.4
+   da requisição no 2.2.7, então chave desconhecida nunca é copiada: um
+   `instructions`/`system`/`prompt` ali chegaria ao modelo. O schema do 2.2.7
    define estas chaves de catálogo e conexão; o que não estiver aqui sai. */
 const PROVIDER_KEYS = Object.freeze([
   'api', 'name', 'env', 'id', 'npm', 'whitelist', 'blacklist', 'options', 'models',
@@ -50,7 +50,7 @@ const MODEL_PROVIDER_KEYS = Object.freeze(['npm', 'api', 'shape']);
 const SDK_NPM = /^@ai-sdk\/[A-Za-z0-9._-]+$/;
 
 /**
- * A pasta global de config do OpenCode, a mesma que o 2.2.4 resolve.
+ * A pasta global de config do OpenCode, a mesma que o 2.2.7 resolve.
  * @param {{env?: Record<string, string|undefined>, home?: string, platform?: NodeJS.Platform}} [options]
  * @returns {string}
  * @example personalConfigDirectory({env: {XDG_CONFIG_HOME: '/cfg'}, platform: 'linux'}) // '/cfg/opencode'
@@ -62,7 +62,7 @@ function personalConfigDirectory({env = process.env, home = os.homedir(), platfo
     const appData = env.APPDATA || path.join(home, 'AppData', 'Roaming');
     return path.join(appData, 'opencode');
   }
-  /* O binário 2.2.4/2.2.5 lê `$XDG_CONFIG_HOME/opencode` e, sem XDG, também
+  /* O binário 2.2.4–2.2.7 lê `$XDG_CONFIG_HOME/opencode` e, sem XDG, também
      `~/.config/opencode` no macOS (medido com `debug config`): não é
      `~/Library/Application Support`. Seguir o binário evita a Mesa ler um
      provider que o servidor não vê. */
@@ -74,7 +74,7 @@ function plainObject(value) {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
-/* Tira comentários de linha e de bloco fora de string; o 2.2.4 aceita JSONC. */
+/* Tira comentários de linha e de bloco fora de string; o 2.2.7 aceita JSONC. */
 /** @param {string} source */
 function stripComments(source) {
   let out = '';
@@ -190,7 +190,7 @@ function sanitizeOptions(raw, allowed, where, log) {
   return Object.keys(out).length ? out : undefined;
 }
 
-/* `provider.api` e `provider.env` com tipo errado fazem o 2.2.4 descartar o
+/* `provider.api` e `provider.env` com tipo errado fazem o 2.2.7 descartar o
    provider inteiro (medido: string no lugar da lista e objeto no lugar da
    string). Valor válido é mantido; tipo inválido sai com o nome no log. */
 /** @param {Record<string, unknown>} out @param {string} where @param {(area: string, line: string) => void} log */
@@ -271,7 +271,7 @@ function sanitizeModelProvider(raw, where, log) {
 /** @param {unknown} raw @param {string} where @param {(area: string, line: string) => void} log */
 function sanitizeModel(raw, where, log) {
   if (!plainObject(raw)) { log('opencode', `config da pessoa: modelo ignorado em ${where}`); return undefined; }
-  /* O 2.2.4 também carrega `models.<id>.provider.npm` (medido no binário): sem
+  /* O 2.2.7 também carrega `models.<id>.provider.npm` (medido no binário): sem
      este corte, o limite de pacote do provider seria contornado pelo modelo. */
   const npm = plainObject(raw.provider) ? raw.provider.npm : undefined;
   if (npm !== undefined && (typeof npm !== 'string' || !SDK_NPM.test(npm))) {

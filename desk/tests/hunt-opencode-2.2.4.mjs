@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-/* Caça do OpenCode 2.2.4 real (#91): sobe o `opencode serve` de verdade, com o
+/* Caça do OpenCode 2.x real (#91; o arquivo nasceu no 2.2.4 e é reconferido no 2.2.7): sobe o `opencode serve` de verdade, com o
    config da Mesa e um provedor OpenAI-compatible local que devolve a chamada
    que o teste pedir (`shell`, `skill` ou `criar_pdf`). Prova o que a #91
    decidiu:
 
-   1. o `debug config` do 2.2.4 resolve `shell`, `edit` e `read` em `deny`,
+   1. o `debug config` do 2.2.7 resolve `shell`, `edit` e `read` em `deny`,
       com `*` em `deny`, `mesa_*` em `allow` e o `read` liberado só pelo
       sentinela `/mesa-nada-existe/*`; não há a chave `tools` nem plugin;
    2. um `ls` pedido pelo modelo NÃO roda com o shell desligado, e um
@@ -147,7 +147,7 @@ function fakePrepareMaterial(previews) {
 
 function adapterFor(server, workspace, mcp = null) {
   return new OpenCodeAdapter({
-    conversationId: 'hunt-opencode-2.2.4', sessionId: '', directory: workspace,
+    conversationId: 'hunt-opencode-2.2.7', sessionId: '', directory: workspace,
     acquire: async () => ({baseUrl: server.baseUrl, password: server.password, binary: server.binary, pid: server.pid}),
     readVersion: async () => version, log: () => {}, ...(mcp ? {mcpConfig: () => mcp} : {}),
   });
@@ -158,7 +158,7 @@ async function runTurn(adapter, events, id, text) {
   return waitFor(() => events.find((event) => event.type === 'turn_end'), `fim do turno ${id}`);
 }
 
-/* A descoberta de skills do 2.2.4 é assíncrona: espera a de teste aparecer na
+/* A descoberta de skills do 2.2.7 é assíncrona: espera a de teste aparecer na
    rota real antes de chamá-la, senão a recusa seria só "skill não existe". */
 async function waitForSkill(client, directory, id, timeoutMs = 20000) {
   const deadline = Date.now() + timeoutMs;
@@ -169,14 +169,14 @@ async function waitForSkill(client, directory, id, timeoutMs = 20000) {
     /* espera fixa: a descoberta é assíncrona; 100 ms evita sondar sem pausa */
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw Error(`a skill ${id} não foi carregada pelo 2.2.4`);
+  throw Error(`a skill ${id} não foi carregada pelo 2.2.7`);
 }
 
 function resolvedPermissions(binary, env) {
   const output = execFileSync(binary, ['--standalone', 'debug', 'config'], {encoding: 'utf8', timeout: 30000, env});
   const documents = JSON.parse(output);
   const mesa = documents.find((document) => Array.isArray(document?.info?.permissions) && document.info.permissions.length);
-  assert.ok(mesa, 'o debug config do 2.2.4 devolveu as permissões resolvidas');
+  assert.ok(mesa, 'o debug config do 2.2.7 devolveu as permissões resolvidas');
   return mesa.info.permissions;
 }
 
@@ -185,7 +185,7 @@ function resolvedPermissions(binary, env) {
    escreve um marcador que o teste procura. */
 function writePersonalHome(home, providerUrl, workspace) {
   const config = path.join(home, '.config', 'opencode');
-  /* O binário 2.2.4/2.2.5 no macOS lê `~/.config/opencode` (com ou sem
+  /* O binário 2.2.4–2.2.7 no macOS lê `~/.config/opencode` (com ou sem
      XDG_CONFIG_HOME; medido com `debug config`). A cópia em
      `~/Library/Application Support/opencode` fica plantada de propósito: se
      alguma versão passar a ler esse caminho, o teste tem de ver o vazamento,
@@ -210,7 +210,7 @@ function writePersonalHome(home, providerUrl, workspace) {
   fs.writeFileSync(path.join(claude, 'CLAUDE.md'), '# regra do claude\nCLAUDE-SECRETO-93\n');
   fs.writeFileSync(path.join(agents, 'AGENTS.md'), '# regra dos agentes\nAGENTS-AGENTES-93\n');
   fs.writeFileSync(path.join(skill, 'SKILL.md'), '---\nname: pessoa-skill\ndescription: SKILL-PESSOA-93\n---\n\nSKILL-CORPO-93\n');
-  /* A pasta `.claude/skills` também é uma pasta pessoal: o 2.2.4 com
+  /* A pasta `.claude/skills` também é uma pasta pessoal: o 2.2.7 com
      OPENCODE_DISABLE_CLAUDE_CODE=1 não pode carregar nem citar esta skill. */
   fs.writeFileSync(path.join(claudeSkill, 'SKILL.md'), '---\nname: pessoa-skill-claude\ndescription: SKILL-CLAUDE-DESCRICAO-93\n---\n\nSKILL-CLAUDE-CORPO-93\n');
   fs.writeFileSync(path.join(home, 'auth-import-93.json'), JSON.stringify([{id: 'cred_pessoa_93', integrationID: 'pessoa', label: 'Pessoa', active: true, value: {type: 'key', key: 'chave-da-pessoa-93'}}]));
@@ -222,7 +222,7 @@ function writePersonalHome(home, providerUrl, workspace) {
   }));
   fs.writeFileSync(path.join(project, 'opencode.json'), JSON.stringify({provider: {ponto: {npm: '@ai-sdk/openai-compatible', options: {baseURL: `${providerUrl}/v1`}, models: {om1: {name: 'OM1'}}}}}));
   fs.writeFileSync(path.join(config, 'opencode.jsonc'), `{
-    // comentário: o 2.2.4 aceita JSONC
+    // comentário: o 2.2.7 aceita JSONC
     \"model\": \"pessoa/m1\",
     \"small_model\": \"pessoa/m1\",
     \"provider\": {\"pessoa\": {\"npm\": \"@ai-sdk/openai-compatible\", \"options\": {\"baseURL\": \"${providerUrl}/v1\", \"instructions\": \"INSTRUCAO-OPTIONS-93\", \"system\": \"SISTEMA-OPTIONS-93\", \"prompt\": \"PROMPT-OPTIONS-93\"}, \"models\": {\"m1\": {\"name\": \"M1\", \"tool_call\": true, \"options\": {\"instructions\": \"INSTRUCAO-MODELO-93\", \"system\": \"SISTEMA-MODELO-93\", \"prompt\": \"PROMPT-MODELO-93\"}, \"variants\": {\"low\": {\"temperature\": 0.1, \"instructions\": \"INSTRUCAO-VARIANTE-93\", \"system\": \"SISTEMA-VARIANTE-93\", \"prompt\": \"PROMPT-VARIANTE-93\"}}}}}},
@@ -260,7 +260,7 @@ function allResolvedPermissions(binary, env) {
 const binary = binaryFromEnv();
 if (!binary) skip('defina LEARNING_DESK_OPENCODE com o binário do OpenCode 2.x');
 const version = versionOf(binary);
-if (!/^opencode v?2\./.test(version)) skip(`${binary} é "${version}" (o hunt exige 2.x, de preferência 2.2.4)`);
+if (!/^opencode v?2\./.test(version)) skip(`${binary} é "${version}" (o hunt exige 2.x, de preferência 2.2.7)`);
 
 const runtime = trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-hunt-oc224-')));
 let readOutside = '';
@@ -299,7 +299,7 @@ const previews = [];
 try {
   /* ---------- 1. config resolvido: nativas em deny, sem plugin ---------- */
   const configDir = writeServeConfig({runtime});
-  /* O 2.2.4 descobre skills em `<config>/skill` e `<config>/skills`; o
+  /* O 2.2.7 descobre skills em `<config>/skill` e `<config>/skills`; o
      SKILL.md de teste prova que a chamada negada não leva o conteúdo ao
      provedor. */
   const skillDir = path.join(configDir, 'skill', SKILL_ID);
@@ -316,10 +316,10 @@ try {
   const readRules = permissions.filter((rule) => rule.action === 'read');
   assert.ok(readRules.length, 'read aparece no config resolvido');
   /* `read` é oferecida só pelo sentinela; todo caminho real continua em deny.
-     Sem esta regra allow o 2.2.4 retira a ferramenta e o Zen 429. */
+     Sem esta regra allow o 2.2.7 retira a ferramenta e o Zen 429. */
   assert.deepEqual(readRules.filter((rule) => rule.effect === 'allow').map((rule) => rule.resource), ['/mesa-nada-existe/*']);
   assert.ok(readRules.some((rule) => rule.effect === 'deny' && rule.resource === '*'), 'read nega todo caminho real');
-  /* As demais nativas não têm regra própria: a regra `*` as nega. O 2.2.4 pode
+  /* As demais nativas não têm regra própria: a regra `*` as nega. O 2.2.7 pode
      ou não listar a ação; se listar, tem de ser deny. */
   for (const action of ['multiedit', 'patch', 'glob', 'grep', 'list', 'task', 'webfetch', 'websearch']) {
     const rules = permissions.filter((rule) => rule.action === action);
@@ -336,7 +336,7 @@ try {
   assert.deepEqual(raw.permission.read, {'*': 'deny', '/mesa-nada-existe/*': 'allow'});
   assert.equal(raw.permission['*'], 'deny');
   assert.equal(raw.permission['mesa_*'], 'allow');
-  /* O config da pasta reabriria o shell sem esta trava (medido no 2.2.4). */
+  /* O config da pasta reabriria o shell sem esta trava (medido no 2.2.7). */
   fs.writeFileSync(path.join(workspace, 'opencode.json'), JSON.stringify({permission: {bash: 'allow', shell: 'allow', edit: 'allow', read: 'allow'}, tools: {bash: true, shell: true, edit: true, read: true}}));
   assert.equal(baseEnv.OPENCODE_DISABLE_PROJECT_CONFIG, '1');
 
@@ -434,11 +434,11 @@ try {
     assert.equal(provider.state.lastTools.includes(native), false, `${native} não chega ao modelo`);
   }
   assert.equal(provider.state.lastTools.some((name) => name.startsWith('opencode_')), false, 'nenhuma ferramenta opencode_* chega ao modelo');
-  /* A lista real do 2.2.4 é exatamente as 12 da Mesa MAIS `read` (o
+  /* A lista real do 2.2.7 é exatamente as 13 da Mesa MAIS `read` (o
      destravamento do Zen) e `skill`, que o servidor injeta e a permissão
      `*: deny` recusa (2c). Não há como retirá-los pelo config sem devolver
      o 429. */
-  const mesaTools = ['mesa_buscar_material', 'mesa_calcular', 'mesa_criar_atividade', 'mesa_criar_pdf', 'mesa_ler_pdf', 'mesa_listar_materiais', 'mesa_perguntar', 'mesa_previsualizar_atividade', 'mesa_propor_revisao', 'mesa_quiz', 'mesa_salvar_nota', 'mesa_ver_figura'];
+  const mesaTools = ['mesa_buscar_material', 'mesa_calcular', 'mesa_criar_atividade', 'mesa_criar_pdf', 'mesa_ler_caderno', 'mesa_ler_pdf', 'mesa_listar_materiais', 'mesa_perguntar', 'mesa_previsualizar_atividade', 'mesa_propor_revisao', 'mesa_quiz', 'mesa_salvar_nota', 'mesa_ver_figura'];
   assert.deepEqual([...provider.state.lastTools].sort(), [...mesaTools, 'read', 'skill'].sort(), `a lista é a Mesa + read + skill negada: ${provider.state.lastTools.join(', ')}`);
   assert.ok(provider.state.lastTools.every((name) => name.startsWith('mesa_') || name === 'read' || name === 'skill'), `só Mesa, read e skill negada: ${provider.state.lastTools.join(', ')}`);
 
@@ -466,7 +466,7 @@ try {
   const readEnds = readEvents.filter((event) => event.type === 'tool_end');
   assert.equal(readEnds.length, 6, 'as seis leituras voltaram ao modelo');
   assert.match(String(readEnds[0].result), /Permission denied: read/, 'arquivo dentro do workspace');
-  /* O 2.2.4 escolhe a ação pelo PROJETO, não pelo workspace: sem git, o
+  /* O 2.2.7 escolhe a ação pelo PROJETO, não pelo workspace: sem git, o
      projeto global é a HOME real; dentro de um repo, é a raiz do repo. Um
      TMPDIR dentro do projeto (ex.: ~/.cache/x) faz o arquivo fora do workspace
      cair em `read`; fora do projeto (o /tmp padrão) cai em
@@ -506,7 +506,7 @@ try {
   /* ---------- 2c. skill carregada é negada e o conteúdo não chega ao modelo ---------- */
   const skillClient = createOpenCodeClient({baseUrl: live.baseUrl, password: live.password});
   const loadedSkills = await waitForSkill(skillClient, workspace, SKILL_ID);
-  assert.ok(loadedSkills.includes(SKILL_ID), 'o 2.2.4 carregou o SKILL.md de teste');
+  assert.ok(loadedSkills.includes(SKILL_ID), 'o 2.2.7 carregou o SKILL.md de teste');
   for (const hidden of hiddenSkills) assert.equal(loadedSkills.includes(hidden), false, `${hidden} (HOME/projeto/workspace) não é carregada`);
   provider.state.call = {name: 'skill', args: {id: SKILL_ID}};
   const skillEvents = [];
@@ -521,7 +521,7 @@ try {
   const skillRequestText = JSON.stringify(provider.state.bodies);
   assert.equal(skillRequestText.includes('SEGREDO-DESCRICAO-91'), false, 'a descrição do SKILL.md não chega ao modelo');
   assert.equal(skillRequestText.includes('SEGREDO-CORPO-91'), false, 'o corpo do SKILL.md não chega ao modelo');
-  assert.ok(provider.state.lastTools.includes('skill'), 'o 2.2.4 mantém skill na lista; a permissão nega a chamada');
+  assert.ok(provider.state.lastTools.includes('skill'), 'o 2.2.7 mantém skill na lista; a permissão nega a chamada');
   provider.state.call = null;
 
   /* ---------- 2d. criar_pdf chega à ponte de material e prepara a prévia ---------- */

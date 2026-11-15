@@ -30,7 +30,7 @@ function assertRuntime(runtime) {
  * A pasta da cópia própria de uma versão do OpenCode.
  * @param {{runtime: string, version?: string}} input
  * @returns {string}
- * @example openCodeRuntimeDirectory({runtime: '/r'}) // '/r/opencode/2.2.4'
+ * @example openCodeRuntimeDirectory({runtime: '/r'}) // '/r/opencode/2.2.7'
  */
 function openCodeRuntimeDirectory({runtime, version = PINNED_VERSION}) {
   assertRuntime(runtime);
@@ -42,7 +42,7 @@ function openCodeRuntimeDirectory({runtime, version = PINNED_VERSION}) {
  * O binário da cópia própria (no Windows, `opencode.exe`).
  * @param {{runtime: string, version?: string, platform?: NodeJS.Platform}} input
  * @returns {string}
- * @example openCodeRuntimeBinary({runtime: '/r', platform: 'linux'}) // '/r/opencode/2.2.4/bin/opencode'
+ * @example openCodeRuntimeBinary({runtime: '/r', platform: 'linux'}) // '/r/opencode/2.2.7/bin/opencode'
  */
 function openCodeRuntimeBinary({runtime, version = PINNED_VERSION, platform = process.platform}) {
   return path.join(openCodeRuntimeDirectory({runtime, version}), 'bin', platform === 'win32' ? 'opencode.exe' : 'opencode');

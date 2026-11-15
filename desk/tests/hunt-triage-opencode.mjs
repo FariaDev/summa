@@ -243,7 +243,7 @@ const hostileReport = [
 
 {
   /* Fixture: com `*: allow` o allow do curinga reabriria tudo se os deny não
-     viessem depois. No 2.2.4 a última regra que casa decide. */
+     viessem depois. No 2.2.7 a última regra que casa decide. */
   const withWildcard = {...permission, read: {'*': 'allow', '/mesa-nada-existe/*': 'allow', ...Object.fromEntries(READ_DENY_PATTERNS.map((pattern) => [pattern, 'deny']))}};
   const named = await caseRead(withWildcard, secretPaths);
   for (const [index, file] of secretPaths.entries()) {

@@ -9,7 +9,7 @@
 
    O hunt prova o que a #91 precisa no 1.19.5, com `serve` real e provedor falso:
 
-   1. o config da Mesa (o mesmo do 2.2.4) não tem `tools`, resolve `*` em
+   1. o config da Mesa (o mesmo do 2.2.x) não tem `tools`, resolve `*` em
       `deny` e `mesa_*` em `allow`, e `read` só abre o sentinela — o 1.19.5
       não chega a rodar um turno, então o adaptador o recusa antes da sessão;
    2. o MCP `mesa` no config expõe SÓ `mesa_*` ao provedor pela v1 — nenhuma

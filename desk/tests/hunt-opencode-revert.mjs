@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Caça do revert por fronteira do OpenCode 2.2.4 real (#164): sobe o
+/* Caça do revert por fronteira do OpenCode 2.x real (#164; reconferido no 2.2.7): sobe o
    `opencode serve` de verdade com HOME/XDG temporários e um provedor
    OpenAI-compatible local que só devolve texto fixo. Sem rede e sem login.
 
@@ -14,7 +14,7 @@
       P1, R1, P2, R2;
    4. um prompt RECUSADO antes do aceite (corpo sem `text`, HTTP 400) deixa o
       revert PENDENTE; o DELETE restaura. Modelo inexistente NÃO é recusa no
-      2.2.4: o prompt é aceito (200) e comita o revert;
+      2.2.7: o prompt é aceito (200) e comita o revert;
    5. o id devolvido pelo `prompt` é o `msg_…` da mensagem do aluno no GET e é
       o mesmo id que o stage aceita;
    6. `POST .../revert/commit` existe e corta o histórico dali (204).
@@ -90,7 +90,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const binary = binaryFromEnv();
 if (!binary) skip('defina LEARNING_DESK_OPENCODE com o binário do OpenCode 2.x');
 const version = versionOf(binary);
-if (!/^opencode v?2\./.test(version)) skip(`${binary} é "${version}" (o hunt exige 2.x, de preferência 2.2.4)`);
+if (!/^opencode v?2\./.test(version)) skip(`${binary} é "${version}" (o hunt exige 2.x, de preferência 2.2.7)`);
 
 const runtime = trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-hunt-revert-')));
 const workspace = path.join(runtime, 'ws');
@@ -220,12 +220,12 @@ try {
     summary.refused = {status: refused.status, refusal: refused.payload, sessionRevertBeforeUndo: pending.revert, undoStatus: status, sessionRevertAfterUndo: restored.revert ?? null, messageIds: before.map((item) => item.id)};
   }
 
-  /* 4b. Modelo inexistente NÃO é recusa no 2.2.4: o prompt é aceito e comita. */
+  /* 4b. Modelo inexistente NÃO é recusa no 2.2.7: o prompt é aceito e comita. */
   {
     const s = await twoTurns('S4b');
     await stage(s.id, s.p2);
     const accepted = await client.request('POST', route(s.id, '/prompt'), {body: {text: 'S4b P2 modelo inexistente', resume: true, model: {providerID: 'nao-existe', id: 'nada'}}, query});
-    assert.equal(accepted.status, 200, 'o 2.2.4 aceita o prompt mesmo com modelo inexistente');
+    assert.equal(accepted.status, 200, 'o 2.2.7 aceita o prompt mesmo com modelo inexistente');
     const after = await waitIdle(s.id, 'S4b modelo inexistente');
     assert.equal(after.length, 4, 'o prompt aceito comitou o revert');
     assert.equal(after[2].text, 'S4b P2 modelo inexistente');

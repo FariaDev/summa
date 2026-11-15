@@ -277,7 +277,7 @@ test('engineFactsPrime aquece a versão sem mudar o gate do OpenCode antigo (#de
     process.env.LEARNING_DESK_OPENCODE = path.join(deskDir, 'tests', 'fake-bun-bin', 'opencode');
     const host = createTutorEngineHost({live: fakeLive(), runtime, deskDir, TEST_MODE: false, FREE_ID: 'mesa-free'});
     assert.equal(await host.engineFactsPrime(), null);
-    assert.equal(host.engineFacts().opencode, process.env.LEARNING_DESK_OPENCODE, '2.2.4 continua sendo motor pronto');
+    assert.equal(host.engineFacts().opencode, process.env.LEARNING_DESK_OPENCODE, '2.2.7 continua sendo motor pronto');
     assert.equal(host.openCodeBinary(), process.env.LEARNING_DESK_OPENCODE);
 
     process.env.LEARNING_DESK_OPENCODE = oldBinary;
