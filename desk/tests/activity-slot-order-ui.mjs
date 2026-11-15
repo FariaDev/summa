@@ -1,7 +1,7 @@
 /* #61: o quadro de atividade nasce no ponto em que o tutor chamou a
    ferramenta — texto antes, quadro, texto depois —, ao vivo e depois de
-   reabrir a conversa. A prévia não publicada (H4) também entra no ponto da
-   chamada `previsualizar_atividade`, não no fim de `#messages`.
+   reabrir a conversa. A prévia sem erro (#62) publica na chamada e o quadro recuperado
+   também volta no ponto de `previsualizar_atividade`, não no fim de `#messages`.
    Roda da pasta desk: `node --test tests/activity-slot-order-ui.mjs`. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -61,12 +61,12 @@ await withArtifacts('activity-slot-order',async ctx=>{
  await page.waitForFunction(text=>document.querySelector('#messages').textContent.includes(text),AFTER,{timeout:60000});
  await assertOrder({turn:0,preview:false,when:'ao vivo'});
 
- /* ---- ao vivo: prévia não publicada (H4), quadro no ponto da prévia ---- */
+ /* ---- ao vivo: prévia sem erro (#62), quadro no ponto da prévia ---- */
  await sendEnabled();
  await send('Faça uma prévia.');
  await page.locator('.activity-slot[data-activity-call^="previa:"] .activity-card[data-state="ready"]').waitFor({timeout:60000});
  await pollUntil(()=>page.locator('.activity-slot[data-activity-call^="previa:"]').count(),count=>count===1,{timeout:30000,interval:200,what:'a prévia do turno virar um quadro só'});
- await assertOrder({turn:1,preview:true,when:'ao vivo (H4)'});
+ await assertOrder({turn:1,preview:true,when:'ao vivo (#62)'});
 
  /* ---- reabrir: o histórico recupera a mesma ordem ---- */
  await sendEnabled();
@@ -81,7 +81,7 @@ await withArtifacts('activity-slot-order',async ctx=>{
  await page.locator(`.activity-slot[data-activity-call="${CALL}"]`).waitFor({timeout:30000});
  await page.locator('.activity-slot[data-activity-call^="previa:"]').waitFor({timeout:30000});
  await assertOrder({turn:0,preview:false,when:'reaberto'});
- await assertOrder({turn:1,preview:true,when:'reaberto (H4)'});
+ await assertOrder({turn:1,preview:true,when:'reaberto (#62)'});
  assert.deepEqual(errors,[],'sem erro de página');
 });
 console.log('ok activity-slot-order-ui');

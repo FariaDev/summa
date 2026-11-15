@@ -29,7 +29,7 @@ const TOKEN_SUMMARY = '--mesa-bg/fg/muted/card/border/input/ring, --mesa-accent,
 
 const THEME = `Use the :root tokens (they follow the live theme and accent): ${TOKEN_SUMMARY}; --mesa-chart-1 … --mesa-chart-6 are the chart series in order (1 is the accent). MCP Apps names (--color-background-primary, --color-text-primary, --color-border-primary, --color-ring-primary, --font-sans…) also work. In Chart.js or canvas, read the color at draw time: getComputedStyle(document.documentElement).getPropertyValue("--mesa-chart-1").trim(). On theme or accent change the desk fires window "mesa-theme": recolor what is yours; the embedded Chart.js follows text, grid and font. Use a plain <table> and the base styles (buttons, fields, sliders, selects, tables, headings, paragraphs) without restyling; button.primary (or data-primary) highlights the action and button.ghost the quiet one.`;
 
-const ORDER = 'Flow: build the board for the case, with units and checked calculations; preview it and fix console and print; publish with the returned previaId before writing the reply. The student already sees the board: do not announce it, say where it is or repeat it; add only what it does not say.';
+const ORDER = 'Flow: build the board with units and checked calculations; preview it. A clean preview publishes itself at the call; one with an error is not shown, so fix and preview again. To fix a published preview, call criar_atividade with activityId (corrected content) or previaId, revising the SAME board. Do not announce or repeat it; add only what it does not say.';
 
 const FIGURES = 'For a figure, prefer a visualization with the tokens over a generated PNG (accepted, on light paper).';
 
@@ -37,7 +37,7 @@ const CONTRACT = 'Contract: window.mesa.state(obj) saves state, attempt(obj) rec
 
 const PEDAGOGY = 'An activity has a clear question at the top, a prediction before seeing, manipulation with observation, and on confirm, the prediction beside the result and a conclusion. Without a question and a prediction it is just a toy: show it as a visualization or not at all. Record the attempt with attempt({pergunta, previsao, observado, conclusao, ...}), short readable keys in the language of this conversation, and simple values: "Levar ao tutor" becomes lines in the student\'s draft, and that is how you see what they thought. Local calculations verify; they are not your assessment.';
 
-const FIELDS = 'In html, scripts do not run (the sanitizer removes them): keep code in the js field; no iframe/object/embed/srcdoc. Always send alternativeMarkdown with the complete textual description (formulas, steps and what to observe): it is the accessibility and fallback. html+css+js+texts fit in 64 KiB. To publish what was previewed, send previaId instead of html/css/js; without a preview, html/css/js still works.';
+const FIELDS = 'In html, scripts do not run (the sanitizer removes them): keep code in the js field; no iframe/object/embed/srcdoc. Always send alternativeMarkdown with the complete textual description (formulas, steps and what to observe): it is the accessibility and fallback. html+css+js+texts fit in 64 KiB. To publish what was previewed, send previaId instead of html/css/js; without a preview, html/css/js still works. previaId/activityId revise in place.';
 
 export const KIND_PARAM = 'visualizacao: chart, table, diagram or comparison, without student state (full screen only). atividade (default): exercise with state, which gains the "Levar ao tutor" line.';
 export const CHARTS_PARAM = 'true loads the embedded Chart.js 4 (window.Chart), no network.';
@@ -88,8 +88,8 @@ export const CREATE_DESCRIPTION = [
 ].join(' ');
 
 export const PREVIEW_DESCRIPTION = [
-  'Preview of the board before showing it: the desk renders the same html/css/js in an invisible offline window, with the same isolation as the conversation board, and returns a PNG print, contentHeight (the height the content requests at that width) and the console messages — log, info, warning, error and exceptions, with the line. console.log is a good way to report your checks. Nothing is published while this call runs.',
-  'The fields and board features are those of the show tool (here title, objective and alternativeMarkdown are optional), plus theme and width. Nothing appears to the student during this call: the result carries previaId, and the preview only returns the print for you. Publish it with criar_atividade and that id (without html/css/js) before ending the reply. If the turn ends without that call, the desk publishes the last preview for you, so do not leave a half-finished preview as the last call.',
+  'Preview of the board: the desk renders the same html/css/js in an invisible offline window, with the same isolation as the conversation board, and returns a PNG print, contentHeight (the height the content requests at that width) and the console messages — log, info, warning, error and exceptions, with the line. console.log is a good way to report your checks.',
+  'The fields and board features are those of the show tool (here title, objective and alternativeMarkdown are optional), plus theme and width. A preview with NO console error or exception is published immediately, at the point of this call: the student already sees the board and the result says so. A preview with an error or exception publishes nothing. To correct an already published preview, call criar_atividade with its previaId (or activityId): it revises the same board in place, without a second one. If the turn ends with an unpublished preview that had an error, the desk shows the visible notice.',
 ].join(' ');
 
 /* M4: a prévia guarda até 200 mensagens, mas só 50 voltam. Erros primeiro,
@@ -106,10 +106,21 @@ function consolePreview(messages) {
     .map((entry) => entry.message);
 }
 
-/* O texto que o tutor recebe de volta da prévia, junto do print. */
+/* O texto que o tutor recebe de volta da prévia, junto do print. A linha
+   `Quadro publicado: act-… v…` é a marca que o renderer lê para pôr o slot no
+   ponto da chamada sem esperar o fim do turno (#62); o `previaId "…"` é a
+   fonte única do id (H4 e histórico). */
 export function previewText(result) {
   const lines = [`Prévia em ${result.width}px (${result.theme}): o conteúdo pede ${result.contentHeight}px de altura.`];
-  if (result.previaId) lines.push(`Para publicar, chame criar_atividade com previaId "${result.previaId}" no lugar de html/css/js. A prévia não aparece durante esta chamada; se o turno terminar sem essa publicação, a Mesa publica a última prévia para o aluno.`);
+  if (result.previaId) lines.push(`Id da prévia: previaId "${result.previaId}".`);
+  const activity = result.activity && typeof result.activity === 'object' ? result.activity : null;
+  if (activity && typeof activity.id === 'string') {
+    lines.push(`Quadro publicado: ${activity.id} v${activity.version} — o aluno JÁ o vê na conversa, no ponto desta chamada.`);
+    lines.push(`Se o print mostrar algo errado, corrija o conteúdo e chame criar_atividade com activityId "${activity.id}" e o html/css/js corrigidos — com previaId "${result.previaId}" a revisão mantém este conteúdo. É o MESMO quadro, trocado no lugar, sem segundo quadro.`);
+  } else {
+    lines.push('Nada apareceu para o aluno: esta prévia não foi publicada.');
+    if (result.publishError) lines.push(`A publicação falhou: ${result.publishError}`);
+  }
   const messages = Array.isArray(result.consoleMessages) ? result.consoleMessages : [];
   if (!messages.length) lines.push('Console: nada.');
   else {
@@ -119,6 +130,7 @@ export function previewText(result) {
   }
   const errors = messages.filter((message) => message.level === 'error').length;
   lines.push(errors ? `Corrija os ${errors} erro(s) antes de mostrar.` : 'Sem erros no console.');
+  if (!activity) lines.push('Depois de corrigir, faça uma nova prévia: sem erro no console, ela publica sozinha.');
   return lines.join('\n');
 }
 
@@ -127,7 +139,13 @@ export function previewText(result) {
    aluno já vê o quadro. */
 export function publishedText(result, kind) {
   const what = (result.view || kind) === 'visualizacao' ? 'Visualização' : 'Atividade';
-  const revision = result.id ? ` Para revisar, repita a chamada com activityId "${result.id}".` : '';
   const warning = result.measureFailed ? ' Aviso: a Mesa não conseguiu medir o quadro; a altura pode demorar a assentar.' : '';
+  /* #62: revisão de uma prévia publicada — o MESMO quadro trocado no lugar.
+     O `previaId` na frase é a marca que o renderer usa para atualizar o slot
+     da prévia em vez de abrir um segundo. */
+  if (result.previaId) {
+    return `${what} “${result.title}” revisada na conversa (${result.id} v${result.version}) — o MESMO quadro, trocado no lugar. Quadro publicado: ${result.id} v${result.version}. O aluno já vê a versão nova: não a anuncie nem a repita na resposta; não diga que ele respondeu ou que algo foi avaliado. Para revisar de novo, repita a chamada com previaId "${result.previaId}" ou activityId "${result.id}" (e o conteúdo corrigido).${warning}`;
+  }
+  const revision = result.id ? ` Para revisar, repita a chamada com activityId "${result.id}".` : '';
   return `${what} “${result.title}” mostrada na conversa (${result.id} v${result.version}). O aluno já a vê: não a anuncie nem a repita na resposta; não diga que ele respondeu ou que algo foi avaliado.${revision}${warning}`;
 }

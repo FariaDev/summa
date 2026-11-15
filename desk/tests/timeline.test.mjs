@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
  ACTIVITY_TOOLS,PREVIEW_TOOLS,addStep,artifactPart,beginTrack,closeAll,closeSegment,createTrack,
- historyArtifactPart,isActivityTool,isPreviewTool,joinStep,openSegment,previewIdOfText,previewPart,removeSegment,resetTrack,segmentCount,
+ historyArtifactPart,isActivityTool,isPreviewTool,joinStep,openSegment,previewIdOfText,previewPart,publishedActivityOfText,removeSegment,resetTrack,segmentCount,
  segmentEmpty,segmentOfStep,segmentSteps,
 } from '../src/timeline.mjs';
 
@@ -45,11 +45,24 @@ test('historyArtifactPart projeta atividade e prévia no ponto da chamada (#61)'
  assert.equal(historyArtifactPart(null),null);
 });
 
+test('historyArtifactPart não abre segundo slot para a revisão da prévia (#62)', () => {
+ const revision={id:'c',toolName:'mesa_criar_atividade',resultText:'Atividade “Reta” revisada na conversa (act-0123456789 v2). Quadro publicado: act-0123456789 v2. Para revisar de novo, repita a chamada com previaId "prv-0123456789ab" ou activityId "act-0123456789".'};
+ assert.equal(historyArtifactPart(revision,30),null,'o slot é o da prévia, recuperado pelo store');
+ assert.deepEqual(historyArtifactPart({id:'n',toolName:'mesa_criar_atividade',resultText:'Atividade “Nova” mostrada na conversa (act-0123456789 v1).'},30),artifactPart('n','mesa_criar_atividade',30));
+});
+
 test('previewIdOfText reconhece só o id curto que a prévia devolve (#61)', () => {
  assert.equal(previewIdOfText('Para publicar, chame com previaId "prv-0123456789ab" no lugar de html.'),'prv-0123456789ab');
  assert.equal(previewIdOfText('sem prévia'),'');
  assert.equal(previewIdOfText(''),'');
  assert.equal(previewIdOfText(undefined),'');
+});
+
+test('publishedActivityOfText lê a marca da prévia já publicada (#62)', () => {
+ assert.deepEqual(publishedActivityOfText('Quadro publicado: act-0123456789 v2 — o aluno JÁ o vê na conversa.'),{id:'act-0123456789',version:2});
+ assert.equal(publishedActivityOfText('Nada apareceu para o aluno: esta prévia não foi publicada.'),null);
+ assert.equal(publishedActivityOfText('mostrada na conversa (act-0123456789 v1)'),null,'texto de publicação normal não é prévia');
+ assert.equal(publishedActivityOfText(''),null);
 });
 
 test('segmento aberto reusa; fechar fixa to/endedAt; o próximo abre embaixo', () => {

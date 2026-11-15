@@ -160,7 +160,7 @@ export function longStreamText() {
 export async function createFakeOpencodeServe(options = {}) {
   const {password = '', models = DEFAULT_MODELS, commands = DEFAULT_COMMANDS, reply = (text) => `Resposta do OpenCode falso: ${text.slice(-40)}`,
     log = () => {}, queueLog = () => {}, refusalLog = () => {}, promptLog = () => {}, reviewDraft = '', reviewDelayMs = 0, mcpBefore = '', mcpAfter = ''} = options;
-  const state = {promptStatus: options.promptStatus || 200, instructionsStatus: options.instructionsStatus || 0, instructionMaxBytes: options.instructionMaxBytes || 0, dropAfterAccept: !!options.dropAfterAccept, ask: !!options.ask, permission: options.permission || null, permissionEvent: options.permissionEvent || 'asked', permissionReply: options.permissionReply || 'decision', tool: options.tool || null, steps: options.steps || null, mcpCall: options.mcpCall || null, mcpStatus: options.mcpStatus || 'connected', mcpPendingFile: options.mcpPendingFile || '', failTurn: options.failTurn || '', pageSize: options.pageSize || 0, turnDelay: options.turnDelayMs ?? 10, stream: options.stream || null, mcpCalls: Array.isArray(options.mcpCalls) ? [...options.mcpCalls] : null, tokens: options.tokens || {input: 900, output: 100, reasoning: 0, cache: {read: 0, write: 0}}, chaos: new Set(Array.isArray(options.chaos) ? options.chaos : []), refusePrefix: options.refusePrefix || '', revertStatus: options.revertStatus ?? 200, reviewDraft: String(reviewDraft || ''), reviewDelay: reviewDelayMs, mcpBefore: String(mcpBefore || ''), mcpAfter: String(mcpAfter || '')};
+  const state = {promptStatus: options.promptStatus || 200, instructionsStatus: options.instructionsStatus || 0, instructionMaxBytes: options.instructionMaxBytes || 0, dropAfterAccept: !!options.dropAfterAccept, ask: !!options.ask, permission: options.permission || null, permissionEvent: options.permissionEvent || 'asked', permissionReply: options.permissionReply || 'decision', tool: options.tool || null, steps: options.steps || null, mcpCall: options.mcpCall || null, mcpStatus: options.mcpStatus || 'connected', mcpPendingFile: options.mcpPendingFile || '', failTurn: options.failTurn || '', pageSize: options.pageSize || 0, turnDelay: options.turnDelayMs ?? 10, stream: options.stream || null, mcpCalls: Array.isArray(options.mcpCalls) ? [...options.mcpCalls] : null, tokens: options.tokens || {input: 900, output: 100, reasoning: 0, cache: {read: 0, write: 0}}, chaos: new Set(Array.isArray(options.chaos) ? options.chaos : []), refusePrefix: options.refusePrefix || '', revertStatus: options.revertStatus ?? 200, reviewDraft: String(reviewDraft || ''), reviewDelay: reviewDelayMs, mcpBefore: String(mcpBefore || ''), mcpAfter: String(mcpAfter || ''), lastMcpResult: ''};
   const requests = [];
   const sessions = new Map();
   const mcp = new Map();
@@ -370,8 +370,21 @@ export async function createFakeOpencodeServe(options = {}) {
      no registro, o modelo só a alcança por dentro da `execute` (é o nome que o
      SSE mostra); com ele, o nome é `mesa_<ferramenta>`. A chamada vai de
      verdade ao servidor registrado, depois do `tool.called`. */
+  /* `previaId: "$last"`/`activityId: "$last"` no input de um teste resolve para
+     o id que a chamada MCP anterior devolveu (#62: prévia e a revisão dela). */
+  function mcpInputOf(input) {
+    if (!input || typeof input !== 'object') return input;
+    const next = {...input};
+    const preview = /previaId\s+"(prv-[a-z0-9]{8,24})"/.exec(state.lastMcpResult);
+    const activity = /Quadro publicado: (act-[a-z0-9][a-z0-9-]{2,63}) v\d+/.exec(state.lastMcpResult);
+    if (next.previaId === '$last' && preview) next.previaId = preview[1];
+    if (next.activityId === '$last' && activity) next.activityId = activity[1];
+    return next;
+  }
+
   async function mcpTurn(session, text, assistantID, call = state.mcpCall) {
-    const {name, input} = call;
+    const {name} = call;
+    const input = mcpInputOf(call.input);
     /* Texto antes e depois da ferramenta (#42): o quadro precisa achar o lugar
        dele no meio da fala do tutor, não só no fim da mensagem. */
     const beforeID = state.mcpBefore ? `${assistantID}b` : '';
@@ -394,6 +407,7 @@ export async function createFakeOpencodeServe(options = {}) {
     emit('session.tool.called', {sessionID: session.id, id: callID, input: toolInput});
     const toolContent = config ? await callMcpTool(config, name, input) : [{type: 'text', text: 'MCP mesa não registrado.'}];
     const result = toolContent.map((part) => part.text || '').join('\n');
+    state.lastMcpResult = result;
     if (process.env.FAKE_OPENCODE_MCP_LOG) { try { fs.appendFileSync(process.env.FAKE_OPENCODE_MCP_LOG, `${JSON.stringify({name, result})}\n`); } catch { /* log opcional */ } }
     const output = toolContent;
     emit('session.tool.success', {sessionID: session.id, id: callID, content: output});

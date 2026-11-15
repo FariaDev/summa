@@ -57,6 +57,28 @@ function createActivityHost({store,runtime,captureScope,scopeIsCurrent,mutate=(_
   const previewId=spec&&typeof spec.previaId==='string'?spec.previaId:'';
   throw Error(message('err.activity.previewMissing',{received:describeReceived(previewId)}));
  }
+ /* #62: a prévia publicada guarda o quadro com o id sintético `previa:…`.
+    A revisão (por `previaId` ou pelo `activityId` que o tutor recebeu) usa o
+    MESMO id de chamada, então o renderer troca o quadro no lugar em vez de
+    abrir um segundo slot. */
+ const PREVIEW_CALL_PREFIX='previa:';
+ function previewIdOfCall(toolCallId){const id=String(toolCallId||'');return id.startsWith(PREVIEW_CALL_PREFIX)?id.slice(PREVIEW_CALL_PREFIX.length):'';}
+ function latestOf(items,predicate){
+  let found=null;
+  for(const item of items){if(!predicate(item))continue;if(!found||Number(item.version)>Number(found.version))found=item;}
+  return found;
+ }
+ function revisionTarget(captured,{activityId,previaId}){
+  const items=store.list(captured);
+  if(activityId){
+   const latest=latestOf(items,item=>item.id===activityId);
+   const derived=latest?previewIdOfCall(latest.toolCallId):'';
+   return derived?{activityId,previaId:derived,toolCallId:`${PREVIEW_CALL_PREFIX}${derived}`}:{activityId};
+  }
+  if(!previaId)return {};
+  const published=latestOf(items,item=>item.toolCallId===`${PREVIEW_CALL_PREFIX}${previaId}`);
+  return published?{activityId:published.id,previaId,toolCallId:`${PREVIEW_CALL_PREFIX}${previaId}`}:{};
+ }
  /* A prévia mede o documento nas larguras do núcleo ANTES de publicar (#42):
     o quadro nasce com a altura certa. Medir é fora da trava — leva um
     instante. Erro de console RECUSA a publicação: o documento já provou que
@@ -86,10 +108,12 @@ function createActivityHost({store,runtime,captureScope,scopeIsCurrent,mutate=(_
    current();
    // Revisão opcional: o store confere que o id existe NESTA conversa.
    const activityId=resolved&&typeof resolved.activityId==='string'?resolved.activityId:'';
-   const item=await store.publish({...captured,spec:resolved,activityId,heights:measured.heights,toolCallId:caller.toolCallId,callRef:caller.callRef||''});
+   const previaId=resolved&&typeof resolved.previaId==='string'?resolved.previaId:'';
+   const target=revisionTarget(captured,{activityId,previaId});
+   const item=await store.publish({...captured,spec:resolved,activityId:target.activityId||'',heights:measured.heights,toolCallId:target.toolCallId||caller.toolCallId,callRef:caller.callRef||''});
    if(!scopeIsCurrent(captured))throw Error(message('err.activity.sessionChangedPublishing'));
    if(!runtime.remember(item,resolved))throw Error(message('err.activity.documentInvalid',{id:item.id,version:item.version}));
-   const activity={...scoped(item),...(measured.failed?{measureFailed:true}:{})};
+   const activity={...scoped(item),...(target.previaId?{previaId:target.previaId}:{}),...(measured.failed?{measureFailed:true}:{})};
    emit({status:'published',courseId:captured.courseId,conversationId:captured.conversationId,scope:{...captured,scopeRef},activity});
    return activity;
   });
@@ -104,6 +128,24 @@ function createActivityHost({store,runtime,captureScope,scopeIsCurrent,mutate=(_
   const spec=draftFor(captured,previaId);
   if(!spec)throw Error(message('err.activity.previewMissing',{received:describeReceived(previaId)}));
   return publish(captured,{...spec,previaId},{toolCallId:`previa:${previaId}`});
+ }
+ /* #62: prévia sem erro publica durante a própria chamada, no mesmo id
+    sintético do H4. Erro de console mantém a prévia invisível; falha da
+    publicação devolve o print com o motivo em vez de perder a prévia. */
+ async function publishPreviewResult(captured,result){
+  const previewed=result&&typeof result==='object'?result:null;
+  const previaId=previewed&&typeof previewed.previaId==='string'?previewed.previaId:'';
+  if(!previaId||typeof draftFor!=='function')return result;
+  const errors=(Array.isArray(previewed.consoleMessages)?previewed.consoleMessages:[]).filter(entry=>entry&&entry.level==='error');
+  if(errors.length)return result;
+  const spec=draftFor(captured,previaId);
+  if(!spec)return result;
+  try{
+   const activity=await publish(captured,{...spec,previaId},{toolCallId:`${PREVIEW_CALL_PREFIX}${previaId}`});
+   return {...previewed,activity:{id:activity.id,version:activity.version,title:activity.title,...(activity.view?{view:activity.view}:{}),...(activity.revision?{revision:true}:{})}};
+  }catch(error){
+   return {...previewed,publishError:String(error&&error.message||error)};
+  }
  }
  function list(){const captured=current();return {items:store.list(captured).map(scoped)};}
  function activeScope(){return {...current(),scopeRef};}
@@ -136,6 +178,6 @@ function createActivityHost({store,runtime,captureScope,scopeIsCurrent,mutate=(_
    });
   }
  }
- return {publish,publishPreview,list,read,stateGet,stateSave,register,invalidate,activeScope,columnWidth:()=>columnWidth};
+ return {publish,publishPreview,publishPreviewResult,list,read,stateGet,stateSave,register,invalidate,activeScope,columnWidth:()=>columnWidth};
 }
 module.exports={createActivityHost};

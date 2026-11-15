@@ -60,7 +60,9 @@ function createTutorBridgeHost({live,runtime,ggb,pendingDialogs,appendLog,captur
     priorMessages:record.messages||[],importedPrefixLength:record.importedPrefixLength||0,
     createMaterial:payload=>prepareTutorMaterial(materialScope,payload),
     createActivity:payload=>live.activityHost.publish(activityScope,payload,{toolCallId:payload.toolCallId,callRef:payload.callRef}),
-    previewActivity:payload=>live.activityPreview.preview(payload,{theme:payload?.theme,width:payload?.width,scope:activityScope}),
+    /* #62: prévia sem erro publica no ponto da chamada; o resultado leva o
+       `activity` e o texto do guia diz que o aluno já vê o quadro. */
+    previewActivity:async payload=>live.activityHost.publishPreviewResult(activityScope,await live.activityPreview.preview(payload,{theme:payload?.theme,width:payload?.width,scope:activityScope})),
     viewFigure:payload=>live.figurePreview.preview(payload),
     geogebra:ggb.service,readPdf:typeof live.readTutorPdf==='function'?raw=>live.readTutorPdf(raw):null,readNotebook:typeof live.readTutorNotebook==='function'?raw=>live.readTutorNotebook(raw):null,
     searchMaterial:typeof live.studyServices?.materialSearch==='function'?raw=>live.studyServices.materialSearch(null,raw):null,

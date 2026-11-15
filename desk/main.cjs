@@ -347,7 +347,7 @@ const activityHost=createActivityHost({store:activityStore,runtime:activityRunti
 });
 activityHost.register(ipcMain);
 /* OpenCode (#57): o MCP não sabe o id da chamada; `identifyCaller` o casa pelo SSE. */
-const activityBridge=createActivityBridge({publish:async(scope,spec,caller)=>activityHost.publish(scope,spec,await openCodeTutor.identifyCaller(caller)),preview:(raw,options)=>activityPreview.preview(raw,options),figure:raw=>figurePreview.preview(raw),
+const activityBridge=createActivityBridge({publish:async(scope,spec,caller)=>activityHost.publish(scope,spec,await openCodeTutor.identifyCaller(caller)),preview:(raw,options)=>activityPreview.preview(raw,options),publishPreview:(scope,result)=>activityHost.publishPreviewResult(scope,result),figure:raw=>figurePreview.preview(raw),
  /* `ler_pdf`: biblioteca (NFC/NFD) ou PDF na mesma pasta. `validPdf` segue para o IPC da janela. */
  pdfPage:raw=>readTutorPdf(raw),notebookPage:raw=>live.readTutorNotebook(raw),
  searchMaterial:(scope,raw)=>live.studyServices.materialSearch(scope,raw),materialList:async scope=>live.studyServices.materialList(scope),

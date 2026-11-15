@@ -96,7 +96,7 @@ test('criar_atividade aceita o tipo e a biblioteca de gráficos', async () => {
 
 test('as instruções dizem o que a issue pede: prévia antes, quadro solto, tokens, offline e o texto que não repete', () => {
   for (const pattern of [
-    /[Pp]review/, /before writing the reply/, /do not announce it/, /without background, card, border/, /no card, border or title/,
+    /[Pp]review/, /clean preview publishes itself at the call/, /revising the SAME board/, /[Dd]o not announce/, /without background, card, border/, /no card, border or title/,
     /fluid width/, /fixed height in px/, /100vh/, /16px padding/, /var\(--mesa-radius\)/,
     /--mesa-chart-1 … --mesa-chart-6/, /--color-background-primary/, /--mesa-font-sans\/serif\/mono/, /offline/, /Chart\.js 4/, /KaTeX/,
     /plain SVG or canvas/, /generated PNG/, /Levar ao tutor/,
@@ -104,8 +104,9 @@ test('as instruções dizem o que a issue pede: prévia antes, quadro solto, tok
   assert.match(PREVIEW_TOOL_DESCRIPTION, /PNG print/);
   assert.match(PREVIEW_TOOL_DESCRIPTION, /contentHeight/);
   assert.match(PREVIEW_TOOL_DESCRIPTION, /log, info, warning, error and exceptions/);
-  assert.match(PREVIEW_TOOL_DESCRIPTION, /Nothing is published while this call runs/);
-  assert.match(PREVIEW_TOOL_DESCRIPTION, /publishes the last preview/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /NO console error or exception is published immediately/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /revises the same board in place/);
+  assert.match(PREVIEW_TOOL_DESCRIPTION, /shows the visible notice/);
 });
 
 /* M1: a descrição era ~2,1 mil tokens (auditoria das ferramentas do tutor). O
@@ -127,7 +128,7 @@ test('a ferramenta do Claude usa o MESMO texto do guia', async () => {
   assert.equal(PREVIEW_TOOL_NAME, 'mcp__mesa__previsualizar_atividade');
 });
 
-test('prévia no Claude: devolve a imagem e o resumo do console; nada de publicação', async () => {
+test('prévia no Claude: com erro, nada aparece; o texto manda corrigir e pré-visualizar de novo', async () => {
   const calls = [];
   const definition = await createPreviewTool(async (args) => {
     calls.push(args);
@@ -146,10 +147,40 @@ test('prévia no Claude: devolve a imagem e o resumo do console; nada de publica
   assert.match(result.content[1].text, /Prévia em 390px \(escuro\): o conteúdo pede 240px/);
   assert.match(result.content[1].text, /\[error\] TypeError: x \(linha 3\)/);
   assert.match(result.content[1].text, /Corrija os 1 erro/);
-  assert.match(result.content[1].text, /criar_atividade com previaId "prv-0123456789ab"/);
+  assert.match(result.content[1].text, /Nada apareceu para o aluno/);
+  assert.match(result.content[1].text, /faça uma nova prévia/);
+  assert.doesNotMatch(result.content[1].text, /Quadro publicado:/);
   const failing = await createPreviewTool(async () => { throw new Error('O documento não ficou pronto a tempo.'); });
   const failed = await failing.handler({html: '<p/>'}, {});
   assert.equal(failed.isError, true);
+});
+
+test('#62: prévia limpa diz que o quadro já está visível e como revisar o MESMO quadro', async () => {
+  const definition = await createPreviewTool(async () => ({
+    previewed: true, width: 390, theme: 'claro', contentHeight: 240, capturedHeight: 240, previaId: 'prv-0123456789ab',
+    activity: {id: 'act-0123456789', version: 1, title: 'Reta'},
+    consoleMessages: [{level: 'log', text: 'ok'}],
+    screenshot: {mimeType: 'image/png', data: 'iVBORw0KGgo=', width: 390, height: 240},
+  }));
+  const result = await definition.handler({html: '<p>x</p>', js: 'mesa.ready()'}, {});
+  const text = result.content[1].text;
+  assert.match(text, /Quadro publicado: act-0123456789 v1/);
+  assert.match(text, /o aluno JÁ o vê na conversa, no ponto desta chamada/);
+  assert.match(text, /criar_atividade com activityId "act-0123456789" e o html\/css\/js corrigidos/);
+  assert.match(text, /com previaId "prv-0123456789ab" a revisão mantém este conteúdo/);
+  assert.match(text, /MESMO quadro, trocado no lugar/);
+  assert.doesNotMatch(text, /Nada apareceu/);
+});
+
+test('#62: publicação de revisão diz que é o MESMO quadro, com o previaId', async () => {
+  const guide = await import('../src/extensions/mesa-activity/guide.mjs');
+  const text = guide.publishedText({title: 'Reta', id: 'act-0123456789', version: 2, previaId: 'prv-0123456789ab'}, 'atividade');
+  assert.match(text, /revisada na conversa \(act-0123456789 v2\)/);
+  assert.match(text, /MESMO quadro, trocado no lugar/);
+  assert.match(text, /Quadro publicado: act-0123456789 v2/);
+  assert.match(text, /previaId "prv-0123456789ab" ou activityId "act-0123456789"/);
+  const normal = guide.publishedText({title: 'Reta', id: 'act-0123456789', version: 1}, 'atividade');
+  assert.doesNotMatch(normal, /Quadro publicado:/);
 });
 
 test('o servidor mesa inclui a prévia só junto da ferramenta de mostrar', async () => {

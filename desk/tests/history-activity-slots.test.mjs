@@ -164,9 +164,11 @@ test('recoverActivitySlots: prévia publicada no fim do turno volta no ponto da 
     root,
     ranges: [{start: 100, tail: secondSpeech}],
     doc,
-    list: async () => ({items: [slot('previa:prv-1', 1, 150)]}),
+    list: async () => ({items: [{...slot('previa:prv-1', 2, 150), id: 'act-0123456789'}]}),
   });
   assert.deepEqual(result.map((entry) => entry.toolCallId), ['previa:prv-1']);
+  assert.equal(result[0].element.dataset.activityId, 'act-0123456789');
+  assert.equal(result[0].element.dataset.activityVersion, '2','a versão da revisão acompanha o slot (#62)');
   const order = root.children.map((node) => node.dataset.activityCall || node.dataset.previewId || (node === firstSpeech ? 'fala-1' : node === secondSpeech ? 'fala-2' : 'outro'));
   assert.deepEqual(order, ['fala-1', 'previa:prv-1', 'fala-2'], 'o quadro entra no ponto da prévia e a marca sai do DOM');
 });
