@@ -9,6 +9,7 @@ import {message} from '../../i18n.mjs';
 import {NOTEBOOK_MAX_XML_BYTES, NOTEBOOK_TEXT_LIMIT, hasUnsafeDoctype, latexOf, pagesOfXml, textsOf} from '../../notebook-xopp.mjs';
 import {missingPdfOf, sanitizeBackgrounds} from './notebook-background.mjs';
 import toolErrorModule from '../../agents/tool-error-text.cjs';
+import winCmdSpawn from '../../win-cmd-spawn.cjs';
 const {toolErrorText} = toolErrorModule;
 export {NOTEBOOK_MAX_XML_BYTES, NOTEBOOK_TEXT_LIMIT};
 export const NOTEBOOK_TOOL_NAME = 'ler_caderno';
@@ -58,7 +59,11 @@ function runXournalpp({binary, copy, out, page, timeoutMs, spawnProcess = spawn}
     const env = {...process.env};
     delete env.DISPLAY;
     let timedOut = false;
-    const child = spawnProcess(binary, [copy, '-n', String(page), `--export-range=${page}`, '--create-img', out, '--export-png-dpi', String(NOTEBOOK_DPI)], {env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true});
+    /* Um `.cmd`/`.bat` no Windows só roda pelo cmd.exe, com os argumentos
+       escapados (`win-cmd-spawn.cjs`); o xournalpp.exe segue direto. Os testes
+       de janela usam um `.cmd` como Xournal++ falso no Windows. */
+    const plan = winCmdSpawn.spawnPlan(binary, [copy, '-n', String(page), `--export-range=${page}`, '--create-img', out, '--export-png-dpi', String(NOTEBOOK_DPI)], {env});
+    const child = spawnProcess(plan.file, plan.args, {env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, ...plan.options});
     child.stderr?.on('data', () => {});
     const timer = setTimeout(() => { timedOut = true; try { child.kill('SIGKILL'); } catch { /* o processo já era */ } }, timeoutMs);
     child.on('error', (error) => {
