@@ -11,6 +11,7 @@ const {toNat}=require('./src/bend-nat.mjs');
 const {normalizeRecents,normalizeFavorites}=require('./src/model-picker.mjs');
 const {normalizeModelDefault}=require('./src/model-default.mjs');
 const {normalizeComposerPins,savedComposerPins}=require('./src/composer-pins.mjs');
+const {normalizeMaterialFolders}=require('./src/material-picker.mjs');
 
 /* Sanitização do desk.json (#43 fase 2: saiu do main.cjs sem mudar regra). */
 /* Estado lido é dado não confiável (arquivo editado à mão, versão antiga ou
@@ -77,6 +78,7 @@ function sanitizeCourseState(value){
   sessionStudies:isPlainObject(source.sessionStudies)?source.sessionStudies:{},
   study:isPlainObject(source.study)?source.study:{},
   pdfRotations:sanitizePdfRotations(source.pdfRotations),
+  materialFolders:normalizeMaterialFolders(source.materialFolders),
   ggbBase64:asString(source.ggbBase64)};
 }
 function sanitizeState(value){
@@ -86,6 +88,7 @@ function sanitizeState(value){
   session:asString(source.session),
   study:isPlainObject(source.study)?source.study:{},
   pdfRotations:sanitizePdfRotations(source.pdfRotations),
+  materialFolders:normalizeMaterialFolders(source.materialFolders),
   ggbBase64:asString(source.ggbBase64),
   viewLayout:layoutPolicy.normalizeViewLayout(source.viewLayout),
   layoutPresets:layoutPolicy.normalizeStore(source.layoutPresets),
@@ -139,4 +142,4 @@ const sanitizeModelRecents=normalizeRecents;
 const sanitizeModelFavorites=normalizeFavorites;
 const sanitizeModelDefault=normalizeModelDefault;
 
-module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeComposerPins:normalizeComposerPins,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};
+module.exports={sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeComposerPins:normalizeComposerPins,sanitizeMaterialFolders:normalizeMaterialFolders,savedComposerPins,isPlainObject,asString,asArray,asComposerHeight,asBounds,sanitizeRotation,sanitizePdfRotations,sanitizeFreeState,sanitizeCourseState,sanitizeState,sanitizePdfPageOffsets};

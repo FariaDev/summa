@@ -2856,5 +2856,10 @@
   "session.context.page": "p. {page}",
   "work.counts.read.one": "{count} leitura",
   "work.counts.read.other": "{count} leituras",
-  "composer.messageHeight": "Altura da caixa de mensagem"
+  "composer.messageHeight": "Altura da caixa de mensagem",
+  "pdf.material.aria": "Material de {label}",
+  "pdf.material.listAria": "Materiais de {label}",
+  "pdf.material.noMatch": "Nenhum material com “{query}”.",
+  "pdf.material.search": "Buscar materiais…",
+  "pdf.material.searchAria": "Buscar material"
 }

@@ -2856,5 +2856,10 @@
   "session.context.page": "p. {page}",
   "work.counts.read.one": "{count} reading",
   "work.counts.read.other": "{count} readings",
-  "composer.messageHeight": "Message box height"
+  "composer.messageHeight": "Message box height",
+  "pdf.material.aria": "Material for {label}",
+  "pdf.material.listAria": "Materials in {label}",
+  "pdf.material.noMatch": "No material matches “{query}”.",
+  "pdf.material.search": "Search materials…",
+  "pdf.material.searchAria": "Search material"
 }

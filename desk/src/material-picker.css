@@ -1,0 +1,59 @@
+/* Seletor de material do leitor (#74): a busca e a lista que abrem do
+   `.pdf-select`, no meio da barra única. Uma superfície só, como o "Mais
+   opções" do mesmo leitor e o seletor de modelo (#59): PDFs da raiz no topo e
+   um grupo por subpasta, com o título na cor discreta e a seta de abrir/fechar.
+   O `<select>` nativo continua na barra e é o contrato do nome acessível. */
+.material-pop{
+ position:absolute;top:calc(var(--bar) - var(--space-1));left:var(--space-2);z-index:12;
+ display:flex;flex-direction:column;width:min(360px,calc(100% - var(--space-5)));
+ max-height:min(70%,420px);padding:var(--space-1);
+ border:1px solid var(--border-strong);border-radius:var(--r-md);background:var(--raised);box-shadow:var(--shadow-pop);
+}
+.material-pop[hidden]{display:none}
+.material-search{
+ display:flex;align-items:center;gap:var(--space-2);padding:0 var(--space-2);
+ border-bottom:1px solid var(--border);
+}
+.material-search:focus-within{border-bottom-color:var(--accent-fill)}
+.material-search-icon{display:inline-flex;flex:none;color:var(--faint)}
+.material-search-icon .icon{width:15px;height:15px}
+.material-search-input{
+ flex:1;min-width:0;height:var(--ctl);padding:0;border:0;border-radius:0;background:transparent;
+ color:var(--fg);font-size:var(--fs-md);
+}
+.material-search-input:focus-visible{outline:none}
+.material-search-input::placeholder{color:var(--faint)}
+.material-empty{
+ margin:0;padding:var(--space-4) var(--space-3);
+ font-size:var(--fs-sm);color:var(--muted);overflow-wrap:anywhere;
+}
+.material-empty[hidden]{display:none}
+.material-list{
+ display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+ padding:var(--space-1) var(--space-1) var(--space-2);
+ scrollbar-width:thin;scrollbar-color:transparent transparent;
+}
+.material-list:hover{scrollbar-color:var(--border-strong) transparent}
+.material-group{display:flex;flex-direction:column}
+.material-group-head,.material-row{
+ display:flex;align-items:center;gap:var(--space-2);min-height:30px;padding:0 var(--space-2);
+ border-radius:var(--r-sm);cursor:pointer;color:var(--fg);
+}
+.material-group-head{color:var(--muted);font-size:var(--fs-sm);font-weight:600}
+.material-group-head.active,.material-row.active{background:var(--hover-row)}
+.material-row[aria-selected="true"]{background:var(--selected);color:var(--fg-strong)}
+.material-chevron{display:inline-flex;flex:none;color:var(--faint)}
+.material-chevron .icon{width:14px;height:14px}
+.material-group-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.material-group-count{flex:none;font-size:var(--fs-xs);color:var(--faint)}
+.material-row{padding-left:var(--space-5);font-size:var(--fs-md)}
+.material-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.material-row-folder{
+ flex:none;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ font-size:var(--fs-xs);color:var(--faint);
+}
+.material-row-check{display:inline-flex;flex:none;width:14px;color:var(--accent-text);opacity:0}
+.material-row[aria-selected="true"] .material-row-check{opacity:1}
+.material-row-check .icon{width:14px;height:14px}
+.material-open{color:var(--muted)}
+.material-open .material-row-name{flex:none}

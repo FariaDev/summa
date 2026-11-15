@@ -11,7 +11,7 @@ const materialModel=require('./material-model.cjs');
 const free=require('./free-workspaces.cjs');
 const chatState=require('./src/study-data/chat-state.cjs');
 const {sessionStartedFromPath,formatSessionLabel}=require('./lib.cjs');
-const {courseLibrary}=require('./courses.cjs');
+const {courseLibrary,withPdfFolders}=require('./courses.cjs');
 const {needsSetup,normalize,pickPdfs}=require('./config.cjs');
 const {releaseNotesVersion}=require('./desk-version.cjs');
 const {cleanStudy,authorizeRestoredStudy}=require('./study.cjs');
@@ -79,7 +79,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
    const previous=courseStates[live.courseId]||{};
    const sessionStudies={...(previous.sessionStudies||{}),[live.session]:cleanStudy(live.state.study)};
    const sessionLayouts={...(previous.sessionLayouts||{}),[live.session]:chatState.capture({...live.state,study:cleanStudy(live.state.study)})};
-   courseStates[live.courseId]={pdfs:live.state.pdfs,referenceVisible:live.state.referenceVisible,chatWidth:live.state.chatWidth,calcHeight:live.state.calcHeight,pdfSplit:live.state.pdfSplit,draft:live.state.draft,study:cleanStudy(live.state.study),pdfRotations:live.state.pdfRotations||{},sessionStudies,sessionLayouts,session:live.session,sessions:courseSessions()};
+   courseStates[live.courseId]={pdfs:live.state.pdfs,materialFolders:live.state.materialFolders||{},referenceVisible:live.state.referenceVisible,chatWidth:live.state.chatWidth,calcHeight:live.state.calcHeight,pdfSplit:live.state.pdfSplit,draft:live.state.draft,study:cleanStudy(live.state.study),pdfRotations:live.state.pdfRotations||{},sessionStudies,sessionLayouts,session:live.session,sessions:courseSessions()};
    ggbCache.persist(live.courseId,typeof live.state.ggbBase64==='string'?live.state.ggbBase64:'');
   }
   const payload=deskPayload();
@@ -109,7 +109,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
   const ggbSaved=ggbCache.read(live.courseId)||saved.ggbBase64||'';
   ggbCache.remember(live.courseId,ggbSaved);
   const layout=deskLayout({...saved,theme:live.state.theme});
-  live.state={...live.state,pdfs:saved.pdfs||[],pdfRotations:saved.pdfRotations||{},referenceVisible:layout.referenceVisible,chatWidth:layout.chatWidth,calcHeight:layout.calcHeight,pdfSplit:layout.pdfSplit,draft:layout.draft,theme:layout.theme,ggbBase64:ggbSaved,study:restoredStudy};
+  live.state={...live.state,pdfs:saved.pdfs||[],materialFolders:saved.materialFolders||{},pdfRotations:saved.pdfRotations||{},referenceVisible:layout.referenceVisible,chatWidth:layout.chatWidth,calcHeight:layout.calcHeight,pdfSplit:layout.pdfSplit,draft:layout.draft,theme:layout.theme,ggbBase64:ggbSaved,study:restoredStudy};
   ggb.resetRestored();
  }
  /* Registro de retomada da matéria ativa (o cartão do "Encerrar por hoje"). O
@@ -155,7 +155,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
   const record=freeActive?free.findWorkspace(runtime,live.freeSessionId):null;
   /* Em Livre a biblioteca é SÓ o manifesto da sessão: nada de varrer pasta de
     matéria nem herdar fontes de outro curso. */
-  const library=freeActive?((record?.materials||[]).map(material=>({name:material.name,path:material.path}))):(live.course?courseLibrary(live.course):[]);
+  const library=freeActive?((record?.materials||[]).map(material=>({name:material.name,path:material.path}))):(live.course?withPdfFolders(live.course,courseLibrary(live.course)):[]);
   /* Reabertura: biblioteca volta como biblioteca; leitor fora dela volta só por
      inteiro (avulso que volta ao reabrir não vira pasta). */
   pdfGrants.reset(library.map(p=>p.path),(live.state.pdfs||[]).filter(p=>p?.path&&fs.existsSync(p.path)).map(p=>p.path));
