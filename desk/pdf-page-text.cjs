@@ -26,10 +26,17 @@ const CUT_WORD_MARGIN = 200;
 const CACHE_DOCS = 2;
 const CACHE_PAGES = 24;
 const MAX_IMAGE_CHARS = 1800000;
+/* #60: a ponte do `ler_pdf` corta a chamada em 30 s (`pdf-tool.mjs`); o render
+   de um scan pode gastar 20 s (mais a janela) e três em fila passariam disso.
+   O `read` inteiro volta dentro deste orçamento: a imagem que não saiu volta
+   com o texto e `imageError`, e o render ainda na fila é descartado. */
+const READ_BUDGET_MS = 22000;
 const FORMULA_PATHS = 100;
 const FORMULA_TEXT = 250;
 const PATH_OPS = new Set(['constructPath', 'stroke', 'fill', 'eoFill', 'fillStroke', 'eoFillStroke']);
 const IDENTITY = [1, 0, 0, 1, 0, 0];
+
+/** Página já lida: texto, classificação e, quando houver, a imagem ou o aviso. @typedef {{page: number, text: string, kind: string, textLength: number, textTruncated: boolean, imageRatio: number, image?: string, imageError?: string}} ReadPage */
 
 /** O pdf.js do app (build legacy, que roda em Node sem DOM). */
 const loadDefaultPdfjs = () => import(pathToFileURL(require.resolve('pdfjs-dist/legacy/build/pdf.mjs')).href);
@@ -256,6 +263,7 @@ async function openDocument(pdfjs, file, readFile) {
  * Texto, corte e classificação de uma página. Só a inspeção fica no cache:
  * o PNG é gerado na chamada que pede a imagem.
  * @param {{pdfjs: any, doc: any, number: number}} request
+ * @returns {Promise<ReadPage>}
  */
 async function inspectPage({pdfjs, doc, number}) {
   const pdfPage = await doc.getPage(number);
@@ -274,15 +282,34 @@ async function inspectPage({pdfjs, doc, number}) {
 }
 
 /**
+ * Corre a promessa até o sinal abortar; o que chegar depois fica sem efeito.
+ * @template T
+ * @param {Promise<T>} promise
+ * @param {AbortSignal} signal
+ * @param {string} lateText
+ */
+function untilAborted(promise, signal, lateText) {
+  if (signal.aborted) return Promise.reject(Error(lateText));
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(Error(lateText));
+    signal.addEventListener('abort', onAbort, {once: true});
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+  });
+}
+
+/**
  * @param {{page: number, text: string, kind: string, image?: string, imageError?: string}} page
  * @param {string} file
- * @param {(request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}) => Promise<string>} renderPage
+ * @param {(request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}, options?: {signal?: AbortSignal}) => Promise<string>} renderPage
  * @param {import('./pdf-page-view.cjs').PageView} view
+ * @param {AbortSignal} signal orçamento da chamada; o render ainda na fila é descartado
  */
-async function attachImage(page, file, renderPage, view) {
+async function attachImage(page, file, renderPage, view, signal) {
   const copy = {...page};
+  const lateText = `a imagem da página ${copy.page} não ficou pronta a tempo; peça só essa página`;
   try {
-    const image = await renderPage({file, page: copy.page, girar: view.girar, recorte: view.recorte, ampliar: view.ampliar, marcas: view.marcas});
+    /* O `signal` segue para o render: o que ainda não começou sai da fila. */
+    const image = await untilAborted(renderPage({file, page: copy.page, girar: view.girar, recorte: view.recorte, ampliar: view.ampliar, marcas: view.marcas}, {signal}), signal, lateText);
     if (typeof image !== 'string' || !image) copy.imageError = 'a Mesa não devolveu a imagem';
     else if (image.length > MAX_IMAGE_CHARS) copy.imageError = `imagem com ${image.length} caracteres; o teto é ${MAX_IMAGE_CHARS}`;
     else copy.image = image;
@@ -310,6 +337,23 @@ function wantsImage(page, mode, canRender, visual = false) {
 }
 
 /**
+ * As primeiras `MAX_IMAGE_PAGES` páginas que pedem imagem entram; da que
+ * passaria do teto em diante nada entra, como antes.
+ * @template {ReadPage} T
+ * @param {T[]} inspected
+ * @param {(page: T) => boolean} wants
+ */
+function imagePages(inspected, wants) {
+  let imageCount = 0;
+  for (let index = 0; index < inspected.length; index += 1) {
+    if (!wants(inspected[index])) continue;
+    if (imageCount >= MAX_IMAGE_PAGES) return {included: inspected.slice(0, index), imageLimitHit: true};
+    imageCount += 1;
+  }
+  return {included: inspected, imageLimitHit: false};
+}
+
+/**
  * Leitor de páginas com o pdf.js e o render injetados.
  *
  * O mesmo PDF era relido e reparseado a cada `ler_pdf`. O documento fica em
@@ -317,11 +361,11 @@ function wantsImage(page, mode, canRender, visual = false) {
  * `CACHE_PAGES` páginas lidas por documento) e as páginas de uma chamada saem
  * juntas. `warm` adianta o texto sem segurar o envio; `count` dá o total ao
  * chip do chat pelo mesmo documento.
- * @param {{loadPdfjs?: () => Promise<any>, readFile?: (file: string) => Buffer, statFile?: (file: string) => {mtimeMs: number, size: number}, renderPage?: ((request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}) => Promise<string>) | null}} [deps]
+ * @param {{loadPdfjs?: () => Promise<any>, readFile?: (file: string) => Buffer, statFile?: (file: string) => {mtimeMs: number, size: number}, renderPage?: ((request: {file: string, page: number, girar?: number, recorte?: import('./pdf-page-view.cjs').Recorte|null, ampliar?: number, marcas?: import('./pdf-page-view.cjs').Marca[]}, options?: {signal?: AbortSignal}) => Promise<string>) | null, readBudgetMs?: number}} [deps]
  * @returns {{read: (request: {file: string, first: unknown, last?: unknown, imagem?: unknown, girar?: unknown, recorte?: unknown, ampliar?: unknown, marcas?: unknown}) => Promise<{file: string, total: number, requested: {first: number, last: number}, pages: Array<{page: number, text: string, kind: string, textLength: number, textTruncated: boolean, imageRatio: number, image?: string, imageError?: string}>, next: number|null, imageLimitHit: boolean}>, warm: (request: {file: string, first: unknown, last?: unknown}) => Promise<void>, count: (file: string) => Promise<number>}}
  * @example await createPdfPageReader().read({file: '/c/Apostila.pdf', first: 53})
  */
-function createPdfPageReader({loadPdfjs = loadDefaultPdfjs, readFile = (file) => fs.readFileSync(file), statFile = (file) => fs.statSync(file), renderPage = null} = {}) {
+function createPdfPageReader({loadPdfjs = loadDefaultPdfjs, readFile = (file) => fs.readFileSync(file), statFile = (file) => fs.statSync(file), renderPage = null, readBudgetMs = READ_BUDGET_MS} = {}) {
   /** @typedef {{key: string, pdfjs: any, doc: any, loading: {destroy?: () => Promise<void>}, pages: Map<number, Promise<any>>, pins: number}} CachedDoc */
   /** @type {Map<string, CachedDoc>} */
   const docs = new Map();
@@ -396,38 +440,41 @@ function createPdfPageReader({loadPdfjs = loadDefaultPdfjs, readFile = (file) =>
   }
 
   /**
+   * Texto de todas as páginas pedidas e, nas que pedem imagem, o PNG até o
+   * orçamento da chamada acabar.
+   * @param {any} entry
+   * @param {{file: string, first: unknown, last?: unknown, view: import('./pdf-page-view.cjs').PageView, mode: 'auto'|'sim'|'nao', signal: AbortSignal}} request
+   */
+  async function readPages(entry, {file, first, last, view, mode, signal}) {
+    const total = entry.doc.numPages;
+    const range = pageRange(first, last, total);
+    const numbers = [];
+    for (let number = range.first; number <= range.last; number += 1) numbers.push(number);
+    const inspected = await Promise.all(numbers.map((number) => pageOf(entry, number)));
+    const wants = (page) => wantsImage(page, mode, typeof renderPage === 'function', view.visual);
+    const {included, imageLimitHit} = imagePages(inspected, wants);
+    const pages = await Promise.all(included.map((page) => (wants(page) ? attachImage(page, file, renderPage, view, signal) : page)));
+    const lastPage = pages.length ? pages[pages.length - 1].page : range.first;
+    return {file: path.basename(file), total, requested: {first: range.first, last: range.requestedLast}, pages, next: lastPage < total ? lastPage + 1 : null, imageLimitHit};
+  }
+
+  /**
    * @param {{file: string, first: unknown, last?: unknown, imagem?: unknown, girar?: unknown, recorte?: unknown, ampliar?: unknown, marcas?: unknown}} request
    */
   async function read({file, first, last, imagem, girar, recorte, ampliar, marcas}) {
     const view = normalizePageView({girar, recorte, ampliar, marcas, imagem});
-    const entry = await open(file);
+    const mode = imageMode(imagem);
+    /* #60: o orçamento cobre a chamada inteira. Quando estoura, o `signal`
+       aborta as imagens que faltam e descarta os renders ainda na fila. */
+    const budget = new AbortController();
+    const budgetTimer = setTimeout(() => budget.abort(), Math.max(0, readBudgetMs));
+    let entry = null;
     try {
-      const total = entry.doc.numPages;
-      const range = pageRange(first, last, total);
-      const numbers = [];
-      for (let number = range.first; number <= range.last; number += 1) numbers.push(number);
-      const inspected = await Promise.all(numbers.map((number) => pageOf(entry, number)));
-      const mode = imageMode(imagem);
-      const canRender = typeof renderPage === 'function';
-      const wants = (page) => wantsImage(page, mode, canRender, view.visual);
-      const included = [];
-      let imageCount = 0;
-      let imageLimitHit = false;
-      for (const page of inspected) {
-        if (wants(page)) {
-          if (imageCount >= MAX_IMAGE_PAGES) {
-            imageLimitHit = true;
-            break;
-          }
-          imageCount += 1;
-        }
-        included.push(page);
-      }
-      const pages = await Promise.all(included.map((page) => (wants(page) ? attachImage(page, file, renderPage, view) : page)));
-      const lastPage = pages.length ? pages[pages.length - 1].page : range.first;
-      return {file: path.basename(file), total, requested: {first: range.first, last: range.requestedLast}, pages, next: lastPage < total ? lastPage + 1 : null, imageLimitHit};
+      entry = await open(file);
+      return await readPages(entry, {file, first, last, view, mode, signal: budget.signal});
     } finally {
-      unpin(entry);
+      clearTimeout(budgetTimer);
+      if (entry) unpin(entry);
     }
   }
 
@@ -450,4 +497,4 @@ function createPdfPageReader({loadPdfjs = loadDefaultPdfjs, readFile = (file) =>
   return {read, warm, count};
 }
 
-module.exports = {createPdfPageReader, pageText, cutPageText, pageRange, pageStats, pageKind, kindFromCounts, imageAreaRatio, opsByName, MAX_PAGES, MAX_IMAGE_PAGES, MAX_CHARS_PER_PAGE, FIGURE_AREA_RATIO, MAX_IMAGE_CHARS, FORMULA_PATHS, FORMULA_TEXT};
+module.exports = {createPdfPageReader, pageText, cutPageText, pageRange, pageStats, pageKind, kindFromCounts, imageAreaRatio, opsByName, MAX_PAGES, MAX_IMAGE_PAGES, MAX_CHARS_PER_PAGE, FIGURE_AREA_RATIO, MAX_IMAGE_CHARS, READ_BUDGET_MS, FORMULA_PATHS, FORMULA_TEXT};

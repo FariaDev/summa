@@ -138,14 +138,65 @@ function pngUnderCap(canvas) {
   return data;
 }
 
+/* #60: antes cada página relia os bytes e reabria o PDF. Agora um documento só
+   fica aberto para o caminho em curso — as páginas da mesma chamada (e uma
+   chamada logo depois ao mesmo arquivo) o reaproveitam —, solto quando outro
+   caminho chega ou depois de alguns segundos sem render. Os bytes continuam
+   vindo pelo preload, que o main só autoriza para o arquivo da chamada em
+   curso; o cache não abre caminho novo. */
+const DOC_IDLE_MS = 5000;
+let openDocument = null;
+
+/* O teste da janela encurta a espera por `window.__mesaPdfDocIdleMs`. */
+const idleMs = () => {
+  const testValue = Number(window.__mesaPdfDocIdleMs);
+  return testValue > 0 ? testValue : DOC_IDLE_MS;
+};
+
+function releaseDocument() {
+  const entry = openDocument;
+  if (!entry) return;
+  openDocument = null;
+  clearTimeout(entry.idleTimer);
+  Promise.resolve(entry.loading?.destroy?.()).catch(() => {});
+}
+
+async function documentFor(file) {
+  if (openDocument && openDocument.file === file) {
+    clearTimeout(openDocument.idleTimer);
+    openDocument.idleTimer = null;
+    return {entry: openDocument, doc: await openDocument.promise};
+  }
+  releaseDocument();
+  const entry = {file, loading: null, idleTimer: null, promise: null};
+  entry.promise = (async () => {
+    const bytes = new Uint8Array(await window.mesaPdf.read(file));
+    entry.loading = pdfjs.getDocument({data: bytes, standardFontDataUrl, cMapUrl, cMapPacked: true, wasmUrl, isEvalSupported: false, verbosity: 0});
+    return entry.loading.promise;
+  })();
+  openDocument = entry;
+  try {
+    return {entry, doc: await entry.promise};
+  } catch (error) {
+    if (openDocument === entry) openDocument = null;
+    throw error;
+  }
+}
+
+function scheduleIdleRelease(entry) {
+  if (!entry) return;
+  clearTimeout(entry.idleTimer);
+  entry.idleTimer = setTimeout(() => {
+    if (openDocument === entry) releaseDocument();
+  }, idleMs());
+}
+
 window.mesaRenderPdfPage = async (file, pageNumber, options = {}) => {
   const girar = Number(options.girar) || 0;
   const ampliar = Number(options.ampliar) || 1;
   const recorte = options.recorte || null;
   const marcas = Array.isArray(options.marcas) ? options.marcas : [];
-  const bytes = new Uint8Array(await window.mesaPdf.read(file));
-  const loading = pdfjs.getDocument({data: bytes, standardFontDataUrl, cMapUrl, cMapPacked: true, wasmUrl, isEvalSupported: false, verbosity: 0});
-  const doc = await loading.promise;
+  const {entry, doc} = await documentFor(file);
   let canvas = null;
   try {
     const page = await doc.getPage(pageNumber);
@@ -169,7 +220,7 @@ window.mesaRenderPdfPage = async (file, pageNumber, options = {}) => {
       canvas.width = 0;
       canvas.height = 0;
     }
-    await loading.destroy();
+    scheduleIdleRelease(entry);
   }
 };
 </script>
