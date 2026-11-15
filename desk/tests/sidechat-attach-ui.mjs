@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
-import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow} from './helpers.mjs';
+import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow,fakeEngineLauncher} from './helpers.mjs';
 
 /* Clipe e bandeja de anexos do chat lateral (Electron real, fake-opencode e
    fake-xournalpp, dados sintéticos). Cobre: o clipe do lateral com o mesmo
@@ -15,6 +15,9 @@ import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDesk
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const FAKE_XOURNALPP=path.join(here,'fake-xournalpp.mjs');
+/* No Windows o app não executa um `.mjs`: o mesmo `.cmd` que roda os motores
+   falsos (`node fake-xournalpp.mjs %*`) faz o papel do xournalpp.exe. */
+const XOURNALPP_BIN=fakeEngineLauncher(FAKE_XOURNALPP);
 /* PNG de 1×1: o menor anexo de imagem válido. */
 const PNG_1X1=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
 const XML=`<?xml version="1.0" standalone="no"?><xournal version="4"><page width="589" height="845"><background type="solid" color="#ffffffff" style="lined"/><layer><text fn="" size="12" color="#0013ff" font="Sans" x="100" y="100">Primeira</text></layer></page><page width="589" height="845"><background type="solid" color="#ffffffff" style="lined"/><layer><text fn="" size="12" color="#0013ff" font="Sans" x="100" y="100">Segunda</text></layer></page></xournal>`;
@@ -34,7 +37,7 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  fs.chmodSync(FAKE_XOURNALPP,0o755);
  const current=seedNativeSession(runtime,[{role:'user',content:[{type:'text',text:'conversa atual'}]}],{courseId:'Test',preview:'conversa atual'});
  writeDeskJson(runtime,{session:current,courseId:'Test',courseStates:{Test:{session:current,pdfs:[{path:pdf,page:1,zoom:1,scrollX:0,scrollY:0}],sessions:[{path:current,started:Date.now(),preview:'conversa atual'}]}}});
- writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Test',name:'Teste',path:course}],xournalPath:FAKE_XOURNALPP,desk:{pinnedExtensions:false}});
+ writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Test',name:'Teste',path:course}],xournalPath:XOURNALPP_BIN,desk:{pinnedExtensions:false}});
  const serveLog=path.join(runtime,'serve.log');
  ctx.app=await launchDesk({runtime,env:{FAKE_OPENCODE_LOG:serveLog}});
  const shots='/tmp/claude-1000/pagina-imagem';

@@ -8,7 +8,7 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {gzipSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
-import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow,pageWindow,freezeMotion,syntheticFigurePng} from './helpers.mjs';
+import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow,fakeEngineLauncher,pageWindow,freezeMotion,syntheticFigurePng} from './helpers.mjs';
 import {closeApp} from './proc-tree.mjs';
 import {pollUntil} from './waits.mjs';
 
@@ -17,6 +17,9 @@ const SHOT='/tmp/claude-1000/summa-cartoes.png';
 const SHOTS='/tmp/claude-1000/pagina-imagem';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const FAKE_XOURNALPP=path.join(here,'fake-xournalpp.mjs');
+/* No Windows o app não executa um `.mjs`: o mesmo `.cmd` que roda os motores
+   falsos (`node fake-xournalpp.mjs %*`) faz o papel do xournalpp.exe. */
+const XOURNALPP_BIN=fakeEngineLauncher(FAKE_XOURNALPP);
 
 /** Largura do PNG guardado, lida do IHDR (bytes 16–19). */
 const pngWidth=dataUrl=>Buffer.from(String(dataUrl).split(',')[1]||'','base64').readUInt32BE(16);
@@ -93,7 +96,7 @@ await withArtifacts('mini-notebooks',async ctx=>{
  await closeApp(old,{ledgerDir:runtime});
  /* O Xournal++ falso entra só agora: o reload deixa apenas a miniatura reduzida,
     e o envio precisa renderizar a página de novo a partir do disco. */
- writeConfigJson(runtime,{vaultPath:runtime,runtimePath:runtime,courses:[{id:'Test',name:'Cálculo I',path:course}],xournalPath:FAKE_XOURNALPP,desk:{pinnedExtensions:false}});
+ writeConfigJson(runtime,{vaultPath:runtime,runtimePath:runtime,courses:[{id:'Test',name:'Cálculo I',path:course}],xournalPath:XOURNALPP_BIN,desk:{pinnedExtensions:false}});
  ctx.app=await launchDesk({runtime,env:{FAKE_OPENCODE_REPLY:'Vamos ver o limite pela definição.',FAKE_OPENCODE_LOG:serveLog,FAKE_XOURNALPP_LOG:xournalLog}});
  page=await ctx.app.firstWindow();
  page.on('pageerror',e=>errors.push(e.message));
