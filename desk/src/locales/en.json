@@ -2295,6 +2295,8 @@
   "setup.continue": "Continue",
   "setup.create": "Create the course",
   "setup.drop.changeTitle": "Change the folder",
+  "setup.folder.found.one": "1 PDF found",
+  "setup.folder.found.other": "{count} PDFs found",
   "setup.folder.lead": "Drag the PDFs or choose the folder.",
   "setup.folder.more": "and {count} more",
   "setup.folder.remove": "Remove this folder",

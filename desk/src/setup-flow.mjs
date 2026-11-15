@@ -198,3 +198,22 @@ export function pdfPreview(names, count) {
   const shown = (names || []).slice(0, 4);
   return {shown, more: Math.max(0, (Number(count) || 0) - shown.length)};
 }
+
+/**
+ * O resumo da pasta escolhida: o total encontrado, até quatro nomes e quantos
+ * sobram. Os nomes repetidos já chegam com a subpasta do host (#88).
+ * @param {string[]} names nomes em ordem, com a subpasta quando repete
+ * @param {number} count total de PDFs na pasta
+ * @param {(key: string, args?: Record<string, string | number>) => string} t tradutor
+ * @returns {string}
+ * @example pdfSummary(['Aula 1.pdf'], 1, t) // '1 PDF encontrado · Aula 1.pdf'
+ * @example pdfSummary(['a.pdf', 'b.pdf', 'c.pdf', 'd.pdf', 'e.pdf'], 5, t) // '5 PDFs encontrados · a.pdf · b.pdf · c.pdf · d.pdf · e mais 1'
+ */
+export function pdfSummary(names, count, t) {
+  const total = Math.max(0, Number(count) || 0);
+  if (!total) return t('setup.folder.none');
+  const {shown, more} = pdfPreview(names, total);
+  const parts = [t('setup.folder.found', {count: total}), ...shown];
+  if (more) parts.push(t('setup.folder.more', {count: more}));
+  return parts.join(' · ');
+}

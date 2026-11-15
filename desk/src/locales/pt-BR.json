@@ -2295,6 +2295,8 @@
   "setup.continue": "Continuar",
   "setup.create": "Criar a matéria",
   "setup.drop.changeTitle": "Trocar a pasta",
+  "setup.folder.found.one": "1 PDF encontrado",
+  "setup.folder.found.other": "{count} PDFs encontrados",
   "setup.folder.lead": "Arraste os PDFs ou escolha a pasta.",
   "setup.folder.more": "e mais {count}",
   "setup.folder.remove": "Tirar esta pasta",

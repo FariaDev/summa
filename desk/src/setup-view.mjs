@@ -1,6 +1,6 @@
 // @ts-check
 import {t,currentLanguage} from './ui-text.mjs';
-import {TOUR,stepId,setupBlocked,primaryKey,hintKey,setupTrail,speechOf,pdfPreview} from './setup-flow.mjs';
+import {TOUR,stepId,setupBlocked,primaryKey,hintKey,setupTrail,speechOf,pdfSummary} from './setup-flow.mjs';
 import {sceneOf,sceneTabOf,scenePdfLabel,ringFor} from './setup-scene.mjs';
 
 /* Pintura da primeira abertura em tela cheia (#64). O HTML estático
@@ -73,8 +73,7 @@ function paintFolder(state,facts){
  setText($('#setup-drop-help'),has?'':t('firstrun.drop.help'));
  $('#setup-chosen').hidden=!has;
  setText($('#setup-chosen-folder'),has?t('firstrun.chosen',{folder:state.folder}):'');
- const {shown,more}=pdfPreview(facts.pdfNames,state.pdfCount);
- const files=state.pdfCount?[...shown,...(more?[t('setup.folder.more',{count:more})]:[])].join(' · '):t('setup.folder.none');
+ const files=pdfSummary(facts.pdfNames,state.pdfCount,t);
  setText($('#setup-chosen-files'),has?files:'');
  const away=has&&facts.elsewhere>0;
  $('#setup-elsewhere').hidden=!away;
