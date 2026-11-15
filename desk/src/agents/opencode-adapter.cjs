@@ -47,6 +47,7 @@ const {trackDelivery, cancel: cancelAdapter, cancelledAcceptance: settleCancelle
 const {createTurnGuard} = require('./opencode-turn-guard.cjs');
 const {readOpenCodeVersion, oldOpenCode} = require('./opencode-version.cjs');
 const {installPrototypeMethods} = require('../prototype-mixins.cjs'); const {OpenCodeRevert} = require('./opencode-revert.cjs');
+const {ensureMesaMcp} = require('./opencode-mcp-recovery.cjs');
 const {message} = require('../i18n.mjs');
 /**
  * @typedef {import('./opencode-serve-owner.cjs').ServeLease} ServeLease
@@ -236,10 +237,10 @@ class OpenCodeAdapter extends EventEmitter {
 
   /* As ferramentas da Mesa (GeoGebra, atividades) entram como MCP `mesa` na
      pasta da conversa. Falhar aqui não derruba o estudo: o resultado vai ao
-     log e a indisponibilidade acompanha o prompt do tutor (#55). O aviso sai
-     UMA vez por conexão (`openSession` chama isto uma vez por bind); os turnos
-     seguintes reusam o mesmo cliente e não repetem o toast. */
-  async registerMcp() {
+     log e a indisponibilidade acompanha o prompt do tutor (#55). `replace` é
+     o religar do meio da sessão (#63); `notify: false` não repete o toast
+     quando o MCP já estava indisponível. */
+  async registerMcp({replace = false, notify = true} = {}) {
     const config = this.options.mcpConfig?.() || null;
     this.mcpUnavailable = false;
     if (!config) return;
@@ -250,9 +251,10 @@ class OpenCodeAdapter extends EventEmitter {
       log: (line) => this.log('opencode', line),
       timeoutMs: this.options.mcpTimeoutMs,
       pollMs: this.options.mcpPollMs,
+      replace,
     });
     this.mcpUnavailable = !outcome.connected;
-    if (outcome.connected) return;
+    if (outcome.connected || !notify) return;
     this.emitEvent('warning', {code: 'OPENCODE_MCP_FAILED', message: mcpFailureMessage(outcome.status)});
   }
 
@@ -370,6 +372,7 @@ class OpenCodeAdapter extends EventEmitter {
     /* Steer só é steer com turno em voo; ocioso, é um envio normal (o serviço
        já decide assim, e o adaptador repete a regra para quem o chama direto). */
     const steer = input.delivery === 'steer' && this.busy && Boolean(this.turn);
+    await ensureMesaMcp(this);
     let text = String(input.text || '');
     const marked = this.instructionMode === 'prefix' && !this.prefixArmed && Boolean(this.options.systemPrompt);
     if (marked) { this.prefixArmed = true; text = markTutorPrompt(this.tutorPrompt(), text); }
@@ -388,6 +391,7 @@ class OpenCodeAdapter extends EventEmitter {
 
   async deliverCommand(input, id, token) {
     await this.connect();
+    await ensureMesaMcp(this);
     const files = this.files(input.images);
     const body = {name: String(input.name || '').replace(/^\/+/, ''), text: String(input.text || ''), ...(files.length ? {files} : {})};
     return admitTurn(this, {id, route: this.route('/command'), body, action: 'opencode.action.command', token,

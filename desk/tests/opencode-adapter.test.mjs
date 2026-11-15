@@ -4,6 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {createFakeOpencodeServe} from './fake-opencode.mjs';
 import {parseMessage} from '../src/i18n.mjs';
@@ -12,6 +14,8 @@ import en from '../src/locales/en.json' with {type: 'json'};
 
 const require = createRequire(import.meta.url);
 const {OpenCodeAdapter} = require('../src/agents/opencode-adapter.cjs');
+/* MCP falso da #63: uma ferramenta curta que prova o religar entre turnos. */
+const FAKE_MCP = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fake-mcp-slow.mjs');
 /* Um `ses_` como o servidor cunha (o adaptador nunca cunha o seu). */
 const SERVER_ID = 'ses_ea5e2000affeZzYyXxWwVvUuTt';
 const fakeReadVersion = async () => 'opencode v2.2.4';
@@ -188,6 +192,39 @@ test('sem canal de instruções o prompt marcado também leva a linha de indispo
   assert.match(prompt, /primeira$/);
   const history = await adapter.history();
   assert.equal(history.find((item) => item.role === 'user').content[0].text, 'primeira', 'o prompt não volta como fala');
+});
+
+test('MCP que cai entre dois turnos é religado antes do próximo envio (#63)', async (t) => {
+  const serve = await createFakeOpencodeServe({password: PASSWORD, mcpReplaceRecovers: true, mcpCall: {name: 'lento', input: {ms: 0}}});
+  t.after(() => serve.close());
+  const {adapter, events, logs} = createHarness(serve, {
+    mcpConfig: () => ({type: 'local', command: [process.execPath, FAKE_MCP], environment: {}, enabled: true, codemode: false}),
+  });
+  t.after(() => adapter.stop());
+  await adapter.connect();
+  assert.equal(adapter.mcpUnavailable, false);
+  await adapter.send({id: 'u1', text: 'primeiro'});
+  await waitFor(events, (item) => item.type === 'turn_end', 'primeiro turno');
+  assert.equal(events.find((item) => item.type === 'tool_end')?.isError, false, 'o primeiro turno usou a ferramenta');
+  /* O processo filho do MCP morreu entre os turnos. */
+  serve.state.mcpStatus = 'failed';
+  events.length = 0;
+  const from = serve.requests.length;
+  await adapter.send({id: 'u2', text: 'segundo'});
+  await waitFor(events, (item) => item.type === 'turn_end', 'segundo turno');
+  const after = serve.requests.slice(from);
+  const getAt = after.findIndex((item) => item.method === 'GET' && item.url.startsWith('/api/mcp'));
+  const deleteAt = after.findIndex((item) => item.method === 'DELETE' && item.url.startsWith('/api/experimental/mcp/mesa'));
+  const putAt = after.findIndex((item) => item.method === 'PUT' && item.url.startsWith('/api/experimental/mcp/mesa'));
+  const promptAt = after.findIndex((item) => item.method === 'POST' && item.url.endsWith('/prompt'));
+  assert.ok(getAt >= 0, 'GET /api/mcp antes do envio');
+  assert.ok(deleteAt > getAt, 'remove a entrada failed depois de conferir');
+  assert.ok(putAt > deleteAt, 're-registra depois de remover');
+  assert.ok(promptAt > putAt, 'o prompt só sai depois do MCP religado');
+  assert.equal(events.find((item) => item.type === 'tool_end')?.isError, false, 'o segundo turno voltou com a ferramenta');
+  assert.equal(serve.state.mcpStatus, 'connected');
+  assert.ok(logs.some((item) => item.area === 'opencode' && /MCP mesa failed antes do envio; religando/.test(item.line)), 'linha do religar no log');
+  assert.ok(logs.filter((item) => /^MCP mesa conectado em \d+ ms$/.test(item.line)).length >= 2, 'o registro novo aparece no log');
 });
 
 test('o título da sessão vem da interface, não do marcador cru (#93)', async (t) => {
