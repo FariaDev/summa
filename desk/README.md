@@ -83,7 +83,7 @@ Não há sincronização com serviço próprio, telemetria do aplicativo, ediç�
 
 ## Desenvolvimento
 
-Requer Node 20+. No Mac do autor o vault e o tutor já existentes são detectados. Em outro computador, veja [`SETUP.md`](SETUP.md).
+Requer Node 22+. No Mac do autor o vault e o tutor já existentes são detectados. Em outro computador, veja [`SETUP.md`](SETUP.md).
 
 ```sh
 npm ci
