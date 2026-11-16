@@ -3,7 +3,7 @@ import {notebookCardOf} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
 
 /* Cartões de caderno na bandeja do tutor principal: a página que o Ambitus
-   manda quando o modo mini está ligado (`ambitus-page.mjs` decide o destino).
+   manda, com ou sem o modo mini (`ambitus-page.mjs`).
    O desenho vem de `notebook-card.mjs`, o mesmo do chat lateral. O caminho do
    arquivo fica ESCONDIDO no cartão e segue ao motor no envio (`notebooks` do
    `pi-prompt`, `tutor-prompt-host.cjs`), nunca ao texto que a pessoa vê.

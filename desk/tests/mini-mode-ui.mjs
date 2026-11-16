@@ -3,7 +3,7 @@
 // por cima, sem o cabeçalho da Mesa; o alfinete alterna e guarda a escolha; "Voltar à Mesa" restaura
 // tamanho, lugar e estado (inclusive a tela inteira que já estava ligada); Ctrl+Shift+M alterna; o
 // lugar do mini fica guardado; a página do Ambitus vira cartão de caderno na bandeja do tutor
-// (caminho escondido) só com o mini ligado; fechar no mini grava a janela normal e o Summa abre normal.
+// (caminho escondido) sempre, com ou sem o mini; fechar no mini grava a janela normal e o Summa abre normal.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -151,7 +151,7 @@ await withArtifacts('mini-mode',async ctx=>{
  await page.waitForFunction(()=>!document.body.classList.contains('chat-full'),undefined,{timeout:5000});
  await pollUntil(()=>boundsOf(win),b=>sameBounds(b,normal),{timeout:10000,interval:100,what:'a janela normal depois da tela inteira'});
 
- /* ---- 7. A página do Ambitus: fora do mini vai ao chat lateral, no mini à bandeja do tutor ---- */
+ /* ---- 7. A página do Ambitus vai sempre à bandeja do tutor, com o campo em foco ---- */
  const bridge=()=>JSON.parse(fs.readFileSync(path.join(runtime,'ambitus-bridge.json'),'utf8'));
  await pollUntil(()=>{try{return bridge().port;}catch{return 0;}},v=>!!v,{timeout:15000,interval:100,what:'a ponte do Ambitus subir'});
  const sendPage=async body=>{
@@ -159,17 +159,22 @@ await withArtifacts('mini-mode',async ctx=>{
   const response=await fetch(`http://127.0.0.1:${file.port}/mandar-pagina`,{method:'POST',headers:{'content-type':'application/json','x-summa-token':file.token},body:JSON.stringify(body)});
   return response.status;
  };
+ const card=page.locator('#attachments .attachment.notebook-card');
+ await page.locator('#prompt').evaluate(el=>el.blur());
  assert.equal(await sendPage({caminho:notebook,pagina:2,nome:'Limites — aula 3'}),200);
- await page.waitForSelector('#sidechat-attachments .notebook-card',{timeout:30000});
- assert.equal(await page.locator('#attachments .notebook-card').count(),0,'fora do mini nada muda: o cartão foi ao chat lateral, não ao tutor');
- await page.locator('#sidechat-attachments .attachment-remove').first().click();
+ await card.waitFor({timeout:10000});
+ assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','fora do mini o cartão vai à bandeja do tutor');
+ assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/);
+ assert.equal(await page.locator('#sidechat').isVisible(),false,'o chat lateral não abre');
+ assert.equal(await page.locator('#sidechat-toggle').getAttribute('aria-pressed'),'false','nem fica ligado');
+ assert.equal(await page.locator('#prompt').evaluate(el=>el===document.activeElement),true,'e o foco vai ao campo, para a pergunta');
+ await page.locator('#attachments .attachment-remove').first().click();
 
  await page.keyboard.press('Control+Shift+M');
  await waitMini(true);
  await pollUntil(()=>boundsOf(win),b=>sameBounds(b,moved),{timeout:10000,interval:100,what:'o mini ligar de novo'});
  assert.equal(await page.locator('#sidechat').isVisible(),false,'o chat lateral preso não aparece no mini');
  assert.equal(await sendPage({caminho:notebook,pagina:2,nome:'Limites — aula 3'}),200);
- const card=page.locator('#attachments .attachment.notebook-card');
  await card.waitFor({timeout:10000});
  assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o nome acessível diz o caderno e a página');
  assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/);
