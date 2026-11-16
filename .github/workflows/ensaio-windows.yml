@@ -62,7 +62,7 @@ jobs:
             LATEST="${TO_VERSION#v}"
           else
             npm run update -- --sem-reabrir
-            LATEST="$(curl -fsSL https://api.github.com/repos/FariaDev/mesa-de-estudos/releases/latest | node -p 'JSON.parse(require("fs").readFileSync(0)).tag_name.slice(1)')"
+            LATEST="$(curl -fsSL https://api.github.com/repos/FariaDev/summa/releases/latest | node -p 'JSON.parse(require("fs").readFileSync(0)).tag_name.slice(1)')"
           fi
           INSTALLED="$(node -p 'require("./package.json").version')"
           test "$INSTALLED" = "$LATEST" || { echo "instalada $INSTALLED, publicada $LATEST"; exit 1; }
@@ -121,11 +121,6 @@ jobs:
           # A tag publicada não tem o updater do #47; a partida é este código com
           # a versão do input para a trava anti-rollback deixar aplicar a release.
           node -e 'const fs=require("fs"); for(const f of ["package.json","package-lock.json"]){const p=JSON.parse(fs.readFileSync(f,"utf8")); p.version=process.env.FROM_VERSION; if(p.packages&&p.packages[""])p.packages[""].version=process.env.FROM_VERSION; fs.writeFileSync(f,JSON.stringify(p,null,2)+"\n");}'
-          # Enquanto os assets assinados só existem no mesa-de-estudos, o ensaio
-          # aponta o updater para lá; o código do updater é o deste PR.
-          sed -i 's#FariaDev/summa/releases#FariaDev/mesa-de-estudos/releases#g' updater-core.cjs
-          sed -i 's#FariaDev/summa/tags#FariaDev/mesa-de-estudos/tags#g' updater-core.cjs
-          sed -i 's#FariaDev/summa/releases/download#FariaDev/mesa-de-estudos/releases/download#g' updater-signature.cjs
           npm ci --no-audit --no-fund
           node node_modules/electron/install.js
           echo "DESK=$INSTALL/desk" >> "$GITHUB_ENV"
