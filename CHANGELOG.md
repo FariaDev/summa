@@ -34,12 +34,13 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 - **Instalação mais clara:** os textos batem com as versões reais (Node 22, OpenCode 2.2.7); no Windows, o setup explica a falta do Visual C++ Redistributable.
 - **Atualização:** a instalação por zip registra a origem e se atualiza pelo zip; no Windows, a atualização espera os processos do Electron; o app instalado avisa que usa o runtime do clone.
 - **Janela:** a Summa volta para a tela quando o monitor é desconectado; em janela baixa, o painel Contexto e a fala da primeira abertura continuam inteiros.
-- **Primeira abertura:** fonte maior e a cena acompanha a altura.
+- **Primeira abertura:** fonte maior e a cena acompanha a altura. O passeio **Como funciona** para no primeiro clique ou tecla e não recomeça sozinho; os nomes das cores de acento aparecem inteiros; o resumo da pasta mostra o total de PDFs e a subpasta quando dois têm o mesmo nome.
+- **Diagnóstico:** antes da primeira abertura, o `npm run doctor` marca como pendente o que só existe depois dela, em vez de dar erro.
 - **Conferir no Linux:** com o Ambitus conectado, o Conferir pede a página pela ponte também no Linux.
 - **Tutor:** o MCP da Summa religa sozinho quando cai no meio da sessão; a atividade aparece no ponto em que o tutor a enviou; a prévia sem erro publica o quadro na hora; o `ler_pdf` responde dentro do prazo.
 - **OpenCode 2.2.7** e **Claude Code 2.1.325** testados; Node mínimo 22.
 - **Relatar um problema:** sai do Mais opções do tutor para o menu **Ajustes**, a paleta e o rodapé do Guia, e continua montando o relatório limpo.
-- **Ícone:** o Dock do macOS mantém o ícone do pacote para o tingido, e o desinstalador do Windows recusa com a Summa aberta.
+- **Ícone:** no macOS com ícones tingidos ou transparentes, o Dock e o ⌘Tab mostram o ícone do pacote, que o sistema tinge como os outros; e o desinstalador do Windows recusa com a Summa aberta.
 
 ### Correções
 
@@ -61,7 +62,6 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 - Quem instalou pelo clone do mesa-de-estudos precisa reinstalar uma vez pelo Summa.
 - A leitura da escrita à mão no Ambitus precisa de um modelo pago com visão e fica desligada por padrão.
 - No Windows, a instalação e a primeira conversa foram provadas numa conta limpa; o uso do dia a dia ainda foi testado à mão só no macOS.
-- No macOS com ícones em preto e branco, o ícone da Summa fica colorido enquanto ela está aberta.
 - O instalador do Windows começa por `npm run install-app` num clone: ainda não há instalador gráfico para quem não tem Node.
 
 Para quem já usa: **Sobre → Atualizar e reiniciar**. Quem veio do mesa-de-estudos: reinstale pelo Summa.
