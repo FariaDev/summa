@@ -23,7 +23,7 @@ const desk=path.dirname(fileURLToPath(import.meta.url));
 const nodeFloor=Number(JSON.parse(fs.readFileSync(path.join(desk,'package.json'),'utf8')).engines.node.replace(/[^0-9.]/g,'').split('.')[0]);
 const repo=path.dirname(desk);
 
-/** @typedef {{name: string, ok: boolean, detail: string}} DoctorRow */
+/** @typedef {{name: string, ok: boolean, pending?: boolean, detail: string}} DoctorRow */
 /** @typedef {{config: any, configPath: string, runtime: string, vault: string, courses: Array<{id: string, name: string, path: string}>}} DoctorContext */
 
 /**
@@ -58,12 +58,18 @@ function checkSetup(rows,env,config,home,runtime){
 }
 
 /** @param {DoctorRow[]} rows @param {DoctorContext} context */
-function checkVault(rows,{vault,courses,runtime}){
- const check=(name,ok,detail)=>rows.push({name,ok:!!ok,detail:String(detail??'')});
- check('Vault / pasta de dados',vault&&fs.existsSync(vault),vault||'não configurado');
- for(const name of ['TUTOR.md','LEARNER.md'])check(`Política ${name}`,vault&&fs.existsSync(path.join(vault,name)),vault?path.join(vault,name):'vault não configurado');
+function checkVault(rows,{vault,courses,runtime,config}){
+ /* Primeira abertura pendente (#89): sem vault configurado e sem matéria na
+    config. Vault, políticas e matérias só nascem quando o app abre, então
+    antes disso são pendentes, não falha; um vault configurado que sumiu
+    continua sendo ✗. */
+ const firstRun=!vault&&!(config?.courses||[]).length;
+ const pendingDetail='abra o app e crie a matéria';
+ const check=(name,ok,detail,pending=false)=>rows.push(pending?{name,ok:!!ok,pending:true,detail:String(detail??'')}:{name,ok:!!ok,detail:String(detail??'')});
+ check('Vault / pasta de dados',vault&&fs.existsSync(vault),vault||(firstRun?pendingDetail:'não configurado'),firstRun);
+ for(const name of ['TUTOR.md','LEARNER.md'])check(`Política ${name}`,vault&&fs.existsSync(path.join(vault,name)),vault?path.join(vault,name):firstRun?pendingDetail:'vault não configurado',firstRun);
  check('Capturador visual',process.platform!=='darwin'||fs.existsSync(path.join(repo,'visual-check','windows')),process.platform==='darwin'?path.join(repo,'visual-check','windows'):'não se aplica neste sistema');
- check('Matérias configuradas',courses.length>0,`${courses.length} encontrada(s)`);
+ check('Matérias configuradas',courses.length>0,courses.length?`${courses.length} encontrada(s)`:firstRun?pendingDetail:'0 encontrada(s)',firstRun);
  for(const course of courses){
   const sourceCount=courseLibrary(course.path).length;
   check(`Fontes · ${course.name}`,sourceCount>0,`${sourceCount} PDF(s) acessível(is)`);
@@ -103,13 +109,25 @@ export function doctorChecks({env=process.env,home=os.homedir()}={}){
 }
 
 /**
- * As linhas no formato que o `npm run doctor` sempre imprimiu.
+ * As linhas no formato que o `npm run doctor` sempre imprimiu; pendente da
+ * primeira abertura sai com `…` e não entra na conta (#89).
  * @param {DoctorRow[]} rows
  * @returns {string}
  * @example doctorText([{name:'Node 22+ (setup a partir do código)',ok:true,detail:'v22.19.0'}]) // '✓ Node 22+ (setup a partir do código): v22.19.0\n\nSetup learning pronto.'
  */
 export function doctorText(rows){
- const lines=rows.map(row=>`${row.ok?'✓':'✗'} ${row.name}: ${row.detail}`);
- const failed=rows.filter(r=>!r.ok);
+ const lines=rows.map(row=>`${row.ok?'✓':row.pending?'…':'✗'} ${row.name}: ${row.detail}`);
+ const failed=rows.filter(r=>!r.ok&&!r.pending);
  return `${lines.join('\n')}\n\n${failed.length?`${failed.length} verificação(ões) precisa(m) de atenção.`:'Setup learning pronto.'}`;
+}
+
+/**
+ * O código de saída do `npm run doctor`. Pendente da primeira abertura não é
+ * falha (#89).
+ * @param {DoctorRow[]} rows
+ * @returns {number} 1 quando alguma verificação falhou; 0 quando está tudo certo
+ * @example doctorExitCode([{name:'Matérias configuradas',ok:false,pending:true,detail:'abra o app e crie a matéria'}]) // 0
+ */
+export function doctorExitCode(rows){
+ return rows.some(row=>!row.ok&&!row.pending)?1:0;
 }
