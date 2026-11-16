@@ -367,12 +367,17 @@ export async function createFakeOpencodeServe(options = {}) {
   /* Resposta em VÁRIOS passos (#112), como o 2.2.4 real: cada passo do modelo
      tem o seu `assistantMessageID`, com texto → ferramenta → texto. O teste de
      janela usa este roteiro para provar que a fala do passo anterior não
-     reaparece no fim do turno. */
+     reaparece no fim do turno. `think` entra no começo do passo, no MESMO
+     `assistantMessageID` da fala (#104: pensamento e texto no mesmo passo). */
   function runSteps(session, steps, index = 0) {
     if (index >= steps.length) { endTurn(session); emit('session.execution.succeeded', {sessionID: session.id}); return; }
     const step = steps[index];
     const assistantID = `msg_s${index}${Math.random().toString(36).slice(2, 10)}`;
     emit('session.step.started', {sessionID: session.id, assistantMessageID: assistantID});
+    if (step.think) {
+      emit('session.reasoning.delta', {sessionID: session.id, assistantMessageID: assistantID, delta: step.think});
+      emit('session.reasoning.ended', {sessionID: session.id, assistantMessageID: assistantID, text: step.think});
+    }
     if (step.text) {
       emit('session.text.started', {sessionID: session.id, assistantMessageID: assistantID});
       emit('session.text.delta', {sessionID: session.id, assistantMessageID: assistantID, delta: step.text.slice(0, 8)});
@@ -387,7 +392,7 @@ export async function createFakeOpencodeServe(options = {}) {
       emit('session.tool.success', {sessionID: session.id, assistantMessageID: assistantID, id: callID, content: output});
       toolPart = {type: 'tool', id: callID, name: step.tool.name, state: {status: 'completed', input: step.tool.input || {}, content: output, structured: {}}, time: {created: Date.now(), completed: Date.now()}};
     }
-    session.messages.push({id: assistantID, type: 'assistant', content: [...(step.text ? [{type: 'text', text: step.text}] : []), ...(toolPart ? [toolPart] : [])], time: {created: Date.now()}, tokens: state.tokens, model: session.model || {id: models[0]?.id, providerID: 'opencode'}});
+    session.messages.push({id: assistantID, type: 'assistant', content: [...(step.think ? [{type: 'thinking', thinking: step.think}] : []), ...(step.text ? [{type: 'text', text: step.text}] : []), ...(toolPart ? [toolPart] : [])], time: {created: Date.now()}, tokens: state.tokens, model: session.model || {id: models[0]?.id, providerID: 'opencode'}});
     emit('session.step.ended', {sessionID: session.id, assistantMessageID: assistantID});
     later(session, state.turnDelay, () => runSteps(session, steps, index + 1));
   }
