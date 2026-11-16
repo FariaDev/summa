@@ -2,7 +2,7 @@
 
 ## 1.3.0
 
-A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A escrita à mão do Ambitus entra na conversa, o tutor cabe numa janela pequena e a leitura ficou mais perto de você. Quem instalou pelo mesa-de-estudos precisa reinstalar uma vez pelo Summa.
+A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A escrita à mão do Ambitus entra na conversa, o tutor cabe numa janela pequena e a leitura ficou mais perto de você. Quem instalou pelo zip recebe tudo pelo **Atualizar**; só quem clonou o mesa-de-estudos reinstala uma vez pelo Summa.
 
 ### Antes de atualizar
 
@@ -64,7 +64,7 @@ A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A e
 - No Windows, a instalação e a primeira conversa foram provadas numa conta limpa; o uso do dia a dia ainda foi testado à mão só no macOS.
 - O instalador do Windows começa por `npm run install-app` num clone: ainda não há instalador gráfico para quem não tem Node.
 
-Para quem já usa: **Sobre → Atualizar e reiniciar**. Quem veio do mesa-de-estudos: reinstale pelo Summa.
+Para quem já usa: **Sobre → Atualizar e reiniciar**. Quem clonou o mesa-de-estudos: reinstale pelo Summa.
 
 ## 1.2.0
 
