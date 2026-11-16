@@ -1,0 +1,42 @@
+/* Plano de estudo na barra de cima (#110): o gatilho ao lado de Caderno e
+   GeoGebra e a lista suspensa da matéria. Usa só os tokens do app (style.css),
+   então vale no claro e no escuro e segue o acento. */
+#study-plan-menu{flex:none;align-self:stretch;display:flex;align-items:center}
+#study-plan-menu .study-plan-trigger{display:inline-flex;align-items:center;gap:var(--space-2);max-width:320px;padding:0 var(--space-3);color:var(--muted)}
+#study-plan-menu .study-plan-trigger:hover{color:var(--fg)}
+#study-plan-menu .study-plan-icon{display:inline-flex;flex:none}
+#study-plan-menu .study-plan-icon .icon{width:14px;height:14px}
+#study-plan-menu .study-plan-now{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--faint)}
+#study-plan-menu .study-plan-now:empty{display:none}
+#study-plan-pop{left:0;right:auto;width:360px;max-width:calc(100vw - 2 * var(--pad));max-height:min(560px,70vh);overflow-y:auto;padding:var(--space-2);gap:var(--space-1);cursor:default}
+.study-plan-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 var(--space-1);font-size:var(--fs-sm);font-weight:600;color:var(--fg-strong)}
+.study-plan-count{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.study-plan-list{display:flex;flex-direction:column;gap:var(--space-hairline)}
+.study-plan-row{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-1) var(--space-2);border-radius:var(--r-sm)}
+.study-plan-row:hover,.study-plan-row:focus-within{background:var(--hover)}
+.study-plan-row.now{position:relative;background:var(--tint)}
+.study-plan-row.now::before{content:"";position:absolute;left:0;top:var(--space-1);bottom:var(--space-1);width:2px;border-radius:var(--r-sm);background:var(--accent-fill)}
+.study-plan-row>input[type="checkbox"]{flex:none;margin:5px 0 0;accent-color:var(--accent-fill);cursor:pointer}
+.study-plan-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.study-plan-text{width:100%;min-width:0;box-sizing:border-box;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;padding:2px var(--space-1);font:inherit;font-size:var(--fs-sm);color:var(--fg);box-shadow:none}
+.study-plan-text:hover{background:var(--surface)}
+.study-plan-text:focus{outline:none;background:var(--raised);border-color:var(--accent-fill)}
+.study-plan-row.done .study-plan-text{color:var(--faint);text-decoration:line-through}
+.study-plan-meta{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2);min-width:0;padding-inline-start:var(--space-1);font-size:var(--fs-xs);color:var(--faint)}
+.study-plan-meta:empty{display:none}
+.study-plan-ref{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+#study-plan-pop button{width:auto;height:auto}
+#study-plan-pop .study-plan-meta button{border:0;padding:0 var(--space-1);font:inherit;font-size:var(--fs-xs);color:var(--accent-text);border-radius:var(--r-sm)}
+.study-plan-meta button:hover{text-decoration:underline}
+.study-plan-tools{display:flex;gap:2px;flex:none;opacity:0;transition:opacity var(--t-fast) var(--ease-out)}
+.study-plan-row:hover .study-plan-tools,.study-plan-row:focus-within .study-plan-tools{opacity:1}
+#study-plan-pop .study-plan-tool{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;background:transparent;color:var(--muted);border-radius:var(--r-sm)}
+#study-plan-pop .study-plan-tool:hover{background:var(--active);color:var(--fg)}
+#study-plan-pop .study-plan-tool .icon{width:14px;height:14px}
+#study-plan-pop .study-plan-tool.down .icon{transform:rotate(180deg)}
+#study-plan-pop .study-plan-add{align-self:flex-start;border:0;background:transparent;padding:var(--space-1) var(--space-2);font:inherit;font-size:var(--fs-sm);color:var(--muted);border-radius:var(--r-sm)}
+#study-plan-pop .study-plan-add:hover{background:var(--hover);color:var(--fg)}
+.study-plan-notes{display:flex;flex-direction:column;gap:var(--space-1);margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--border)}
+.study-plan-notes .study-plan-label{font-size:var(--fs-xs);color:var(--muted)}
+.study-plan-notes textarea{width:100%;box-sizing:border-box;min-height:84px;resize:vertical;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);padding:var(--space-2);font:inherit;font-size:var(--fs-sm);color:var(--fg)}
+.study-plan-notes textarea:focus{outline:none;border-color:var(--accent-fill);background:var(--raised)}

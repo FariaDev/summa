@@ -38,6 +38,8 @@
   "chat-pdf-host.cjs",
   "pdf-render-preload.cjs",
   "src/accent-picker.mjs",
+  "src/study-plan.mjs",
+  "src/study-plan-view.mjs",
   "src/extensions/mesa-mcp/pdf-tool.mjs",
   "scripts/measure-boot.mjs",
   "src/pdfjs-loader.mjs",

@@ -79,7 +79,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
    const previous=courseStates[live.courseId]||{};
    const sessionStudies={...(previous.sessionStudies||{}),[live.session]:cleanStudy(live.state.study)};
    const sessionLayouts={...(previous.sessionLayouts||{}),[live.session]:chatState.capture({...live.state,study:cleanStudy(live.state.study)})};
-   courseStates[live.courseId]={pdfs:live.state.pdfs,materialFolders:live.state.materialFolders||{},referenceVisible:live.state.referenceVisible,chatWidth:live.state.chatWidth,calcHeight:live.state.calcHeight,pdfSplit:live.state.pdfSplit,draft:live.state.draft,study:cleanStudy(live.state.study),pdfRotations:live.state.pdfRotations||{},sessionStudies,sessionLayouts,session:live.session,sessions:courseSessions()};
+   courseStates[live.courseId]={pdfs:live.state.pdfs,materialFolders:live.state.materialFolders||{},referenceVisible:live.state.referenceVisible,chatWidth:live.state.chatWidth,calcHeight:live.state.calcHeight,pdfSplit:live.state.pdfSplit,draft:live.state.draft,study:cleanStudy(live.state.study),pdfRotations:live.state.pdfRotations||{},studyPlan:live.state.studyPlan,sessionStudies,sessionLayouts,session:live.session,sessions:courseSessions()};
    ggbCache.persist(live.courseId,typeof live.state.ggbBase64==='string'?live.state.ggbBase64:'');
   }
   const payload=deskPayload();
@@ -109,7 +109,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
   const ggbSaved=ggbCache.read(live.courseId)||saved.ggbBase64||'';
   ggbCache.remember(live.courseId,ggbSaved);
   const layout=deskLayout({...saved,theme:live.state.theme});
-  live.state={...live.state,pdfs:saved.pdfs||[],materialFolders:saved.materialFolders||{},pdfRotations:saved.pdfRotations||{},referenceVisible:layout.referenceVisible,chatWidth:layout.chatWidth,calcHeight:layout.calcHeight,pdfSplit:layout.pdfSplit,draft:layout.draft,theme:layout.theme,ggbBase64:ggbSaved,study:restoredStudy};
+  live.state={...live.state,pdfs:saved.pdfs||[],materialFolders:saved.materialFolders||{},pdfRotations:saved.pdfRotations||{},referenceVisible:layout.referenceVisible,chatWidth:layout.chatWidth,calcHeight:layout.calcHeight,pdfSplit:layout.pdfSplit,draft:layout.draft,theme:layout.theme,ggbBase64:ggbSaved,study:restoredStudy,studyPlan:saved.studyPlan};
   ggb.resetRestored();
  }
  /* Registro de retomada da matéria ativa (o cartão do "Encerrar por hoje"). O

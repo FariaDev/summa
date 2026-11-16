@@ -2903,5 +2903,20 @@
   "pdf.material.listAria": "Materiais de {label}",
   "pdf.material.noMatch": "Nenhum material com “{query}”.",
   "pdf.material.search": "Buscar materiais…",
-  "pdf.material.searchAria": "Buscar material"
+  "pdf.material.searchAria": "Buscar material",
+  "plan.add": "Nova tarefa",
+  "plan.count": "{done} de {total}",
+  "plan.done": "Feita",
+  "plan.down": "Descer tarefa",
+  "plan.link": "ligar ao PDF aberto",
+  "plan.linked": "{name} · p. {page}",
+  "plan.notes": "Anotações",
+  "plan.now": "· agora: {text}",
+  "plan.open": "abrir",
+  "plan.relink": "trocar pelo PDF aberto",
+  "plan.remove": "Apagar tarefa",
+  "plan.task": "Tarefa",
+  "plan.title": "Plano de estudo",
+  "plan.trigger": "Plano",
+  "plan.up": "Subir tarefa"
 }
