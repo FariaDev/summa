@@ -173,8 +173,9 @@ const FORMULAS = {
  * @example writeSampleMaterials('/tmp/calc', 'pt')
  */
 export function writeSampleMaterials(folder, lang){
-  const list = `${folder}/lista-derivadas-${lang}.pdf`;
-  const formula = `${folder}/formulario-derivadas-${lang}.pdf`;
+  /* Nome na língua da captura: a aba mostra o arquivo. */
+  const list = `${folder}/${lang === 'en' ? 'problem-set' : 'lista-derivadas'}.pdf`;
+  const formula = `${folder}/${lang === 'en' ? 'formula-sheet' : 'formulario-derivadas'}.pdf`;
   fs.writeFileSync(list, buildPdf(EXERCISES[lang]));
   fs.writeFileSync(formula, buildPdf([FORMULAS[lang]]));
   return {list, formula};

@@ -50,17 +50,17 @@ function conversationMessages(lang, list) {
   };
   if (lang === 'en') {
     return [
-      {role: 'user', content: [{type: 'text', text: 'Can you check if I derived f(x) = x³ - 3x² + 4 correctly?'}], timestamp: now},
+      {role: 'user', content: [{type: 'text', text: 'I got f\'(x) = 3x² - 3x for f(x) = x³ - 3x² + 4. Is that right?'}], timestamp: now},
       {role: 'assistant', content: [{type: 'text', text: 'Let me check the problem set and the formula sheet.'}, {type: 'toolCall', id: 'read-1', name: 'mesa_ler_pdf', arguments: {caminho: list, pagina: 1}}], timestamp: now + 1_000, model: 'opencode/deepseek-v4.1-flash-free'},
       toolResult,
-      {role: 'assistant', content: [{type: 'text', text: 'Your derivative is **almost right**: $f\'(x) = 3x² - 6x$. The only slip is the sign of the middle term — when you differentiate $-3x²$, the minus goes with the 3, so it becomes $-6x$.\n\nCheck it with the power rule:\n\n$$\\frac{d}{dx}(x^n) = n x^{n-1}$$\n\nNow try question 3 on the list: the tangent line at $x = 2$ uses $f\'(2) = 12$.'}], timestamp: now + 5_000},
+      {role: 'assistant', content: [{type: 'text', text: '**Almost.** The first term is right, and the constant really does vanish. Look again at the middle term, $-3x^2$, with the power rule:\n\n$$\\frac{d}{dx}(x^n) = n x^{n-1}$$\n\nThe exponent comes down and **multiplies** the coefficient. What do you get for $-3x^2$ now?'}], timestamp: now + 5_000},
     ];
   }
   return [
-    {role: 'user', content: [{type: 'text', text: 'Pode conferir se eu derivei certo a função f(x) = x³ - 3x² + 4?'}], timestamp: now},
+    {role: 'user', content: [{type: 'text', text: 'Derivei f(x) = x³ - 3x² + 4 e deu f\'(x) = 3x² - 3x. Está certo?'}], timestamp: now},
     {role: 'assistant', content: [{type: 'text', text: 'Vou conferir a lista e o formulário.'}, {type: 'toolCall', id: 'read-1', name: 'mesa_ler_pdf', arguments: {caminho: list, pagina: 1}}], timestamp: now + 1_000, model: 'opencode/deepseek-v4.1-flash-free'},
     toolResult,
-    {role: 'assistant', content: [{type: 'text', text: 'Sua derivada está **quase certa**: $f\'(x) = 3x² - 6x$. O único deslize é o sinal do termo do meio — ao derivar $-3x²$, o menos acompanha o 3, então vira $-6x$.\n\nConfira pela regra do tombo:\n\n$$\\frac{d}{dx}(x^n) = n x^{n-1}$$\n\nAgora tente a questão 3 da lista: a reta tangente em $x = 2$ usa $f\'(2) = 12$.'}], timestamp: now + 5_000},
+    {role: 'assistant', content: [{type: 'text', text: '**Quase.** O primeiro termo está certo, e a constante some mesmo. Olhe de novo o termo do meio, $-3x^2$, com a regra do tombo:\n\n$$\\frac{d}{dx}(x^n) = n x^{n-1}$$\n\nO expoente desce e **multiplica** o coeficiente. Quanto dá $-3x^2$ agora?'}], timestamp: now + 5_000},
   ];
 }
 
