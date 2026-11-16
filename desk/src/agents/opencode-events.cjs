@@ -312,12 +312,18 @@ class OpenCodeEventReader {
       if (entry.thinking) content.push({type: 'thinking', thinking: entry.thinking});
       if (entry.text) content.push({type: 'text', text: entry.text});
       for (const part of tools) content.push({...part});
+      /* O texto vivo chega como bloco 0 (`textDelta`) e o `message_end` usa a
+         MESMA chave. O pensamento vai antes no `content` para o diário
+         reconstruído (#146), mas não é bloco de fala: sem `contentIndexes` o
+         renderer usava o índice do array (1) e abria um segundo balão com a
+         mesma fala (#104). Ferramentas mantêm o índice do fio. */
+      const contentIndexes = content.map((part, index) => (part.type === 'text' ? 0 : index));
       const model = this.models.get(messageID) || null;
       this.parts.delete(messageID);
       for (const part of tools) this.toolParts.delete(part.id);
       this.started.delete(messageID);
       this.models.delete(messageID);
-      this.emit('message_end', {message: {role: entry.role || 'assistant', id: messageID, uuid: messageID, ...(model || {}), content, timestamp: entry.startedAt || this.now()}});
+      this.emit('message_end', {message: {role: entry.role || 'assistant', id: messageID, uuid: messageID, ...(model || {}), content, contentIndexes, timestamp: entry.startedAt || this.now()}});
     }
   }
 }
