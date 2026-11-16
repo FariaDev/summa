@@ -1,5 +1,13 @@
 # Novidades da Summa
 
+## 1.3.1
+
+Correções. Quem tem a 1.3.0 recebe pelo **Atualizar**.
+
+- **Resposta duplicada:** a resposta do tutor não aparece mais duas vezes no mesmo balão quando o modelo pensa antes de responder.
+- **Página preta do Ambitus:** a página e a tinta que o Ambitus manda chegam ao tutor sobre fundo branco, e não mais pretas.
+- **Página do Ambitus no tutor:** a página que o Ambitus envia vai direto para a pergunta do tutor principal, com o campo em foco. O chat lateral continua lá para quem quiser usar.
+
 ## 1.3.0
 
 A Mesa virou **Summa**, ganhou casa nova e chegou ao Windows com instalador. A escrita à mão do Ambitus entra na conversa, o tutor cabe numa janela pequena e a leitura ficou mais perto de você. Quem instalou pelo zip recebe tudo pelo **Atualizar**; só quem clonou o mesa-de-estudos reinstala uma vez pelo Summa.
