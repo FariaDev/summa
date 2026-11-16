@@ -11,13 +11,16 @@ import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {decodePng} from './png-pixels.mjs';
 
 const require = createRequire(import.meta.url);
 const {BRIDGE_NAME, PNG_CAP, createAmbitusBridgeHost, inkReadingEnabled, isPng} = require('../ambitus-bridge-host.cjs');
 const {createFakeInkReader} = require('./fake-ink-reader.cjs');
 
-/* Um PNG 1×1 de verdade: a ponte só confere a assinatura, mas o corpo é real. */
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
+/* Um PNG 1×1 RGB opaco de verdade: o achatamento da #105 devolve os mesmos bytes. */
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC', 'base64');
+/* 1×1 RGBA amarelo com alfa 127, como a tinta do Ambitus em fundo transparente (#105). */
+const HALF_ALPHA_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
 
 function tempRuntime(t, tag) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `summa-ambitus-${tag}-`));
@@ -74,6 +77,16 @@ test('pedido válido: {text}, o leitor recebe o PNG em base64 e o modelo conferi
   assert.deepEqual(result.json, {text: '∫ x dx'});
   assert.equal(reader.calls[0], PNG.toString('base64'));
   assert.deepEqual(reader.selections[0], {model: 'p/visao', effort: 'high'});
+});
+
+test('ler-tinta com alfa: o leitor recebe o PNG achatado sobre branco, sem alfa (#105)', async (t) => {
+  const {host, reader} = startedHost(t);
+  await host.start();
+  const result = await post(host, {body: HALF_ALPHA_PNG});
+  assert.equal(result.status, 200);
+  const flat = decodePng(reader.calls[0]);
+  assert.equal(flat.channels, 3);
+  assert.deepEqual([...flat.pixels.subarray(0, 3)], [255, 255, 128]);
 });
 
 test('leitura desligada: a ponte fica no ar e responde disabled sem chamar o leitor', async (t) => {

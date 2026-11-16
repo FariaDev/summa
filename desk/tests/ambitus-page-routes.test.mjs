@@ -8,15 +8,46 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import {createRequire} from 'node:module';
+import {decodePng, pixelAt} from './png-pixels.mjs';
 
 const require = createRequire(import.meta.url);
 const {ANSWER_CAP, createAmbitusBridgeHost, parsePageAnswer} = require('../ambitus-bridge-host.cjs');
 const {createPageBroker} = require('../ambitus-page-broker.cjs');
 const {requestAmbitusPage} = require('../ambitus-bridge-wiring.cjs');
 
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', 'base64');
+/* 1×1 RGB opaco: o achatamento da #105 devolve o original e os testes de
+   passagem comparam os mesmos bytes; o fundo transparente tem teste próprio. */
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC', 'base64');
 const PNG_B64 = PNG.toString('base64');
+const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+/** Um pedaço do PNG: tamanho + tipo + dados + CRC. @param {string} type @param {Buffer} data */
+function pngChunk(type, data) {
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(data.length, 0);
+  head.write(type, 4, 'latin1');
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(zlib.crc32(data, zlib.crc32(Buffer.from(type, 'latin1'))) >>> 0, 0);
+  return Buffer.concat([head, data, crc]);
+}
+
+/** PNG 4×4 RGBA com o fundo transparente e um pixel preto opaco em (1,1), o caso da #105. */
+function transparentInkPng() {
+  const width = 4;
+  const height = 4;
+  const stride = width * 4;
+  const raw = Buffer.alloc(height * (stride + 1));
+  const ink = 1 * (stride + 1) + 1 + 1 * 4;
+  raw[ink + 3] = 255;
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  return Buffer.concat([SIGNATURE, pngChunk('IHDR', ihdr), pngChunk('IDAT', zlib.deflateSync(raw)), pngChunk('IEND', Buffer.alloc(0))]);
+}
 
 async function startedBridge(t, brokerOptions = {}) {
   const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-routes-'));
@@ -66,6 +97,24 @@ test('o Conferir pede: o long-poll recebe {pedido} e a resposta chega ao Conferi
   const outcome = await asking;
   assert.equal(outcome.ok, true);
   assert.deepEqual({...outcome.answer}, good(pedido));
+});
+
+test('o PNG da página chega ao Conferir achatado sobre branco (#105)', async (t) => {
+  const {poll, answer, pageBroker} = await startedBridge(t);
+  const pending = poll();
+  await untilConnected(pageBroker);
+  const asking = pageBroker.request();
+  const {pedido} = await (await pending).json();
+  const transparent = transparentInkPng();
+  assert.equal((await answer(good(pedido, {png: transparent.toString('base64')}))).status, 200);
+  const outcome = await asking;
+  assert.equal(outcome.ok, true);
+  const flat = decodePng(outcome.answer.png);
+  assert.deepEqual(pixelAt(flat, 0, 0), {r: 255, g: 255, b: 255, a: 255}, 'o fundo transparente sai branco');
+  assert.deepEqual(pixelAt(flat, 1, 1), {r: 0, g: 0, b: 0, a: 255}, 'a tinta preta continua preta');
+  for (let y = 0; y < flat.height; y += 1) {
+    for (let x = 0; x < flat.width; x += 1) assert.equal(pixelAt(flat, x, y).a, 255, `o pixel (${x},${y}) é opaco`);
+  }
 });
 
 test('sem documento aberto o Ambitus responde {pedido, erro: "sem-pagina"}', async (t) => {

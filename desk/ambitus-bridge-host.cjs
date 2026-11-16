@@ -21,6 +21,7 @@ const http = require('node:http');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const {createLifecycleQueue, removeOwnedBridge, removeOrphanBridge, closeServer} = require('./ink-bridge-lifecycle.cjs');
+const {flattenPng} = require('./png-flatten.cjs');
 
 const BRIDGE_NAME = 'ambitus-bridge.json';
 /* Uma página do Ambitus sai em ~1600 px de largura; 8 MB cobre página com
@@ -125,11 +126,21 @@ function readPngBody(req, res, cap = PNG_CAP) {
   });
 }
 
-/** O campo `png` (base64) de uma página: assinatura de PNG e o mesmo teto de bytes de `/pagina-atual`. @param {unknown} png @returns {boolean} */
-function validPagePng(png) {
-  if (typeof png !== 'string' || !png || !/^[A-Za-z0-9+/]+={0,2}$/.test(png)) return false;
+/**
+ * O campo `png` (base64) de uma página: assinatura de PNG, o mesmo teto de
+ * bytes de `/pagina-atual` e o achatamento sobre branco (#105) antes de o PNG
+ * chegar ao motor, à miniatura ou ao disco.
+ * @param {unknown} png
+ * @param {(line: string) => void} [log] uma linha quando o formato do PNG não é achatado
+ * @returns {string|null} o base64 opaco, ou null quando não é um PNG válido
+ * @example flattenPagePng(PNG_B64) // o mesmo base64, se o PNG já for opaco
+ */
+function flattenPagePng(png, log = () => {}) {
+  if (typeof png !== 'string' || !png || !/^[A-Za-z0-9+/]+={0,2}$/.test(png)) return null;
   const bytes = Buffer.from(png, 'base64');
-  return bytes.length <= PNG_CAP && isPng(bytes);
+  if (bytes.length > PNG_CAP || !isPng(bytes)) return null;
+  const flat = flattenPng(bytes, log);
+  return flat === bytes ? png : flat.toString('base64');
 }
 
 /**
@@ -138,10 +149,11 @@ function validPagePng(png) {
  * e, opcional, o PNG já renderizado pelo Ambitus em base64 (o mesmo formato de
  * `/pagina-atual`); com ele a Summa não renderiza do disco.
  * @param {Buffer|null} body
+ * @param {(line: string) => void} [log] uma linha quando o formato do PNG não é achatado
  * @returns {{caminho: string, pagina: number, nome: string, png?: string}|null}
  * @example parsePageRequest(Buffer.from('{"caminho":"/c/a.xopp","pagina":2}')) // {caminho: '/c/a.xopp', pagina: 2, nome: ''}
  */
-function parsePageRequest(body) {
+function parsePageRequest(body, log = () => {}) {
   if (!body) return null;
   let raw;
   try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
@@ -149,9 +161,10 @@ function parsePageRequest(body) {
   const {caminho, pagina, nome, png} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown}} */ (raw);
   if (typeof caminho !== 'string' || caminho.length > 4096 || !path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho) || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
-  if (png !== undefined && !validPagePng(png)) return null;
+  const flatPng = png === undefined ? null : flattenPagePng(png, log);
+  if (png !== undefined && !flatPng) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {caminho, pagina: /** @type {number} */ (pagina), nome: name, ...(typeof png === 'string' ? {png} : {})};
+  return {caminho, pagina: /** @type {number} */ (pagina), nome: name, ...(flatPng ? {png: flatPng} : {})};
 }
 
 /**
@@ -159,12 +172,13 @@ function parsePageRequest(body) {
  * `{pedido, erro: 'sem-pagina'}`, ou `{pedido, caminho, pagina, nome, png}`
  * com o PNG em base64. `caminho` vazio é um caderno que nunca foi salvo; com
  * valor, vale a mesma regra de `/mandar-pagina`. O PNG é conferido pela
- * assinatura e pelo teto de bytes.
+ * assinatura e pelo teto de bytes, e achatado sobre branco (#105).
  * @param {Buffer|null} body
+ * @param {(line: string) => void} [log] uma linha quando o formato do PNG não é achatado
  * @returns {{pedido: string, erro: 'sem-pagina'}|{pedido: string, caminho: string, pagina: number, nome: string, png: string}|null}
  * @example parsePageAnswer(Buffer.from('{"pedido":"ab","erro":"sem-pagina"}')) // {pedido: 'ab', erro: 'sem-pagina'}
  */
-function parsePageAnswer(body) {
+function parsePageAnswer(body, log = () => {}) {
   if (!body) return null;
   let raw;
   try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
@@ -175,9 +189,10 @@ function parsePageAnswer(body) {
   if (typeof caminho !== 'string' || caminho.length > 4096 || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
   if (caminho && (!path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho))) return null;
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
-  if (!validPagePng(png)) return null;
+  const flatPng = flattenPagePng(png, log);
+  if (!flatPng) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png: /** @type {string} */ (png)};
+  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png: flatPng};
 }
 
 /** Host e token conferidos: só 127.0.0.1/localhost na porta da ponte (DNS rebinding) e o token do arquivo. @param {import('node:http').IncomingMessage} req @param {{token: string, port: number}} identity @returns {boolean} */
@@ -208,6 +223,8 @@ function authorized(req, identity) {
  * `pageBroker`): o Ambitus não tem servidor e segura um long-poll; a Summa o
  * responde `{pedido}` (ou 204 após ~25 s) e o Ambitus devolve a página
  * renderizada do documento em memória. Mesmo token, um long-poll por vez.
+ * Toda página que chega pela ponte (o PNG de `/pagina-atual` e o opcional de
+ * `/mandar-pagina`) é achatada sobre branco antes de qualquer uso (#105).
  * @param {{runtime: string, deskState?: () => unknown,
  *   readText: (png: string, options: {signal: AbortSignal, selection: {model: string, effort: string|null}}) => Promise<{text: string|null, reason: string|null}>,
  *   pickModel: (() => {model: string|null, effort?: string|null, reason: string|null})|null,
@@ -313,7 +330,9 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
         if (!res.writableEnded) try { controller.abort(); } catch { /* já encerrou */ }
       });
       const start = now();
-      const result = await readPage(png, controller);
+      /* #105: o Ambitus manda tinta em fundo transparente e o modelo de visão
+         descarta o alfa e lê preto no preto; achata sobre branco como a página. */
+      const result = await readPage(flattenPng(png, log), controller);
       log(`ambitus: ler-tinta ${result.reason || 'pronto'} em ${Math.max(0, now() - start)} ms`);
       bridgeReply(res, 200, result);
     } catch {
@@ -352,7 +371,7 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
       return;
     }
     const body = await readPngBody(req, res, ANSWER_CAP);
-    const answer = parsePageAnswer(body);
+    const answer = parsePageAnswer(body, log);
     if (!answer) {
       /* Corpo estragado: se der para ler o id, o pedido falha na hora, sem esperar o teto. */
       let id = '';
@@ -376,7 +395,7 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
       bridgeReply(res, 400, {reason: 'bad-request'});
       return;
     }
-    const page = parsePageRequest(await readPngBody(req, res, ANSWER_CAP));
+    const page = parsePageRequest(await readPngBody(req, res, ANSWER_CAP), log);
     if (!page) {
       bridgeReply(res, 400, {reason: 'bad-request'});
       return;
