@@ -330,7 +330,9 @@ function createAmbitusBridgeHost({runtime, deskState = () => ({}), readText, pic
         if (!res.writableEnded) try { controller.abort(); } catch { /* já encerrou */ }
       });
       const start = now();
-      const result = await readPage(png, controller);
+      /* #105: o Ambitus manda tinta em fundo transparente e o modelo de visão
+         descarta o alfa e lê preto no preto; achata sobre branco como a página. */
+      const result = await readPage(flattenPng(png, log), controller);
       log(`ambitus: ler-tinta ${result.reason || 'pronto'} em ${Math.max(0, now() - start)} ms`);
       bridgeReply(res, 200, result);
     } catch {
