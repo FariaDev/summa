@@ -121,7 +121,10 @@ body[data-first-run] #setup[data-dragging] .setup-card{outline-color:var(--accen
 #setup-language{display:flex;gap:8px}
 /* Acento no passo Boas-vindas (#70): as opções das Configurações, numa linha. */
 .setup-accent{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.setup-accent .accent-options{grid-template-columns:repeat(6,minmax(0,1fr))}
+/* #88: eram 6 colunas de quando havia 6 acentos; com dois, cada coluna ficava
+   com 43px e o rótulo nowrap invadia a vizinha ("Graphite" cortado). Duas
+   colunas que crescem até o texto, como o #25 nas Configurações. */
+.setup-accent .accent-options{grid-template-columns:repeat(2,minmax(max-content,1fr))}
 .setup-accent .accent-option{padding:0 var(--space-2);gap:6px}
 .setup-folder-remove{align-self:flex-start;margin:2px 0 0;font-size:var(--fs-sm)}
 #setup-language button{width:200px;height:56px;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding:0 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);text-align:left;color:var(--fg-strong)}

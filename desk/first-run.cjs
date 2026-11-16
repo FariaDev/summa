@@ -1,6 +1,6 @@
 const fs=require('node:fs');const path=require('node:path');
 const {message: uiMsg}=require('./src/i18n.mjs');
-const {courseLibrary}=require('./courses.cjs');
+const {courseLibrary,pdfFolderOf}=require('./courses.cjs');
 
 /* Primeira abertura dentro do app (ticket #21). O que a pessoa soltou no
    quadro da folha "Lista 0 — Montar a mesa" vira UMA pasta de PDFs, a da
@@ -20,9 +20,18 @@ const samePath=(a,b)=>process.platform==='win32'?a.toLowerCase()===b.toLowerCase
 
 /* Os PDFs da pasta, em ordem de nome (a tela da #64 mostra os primeiros). São
    os que a biblioteca da matéria vai listar (`courseLibrary`, com subpastas):
-   antes só a raiz contava e uma pasta com tudo em subpastas dava zero (#70). */
+   antes só a raiz contava e uma pasta com tudo em subpastas dava zero (#70).
+   #88: dois PDFs de mesmo nome em pastas diferentes saíam iguais no resumo;
+   o repetido ganha a subpasta relativa à raiz varrida (`pdfFolderOf`, #74). */
 function listPdfs(folder){
- return courseLibrary(folder).map(pdf=>pdf.name).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+ const pdfs=courseLibrary(folder);
+ const count=new Map();
+ for(const pdf of pdfs)count.set(pdf.name,(count.get(pdf.name)||0)+1);
+ return pdfs.map(pdf=>{
+  if(count.get(pdf.name)<2)return pdf.name;
+  const sub=pdfFolderOf(folder,pdf.path);
+  return sub?`${sub}/${pdf.name}`:pdf.name;
+ }).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
 }
 const PDF_NAMES=4;
 
