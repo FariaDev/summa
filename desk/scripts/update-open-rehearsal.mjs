@@ -32,7 +32,7 @@ const ELECTRON = process.env.ELECTRON_BIN || path.join(DESK, 'node_modules', 'el
 const RUNTIME = path.resolve(process.env.ENSAIO_RUNTIME || path.join(DESK, '.runtime-mesa-aberta'));
 const LOG = path.join(RUNTIME, 'desk.log');
 const SENTINEL = path.join(DESK, 'node_modules', '.ensaio-mesa-aberta');
-const RELEASE_API = 'https://api.github.com/repos/FariaDev/mesa-de-estudos/releases/latest';
+const RELEASE_API = 'https://api.github.com/repos/FariaDev/summa/releases/latest';
 const MCP_GRACE_MS = 6000;
 const UPDATE_TIMEOUT_MS = 15 * 60 * 1000;
 
