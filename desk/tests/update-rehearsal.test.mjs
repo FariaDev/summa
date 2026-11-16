@@ -6,6 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {execFileSync, spawnSync} from 'node:child_process';
 import {auditUpdatedInstall, previousReleaseTag, rehearseUpdate} from '../scripts/update-rehearsal.mjs';
+import {buildReleaseZip} from '../scripts/update-zip.mjs';
+import {releaseAssetsFetcher} from './fake-release-assets.mjs';
 
 const DESK = path.resolve(import.meta.dirname, '..');
 const KEY = 'CHAVE PUBLICA\n';
@@ -67,8 +69,9 @@ test('auditoria acusa arquivo ausente, arquivo diferente, versão errada e dado 
   assert.match(auditUpdatedInstall(input)[0], /dado do usuário alterado: desk\/config\.json/);
 });
 
-/* Fake do updater publicado: como o da 1.0.2, não copia `.pub`. */
-function fakePreviousUpdater() {
+/* Fake do updater publicado: como o da 1.0.2, não copia `.pub`; com `copyPub`,
+   como o da 1.2.0, que já leva a chave. */
+function fakePreviousUpdater({copyPub = false} = {}) {
   const realFiles = JSON.stringify(path.join(DESK, 'updater-files.cjs'));
   return `const fs=require('node:fs');const path=require('node:path');
 const {readZip,stripCommonRoot}=require(${realFiles});
@@ -76,7 +79,7 @@ module.exports={
  readManifest:()=>null,writeManifest:()=>{},removeOrphans:()=>{},
  applyZip(buffer,{rootDir}){
   for(const entry of stripCommonRoot(readZip(buffer))){
-   if(entry.name.endsWith('/')||entry.name.endsWith('.pub'))continue;
+   if(entry.name.endsWith('/')||(${copyPub ? 'false' : "entry.name.endsWith('.pub')"}))continue;
    const file=path.join(rootDir,entry.name);
    fs.mkdirSync(path.dirname(file),{recursive:true});
    fs.writeFileSync(file,entry.data);
@@ -112,6 +115,64 @@ function releaseRepo(t, {publicKey = KEY, embedded = ''} = {}) {
   commitAll(root, 'v0.2.0');
   return root;
 }
+
+function taggedRepo(t, files) {
+  const root = tempDir(t);
+  execFileSync('git', ['init'], {cwd: root, stdio: 'ignore'});
+  writeTree(root, files);
+  commitAll(root, `v${JSON.parse(files['desk/package.json']).version}`);
+  return root;
+}
+
+function signedLegacyRelease(t, files, privateKey) {
+  const root = taggedRepo(t, files);
+  const out = tempDir(t);
+  const zip = buildReleaseZip({repoRoot: root, version: '1.2.0', outDir: out});
+  const commit = execFileSync('git', ['rev-parse', 'v1.2.0^{commit}'], {cwd: root, encoding: 'utf8'}).trim();
+  const manifest = {version: '1.2.0', commit, zipSha256: zip.zipSha256, zipBytes: zip.zipBytes};
+  const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
+  const signature = Buffer.from(crypto.sign(null, manifestBytes, privateKey).toString('base64') + '\n');
+  return {zip: fs.readFileSync(zip.zipFile), manifestBytes, signature};
+}
+
+function bridgeFixture(t, {tamperZip = false} = {}) {
+  const {publicKey, privateKey} = crypto.generateKeyPairSync('ed25519');
+  const publicPem = publicKey.export({type: 'spki', format: 'pem'});
+  const legacy = signedLegacyRelease(t, {
+    'desk/package.json': '{"name":"mesa","version":"1.2.0"}\n',
+    'desk/main.cjs': 'main 1.2',
+    'desk/updater.cjs': fakePreviousUpdater({copyPub: true}),
+    'desk/updater-signature.cjs': signatureModule(''),
+    'desk/update-signing-key.pub': publicPem,
+  }, privateKey);
+  const candidate = taggedRepo(t, {
+    'desk/package.json': '{"name":"mesa","version":"1.3.0"}\n',
+    'desk/main.cjs': 'main 1.3',
+    'desk/updater.cjs': fakePreviousUpdater(),
+    'desk/updater-signature.cjs': signatureModule(''),
+    'desk/update-signing-key.pub': publicPem,
+  });
+  const zip = Buffer.from(legacy.zip);
+  if (tamperZip) zip[Math.floor(zip.length / 2)] ^= 0xff;
+  const fetchBuffer = releaseAssetsFetcher({
+    'mesa-manifest-v1.2.0.json': legacy.manifestBytes,
+    'mesa-manifest-v1.2.0.sig': legacy.signature,
+    'mesa-estudos-1.2.0.zip': zip,
+  });
+  return {candidate, fetchBuffer};
+}
+
+test('primeira release do Summa ensaia com a 1.2.0 assinada do mesa-de-estudos (#21)', {skip: windows}, async (t) => {
+  const {candidate, fetchBuffer} = bridgeFixture(t);
+  const {fromTag, problems} = await rehearseUpdate({repoRoot: candidate, version: '1.3.0', fetchBuffer});
+  assert.equal(fromTag, 'v1.2.0 (FariaDev/mesa-de-estudos)');
+  assert.deepEqual(problems, []);
+});
+
+test('release antiga com zip adulterado é recusada antes de aplicar (#21)', {skip: windows}, async (t) => {
+  const {candidate, fetchBuffer} = bridgeFixture(t, {tamperZip: true});
+  await assert.rejects(() => rehearseUpdate({repoRoot: candidate, version: '1.3.0', fetchBuffer}), /SHA-256 do zip não confere/);
+});
 
 test('ensaio de ponta a ponta recusa o updater antigo que deixa a instalação sem chave', {skip: windows}, async (t) => {
   const {fromTag, problems} = await rehearseUpdate({repoRoot: releaseRepo(t), version: '0.2.0'});

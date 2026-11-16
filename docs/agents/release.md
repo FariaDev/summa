@@ -159,6 +159,28 @@ falhar, o **backup é preservado** (caminho no log) e o Sobre mostra
 Sobre/CLI e handshake do worker (o app só fecha depois de o
 worker confirmar que subiu; sem Node do sistema, aborta com o app de pé).
 
+## Release ponte (1.3.0, #21)
+
+As instalações 1.1.0/1.2.0 buscam atualização no `mesa-de-estudos`; o modo zip não
+confere `commit`, só versão, bytes e SHA-256. A 1.3.0 sai assinada nos dois
+repositórios, nesta ordem:
+
+1. no `FariaDev/summa`: tag `v1.3.0`, `update:sign` e release com os três assets do
+   fluxo acima (zip, manifesto e `.sig`). Sem tag anterior no Summa, o ensaio do
+   `sign` usa a 1.2.0 assinada do `mesa-de-estudos` como a instalação anterior;
+2. publique a **mesma** tríade numa release `v1.3.0` do `mesa-de-estudos` — não
+   reassine, o manifesto é o mesmo:
+
+   ```sh
+   gh release create v1.3.0 -R FariaDev/mesa-de-estudos --target main --notes "…"
+   gh release upload v1.3.0 -R FariaDev/mesa-de-estudos release-v1.3.0/mesa-estudos-1.3.0.zip \
+     release-v1.3.0/mesa-manifest-v1.3.0.json release-v1.3.0/mesa-manifest-v1.3.0.sig
+   ```
+
+   O corpo da release do `mesa-de-estudos` diz que quem instalou por clone reinstala
+   a partir do Summa: o clone antigo não recebe as tags novas;
+3. só depois arquive o `mesa-de-estudos`, com o README apontando para o Summa.
+
 ## Novidades da versão
 
 Depois de atualizar, a Mesa abre uma janela com as novidades (`desk/src/release-notes.mjs`,
