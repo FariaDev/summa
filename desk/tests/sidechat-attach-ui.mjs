@@ -8,7 +8,10 @@ import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDesk
 /* Clipe e bandeja de anexos do chat lateral (Electron real, fake-opencode e
    fake-xournalpp, dados sintéticos). Cobre: o clipe do lateral com o mesmo
    desenho do clipe do compositor; o menu (Imagem, Conferir); a página que o
-   Ambitus manda pela ponte vira uma imagem de verdade na bandeja (54×54,
+   Ambitus manda pela ponte vai SEMPRE à bandeja do tutor, com ou sem o chat
+   lateral aberto (o lateral não ganha o cartão e o foco vai ao campo do tutor);
+   e o código do lateral que continua existindo, alimentado direto pelo
+   `sidechat-loader` em vez da ponte: o cartão como imagem de verdade (54×54,
    etiqueta "pág. N", × e dica com o caderno) com o campo vazio e em foco; o
    caminho do arquivo não aparece na tela, mas chega ao motor no envio junto do
    PNG da página como imagem; a bolha mostra a página e não o chip. */
@@ -89,19 +92,42 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  const imageBox=await page.locator('#sidechat-attachments .attachment img').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,remove:!!el.parentElement.querySelector('.attachment-remove')}));
  assert.deepEqual(imageBox,{width:54,height:54,remove:true},'miniatura de 54px e ×, como no tutor');
 
- /* ---- 4. A página do Ambitus chega como cartão; o campo fica vazio e em foco ---- */
- await page.locator('#sidechat-prompt').fill('');
+ /* ---- 4. A página do Ambitus vai ao TUTOR, mesmo com o lateral aberto ---- */
+ assert.equal(await page.locator('#sidechat').isVisible(),true,'o chat lateral está aberto');
+ await page.locator('#sidechat-prompt').focus();
+ assert.equal(await page.evaluate(()=>document.activeElement?.id),'sidechat-prompt','o foco começa no campo do lateral');
  const sent=await sendPageByBridge(runtime,{caminho:notebook,pagina:2,nome:''});
  assert.deepEqual(sent,{status:200,json:{ok:true}},'a ponte responde sem esperar a miniatura');
- await page.waitForSelector('#sidechat-attachments .notebook-card',{timeout:15000});
+ await page.waitForSelector('#attachments .attachment.notebook-card',{timeout:15000});
+ const tutorCard=page.locator('#attachments .attachment.notebook-card');
+ assert.equal(await tutorCard.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o cartão do tutor diz o caderno e a página');
+ assert.match(await tutorCard.locator('.notebook-page').innerText(),/^pág\. 2$/,'a etiqueta fica sobre a miniatura do tutor');
+ assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),0,'o chat lateral aberto não recebe o cartão');
+ assert.equal(await page.evaluate(()=>document.activeElement?.id),'prompt','o foco vai ao campo do tutor');
+ assert.equal(await page.locator('#prompt').inputValue(),'','o campo do tutor fica vazio, pronto para a pergunta');
+ fs.mkdirSync(shots,{recursive:true});
+ await page.screenshot({path:path.join(shots,'bandeja-tutor-com-lateral.png')});
+ /* O cartão do tutor sai pelo × para não atrapalhar o resto do teste. */
+ await tutorCard.locator('.attachment-remove').click();
+ await page.waitForFunction(()=>!document.querySelector('#attachments .notebook-card'),undefined,{timeout:5000});
+
+ /* ---- 5. O lateral que continua existindo, alimentado direto pelo loader ---- */
+ assert.equal(await page.locator('#attachments .attachment.notebook-card').count(),0,'o tutor não recebe o que entra no lateral');
+ const thumb=`data:image/png;base64,${PNG_1X1.toString('base64')}`;
+ const direct=await page.evaluate(async({caminho,pagina,nome,thumb})=>{
+  const loader=await import('./src/sidechat-loader.mjs');
+  return {added:await loader.attachSidechatNotebook({caminho,pagina,nome}),thumb:loader.setSidechatNotebookThumb({caminho,pagina,thumb})};
+ },{caminho:notebook,pagina:2,nome:'',thumb});
+ assert.deepEqual(direct,{added:true,thumb:true},'o loader põe o cartão e a miniatura no lateral');
+ await page.waitForSelector('#sidechat-attachments .notebook-card',{timeout:10000});
  const card=page.locator('#sidechat-attachments .attachment.notebook-card');
  assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o nome acessível diz o caderno e a página');
  assert.equal(await card.getAttribute('title'),'Limites — aula 3 — pág. 2','a dica diz o mesmo');
  assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/,'a etiqueta fica sobre a miniatura');
  assert.equal(await page.locator('#sidechat-prompt').inputValue(),'','o campo de texto fica vazio');
  assert.equal(await page.evaluate(()=>document.activeElement?.id),'sidechat-prompt','e com foco, pronto para a pergunta');
- await page.waitForSelector('#sidechat-attachments .notebook-card img.notebook-thumb',{timeout:20000});
- assert.match(await card.locator('img.notebook-thumb').getAttribute('src'),/^data:image\/png;base64,/,'a imagem vem do mesmo caminho do ler_caderno');
+ await page.waitForSelector('#sidechat-attachments .notebook-card img.notebook-thumb',{timeout:10000});
+ assert.equal(await card.locator('img.notebook-thumb').getAttribute('src'),thumb,'a miniatura é o PNG que veio do lado do main');
  const cardBox=await card.locator('img.notebook-thumb').evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,remove:!!el.parentElement.querySelector('.attachment-remove')}));
  assert.deepEqual(cardBox,{width:54,height:54,remove:true},'a página ocupa o mesmo quadrado das outras imagens, com o mesmo ×');
  fs.mkdirSync(shots,{recursive:true});
@@ -110,14 +136,14 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  assert.doesNotMatch(visible,/aula 3\.xopp/,'o caminho do arquivo não aparece na tela');
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').evaluate(el=>el.closest('.attachment').innerHTML.includes(el.ownerDocument.defaultView.location.href)),false);
  assert.equal(await page.locator('#sidechat-attachments [data-key*="xopp"], #sidechat-attachments [title*="xopp"]').count(),0,'nem escondido em atributo visível a quem passa o mouse');
- /* Mandar a mesma página de novo não duplica o cartão. */
- await sendPageByBridge(runtime,{caminho:notebook,pagina:2,nome:''});
- await page.waitForTimeout(400);// espera fixa: "nada muda em 0,4 s" — o segundo envio da mesma página não pode duplicar o cartão
- assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),1);
+ /* O mesmo cartão de novo não duplica. */
+ const again=await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:2,nome:''});
+ assert.equal(again,true,'o loader aceita de novo a mesma página');
+ assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),1,'o mesmo cartão não duplica');
  await page.screenshot({path:'/tmp/claude-1000/summa-8a.png'});
 
- /* ---- 5. O × tira o cartão; a pergunta vai com o caminho escondido e a imagem ---- */
- await sendPageByBridge(runtime,{caminho:notebook,pagina:1,nome:'Aula 3'});
+ /* ---- 6. O × tira o cartão; a pergunta vai com o caminho escondido e a imagem ---- */
+ assert.equal(await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:1,nome:'Aula 3'}),true,'o loader põe o segundo cartão');
  await page.waitForFunction(()=>document.querySelectorAll('#sidechat-attachments .notebook-card').length===2,undefined,{timeout:10000});
  await page.locator('#sidechat-attachments .attachment-remove[aria-label="Remover Aula 3"]').click();
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),1,'o × tira só o cartão clicado');
@@ -140,7 +166,7 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  const sentToEngine=engineSaw.trim().split('\n').map(line=>JSON.parse(line)).filter(entry=>String(entry?.body?.text||'').includes('o que acontece na página dois?')).at(-1);
  assert.equal(sentToEngine.body.files.length,2,'o PNG da página vai em images junto da imagem que já estava na bandeja');
 
- /* ---- 6. A mensagem antiga (só com o bloco, sem imagem) continua abrindo: chip de reserva ---- */
+ /* ---- 7. A mensagem antiga (só com o bloco, sem imagem) continua abrindo: chip de reserva ---- */
  await page.reload();
  await statusOnline(page,{timeout:30000});
  await page.waitForFunction(()=>{const panel=document.querySelector('#sidechat');return panel&&!panel.hidden&&!document.querySelector('#sidechat-prompt').disabled;},undefined,{timeout:30000});
