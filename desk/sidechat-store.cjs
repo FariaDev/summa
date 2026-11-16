@@ -7,6 +7,7 @@ const {boundMessages} = require('./src/agents/conversations.cjs');
 const {MAX_DRAFT} = require('./state-adapter.cjs');
 const {message: uiMsg} = require('./src/i18n.mjs');
 const {attachedNotebooks} = require('./src/notebook-facts.mjs');
+const {isImageOnlyPrompt} = require('./src/image-only-send.mjs');
 
 /* Chat lateral — limites e estados, envelope de contexto e texto de exibição,
    o store dos descritores (escrita atômica, índice, validação), refs de PDF,
@@ -44,6 +45,8 @@ function displayUserText(text) {
   if (typeof text !== 'string') return text;
   const at = text.startsWith(CONTEXT_START) ? text.indexOf(CONTEXT_END_MARKER) : -1;
   const shown = at === -1 ? text : text.slice(at + CONTEXT_END_MARKER.length);
+  /* Só imagem (#109): o pedido leva a frase padrão, mas a bolha fica só com a imagem. */
+  if (isImageOnlyPrompt(shown)) return '';
   /* O resultado do cartão é um prompt da Mesa, não fala do aluno (#92): a bolha
      mostra o mesmo rótulo do chat principal (`text.mjs`). */
   const result = shown.match(/^\[Resultado do cartão: [^\]]+\]\n([\s\S]*)$/);

@@ -34,7 +34,10 @@ class FakeSideChannel {
   messages() { return this.history; }
 }
 
-function harness({validateImages, notebookNote, changingContext = false} = {}) {
+/* Frase padrão do envio só com imagem (#109); no app vem do locale, aqui é fixa. */
+const IMAGE_ONLY = 'Responda de acordo com a imagem que mandei.';
+
+function harness({validateImages, notebookNote, imageOnlyText, changingContext = false} = {}) {
   const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-sidechat-anexos-'));
   const channels = [];
   let clock = 1000;
@@ -52,6 +55,7 @@ function harness({validateImages, notebookNote, changingContext = false} = {}) {
     now: () => ++clock,
     validateImages,
     notebookNote,
+    imageOnlyText,
   });
   return {manager, channels, runtime};
 }
@@ -79,6 +83,32 @@ test('sem anexos nada muda: o texto vai como sempre e a lista de imagens vai vaz
   assert.equal((await h.manager.prompt({id, text: 'de novo'})).sent, true);
   assert.ok(h.channels[0].prompts.every((request) => request.images.length === 0));
   assert.ok(h.channels[0].prompts[1].text === 'de novo', 'o contexto já foi entregue e nada novo se soma');
+});
+
+test('só imagem, sem texto: o motor recebe a frase padrão e a fala visível fica vazia (#109)', async () => {
+  const h = harness({validateImages: () => [SHOT], imageOnlyText: () => IMAGE_ONLY});
+  const id = opened(h);
+  const result = await h.manager.prompt({id, text: '', images: [{dataUrl: 'data:image/png;base64,AAAA'}]});
+  assert.equal(result.sent, true);
+  assert.ok(h.channels[0].prompts[0].text.endsWith(IMAGE_ONLY), 'o pedido ao motor termina na frase padrão');
+  assert.deepEqual(h.channels[0].prompts[0].images, [SHOT]);
+  const shown = h.manager.read({id}).messages.filter((message) => message.role === 'user');
+  assert.deepEqual(shown.map((message) => message.content[0].text), ['']);
+});
+
+test('com texto digitado, a frase padrão não entra: vai só o que a pessoa escreveu', async () => {
+  const h = harness({validateImages: () => [SHOT], imageOnlyText: () => IMAGE_ONLY});
+  const id = opened(h);
+  await h.manager.prompt({id, text: 'o que é isto?', images: [{dataUrl: 'data:image/png;base64,AAAA'}]});
+  assert.ok(h.channels[0].prompts[0].text.endsWith('o que é isto?'));
+  assert.doesNotMatch(h.channels[0].prompts[0].text, /Responda de acordo/);
+});
+
+test('sem texto e sem imagem continua recusado: a frase padrão não libera envio vazio', async () => {
+  const h = harness({validateImages: () => [], imageOnlyText: () => IMAGE_ONLY});
+  const id = opened(h);
+  await assert.rejects(() => h.manager.prompt({id, text: '   ', images: []}), ptMatches(/Mensagem inválida/));
+  assert.equal(h.channels.length, 0, 'o motor nem sobe');
 });
 
 test('o caderno anexado vai ao motor dentro do envelope e a pessoa só vê a pergunta', async () => {

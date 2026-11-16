@@ -115,7 +115,7 @@ export function mountSidechat(container){
  labelBtn(root.querySelector('#sidechat-new'),'plus');
  labelBtn(root.querySelector('#sidechat-more'),'more');
  labelBtn(root.querySelector('#sidechat-close'),'close');
- promptEl=root.querySelector('#sidechat-prompt');attach=bindSidechatAttach(attachParts,{prompt:promptEl,root});
+ promptEl=root.querySelector('#sidechat-prompt');attach=bindSidechatAttach(attachParts,{prompt:promptEl,root,onChange:()=>paintSend()});
  msgsEl=root.querySelector('#sidechat-messages');
  activityEl=root.querySelector('#sidechat-activity');
  sendEl=root.querySelector('#sidechat-send');
@@ -336,9 +336,9 @@ function pendingPlaceholder(){
 function indexedMessages(raw){
  let messageIndex=-1;
  return (Array.isArray(raw)?raw:[]).map(item=>{
-  const message=normalizeMessage(item);
-  if(!message||!String(message.text||'').trim())return null;
-  if(message.role==='user'||message.role==='assistant')message.messageIndex=++messageIndex;
+  const message=normalizeMessage(item),spoken=String(message?.text||'').trim();
+  if(!message||(!spoken&&message.role!=='user'))return null;
+  if(spoken&&(message.role==='user'||message.role==='assistant'))message.messageIndex=++messageIndex;
   return message;
  }).filter(Boolean);
 }
@@ -437,7 +437,7 @@ async function sendMessage(){
  if(state.uncertain){toast(uiMessage('sidechat.warn'));return;}
  const raw=String(promptEl?.value||'');
  const text=raw.trim();
- if(!text)return;
+ if(!text&&!attach?.snapshot?.().images?.length)return;
  const id=state.id;
  const token=++state.sendGen;
  state.sending=true;
@@ -445,7 +445,8 @@ async function sendMessage(){
    a ordem "user antes de assistant" continua certa. O eco `role:'user'` do
    motor é suprimido pelo backend; a bolha local é a fonte. */
  const attached=await attach?.forSend()||{},watch={terminal:false};
- const localUser={role:'user',text,id:'',...(Array.isArray(attached.notebooks)&&attached.notebooks.length?{notebooks:attached.notebooks.slice(0,4).map(({nome,pagina})=>({nome,pagina}))}:{}),...(attached.pages?.length?{images:attached.pages.map(({dataUrl})=>dataUrl)}:{})};
+ const shown=text?(attached.pages||[]):(attached.images||[]); /* #109: sem texto, a bolha mostra a imagem anexada; com texto segue só com as páginas */
+ const localUser={role:'user',text,id:'',...(Array.isArray(attached.notebooks)&&attached.notebooks.length?{notebooks:attached.notebooks.slice(0,4).map(({nome,pagina})=>({nome,pagina}))}:{}),...(shown.length?{images:shown.map(({dataUrl})=>dataUrl)}:{})};
  state.messages.push(localUser);
  sideScroll?.setFollowing(true);
  renderMessages();
@@ -739,7 +740,7 @@ function paintScope(){
  }
 }
 function paintSend(){
- const hasText=Boolean(String(state.draft||'').trim());
+ const hasText=Boolean(String(state.draft||'').trim())||Boolean(attach?.snapshot?.().images?.length); /* #109: só imagem na bandeja liga o Enviar */
  if(sendEl){
   sendEl.classList.toggle('primary',hasText);
   /* Rascunho vazio (ou só espaços) desliga o Enviar (#157, rodada 2, achado 2):

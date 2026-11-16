@@ -84,6 +84,7 @@ function createMesaSidechat({runtime,freeId,session,courseId,courses,config,stat
   runtime,
   validateImages:promptImages,
   notebookNote,
+  imageOnlyText:()=>languageHost.tutorT('send.imageOnly'),
   current:()=>({session:session(),courseId:courseId(),engine:engine(),...mainNativeSelection(),courseName:courseId()===freeId?'':(courses().find(c=>c.id===courseId())?.name||'')}),
   /* O manager chama `snapshot({refs})` (objeto), não o array solto: sem o
      destructuring o `Array.isArray` de `sidechatSnapshot` zerava TODAS as refs

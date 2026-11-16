@@ -2200,6 +2200,7 @@
   "search.title.review": "Caderno de revisão",
   "search.topic": "Assunto: {topic}",
   "search.truncated": "Muitos resultados: refine a busca ou escolha uma matéria ou conteúdo.",
+  "send.imageOnly": "Responda de acordo com a imagem que mandei.",
   "send.needsImages": "Escolha um modelo com suporte a imagens para anexar.",
   "send.noSteer": "O tutor não interrompe a resposta — use a fila (⏎) ou espere.",
   "send.refused": "O tutor recusou a mensagem.",

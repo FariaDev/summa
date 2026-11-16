@@ -43,6 +43,7 @@ const core = require('./src/generated/sidechat.core.js').default;
 const {message: uiMsg} = require('./src/i18n.mjs');
 const {createCardSession} = require('./card-session.cjs');
 const {CONTEXT_END_MARKER, CONTEXT_START, CORE_BY_STATUS, ID_RE, MAX_DIALOG_IDS, MAX_MESSAGE_ID, SCHEMA_VERSION, STATUS_BY_CORE, appendMessage, conversationList, descriptorPath, displayMessages, displayUserText, fail, isPlainObject, normalizeRefs, nowMs, readDescriptorRaw, readIndex, saveDescriptor, sidechatsDir, validDescriptor, writeIndex} = require('./sidechat-store.cjs');
+const {imageOnlyPrompt} = require('./src/image-only-send.mjs');
 const attachments = require('./src/agents/conversation-attachments.cjs');
 
 /* ---------- manager ---------- */
@@ -59,11 +60,13 @@ const isNative = (engine) => conversations.NATIVE_ENGINES.includes(engine);
  *   emit: (payload: object) => void, log: (scope: string, line: string) => void,
  *   revokeCardGrant?: ((grant: {token: string}) => void) | null, now?: () => number,
  *   validateImages?: ((images: unknown) => object[]) | null,
- *   notebookNote?: ((notebooks: unknown) => string) | null}} options
+ *   notebookNote?: ((notebooks: unknown) => string) | null,
+ *   imageOnlyText?: (() => string) | null}} options
  *   `validateImages` mede e encolhe os anexos de imagem (o mesmo `promptImages` do tutor);
- *   `notebookNote` confere os cadernos anexados e devolve o bloco escondido que o motor lê (lança se algum não é conhecido).
+ *   `notebookNote` confere os cadernos anexados e devolve o bloco escondido que o motor lê (lança se algum não é conhecido);
+ *   `imageOnlyText` dá a frase padrão que o motor lê quando a pessoa manda só imagem (#109).
  */
-function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now, validateImages = null, notebookNote = null} = {}) {
+function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now, validateImages = null, notebookNote = null, imageOnlyText = null} = {}) {
   if (typeof runtime !== 'string' || !runtime) fail('runtime obrigatório para o chat lateral.');
   if (typeof current !== 'function') fail('current() obrigatório para o chat lateral.');
   if (typeof snapshot !== 'function') fail('snapshot() obrigatório para o chat lateral.');
@@ -496,10 +499,11 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       if (!isPlainObject(input)) fail('Pedido inválido.');
       const entry = resolve(input);
       const descriptor = entry.descriptor;
-      if (typeof input.text !== 'string' || !input.text.trim()) fail('Mensagem inválida.');
-      if (input.text.length > MAX_DRAFT) fail(uiMsg('err.sidechat.tooLong'));
       /* Anexos da bandeja (imagens e cadernos): conferidos antes de qualquer escrita. */
       const images = attachedImages(input.images);
+      /* Só imagem, sem texto, é envio (#109): a frase padrão vai ao motor, a fala visível fica vazia. */
+      if (typeof input.text !== 'string' || (!input.text.trim() && !images.length)) fail('Mensagem inválida.');
+      if (input.text.length > MAX_DRAFT) fail(uiMsg('err.sidechat.tooLong'));
       const note = attachedNote(input.notebooks);
       /* Aquecimento em voo (foco no campo) não é turno: espera terminar. */
       if (entry.warming) {
@@ -534,7 +538,8 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
         return {sent: false, retryable: true, error: uiMsg('err.sidechat.waitTurn')};
       }
       const includeContext = !!context.digest && core.contextChanged(descriptor.contextDeliveredKey || '', context.key || '');
-      const text = input.text.trim();
+      const spoken = input.text.trim();
+      const text = spoken || (images.length && typeof imageOnlyText === 'function' ? imageOnlyPrompt(imageOnlyText()) : '');
       /* O envelope fecha o bloco interno: o que vem depois é a fala do usuário,
          exatamente como ele escreveu. */
       /* O caderno anexado vai dentro do envelope, que a tela e a busca cortam:
@@ -550,7 +555,7 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       const visibleNotebooks = (Array.isArray(input.notebooks) ? input.notebooks : []).slice(0, 4)
         .map((item) => ({nome: String(item?.nome || '').slice(0, 200), pagina: Math.max(1, Math.trunc(Number(item?.pagina)) || 1)}))
         .filter((item) => item.nome);
-      const userMessage = {role: 'user', content: [{type: 'text', text}], ...(visibleNotebooks.length ? {notebooks: visibleNotebooks} : {})};
+      const userMessage = {role: 'user', content: [{type: 'text', text: spoken}], ...(visibleNotebooks.length ? {notebooks: visibleNotebooks} : {})};
       appendMessage(descriptor, userMessage);
       entry.pendingUser = userMessage;
       entry.settledTurn = null;

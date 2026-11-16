@@ -5,15 +5,19 @@ import {ptMatches} from './pt-text.mjs';
 import {createRequire} from 'node:module';
 import {fakeIpcMain} from './fake-electron-shell.mjs';
 import {fakeTutorBridge} from './fake-tutor-bridge.mjs';
+import {displayUserText} from '../text.mjs';
+import {imageOnlyPrompt} from '../src/image-only-send.mjs';
 
 const require = createRequire(import.meta.url);
 const {registerTutorPromptHost} = require('../tutor-prompt-host.cjs');
+/* Catálogo pt-BR: a frase padrão do envio só com imagem (#109) sai daqui. */
+const ptBR = require('../src/locales/pt-BR.json');
 
 function tutorPromptHost({engine = 'pi', runtime = '/rt', session = '/s.jsonl', bridge = fakeTutorBridge({get_state: {isStreaming: true}}), authorizePdfs, warmPdf} = {}) {
   const ipcMain = fakeIpcMain();
   const accepted = [];
   const live = {config: {desk: {}}, state: {study: {title: 'Lista 2'}}, courseId: 'calc', courses: [{id: 'calc', name: 'Cálculo'}], session,
-    bridge, lastContextKey: '', languageHost: {tutorLanguage: () => 'pt-BR', tutor: () => 'pt-BR', ui: () => 'pt-BR'},
+    bridge, lastContextKey: '', languageHost: {tutorLanguage: () => 'pt-BR', tutor: () => 'pt-BR', ui: () => 'pt-BR', tutorT: key => ptBR[key]},
     studyServices: {accepted: entry => accepted.push(entry.engine)}};
   registerTutorPromptHost({ipcMain, live, runtime, FREE_ID: '__free__', allowedXopp: new Set(), ggb: {newRequest() {}}, appendLog: () => {},
     engine: () => engine, connect: () => bridge, promptImages: () => [], validPdf: file => file, authorizePdfs, assertNoFreeMutation() {}, assertNoNav() {}, warmPdf});
@@ -31,6 +35,33 @@ test('pi-prompt manda texto com ref e contexto e marca o contexto no aceite', as
   assert.match(sent.message, /Cálculo/);
   assert.notEqual(live.lastContextKey, '', 'o aceite grava a chave do contexto enviado');
   assert.deepEqual(accepted, ['pi']);
+});
+
+/* #109: só imagem, sem texto. O motor recebe a frase padrão; o que o aluno digitou (nada) não entra. */
+test('pi-prompt só com imagem manda a frase padrão ao motor (#109)', async () => {
+  const {ipcMain, bridge} = tutorPromptHost();
+  let sent = null;
+  bridge.request = async (method, params) => { if (method === 'prompt') sent = params; return method === 'get_state' ? {isStreaming: true} : {}; };
+  await ipcMain.invoke('pi-prompt', {text: '', images: [{dataUrl: 'data:image/png;base64,AAAA'}]});
+  assert.equal(sent.message.split('\n\n')[0], imageOnlyPrompt(ptBR['send.imageOnly']), 'a marca e a frase padrão abrem a mensagem, sem texto do aluno antes delas');
+});
+
+test('depois do reload a bolha de só-imagem não mostra a frase padrão (#109)', async () => {
+  const {ipcMain, bridge} = tutorPromptHost();
+  let sent = null;
+  bridge.request = async (method, params) => { if (method === 'prompt') sent = params; return method === 'get_state' ? {isStreaming: true} : {}; };
+  await ipcMain.invoke('pi-prompt', {text: '', images: [{dataUrl: 'data:image/png;base64,AAAA'}], refs: [{path: '/p/Limites.pdf', page: 3}]});
+  assert.match(sent.message, /\/p\/Limites\.pdf#page=3/, 'o contexto vai depois da frase padrão');
+  assert.equal(displayUserText(sent.message), '', 'a bolha fica só com a imagem');
+});
+
+test('pi-prompt com texto digitado e imagem não troca o texto pela frase padrão (#109)', async () => {
+  const {ipcMain, bridge} = tutorPromptHost();
+  let sent = null;
+  bridge.request = async (method, params) => { if (method === 'prompt') sent = params; return method === 'get_state' ? {isStreaming: true} : {}; };
+  await ipcMain.invoke('pi-prompt', {text: 'o que é isto?', images: [{dataUrl: 'data:image/png;base64,AAAA'}]});
+  assert.match(sent.message, /^o que é isto\?/);
+  assert.doesNotMatch(sent.message, /Responda de acordo/);
 });
 
 test('pi-prompt recusa texto que não é string', async () => {
