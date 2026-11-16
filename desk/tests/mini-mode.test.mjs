@@ -1,8 +1,7 @@
 // @ts-check
 /* Modo mini no renderer, sem janela: o fluxo liga/desliga (`createMiniFlow`),
-   o roteamento da página do Ambitus (tutor no mini, chat lateral fora dele), o
-   estado da bandeja de cadernos do tutor e o bloco escondido que leva o caminho
-   ao motor. */
+   o destino da página do Ambitus (sempre o tutor), o estado da bandeja de
+   cadernos do tutor e o bloco escondido que leva o caminho ao motor. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -89,51 +88,43 @@ test('toggle alterna e entrar duas vezes pede a janela uma vez só', async () =>
 
 const PAGE = {caminho: '/c/Limites — aula 3.xopp', pagina: 2, nome: 'Limites — aula 3'};
 
-function routing({mini}) {
-  const log = {opened: 0, sidechat: [], tutor: [], toasts: []};
+function routing() {
+  const log = {tutor: [], toasts: []};
   const receive = createAmbitusPage({
     ready: () => log.ready !== false,
-    open: () => { log.opened++; },
-    attach: async (card) => { log.sidechat.push(card); return true; },
     attachTutor: (card) => { log.tutor.push(card); return log.tutorOk !== false; },
-    mini: () => mini,
     toast: (text) => log.toasts.push(text),
-    wait: async () => {},
-    tries: 2,
   });
   return {receive, log};
 }
 
-test('a página do Ambitus com o modo mini ligado vai ao tutor e não abre o chat lateral', async () => {
-  const {receive, log} = routing({mini: true});
+test('a página do Ambitus vai ao tutor principal, com ou sem o modo mini ligado', async () => {
+  const {receive, log} = routing();
   assert.equal(await receive(PAGE), true);
   assert.deepEqual(log.tutor, [{caminho: PAGE.caminho, pagina: 2, nome: 'Limites — aula 3'}]);
-  assert.deepEqual(log.sidechat, [], 'o lateral não recebe');
-  assert.equal(log.opened, 0, 'e não abre');
-});
-
-test('fora do modo mini nada muda: a página abre o chat lateral e vira cartão na bandeja dele', async () => {
-  const {receive, log} = routing({mini: false});
-  assert.equal(await receive({caminho: '/c/Limites.xopp', pagina: 1, nome: ''}), true);
-  assert.equal(log.opened, 1);
-  assert.deepEqual(log.sidechat, [{caminho: '/c/Limites.xopp', pagina: 1, nome: 'Limites'}], 'nome vem do arquivo, sem .xopp');
-  assert.deepEqual(log.tutor, []);
-});
-
-test('sem matéria aberta avisa nos dois destinos; pedido que não é página não faz nada; tutor que recusa avisa', async () => {
-  for (const mini of [true, false]) {
-    const {receive, log} = routing({mini});
-    log.ready = false;
-    assert.equal(await receive(PAGE), false);
-    assert.equal(log.toasts.length, 1);
-    assert.deepEqual([log.tutor.length, log.sidechat.length, log.opened], [0, 0, 0]);
-  }
-  const {receive, log} = routing({mini: true});
-  assert.equal(await receive({caminho: '', pagina: 0}), false);
   assert.deepEqual(log.toasts, []);
+});
+
+test('a página do Ambitus vira cartão no tutor com o nome vindo do arquivo, sem .xopp', async () => {
+  const {receive, log} = routing();
+  assert.equal(await receive({caminho: '/c/Limites.xopp', pagina: 1, nome: ''}), true);
+  assert.deepEqual(log.tutor, [{caminho: '/c/Limites.xopp', pagina: 1, nome: 'Limites'}]);
+  assert.deepEqual(log.toasts, []);
+});
+
+test('sem matéria aberta avisa; pedido que não é página não faz nada; tutor que recusa avisa', async () => {
+  const {receive, log} = routing();
+  log.ready = false;
+  assert.equal(await receive(PAGE), false);
+  assert.equal(log.toasts.length, 1);
+  assert.deepEqual(log.tutor, []);
+  log.ready = true;
+  const before = log.toasts.length;
+  assert.equal(await receive({caminho: '', pagina: 0}), false);
+  assert.equal(log.toasts.length, before, 'pedido inválido não avisa');
   log.tutorOk = false;
   assert.equal(await receive(PAGE), false);
-  assert.equal(log.toasts.length, 1, 'o tutor que não aceitou diz que falhou');
+  assert.equal(log.toasts.length, 2, 'o tutor que não aceitou diz que falhou');
 });
 
 test('bandeja de cadernos do tutor: a mesma página não repete, o teto tira o mais antigo e a miniatura pode chegar antes', () => {
