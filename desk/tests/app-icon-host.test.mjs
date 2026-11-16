@@ -86,6 +86,42 @@ test('#3: no macOS a variante do pacote não chama setIcon, e voltar a ela resta
   ]);
 });
 
+test('#3: tema de ícones tingido ou transparente deixa o Dock com o pacote', () => {
+  const tinted=fakeElectronApp();
+  createAppIcon({app:tinted.app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon,iconTheme:()=>'TintedLight'}).apply(null,'graphite','light');
+  assert.deepEqual(tinted.calls,[]);
+  const clear=fakeElectronApp();
+  createAppIcon({app:clear.app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon,iconTheme:()=>'ClearDark'}).apply(null,'violet','dark');
+  assert.deepEqual(clear.calls,[]);
+  const pack=fakeElectronApp();
+  createAppIcon({app:pack.app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon,iconTheme:()=>'Regular'}).apply(null,'graphite','dark');
+  assert.deepEqual(pack.calls,[]);
+});
+
+test('#3: saindo de um PNG, o modo tingido restaura o ícone do pacote', () => {
+  const {app,calls}=fakeElectronApp();
+  let iconTheme='Regular';
+  const icon=createAppIcon({app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon,iconTheme:()=>iconTheme});
+  icon.apply(null,'violet','light');
+  iconTheme='TintedLight';
+  icon.apply(null,'violet','light');
+  assert.deepEqual(calls,[
+    asset('app-icon','integral-light-violet-dock.png'),
+    EMPTY_DOCK_ICON,
+  ]);
+});
+
+test('#3: tema Regular ou vazio mantém o PNG; no Windows o tema do macOS não conta', () => {
+  for (const mode of ['','Regular']) {
+    const {app,calls}=fakeElectronApp();
+    createAppIcon({app,platform:'darwin',assetsDir:ASSETS,exists:()=>true,emptyIcon:fakeEmptyIcon,iconTheme:()=>mode}).apply(null,'violet','light');
+    assert.deepEqual(calls,[asset('app-icon','integral-light-violet-dock.png')],`tema "${mode}"`);
+  }
+  const win=fakeWindow();
+  createAppIcon({app:{},platform:'win32',assetsDir:ASSETS,exists:()=>true,iconTheme:()=>'TintedLight'}).apply(win,'violet','light');
+  assert.deepEqual(win.calls,[asset('app-icon','integral-light-violet-256.png')]);
+});
+
 test('no modo de teste o Dock escondido não é tocado', () => {
   const {app,calls}=fakeElectronApp();
   createAppIcon({app,platform:'darwin',assetsDir:ASSETS,dockEnabled:false,exists:()=>true}).apply(null,'graphite','dark');

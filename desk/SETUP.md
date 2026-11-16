@@ -37,7 +37,7 @@ npm run geogebra:offline -- --remove
 
 Reabra a Mesa depois de baixar. Com o pacote, a sessão do applet não faz nenhum pedido de rede.
 
-`npm run doctor` fornece uma verificação reproduzível do motor do tutor, políticas `TUTOR.md`/`LEARNER.md`, fontes das matérias, extensão visual (quando aplicável) e escrita do runtime. Corrija qualquer linha marcada com `✗` antes de estudar.
+`npm run doctor` fornece uma verificação reproduzível do motor do tutor, políticas `TUTOR.md`/`LEARNER.md`, fontes das matérias, extensão visual (quando aplicável) e escrita do runtime. Corrija qualquer linha marcada com `✗` antes de estudar; antes da primeira abertura, as linhas marcadas com `…` são esperadas e somem depois de abrir o app e criar a matéria.
 
 Na primeira abertura (sem configuração) a Mesa não mostra diálogo: ela já abre no app.
 

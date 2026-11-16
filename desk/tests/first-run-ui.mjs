@@ -112,6 +112,22 @@ const trailMarks=page=>page.evaluate(()=>[...document.querySelectorAll('#setup-t
  };
 }));
 
+/* #88: os dois rótulos do acento ficam inteiros e separados nos dois idiomas:
+   cada opção cabe no próprio botão (scrollWidth ≤ clientWidth) e as caixas
+   não se sobrepõem. */
+async function accentLabels(page){
+ const options=page.locator('#setup-accent .accent-option');
+ const boxes=[await options.nth(0).boundingBox(),await options.nth(1).boundingBox()];
+ const widths=await options.evaluateAll(els=>els.map(el=>({text:el.textContent.trim(),scrollWidth:el.scrollWidth,clientWidth:el.clientWidth})));
+ return {boxes,widths};
+}
+async function assertAccentLabels(page,language){
+ const {boxes,widths}=await accentLabels(page);
+ assert.equal(widths.length,2,`${language}: dois rótulos de acento`);
+ assert.ok(boxes[1].x>=boxes[0].x+boxes[0].width,`${language}: os rótulos do acento não se sobrepõem (${JSON.stringify(boxes)})`);
+ for(const label of widths)assert.ok(label.scrollWidth<=label.clientWidth,`${language}: "${label.text}" cabe inteiro (${label.scrollWidth} > ${label.clientWidth})`);
+}
+
 const setupFacts=page=>page.evaluate(()=>{
  const shown=el=>{if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return r.width>0&&r.height>0&&cs.visibility!=='hidden'&&cs.display!=='none';};
  const text=sel=>{const el=document.querySelector(sel);return el&&shown(el)?el.textContent.replace(/\s+/g,' ').trim():null;};
@@ -214,6 +230,13 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.equal(f.hScroll,false);
 
  /* #70: a cor de acento se escolhe no setup e vale na hora (a marca também). */
+ /* #88: antes do clique, os rótulos dos dois acentos cabem e não se encostam. */
+ await assertAccentLabels(page,'pt-BR');
+ await page.locator('#first-run-language [data-language="en"]').click();
+ await page.waitForFunction(()=>document.querySelector('#setup-accent [data-accent="graphite"] [data-i18n]')?.textContent==='Graphite');
+ await assertAccentLabels(page,'en');
+ await page.locator('#first-run-language [data-language="pt-BR"]').click();
+ await page.waitForFunction(()=>document.querySelector('#setup-accent [data-accent="graphite"] [data-i18n]')?.textContent==='Grafite');
  await page.locator('#setup-accent [data-accent="violet"]').click();
  const accent=await page.evaluate(()=>({
   html:document.documentElement.dataset.accent||'graphite',
@@ -244,7 +267,8 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  assert.equal(fs.existsSync(s.dataDefault),false,'sugerir a pasta de dados não a cria');
 
  /* O passeio: quatro quadros, cada um acende uma região do desenho; ele
-    passa sozinho, um quadro a cada 2,6 s, e o Próximo continua valendo. */
+    passa sozinho, um quadro a cada 2,6 s, até o primeiro clique — aí só a
+    pessoa anda o quadro (#90). */
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.step,'tour');
@@ -264,6 +288,10 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.sceneRegion,'tutor');
+ /* espera fixa: o passeio anda a cada 2,6 s; passado o prazo, o clique tem de ter parado o quadro no lugar (#90). */
+ await page.waitForTimeout(3200);
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'tutor','depois do clique, o passeio automático para de vez');
  await clickNext(page);
  f=await setupFacts(page);
  assert.equal(f.sceneRegion,'top');
@@ -307,6 +335,13 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  /* "Como a Mesa funciona" leva de volta ao passeio; ⌘/ abre o Guia. */
  await page.locator('#first-run-help').click();
  assert.equal((await setupFacts(page)).step,'tour');
+ /* #90: o indicador de quadro leva àquele quadro; as setas andam o quadro. */
+ await page.locator('#setup-dots i').nth(2).click();
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'tutor','o indicador de quadro escolhe o quadro');
+ await page.keyboard.press('ArrowLeft');
+ f=await setupFacts(page);
+ assert.equal(f.sceneRegion,'writer','as setas andam o quadro');
  await page.keyboard.press('ControlOrMeta+/');
  await page.waitForSelector('#help-dialog[open]');
  await page.keyboard.press('Escape');
@@ -337,7 +372,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
     arrasto (só `File`); o clique nunca valia e o "Continuar" não ligava. */
  await page.waitForFunction(()=>!document.querySelector('#setup-next').disabled);
  assert.equal((await setupFacts(page)).chosen,'Pasta escolhida: '+pdfs,'a pasta do seletor entra');
- assert.equal(await page.locator('#setup-chosen-files').textContent(),'Derivadas.pdf · Limites.pdf','a subpasta conta');
+ assert.equal(await page.locator('#setup-chosen-files').textContent(),'2 PDFs encontrados · Derivadas.pdf · Limites.pdf','a subpasta conta e o total aparece (#88)');
  f=await setupFacts(page);
  assert.equal(f.sceneTone,'found','os PDFs achados aparecem na cena');
  assert.deepEqual(f.scenePdfs,['Derivadas.pdf','Limites.pdf'],'os primeiros nomes vão às páginas da miniatura');
@@ -545,7 +580,7 @@ await withArtifacts('primeira-abertura-criar',async ctx=>{
  await page.waitForFunction(()=>/Pasta escolhida/.test(document.querySelector('#setup-chosen-folder')?.textContent||''));
  let f=await setupFacts(page);
  assert.equal(f.chosen,'Pasta escolhida: '+pdfs);
- assert.equal(f.files,'Formulario.pdf · Limites.pdf','os nomes dos PDFs, em ordem');
+ assert.equal(f.files,'2 PDFs encontrados · Formulario.pdf · Limites.pdf','os nomes dos PDFs, em ordem, e o total (#88)');
  assert.equal(f.firstRun,'true','escolher a pasta não cria a matéria');
  assert.equal(fs.existsSync(s.configFile)?(s.readConfig().courses||[]).length:0,0,'nenhuma matéria gravada ainda');
  await shot(page,'pasta-claro-1440x900.png');

@@ -9,14 +9,26 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {execFileSync, spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {buildReleaseZip} from './update-zip.mjs';
+
+const require = createRequire(import.meta.url);
+const {defaultFetchBuffer} = require('../updater-check.cjs');
+const {assertSafeEntries, readZip, stripCommonRoot} = require('../updater-files.cjs');
+const signature = require('../updater-signature.cjs');
 
 /* Fora do que o app carrega. A chave tem conferência própria: o arquivo pode
    faltar quando o código traz a cópia embutida. */
 const NOT_LOADED_BY_APP = [/^desk\/\.gitignore$/, /^desk\/types\/.*\.d\.ts$/, /^desk\/update-signing-key\.pub$/];
 const USER_FILES = {'desk/config.json': '{"ensaio":true}\n', 'desk/.runtime/ensaio.json': '{"ensaio":true}\n'};
 const BOOT_WAIT_MS = 20000;
+
+/* A 1.3.0 é a primeira release do Summa e a ponte (#21): quem atualiza vem da
+   1.2.0 publicada no mesa-de-estudos. Sem tag anterior no clone, o ensaio usa
+   a release assinada de lá como a instalação anterior — é ela que precisa
+   aceitar o zip novo. */
+const LEGACY_RELEASE = Object.freeze({version: '1.3.0', repo: 'FariaDev/mesa-de-estudos', tag: 'v1.2.0'});
 
 /* Roda no processo filho, com o código da versão anterior: mesma sequência do
    modo zip em `applyUpdate`. */
@@ -61,6 +73,50 @@ export function previousReleaseTag(tags, version) {
   return earlier.sort((a, b) => compareSemver(parseSemver(b), parseSemver(a)))[0] || '';
 }
 
+function legacyReleaseFor(version) {
+  return version === LEGACY_RELEASE.version ? LEGACY_RELEASE : null;
+}
+
+function legacyAssetUrls(release) {
+  const previous = release.tag.replace(/^v/, '');
+  const base = `https://github.com/${release.repo}/releases/download/${release.tag}`;
+  return {
+    previous,
+    manifest: `${base}/mesa-manifest-${release.tag}.json`,
+    signature: `${base}/mesa-manifest-${release.tag}.sig`,
+    zip: `${base}/mesa-estudos-${previous}.zip`,
+  };
+}
+
+/**
+ * Baixa a release assinada da versão anterior fora do clone (#21).
+ * @param {{release: {repo: string, tag: string}, fetchBuffer?: (url: string, options: {maxBytes: number}) => Promise<Buffer>}} input
+ * @returns {Promise<{manifest: Buffer, signature: Buffer, zip: Buffer}>}
+ * @example await downloadLegacyRelease({release: LEGACY_RELEASE})
+ */
+async function downloadLegacyRelease({release, fetchBuffer = defaultFetchBuffer}) {
+  const urls = legacyAssetUrls(release);
+  const fetchAsset = (url, maxBytes, failureKey) => signature.fetchReleaseAsset({fetchBuffer, url, maxBytes, version: urls.previous, failureKey});
+  const [manifest, signatureBytes] = await Promise.all([
+    fetchAsset(urls.manifest, signature.MANIFEST_MAX_BYTES, 'err.update.manifestDownload'),
+    fetchAsset(urls.signature, signature.SIGNATURE_MAX_BYTES, 'err.update.signatureDownload'),
+  ]);
+  const zip = await fetchAsset(urls.zip, signature.ZIP_MAX_BYTES, 'err.update.zipDownload');
+  return {manifest, signature: signatureBytes, zip};
+}
+
+function extractZip(buffer, dir) {
+  const entries = stripCommonRoot(readZip(buffer));
+  assertSafeEntries(entries);
+  fs.mkdirSync(dir, {recursive: true});
+  for (const entry of entries) {
+    if (entry.name.endsWith('/')) continue;
+    const file = path.join(dir, entry.name);
+    fs.mkdirSync(path.dirname(file), {recursive: true});
+    fs.writeFileSync(file, entry.data);
+  }
+}
+
 function sameBytes(left, right) {
   return fs.existsSync(left) && fs.existsSync(right) && fs.readFileSync(left).equals(fs.readFileSync(right));
 }
@@ -102,12 +158,25 @@ function seedUserFiles(installDir) {
   }
 }
 
-function applyAndAudit({repoRoot, fromTag, ref, version, workDir}) {
+function applyAndAudit({repoRoot, fromTag, legacyRelease, legacyAssets, ref, version, workDir}) {
   const git = (...args) => execFileSync('git', args, {cwd: repoRoot, encoding: 'utf8', maxBuffer: 1 << 28});
   const [previousDir, installDir, candidateDir] = ['anterior', 'instalacao', 'candidata'].map((name) => path.join(workDir, name));
-  extractRef(repoRoot, fromTag, previousDir);
-  extractRef(repoRoot, fromTag, installDir);
   extractRef(repoRoot, ref, candidateDir);
+  if (legacyAssets) {
+    const publicKey = signature.readUpdatePublicKey(path.join(candidateDir, 'desk', 'update-signing-key.pub'));
+    const verified = signature.verifySignedManifest({
+      manifestBytes: legacyAssets.manifest,
+      signatureBytes: legacyAssets.signature,
+      publicKey,
+      announcedVersion: legacyRelease.tag.replace(/^v/, ''),
+    });
+    signature.assertZipMatchesManifest(legacyAssets.zip, verified);
+    extractZip(legacyAssets.zip, previousDir);
+    extractZip(legacyAssets.zip, installDir);
+  } else {
+    extractRef(repoRoot, fromTag, previousDir);
+    extractRef(repoRoot, fromTag, installDir);
+  }
   seedUserFiles(installDir);
   /* Com a tag, o ensaio usa o MESMO zip que o sign publica (com o manifesto da
      instalação, #153); `--ref` fora da tag segue com o archive cru. */
@@ -149,21 +218,26 @@ function bootProblem(installDir, workDir) {
 
 /**
  * Ensaia a atualização da versão anterior para a candidata, numa pasta temporária.
- * @param {{repoRoot: string, version: string, ref?: string, fromTag?: string, open?: boolean}} input `ref` é a tag ou o commit candidato
+ * @param {{repoRoot: string, version: string, ref?: string, fromTag?: string, open?: boolean,
+ *   fetchBuffer?: (url: string, options: {maxBytes: number}) => Promise<Buffer>}} input
+ *   `ref` é a tag ou o commit candidato; sem tag anterior, a 1.3.0 (#21) ensaia a
+ *   release assinada da 1.2.0 do mesa-de-estudos.
  * @returns {Promise<{fromTag: string, problems: string[]}>}
  * @example await rehearseUpdate({repoRoot, version: '1.1.0', fromTag: 'v1.0.2'})
  */
-export async function rehearseUpdate({repoRoot, version, ref = `v${version}`, fromTag = '', open = false}) {
+export async function rehearseUpdate({repoRoot, version, ref = `v${version}`, fromTag = '', open = false, fetchBuffer = defaultFetchBuffer}) {
   const from = fromTag || previousTagIn(repoRoot, version);
-  if (!from) return {fromTag: '', problems: []};
+  const legacy = from ? null : legacyReleaseFor(version);
+  if (!from && !legacy) return {fromTag: '', problems: []};
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-ensaio-'));
   try {
-    const {installDir, problems} = applyAndAudit({repoRoot, fromTag: from, ref, version, workDir});
+    const legacyAssets = legacy ? await downloadLegacyRelease({release: legacy, fetchBuffer}) : null;
+    const {installDir, problems} = applyAndAudit({repoRoot, fromTag: from, legacyRelease: legacy, legacyAssets, ref, version, workDir});
     if (open && !problems.length) {
       const problem = await bootProblem(installDir, workDir);
       if (problem) problems.push(problem);
     }
-    return {fromTag: from, problems};
+    return {fromTag: from || `${legacy.tag} (${legacy.repo})`, problems};
   } finally {
     fs.rmSync(workDir, {recursive: true, force: true});
   }

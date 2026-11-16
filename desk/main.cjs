@@ -55,7 +55,7 @@ const {createPhoneHost}=require('./phone-host.cjs');
 const {readPalette,phoneLookCss}=require('./phone-look.cjs');
 const {phoneCastCss}=require('./phone-cast.cjs');
 const {createLanguageHost}=require('./language-host.cjs');
-const {createAppIcon}=require('./app-icon-host.cjs');const {WINDOWS_APP_ID,ensureStartMenuShortcut}=require('./windows-shortcut.cjs');
+const {createAppIcon,systemIconTheme}=require('./app-icon-host.cjs');const {WINDOWS_APP_ID,ensureStartMenuShortcut}=require('./windows-shortcut.cjs');
 const {removeLegacyBundle}=require('./legacy-bundle.cjs');
 const {createOpencodeHost}=require('./opencode-host.cjs');const {toolTestFixtures}=require('./tool-test-fixtures.cjs');
 const {createOpenCodeProvidersHost}=require('./opencode-providers-host.cjs');const {createTutorRelink}=require('./tutor-relink.cjs');
@@ -418,7 +418,7 @@ app.whenReady().then(async()=>{
  if(process.platform==='win32'&&(!TEST_MODE||process.env.LEARNING_DESK_APPDATA)&&typeof app.getAppPath==='function'&&typeof shell.writeShortcutLink==='function')ensureStartMenuShortcut({shell,platform:process.platform,env:{...process.env,APPDATA:process.env.LEARNING_DESK_APPDATA||process.env.APPDATA},execPath:process.execPath,appPath:app.getAppPath(),assetsDir:path.join(__dirname,'assets'),defaultApp:!!process.defaultApp,fs,log:appendLog});
  if(TEST_MODE&&process.platform==='darwin'){try{app.setActivationPolicy('accessory');}catch{/* só existe no macOS */}try{app.dock?.hide();}catch{/* só existe no macOS */}}
  /* #61/#100: com o app aberto, o Dock e a janela seguem o ícone e o acento. */
- appIcon=createAppIcon({app,platform:process.platform,assetsDir:path.join(__dirname,'assets'),dockEnabled:!TEST_MODE,systemDark:()=>!!nativeTheme?.shouldUseDarkColors});
+ appIcon=createAppIcon({app,platform:process.platform,assetsDir:path.join(__dirname,'assets'),dockEnabled:!TEST_MODE,systemDark:()=>!!nativeTheme?.shouldUseDarkColors,iconTheme:systemIconTheme});
  appIcon.apply(null,state.accent,state.theme);
  nativeTheme?.on?.('updated',()=>appIcon?.apply(win,state.accent,state.theme));
  app.setAboutPanelOptions({applicationName:'Summa',applicationVersion:app.getVersion(),copyright:languageHost.t('about.copyright'),iconPath:path.join(__dirname,'assets','mesa-1024.png')});
