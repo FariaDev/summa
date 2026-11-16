@@ -9,11 +9,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
-import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow,PLOT_PNG} from './helpers.mjs';
+import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,writeDeskJson,seedNativeSession,tinyPdf,statusOnline,resizeWindow} from './helpers.mjs';
 import {startFakeAmbitus} from './fake-ambitus.mjs';
 
 const XML=`<?xml version="1.0" standalone="no"?><xournal version="4"><page width="589" height="845"><background type="solid" color="#ffffffff" style="lined"/><layer><text fn="" size="12" color="#0013ff" font="Sans" x="100" y="100">Primeira</text></layer></page></xournal>`;
 const NATIVE_CAPTURE=process.platform==='win32'||process.platform==='darwin';
+/* 1×1 RGB opaco: a ponte achata PNG transparente sobre branco (#105), então a
+   imagem opaca é a que chega à bandeja byte a byte. */
+const PAGE_PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC';
 
 await withArtifacts('ambitus-conferir',async ctx=>{
  const runtime=ctx.runtime=newRuntime('ambitus-conferir'),course=seedCourse(runtime,'Test');
@@ -37,7 +40,7 @@ await withArtifacts('ambitus-conferir',async ctx=>{
  if(!NATIVE_CAPTURE)assert.equal(before.disabled,true,'no Linux, sem Ambitus, o Conferir fica indisponível como hoje');
 
  /* ---- 2. O Ambitus se pendura: liga o Conferir e o nome muda ---- */
- let answer={caminho:notebook,pagina:2,nome:'Limites — aula 3',png:PLOT_PNG};
+ let answer={caminho:notebook,pagina:2,nome:'Limites — aula 3',png:PAGE_PNG};
  const ambitus=startFakeAmbitus({runtime,page:()=>answer});
  await page.waitForFunction(()=>{const el=document.querySelector('#check');return el&&!el.disabled&&/Ambitus/.test(el.textContent);},undefined,{timeout:15000});
  assert.match((await checkState()).label,/^Conferir Ambitus$/);
@@ -62,12 +65,12 @@ await withArtifacts('ambitus-conferir',async ctx=>{
  const card=page.locator('#sidechat-attachments .attachment.notebook-card');
  assert.equal(await card.getAttribute('aria-label'),'Limites — aula 3 — pág. 2','o cartão diz o caderno e a página no nome acessível');
  assert.match(await card.locator('.notebook-page').innerText(),/^pág\. 2$/);
- assert.equal(await card.locator('img.notebook-thumb').getAttribute('src'),`data:image/png;base64,${PLOT_PNG}`,'a imagem é a página que o Ambitus mandou');
+ assert.equal(await card.locator('img.notebook-thumb').getAttribute('src'),`data:image/png;base64,${PAGE_PNG}`,'a imagem é a página que o Ambitus mandou');
  assert.doesNotMatch(await page.locator('#sidechat').innerText(),/aula 3\.xopp/,'o caminho não aparece na tela');
  await card.locator('.attachment-remove').click();
 
  /* ---- 5. Caderno sem arquivo: entra no lateral como imagem ---- */
- answer={caminho:'',pagina:1,nome:'',png:PLOT_PNG};
+ answer={caminho:'',pagina:1,nome:'',png:PAGE_PNG};
  await page.locator('#sidechat-attach').click();
  await page.locator('#sidechat-check').click();
  await page.waitForSelector('#sidechat-attachments .attachment img',{timeout:15000});
