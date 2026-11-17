@@ -313,6 +313,9 @@ export function initStudyPlanView() {
   menu = $('#study-plan-menu');
   pop = $('#study-plan-pop');
   if (!menu || !pop) return;
+  /* O ícone do gatilho vem do `icons.mjs`, como o do GeoGebra; o HTML só reserva o lugar. */
+  const triggerIcon = menu.querySelector('.study-plan-trigger .study-plan-icon');
+  if (triggerIcon && !triggerIcon.firstChild) triggerIcon.innerHTML = icon('listChecks');
   pop.addEventListener('click', onPopClick);
   pop.addEventListener('change', onPopChange);
   pop.addEventListener('input', onPopInput);

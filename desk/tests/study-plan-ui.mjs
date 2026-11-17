@@ -43,6 +43,7 @@ await withArtifacts('plano-estudo',async ctx=>{
  /* ---------- 1. o botão aparece na matéria, sem tarefa ---------- */
  assert.equal(await page.locator('#study-plan-menu').isVisible(),true,'o Plano aparece na barra de cima, numa matéria');
  assert.equal(await triggerText(page),'Plano','sem tarefa, o botão só diz Plano');
+ assert.equal(await page.locator('#study-plan-menu .study-plan-trigger .study-plan-icon svg').count(),1,'o gatilho mostra o ícone do Plano');
 
  /* ---------- 2. criar tarefas: botão, Enter e Backspace em vazio ---------- */
  await openPlan(page);
