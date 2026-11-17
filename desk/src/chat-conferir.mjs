@@ -56,7 +56,7 @@ export async function conferir(sink){
   const file=dataUrlFile(shot?.dataUrl,page?uiText(String(shot.title||app)):captureFileName(app));
   if(!file){toast(uiMessage('capture.invalid'));return;}
   const asCard=!!(sink?.notebook&&page?.caminho);
-  const added=asCard?(sink.notebook({caminho:page.caminho,pagina:page.pagina,nome:page.nome},shot.dataUrl)?1:0)
+  const added=asCard?(sink.notebook({caminho:page.caminho,pagina:page.pagina,nome:page.nome,...(page.recorte?{recorte:page.recorte}:{})},shot.dataUrl)?1:0)
    :sink?await sink.attach(file):await addAttachments([file],{capturedAt:Date.now(),exercise:exerciseAtCapture,app});
   if(!added)return;
   playShutter(sink?sink.shutter:$('#attach'));

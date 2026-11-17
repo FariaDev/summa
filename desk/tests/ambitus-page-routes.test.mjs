@@ -221,3 +221,49 @@ test('requestAmbitusPage autoriza o caderno que existe e esconde o caminho de um
   assert.deepEqual(await requestAmbitusPage(answered({erro: 'sem-pagina'}), {allowedXopp: allowed}), {ok: false, reason: 'no-page'});
   assert.deepEqual(await requestAmbitusPage({request: async () => ({ok: false, reason: 'timeout'})}, {allowedXopp: allowed}), {ok: false, reason: 'timeout'});
 });
+
+test('o recorte que o Ambitus manda com o png vai ao Conferir pela rota /pagina-atual', async (t) => {
+  const {poll, answer, pageBroker} = await startedBridge(t);
+  const pending = poll();
+  await untilConnected(pageBroker);
+  const asking = pageBroker.request();
+  const {pedido} = await (await pending).json();
+  const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+  assert.equal((await answer(good(pedido, {recorte}))).status, 200);
+  const outcome = await asking;
+  assert.equal(outcome.ok, true);
+  assert.deepEqual(outcome.answer.recorte, recorte);
+});
+
+test('recorte torto na resposta do Ambitus: 400 e o Conferir recebe invalid na hora', async (t) => {
+  const {poll, answer, pageBroker} = await startedBridge(t, {answerMs: 5000});
+  const pending = poll();
+  await untilConnected(pageBroker);
+  const asking = pageBroker.request();
+  const {pedido} = await (await pending).json();
+  assert.equal((await answer(good(pedido, {recorte: {x: 0, y: 286, largura: 0, altura: 555}}))).status, 400);
+  assert.deepEqual(await asking, {ok: false, reason: 'invalid'});
+});
+
+test('o recorte da resposta vale só com o png; sem recorte a resposta é a de hoje; recorte torto recusa', () => {
+  const parse = (value) => parsePageAnswer(Buffer.from(JSON.stringify(value)));
+  const id = 'abcdef0123456789';
+  const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+  assert.deepEqual(parse({pedido: id, caminho: '', pagina: 1, png: PNG_B64, recorte}).recorte, recorte);
+  assert.equal('recorte' in parse({pedido: id, caminho: '', pagina: 1, png: PNG_B64}), false, 'sem recorte, a resposta é a de hoje');
+  assert.equal(parse({pedido: id, caminho: '', pagina: 1, recorte}), null, 'sem png, o recorte não entra');
+  assert.equal(parse({pedido: id, caminho: '', pagina: 1, png: PNG_B64, recorte: {...recorte, altura: -1}}), null);
+});
+
+test('requestAmbitusPage leva o recorte ao Conferir; sem ele, a resposta é a de hoje', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-recorte-'));
+  t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+  const notebook = path.join(dir, 'Limites.xopp');
+  fs.writeFileSync(notebook, 'x');
+  const answered = (answer) => ({request: async () => ({ok: true, answer})});
+  const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+  const page = {caminho: notebook, pagina: 2, nome: 'Limites', png: PNG_B64};
+  assert.deepEqual(await requestAmbitusPage(answered({...page, recorte}), {allowedXopp: new Set()}), {ok: true, ...page, recorte});
+  const plain = await requestAmbitusPage(answered(page), {allowedXopp: new Set()});
+  assert.equal('recorte' in plain, false);
+});

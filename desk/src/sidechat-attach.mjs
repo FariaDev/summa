@@ -8,7 +8,7 @@ import {renderChildren} from './view-host.mjs';
 import {bendList,openImageDialog} from './chat-assets.mjs';
 import {imageFacts} from './attach-image-facts.mjs';
 import {h} from './sidechat-message-view.mjs';
-import {notebookCardOf} from './ambitus-page.mjs';
+import {notebookCardOf, notebookSendFacts} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
 import {notebookPageImages} from './notebook-send.mjs';
 
@@ -61,7 +61,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   const {tray, clip, pop, input, check, file} = parts;
   /** @type {Array<{dataUrl: string, mimeType?: string, name?: string}>} */
   let images = [];
-  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string, full?: boolean}>} */
+  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string, full?: boolean, recorte?: object}>} */
   let notebooks = [];
   let generation = 0;
   /* A miniatura pode chegar antes do cartão (o chat lateral ainda monta): fica guardada até ele entrar. */
@@ -157,7 +157,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   function snapshot() {
     return {
       ...(images.length ? {images: images.map((item) => ({dataUrl: item.dataUrl}))} : {}),
-      ...(notebooks.length ? {notebooks: notebooks.map(({caminho, pagina, nome}) => ({caminho, pagina, nome}))} : {}),
+      ...(notebooks.length ? {notebooks: notebooks.map(notebookSendFacts)} : {}),
     };
   }
 
@@ -167,7 +167,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
     const all = [...pages, ...images].map((item) => ({dataUrl: item.dataUrl}));
     return {
       ...(all.length ? {images: all} : {}),
-      ...(notebooks.length ? {notebooks: notebooks.map(({caminho, pagina, nome}) => ({caminho, pagina, nome}))} : {}),
+      ...(notebooks.length ? {notebooks: notebooks.map(notebookSendFacts)} : {}),
       pages,
     };
   }

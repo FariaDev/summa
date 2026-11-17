@@ -1,5 +1,5 @@
 // @ts-check
-import {notebookCardOf} from './ambitus-page.mjs';
+import {notebookCardOf, notebookSendFacts} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
 
 /* Cartões de caderno na bandeja do tutor principal: a página que o Ambitus
@@ -19,16 +19,17 @@ const MAX_NOTEBOOKS = 4;
 const THUMB_MAX_WIDTH = 240;
 const PNG_DATA_URL = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 
-/** @typedef {{caminho: string, pagina: number, nome: string, thumb: string, savedThumb?: string, full?: boolean}} TrayNotebook */
+/** @typedef {{caminho: string, pagina: number, nome: string, thumb: string, savedThumb?: string, full?: boolean, recorte?: {x: number, y: number, largura: number, altura: number}}} TrayNotebook */
 
 /**
  * O estado puro da bandeja de cadernos (sem DOM): a mesma página não repete,
  * passou do teto sai o mais antigo, e a miniatura pode chegar antes do cartão.
- * `persisted` é o que vai ao disco (com a miniatura reduzida, se houver).
+ * `persisted` é o que vai ao disco (com a miniatura reduzida, se houver); o
+ * `recorte` do cartão, quando é um trecho, vai junto nos dois.
  * @returns {{add: (raw: unknown) => boolean, setThumb: (raw: unknown) => boolean, setSavedThumb: (raw: unknown) => boolean,
  *   restore: (raw: unknown) => void, remove: (item: TrayNotebook) => void, list: () => TrayNotebook[],
- *   snapshot: () => Array<{caminho: string, pagina: number, nome: string}>,
- *   persisted: () => Array<{caminho: string, pagina: number, nome: string, thumb: string}>,
+ *   snapshot: () => Array<{caminho: string, pagina: number, nome: string, recorte?: object}>,
+ *   persisted: () => Array<{caminho: string, pagina: number, nome: string, recorte?: object, thumb: string}>,
  *   release: (sent: unknown) => void, clear: () => void}}
  * @example const tray = createNotebookTray(); tray.add({caminho: '/c/a.xopp', pagina: 2, nome: 'a'}); tray.snapshot() // [{caminho: '/c/a.xopp', pagina: 2, nome: 'a'}]
  */
@@ -82,8 +83,8 @@ export function createNotebookTray() {
     },
     remove(item) { items = items.filter((other) => other !== item); },
     list: () => items,
-    snapshot: () => items.map(({caminho, pagina, nome}) => ({caminho, pagina, nome})),
-    persisted: () => items.map(({caminho, pagina, nome, thumb, savedThumb}) => ({caminho, pagina, nome, thumb: savedThumb || thumb || ''})),
+    snapshot: () => items.map(notebookSendFacts),
+    persisted: () => items.map((item) => ({...notebookSendFacts(item), thumb: item.savedThumb || item.thumb || ''})),
     /* Tira da bandeja o que o envio levou; o que chegou durante o envio fica. */
     release(sent) {
       const gone = new Set((Array.isArray(sent) ? sent : []).map((item) => keyOf(item || {})));

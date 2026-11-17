@@ -254,3 +254,32 @@ test('sem matéria aberta ou com o tutor recusando, um aviso e nenhum cartão', 
   assert.equal(toasts.length, 2);
   assert.ok(toasts.every((m) => typeof m === 'string' && m.length > 0));
 });
+
+test('o recorte do Ambitus (com o png) chega ao main; sem png, ou com um trecho torto, o pedido é recusado', async (t) => {
+  const got = [];
+  const host = hostWith(t, (page) => { got.push(page); return {ok: true}; });
+  await host.start();
+  const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+  assert.deepEqual(await send(host, {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64, recorte}), {status: 200, json: {ok: true}});
+  assert.deepEqual(got, [{caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', png: PNG_B64, recorte}]);
+  assert.equal((await send(host, {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', recorte})).status, 400, 'recorte sem png não vira pedido');
+  for (const bad of [{...recorte, largura: 0}, {...recorte, x: -1}, {...recorte, y: '286'}, {...recorte, altura: 'NaN'}]) {
+    assert.equal((await send(host, {caminho: '/c/Limites.xopp', pagina: 2, png: PNG_B64, recorte: bad})).status, 400, JSON.stringify(bad));
+  }
+  assert.equal(got.length, 1, 'nenhum trecho torto chegou ao main');
+});
+
+test('o cartão do Ambitus leva o recorte no evento ambitus-page; sem ele, o evento é o de sempre', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-recorte-'));
+  const file = path.join(dir, 'Limites.xopp');
+  fs.writeFileSync(file, 'x');
+  try {
+    const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+    const withExcerpt = wiredWin();
+    assert.deepEqual(sendPageToSidechat({caminho: file, pagina: 2, nome: 'Limites', png: PNG_B64, recorte}, {allowedXopp: new Set(), win: () => withExcerpt.win}), {ok: true});
+    assert.deepEqual(withExcerpt.sent[0], ['ambitus-page', {caminho: file, pagina: 2, nome: 'Limites', recorte}]);
+    const whole = wiredWin();
+    assert.deepEqual(sendPageToSidechat({caminho: file, pagina: 2, nome: 'Limites', png: PNG_B64}, {allowedXopp: new Set(), win: () => whole.win}), {ok: true});
+    assert.deepEqual(whole.sent[0], ['ambitus-page', {caminho: file, pagina: 2, nome: 'Limites'}]);
+  } finally { fs.rmSync(dir, {recursive: true, force: true}); }
+});

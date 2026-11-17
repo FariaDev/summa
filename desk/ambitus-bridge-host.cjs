@@ -22,6 +22,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const {createLifecycleQueue, removeOwnedBridge, removeOrphanBridge, closeServer} = require('./ink-bridge-lifecycle.cjs');
 const {flattenPng} = require('./png-flatten.cjs');
+const {notebookRecorte} = require('./src/notebook-facts.mjs');
 
 const BRIDGE_NAME = 'ambitus-bridge.json';
 /* Uma página do Ambitus sai em ~1600 px de largura; 8 MB cobre página com
@@ -144,13 +145,29 @@ function flattenPagePng(png, log = () => {}) {
 }
 
 /**
+ * O `recorte` opcional de um pedido (o trecho da página, em pontos): ausente
+ * vale e some; presente só vale junto do PNG e com a forma de `notebookRecorte`.
+ * @param {unknown} value o campo `recorte` como veio
+ * @param {string|null} png o PNG já achatado, ou null quando o pedido não traz um
+ * @returns {{recorte?: {x: number, y: number, largura: number, altura: number}}|null} null quando o campo é inválido
+ * @example recorteField(undefined, null) // {}
+ * @example recorteField({x: 0, y: 286, largura: 595, altura: 555}, null) // null (sem png)
+ */
+function recorteField(value, png) {
+  if (value === undefined) return {};
+  const recorte = notebookRecorte(value);
+  return recorte && png ? {recorte} : null;
+}
+
+/**
  * O pedido de mandar uma página ao chat lateral: caminho absoluto de um
  * `.xopp`, página contada de 1, o nome do caderno (opcional, só para o texto)
  * e, opcional, o PNG já renderizado pelo Ambitus em base64 (o mesmo formato de
- * `/pagina-atual`); com ele a Summa não renderiza do disco.
+ * `/pagina-atual`); com ele a Summa não renderiza do disco. Com o PNG, o
+ * `recorte` opcional diz que ele é só um trecho da página (pontos PDF).
  * @param {Buffer|null} body
  * @param {(line: string) => void} [log] uma linha quando o formato do PNG não é achatado
- * @returns {{caminho: string, pagina: number, nome: string, png?: string}|null}
+ * @returns {{caminho: string, pagina: number, nome: string, png?: string, recorte?: {x: number, y: number, largura: number, altura: number}}|null}
  * @example parsePageRequest(Buffer.from('{"caminho":"/c/a.xopp","pagina":2}')) // {caminho: '/c/a.xopp', pagina: 2, nome: ''}
  */
 function parsePageRequest(body, log = () => {}) {
@@ -158,13 +175,15 @@ function parsePageRequest(body, log = () => {}) {
   let raw;
   try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const {caminho, pagina, nome, png} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown}} */ (raw);
+  const {caminho, pagina, nome, png, recorte} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown, recorte?: unknown}} */ (raw);
   if (typeof caminho !== 'string' || caminho.length > 4096 || !path.isAbsolute(caminho) || !/\.xopp$/i.test(caminho) || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
   const flatPng = png === undefined ? null : flattenPagePng(png, log);
   if (png !== undefined && !flatPng) return null;
+  const excerpt = recorteField(recorte, flatPng);
+  if (!excerpt) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {caminho, pagina: /** @type {number} */ (pagina), nome: name, ...(flatPng ? {png: flatPng} : {})};
+  return {caminho, pagina: /** @type {number} */ (pagina), nome: name, ...(flatPng ? {png: flatPng} : {}), ...excerpt};
 }
 
 /**
@@ -172,10 +191,11 @@ function parsePageRequest(body, log = () => {}) {
  * `{pedido, erro: 'sem-pagina'}`, ou `{pedido, caminho, pagina, nome, png}`
  * com o PNG em base64. `caminho` vazio é um caderno que nunca foi salvo; com
  * valor, vale a mesma regra de `/mandar-pagina`. O PNG é conferido pela
- * assinatura e pelo teto de bytes, e achatado sobre branco (#105).
+ * assinatura e pelo teto de bytes, e achatado sobre branco (#105). O `recorte`
+ * opcional vale aqui também (só com o PNG, que é obrigatório).
  * @param {Buffer|null} body
  * @param {(line: string) => void} [log] uma linha quando o formato do PNG não é achatado
- * @returns {{pedido: string, erro: 'sem-pagina'}|{pedido: string, caminho: string, pagina: number, nome: string, png: string}|null}
+ * @returns {{pedido: string, erro: 'sem-pagina'}|{pedido: string, caminho: string, pagina: number, nome: string, png: string, recorte?: {x: number, y: number, largura: number, altura: number}}|null}
  * @example parsePageAnswer(Buffer.from('{"pedido":"ab","erro":"sem-pagina"}')) // {pedido: 'ab', erro: 'sem-pagina'}
  */
 function parsePageAnswer(body, log = () => {}) {
@@ -183,7 +203,7 @@ function parsePageAnswer(body, log = () => {}) {
   let raw;
   try { raw = JSON.parse(body.toString('utf8')); } catch { return null; }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const {pedido, erro, caminho, pagina, nome, png} = /** @type {{pedido?: unknown, erro?: unknown, caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown}} */ (raw);
+  const {pedido, erro, caminho, pagina, nome, png, recorte} = /** @type {{pedido?: unknown, erro?: unknown, caminho?: unknown, pagina?: unknown, nome?: unknown, png?: unknown, recorte?: unknown}} */ (raw);
   if (typeof pedido !== 'string' || !/^[0-9a-f]{8,64}$/.test(pedido)) return null;
   if (erro !== undefined) return erro === 'sem-pagina' ? {pedido, erro} : null;
   if (typeof caminho !== 'string' || caminho.length > 4096 || caminho.includes('\0') || /[\r\n]/.test(caminho)) return null;
@@ -191,8 +211,10 @@ function parsePageAnswer(body, log = () => {}) {
   if (!Number.isInteger(pagina) || /** @type {number} */ (pagina) < 1 || /** @type {number} */ (pagina) > 100000) return null;
   const flatPng = flattenPagePng(png, log);
   if (!flatPng) return null;
+  const excerpt = recorteField(recorte, flatPng);
+  if (!excerpt) return null;
   const name = typeof nome === 'string' ? Array.from(nome, (c) => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, 200) : '';
-  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png: flatPng};
+  return {pedido, caminho, pagina: /** @type {number} */ (pagina), nome: name, png: flatPng, ...excerpt};
 }
 
 /** Host e token conferidos: só 127.0.0.1/localhost na porta da ponte (DNS rebinding) e o token do arquivo. @param {import('node:http').IncomingMessage} req @param {{token: string, port: number}} identity @returns {boolean} */
@@ -217,7 +239,8 @@ function authorized(req, identity) {
  * `sendPage` leva a página ao chat lateral (o tutor a relê pelo `ler_caderno`);
  * resposta `{ok: true}` ou `{reason}`. O `png` opcional (base64, a mesma
  * validação e o mesmo teto de corpo de `/pagina-atual`) é usado no lugar da
- * renderização do disco. Não depende de `inkReading`: é um pedido explícito da
+ * renderização do disco. O `recorte` opcional (só com o png) diz que esse PNG é
+ * um trecho da página, não a página toda (`notebookRecorte`). Não depende de `inkReading`: é um pedido explícito da
  * pessoa e nada sai da máquina até ela enviar a mensagem.
  * Rotas `GET /pedido-pagina` e `POST /pagina-atual` (o Conferir pela ponte, com
  * `pageBroker`): o Ambitus não tem servidor e segura um long-poll; a Summa o

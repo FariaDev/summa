@@ -237,3 +237,20 @@ test('item da fila leva o caderno junto (com o caminho) e volta do disco', () =>
     assert.deepEqual(tray.items[0].notebooks, [notebook], 'o save da bandeja preserva o caderno da fila');
   });
 });
+
+test('cartão de trecho: o recorte vai ao disco e volta na bandeja e na fila; um recorte torto cai e o cartão fica como página inteira', () => {
+  withRuntime((runtime) => {
+    const session = join(runtime, SESSION);
+    const xopp = join(runtime, 'Limites — aula 3.xopp');
+    writeFileSync(xopp, 'caderno');
+    const thumb = 'data:image/png;base64,iVBORw0KGgo=';
+    const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+    const excerpt = {caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb, recorte};
+    pending.saveTray(runtime, session, [], [], [excerpt]);
+    assert.deepEqual(pending.readPending(runtime, session).notebooks, [excerpt], 'o trecho volta do disco');
+    pending.saveQueue(runtime, session, [{text: '', refs: [], images: [], pdfs: [], notebooks: [excerpt]}], false);
+    assert.deepEqual(pending.readPending(runtime, session).items[0].notebooks, [excerpt], 'a fila leva o trecho junto');
+    pending.saveTray(runtime, session, [], [], [{...excerpt, recorte: {...recorte, largura: 0}}]);
+    assert.deepEqual(pending.readPending(runtime, session).notebooks, [{caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb}], 'recorte torto cai; o cartão segue como página inteira');
+  });
+});

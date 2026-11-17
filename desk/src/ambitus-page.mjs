@@ -1,5 +1,6 @@
 // @ts-check
 import {t} from './ui-text.mjs';
+import {notebookRecorte} from './notebook-facts.mjs';
 
 /* A página mandada pelo Ambitus (`ambitus-page`, pela ponte local) vai SEMPRE à
    bandeja do tutor principal (`tutor-notebooks.mjs`), como cartão (miniatura,
@@ -15,15 +16,29 @@ function notebookName(caminho, nome) {
 }
 
 /**
- * O cartão de uma página pedida, ou null quando o pedido não é uma página.
- * @param {unknown} raw `{caminho, pagina, nome}`
- * @returns {{caminho: string, pagina: number, nome: string}|null}
+ * O cartão de uma página pedida, ou null quando o pedido não é uma página. O
+ * `recorte` (trecho da página, em pontos) fica no cartão quando é válido; sem
+ * ele, o cartão é a página inteira.
+ * @param {unknown} raw `{caminho, pagina, nome, recorte?}`
+ * @returns {{caminho: string, pagina: number, nome: string, recorte?: {x: number, y: number, largura: number, altura: number}}|null}
  * @example notebookCardOf({caminho: '/c/Limites.xopp', pagina: 2, nome: ''}) // {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites'}
  */
 export function notebookCardOf(raw) {
-  const {caminho, pagina, nome} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown}} */ (raw || {});
+  const {caminho, pagina, nome, recorte} = /** @type {{caminho?: unknown, pagina?: unknown, nome?: unknown, recorte?: unknown}} */ (raw || {});
   if (typeof caminho !== 'string' || !caminho || typeof pagina !== 'number' || !Number.isInteger(pagina) || pagina < 1) return null;
-  return {caminho, pagina, nome: notebookName(caminho, typeof nome === 'string' ? nome.trim() : '')};
+  const excerpt = notebookRecorte(recorte);
+  return {caminho, pagina, nome: notebookName(caminho, typeof nome === 'string' ? nome.trim() : ''), ...(excerpt ? {recorte: excerpt} : {})};
+}
+
+/**
+ * O que o envio leva de um cartão: caminho, página e nome, e o `recorte` só
+ * quando o cartão é um trecho (sem ele, a chave não aparece).
+ * @param {{caminho: string, pagina: number, nome: string, recorte?: object}} card
+ * @returns {{caminho: string, pagina: number, nome: string, recorte?: object}}
+ * @example notebookSendFacts({caminho: '/c/a.xopp', pagina: 2, nome: 'a', thumb: 'x'}) // {caminho: '/c/a.xopp', pagina: 2, nome: 'a'}
+ */
+export function notebookSendFacts({caminho, pagina, nome, recorte}) {
+  return {caminho, pagina, nome, ...(recorte ? {recorte} : {})};
 }
 
 /**
