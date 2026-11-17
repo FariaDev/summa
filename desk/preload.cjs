@@ -108,7 +108,9 @@ function sidechatAttachments(raw){
    const book=asPlain(item,'Caderno inválido.');
    const pagina=Number(book.pagina);
    if(!Number.isInteger(pagina)||pagina<1)fail('Caderno inválido.');
-   return {caminho:asString(book.caminho,'Caderno inválido.',MAX_SIDE_PATH),pagina,nome:asString(book.nome??'','Caderno inválido.',200)};
+   /* O trecho (`recorte`) passa como veio; o main confere as medidas (notebook-note.cjs). */
+   const excerpt=book.recorte===undefined?{}:{recorte:asPlain(book.recorte,'Caderno inválido.')};
+   return {caminho:asString(book.caminho,'Caderno inválido.',MAX_SIDE_PATH),pagina,nome:asString(book.nome??'','Caderno inválido.',200),...excerpt};
   });
  }
  return out;

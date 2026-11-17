@@ -25,6 +25,7 @@ const path = require('node:path');
 const pendingCore = require('./src/generated/pending.core.js').default;
 const attachCore = require('./src/generated/attachments.core.js').default;
 const {normalizePdfFacts} = require('./src/chat-pdf.mjs');
+const {notebookRecorte} = require('./src/notebook-facts.mjs');
 const {toNat, wholeNat} = require('./src/bend-nat.mjs');
 const {MAX_DRAFT} = require('./state-adapter.cjs');
 
@@ -86,7 +87,9 @@ function notebookFact(raw) {
   const name = (typeof raw.nome === 'string' ? raw.nome.replace(/\s+/g, ' ').trim() : '').slice(0, MAX_NOTEBOOK_NAME)
     || path.basename(caminho).replace(/\.xopp$/i, '');
   const thumb = typeof raw.thumb === 'string' && NOTEBOOK_PNG.test(raw.thumb) && raw.thumb.length <= MAX_NOTEBOOK_THUMB ? raw.thumb : '';
-  return {caminho, pagina: Math.min(page, 100000), nome: name, ...(thumb ? {thumb} : {})};
+  /* O trecho (`recorte`) do Ambitus volta junto; o disco antigo, sem ele, carrega como página inteira. */
+  const recorte = notebookRecorte(raw.recorte);
+  return {caminho, pagina: Math.min(page, 100000), nome: name, ...(thumb ? {thumb} : {}), ...(recorte ? {recorte} : {})};
 }
 
 function normalizeNotebooks(raw) {

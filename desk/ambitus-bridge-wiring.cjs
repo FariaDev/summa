@@ -64,8 +64,9 @@ async function sendPageThumbnail(page, {readNotebook, win, log = () => {}}) {
  * janela vem para a frente com o pedido (`ambitus-page`), que no renderer vira
  * um cartão na bandeja de anexos. Sem janela, o motivo. O PNG que veio com o
  * pedido (`png`, base64) vira a imagem do cartão; sem ele, a miniatura é
- * renderizada depois, sem segurar a resposta (`sendPageThumbnail`).
- * @param {{caminho: string, pagina: number, nome: string, png?: string}} page
+ * renderizada depois, sem segurar a resposta (`sendPageThumbnail`). O `recorte`
+ * (com o png) vai junto no `ambitus-page`: o cartão é só esse trecho.
+ * @param {{caminho: string, pagina: number, nome: string, png?: string, recorte?: {x: number, y: number, largura: number, altura: number}}} page
  * @param {{allowedXopp: Set<string>, win: () => any, isFile?: (file: string) => boolean,
  *   readNotebook?: ((raw: {caminho: string, pagina: number}) => Promise<{image?: string}>) | null, log?: (line: string) => void}} deps
  * @returns {{ok: true}|{reason: string}}
@@ -79,7 +80,7 @@ function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = 
   if (window.isMinimized()) window.restore();
   window.show();
   window.focus();
-  window.webContents.send('ambitus-page', {caminho: page.caminho, pagina: page.pagina, nome: page.nome});
+  window.webContents.send('ambitus-page', {caminho: page.caminho, pagina: page.pagina, nome: page.nome, ...(page.recorte ? {recorte: page.recorte} : {})});
   if (typeof page.png === 'string' && page.png) {
     window.webContents.send('ambitus-page-thumb', {caminho: page.caminho, pagina: page.pagina, thumb: `data:image/png;base64,${page.png}`});
   } else if (typeof readNotebook === 'function') {
@@ -93,20 +94,21 @@ function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = 
  * para a janela: se o caderno tem arquivo e ele existe, entra na lista viva
  * (`allowedXopp`) para o tutor relê-lo pelo `ler_caderno`, como em
  * `/mandar-pagina`. Arquivo que sumiu vira `caminho` vazio: a página entra
- * como imagem, sem prometer uma releitura que o tutor não faria.
+ * como imagem, sem prometer uma releitura que o tutor não faria. O `recorte` que
+ * o Ambitus mandou (trecho da página) volta junto, como em `/mandar-pagina`.
  * @param {{request: () => Promise<{ok: true, answer: any}|{ok: false, reason: string}>}} broker
  * @param {{allowedXopp: Set<string>, isFile?: (file: string) => boolean}} deps
- * @returns {Promise<{ok: true, png: string, caminho: string, pagina: number, nome: string}|{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'|'no-page'}>}
+ * @returns {Promise<{ok: true, png: string, caminho: string, pagina: number, nome: string, recorte?: {x: number, y: number, largura: number, altura: number}}|{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'|'no-page'}>}
  * @example await requestAmbitusPage(broker, {allowedXopp}) // {ok: true, png: 'iVBOR…', caminho: '/c/a.xopp', pagina: 2, nome: 'a'}
  */
 async function requestAmbitusPage(broker, {allowedXopp, isFile = (file) => { try { return fs.statSync(file).isFile(); } catch { return false; } }}) {
   const outcome = await broker.request();
   if (!outcome.ok) return /** @type {{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'}} */ (outcome);
-  const {erro, caminho = '', pagina, nome = '', png} = outcome.answer;
+  const {erro, caminho = '', pagina, nome = '', png, recorte} = outcome.answer;
   if (erro) return {ok: false, reason: 'no-page'};
   const known = caminho && isFile(caminho) ? caminho : '';
   if (known) authorizeXopp(allowedXopp, known);
-  return {ok: true, png, caminho: known, pagina, nome};
+  return {ok: true, png, caminho: known, pagina, nome, ...(recorte ? {recorte} : {})};
 }
 
 /**

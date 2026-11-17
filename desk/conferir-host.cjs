@@ -10,7 +10,7 @@ const {message: uiMsg} = require('./src/i18n.mjs');
 
    Canais:
    - `capture-ready`    → {title, dataUrl, app} | {absent, app, saved, message}
-                          | {title, dataUrl, app: 'Ambitus', ambitus: {caminho, pagina, nome}} (pela ponte)
+                          | {title, dataUrl, app: 'Ambitus', ambitus: {caminho, pagina, nome, recorte?}} (pela ponte)
    - `capture-windows`  → {windows:[fatos], choice, canGoBack}
    - `capture-choose`   → {id} captura a janela escolhida e guarda o APP dela
    - `capture-default`  → volta ao Xournal++ (esquece a escolha)
@@ -108,7 +108,7 @@ function createConferirHost(deps) {
       title: result.nome ? uiMsg('conferir.ambitusTitle', {name: result.nome, page: result.pagina}) : uiMsg('conferir.ambitusUntitledTitle', {page: result.pagina}),
       dataUrl: `data:image/png;base64,${result.png}`,
       app: AMBITUS_APP,
-      ambitus: {caminho: result.caminho, pagina: result.pagina, nome: result.nome},
+      ambitus: {caminho: result.caminho, pagina: result.pagina, nome: result.nome, ...(result.recorte ? {recorte: result.recorte} : {})},
     };
   }
 

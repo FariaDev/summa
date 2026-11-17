@@ -11,9 +11,30 @@ export const MAX_NOTEBOOKS = 4;
    gerador do bloco não podem divergir. */
 export const NOTEBOOK_HEADERS = ['Cadernos anexados à mensagem', 'Notebooks attached to the message'];
 const HEADER = new RegExp(`\\[(?:${NOTEBOOK_HEADERS.map(escapeRegExp).join('|')})\\]`);
-const LINE = /^- (?:caderno|notebook) “(.+?)”, (?:pág\.|p\.) (\d+), (?:arquivo|file) /;
+/* A linha de trecho (`recorte`, o Ambitus manda só o que a pessoa vê) traz as
+   mesmas quatro medidas nos dois idiomas; a linha antiga, sem trecho, segue valendo. */
+const LINE = /^- (?:caderno|notebook) “(.+?)”, (?:pág\.|p\.) (\d+), (?:(?:trecho|excerpt) x=\S+ y=\S+ (?:largura|width)=\S+ (?:altura|height)=\S+ pt, )?(?:arquivo|file) /;
 const MAX_PAGE = 100000;
 const MAX_NAME = 200;
+
+/**
+ * O trecho de uma página do Ambitus (`recorte`), em pontos PDF (1/72 in) com a
+ * origem no canto superior esquerdo da página. Só vale com as quatro medidas
+ * numéricas finitas, `x` e `y` ≥ 0 e `largura` e `altura` > 0; qualquer outra
+ * coisa é null (o pedido que a traz é recusado, nunca vira a página inteira).
+ * @param {unknown} raw `{x, y, largura, altura}`
+ * @returns {{x: number, y: number, largura: number, altura: number}|null}
+ * @example notebookRecorte({x: 0, y: 286, largura: 595, altura: 555}) // {x: 0, y: 286, largura: 595, altura: 555}
+ * @example notebookRecorte({x: 0, y: 0, largura: 0, altura: 555}) // null
+ */
+export function notebookRecorte(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const {x, y, largura, altura} = /** @type {{x?: unknown, y?: unknown, largura?: unknown, altura?: unknown}} */ (raw);
+  if (![x, y, largura, altura].every((value) => typeof value === 'number' && Number.isFinite(value))) return null;
+  const [left, top, width, height] = /** @type {number[]} */ ([x, y, largura, altura]);
+  if (left < 0 || top < 0 || width <= 0 || height <= 0) return null;
+  return {x: left, y: top, largura: width, altura: height};
+}
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

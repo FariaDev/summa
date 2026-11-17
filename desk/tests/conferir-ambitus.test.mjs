@@ -72,3 +72,11 @@ test('sem resposta e sem página viram mensagens diferentes', async () => {
   await assert.rejects(harness({result: {ok: false, reason: 'not-connected'}}).host.ready(), ptMatches(/Ambitus não respondeu/));
   await assert.rejects(harness({result: {ok: false, reason: 'no-page'}}).host.ready(), ptMatches(/não tem uma página aberta/));
 });
+
+test('o recorte que o Ambitus mandou vai no cartão; a página inteira não ganha a chave', async () => {
+  const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+  const excerpt = harness({result: {ok: true, png: PNG_B64, caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', recorte}});
+  assert.deepEqual((await excerpt.host.ready()).ambitus, {caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites', recorte});
+  const whole = harness();
+  assert.equal('recorte' in (await whole.host.ready()).ambitus, false);
+});
