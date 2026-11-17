@@ -10,6 +10,7 @@ const {exportConversationMarkdown}=history;
 const {mergePriorHistory}=require('./src/agents/claude-adapter-history.cjs');
 const {readNativeHistory}=require('./src/agents/native-history.cjs');
 const {message}=require('./src/i18n.mjs');
+const {isImageOnlyPrompt}=require('./src/image-only-send.mjs');
 
 /* Exportação da conversa ativa para Markdown (#43 fase 2: saiu do main.cjs).
    Pi lê o JSONL da sessão; Claude lê o registro da conversa e, quando há
@@ -46,7 +47,8 @@ function registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,ap
    if(!m||!['user','assistant'].includes(m.role))continue;
    let text='';
    for(const part of Array.isArray(m.content)?m.content:[]){
-    if(part?.type==='text')text+=(text?'\n':'')+String(part.text||'');
+    /* Envio só com imagem (#109): a marca e a frase padrão não vão ao arquivo. */
+    if(part?.type==='text'&&!(m.role==='user'&&isImageOnlyPrompt(part.text)))text+=(text?'\n':'')+String(part.text||'');
     else if(part?.type==='image')text+=(text?'\n':'')+labels.imageAttached;
    }
    if(!text.trim())continue;
