@@ -188,6 +188,21 @@ test('o PNG que veio no pedido vira a imagem do cartão, sem renderizar o disco'
   } finally { fs.rmSync(dir, {recursive: true, force: true}); }
 });
 
+test('a miniatura de um trecho leva o recorte, para ir ao cartão certo da mesma página', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-recorte-'));
+  const file = path.join(dir, 'Limites.xopp');
+  fs.writeFileSync(file, 'x');
+  try {
+    const {sent, win} = wiredWin();
+    const recorte = {x: 0, y: 286, largura: 595, altura: 555};
+    assert.deepEqual(sendPageToSidechat({caminho: file, pagina: 2, nome: 'Limites', png: PNG_B64, recorte}, {allowedXopp: new Set(), win: () => win}), {ok: true});
+    assert.deepEqual(sent, [
+      ['ambitus-page', {caminho: file, pagina: 2, nome: 'Limites', recorte}],
+      ['ambitus-page-thumb', {caminho: file, pagina: 2, recorte, thumb: `data:image/png;base64,${PNG_B64}`}],
+    ]);
+  } finally { fs.rmSync(dir, {recursive: true, force: true}); }
+});
+
 test('a miniatura segue depois da resposta, num evento à parte, pelo mesmo leitor do ler_caderno', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-ambitus-thumb-'));
   const file = path.join(dir, 'Limites.xopp');

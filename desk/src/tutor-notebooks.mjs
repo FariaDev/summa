@@ -1,6 +1,7 @@
 // @ts-check
 import {notebookCardOf, notebookSendFacts} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
+import {notebookCardKey} from './notebook-facts.mjs';
 
 /* Cartões de caderno na bandeja do tutor principal: a página que o Ambitus
    manda, com ou sem o modo mini (`ambitus-page.mjs`).
@@ -38,7 +39,8 @@ export function createNotebookTray() {
   let items = [];
   /** @type {Map<string, string>} */
   const early = new Map();
-  const keyOf = (/** @type {{caminho: unknown, pagina: unknown}} */ item) => `${item.caminho}#${item.pagina}`;
+  /* A página e o trecho: dois trechos da mesma página são dois cartões. */
+  const keyOf = notebookCardKey;
   return {
     add(raw) {
       const card = notebookCardOf(raw);
@@ -54,18 +56,18 @@ export function createNotebookTray() {
     setThumb(raw) {
       const {caminho, pagina, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, thumb?: unknown}} */ (raw || {});
       if (typeof thumb !== 'string' || !PNG_DATA_URL.test(thumb)) return false;
-      const card = items.find((item) => item.caminho === caminho && item.pagina === pagina);
+      const card = items.find((item) => keyOf(item) === keyOf(raw));
       if (card) { card.thumb = thumb; card.full = true; card.savedThumb = ''; return true; }
       if (typeof caminho === 'string' && typeof pagina === 'number') {
-        early.set(keyOf({caminho, pagina}), thumb);
+        early.set(keyOf(raw), thumb);
         if (early.size > MAX_NOTEBOOKS) early.delete(/** @type {string} */ (early.keys().next().value));
       }
       return false;
     },
     setSavedThumb(raw) {
-      const {caminho, pagina, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, thumb?: unknown}} */ (raw || {});
+      const {thumb} = /** @type {{thumb?: unknown}} */ (raw || {});
       if (typeof thumb !== 'string' || !PNG_DATA_URL.test(thumb)) return false;
-      const card = items.find((item) => item.caminho === caminho && item.pagina === pagina);
+      const card = items.find((item) => keyOf(item) === keyOf(raw));
       if (!card) return false;
       card.savedThumb = thumb;
       return true;
@@ -117,13 +119,13 @@ export function tutorNotebookCount() { return tray.list().length; }
 /**
  * O cartão vivo de uma página (para o envio achar a imagem cheia da bandeja),
  * ou `null` quando a página não está na bandeja.
- * @param {{caminho?: unknown, pagina?: unknown}} raw
+ * @param {{caminho?: unknown, pagina?: unknown, recorte?: unknown}} raw
  * @returns {TrayNotebook|null}
  * @example tutorNotebookFind({caminho: '/c/a.xopp', pagina: 2})?.thumb
  */
 export function tutorNotebookFind(raw) {
-  const {caminho, pagina} = raw || {};
-  return tray.list().find((item) => item.caminho === caminho && item.pagina === pagina) || null;
+  const key = notebookCardKey(raw || {});
+  return tray.list().find((item) => notebookCardKey(item) === key) || null;
 }
 
 /** O que o envio leva: caminho, página e nome (a miniatura não vai). @returns {Array<{caminho: string, pagina: number, nome: string}>} @example tutorNotebooksSnapshot() // [{caminho: '/c/a.xopp', pagina: 2, nome: 'a'}] */
@@ -177,9 +179,9 @@ export function attachTutorNotebook(raw) {
 export function setTutorNotebookThumb(raw) {
   if (!tray.setThumb(raw)) return false;
   changed();
-  const {caminho, pagina, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, thumb?: unknown}} */ (raw || {});
+  const {caminho, pagina, recorte, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, recorte?: unknown, thumb?: unknown}} */ (raw || {});
   void shrinkThumb(/** @type {string} */ (thumb)).then((small) => {
-    if (!small || !tray.setSavedThumb({caminho, pagina, thumb: small})) return;
+    if (!small || !tray.setSavedThumb({caminho, pagina, recorte, thumb: small})) return;
     changed();
   }).catch(() => {});
   return true;
@@ -204,7 +206,7 @@ async function shrinkThumb(dataUrl) {
 /** @param {TrayNotebook} item @returns {HTMLElement} o cartão `.attachment` do caderno, com o × */
 function cardNode(item) {
   return notebookCardNode(item, {
-    key: `notebook-${item.caminho}#${item.pagina}`,
+    key: `notebook-${notebookCardKey(item)}`,
     onRemove: () => {
       tray.remove(item);
       changed();

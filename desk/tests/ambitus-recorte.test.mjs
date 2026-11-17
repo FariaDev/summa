@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {notebookRecorte, attachedNotebooks} from '../src/notebook-facts.mjs';
+import {notebookRecorte, notebookCardKey, attachedNotebooks} from '../src/notebook-facts.mjs';
 import {notebookCardOf, notebookSendFacts} from '../src/ambitus-page.mjs';
 import {createNotebookTray} from '../src/tutor-notebooks.mjs';
 import {createI18n, message} from '../src/i18n.mjs';
@@ -59,7 +59,52 @@ test('a bandeja leva o trecho no envio e no que se guarda; o disco antigo volta 
   assert.deepEqual(restored.snapshot(), [{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT}, {caminho: XOPP, pagina: 3, nome: 'Limites'}]);
 
   tray.add({caminho: XOPP, pagina: 2, nome: 'Limites'});
-  assert.deepEqual(tray.snapshot(), [{caminho: XOPP, pagina: 2, nome: 'Limites'}], 'a página inteira que chega depois troca o trecho da mesma página');
+  assert.deepEqual(tray.snapshot(), [{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT}, {caminho: XOPP, pagina: 2, nome: 'Limites'}],
+    'a página inteira e um trecho dela são dois cartões');
+});
+
+const OTHER = {x: 0, y: 0, largura: 595, altura: 286};
+const PNG_A = 'data:image/png;base64,QUFB';
+const PNG_B = 'data:image/png;base64,QkJC';
+
+test('a chave do cartão é a página e, quando há, o trecho', () => {
+  assert.equal(notebookCardKey({caminho: XOPP, pagina: 2}), `${XOPP}#2`);
+  assert.equal(notebookCardKey({caminho: XOPP, pagina: 2, recorte: EXCERPT}), `${XOPP}#2#0,286,595,555`);
+  assert.equal(notebookCardKey({caminho: XOPP, pagina: 2, recorte: {x: 0}}), `${XOPP}#2`, 'trecho torto não muda a chave');
+  assert.notEqual(notebookCardKey({caminho: XOPP, pagina: 2, recorte: EXCERPT}), notebookCardKey({caminho: XOPP, pagina: 2, recorte: OTHER}));
+});
+
+test('dois trechos da mesma página são dois cartões; o mesmo trecho de novo não repete', () => {
+  const tray = createNotebookTray();
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT});
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER});
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT});
+  assert.deepEqual(tray.snapshot(), [{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER}, {caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT}]);
+});
+
+test('a miniatura de cada trecho vai ao seu cartão, mesmo quando chega antes dele', () => {
+  const tray = createNotebookTray();
+  assert.equal(tray.setThumb({caminho: XOPP, pagina: 2, recorte: OTHER, thumb: PNG_B}), false, 'chegou antes do cartão');
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT});
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER});
+  assert.equal(tray.setThumb({caminho: XOPP, pagina: 2, recorte: EXCERPT, thumb: PNG_A}), true);
+  assert.deepEqual(tray.list().map((item) => item.thumb), [PNG_A, PNG_B]);
+  assert.equal(tray.setSavedThumb({caminho: XOPP, pagina: 2, recorte: OTHER, thumb: PNG_A}), true);
+  assert.deepEqual(tray.list().map((item) => item.savedThumb), ['', PNG_A]);
+});
+
+test('o envio de um trecho tira só ele da bandeja', () => {
+  const tray = createNotebookTray();
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT});
+  tray.add({caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER});
+  tray.release([{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT}]);
+  assert.deepEqual(tray.snapshot(), [{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER}]);
+});
+
+test('o disco devolve os dois trechos da mesma página', () => {
+  const restored = createNotebookTray();
+  restored.restore([{caminho: XOPP, pagina: 2, nome: 'Limites', recorte: EXCERPT, thumb: ''}, {caminho: XOPP, pagina: 2, nome: 'Limites', recorte: OTHER, thumb: ''}]);
+  assert.equal(restored.snapshot().length, 2);
 });
 
 test('o bloco escondido diz que a imagem é só o trecho, com as medidas arredondadas; a linha de página inteira não muda', () => {

@@ -36,6 +36,22 @@ export function notebookRecorte(raw) {
   return {x: left, y: top, largura: width, altura: height};
 }
 
+/**
+ * A identidade de um cartão de caderno nas bandejas e no `pending.json`: a
+ * página e, quando é um trecho, o `recorte`. Dois trechos da mesma página são
+ * dois cartões; o mesmo trecho mandado de novo substitui o anterior.
+ * @param {{caminho?: unknown, pagina?: unknown, recorte?: unknown}} item
+ * @returns {string}
+ * @example notebookCardKey({caminho: '/c/a.xopp', pagina: 2}) // '/c/a.xopp#2'
+ * @example notebookCardKey({caminho: '/c/a.xopp', pagina: 2, recorte: {x: 0, y: 286, largura: 595, altura: 555}}) // '/c/a.xopp#2#0,286,595,555'
+ */
+export function notebookCardKey(item) {
+  const {caminho, pagina, recorte} = item || {};
+  const excerpt = notebookRecorte(recorte);
+  const page = `${caminho}#${pagina}`;
+  return excerpt ? `${page}#${excerpt.x},${excerpt.y},${excerpt.largura},${excerpt.altura}` : page;
+}
+
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

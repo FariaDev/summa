@@ -82,7 +82,8 @@ function sendPageToSidechat(page, {allowedXopp, win, readNotebook = null, log = 
   window.focus();
   window.webContents.send('ambitus-page', {caminho: page.caminho, pagina: page.pagina, nome: page.nome, ...(page.recorte ? {recorte: page.recorte} : {})});
   if (typeof page.png === 'string' && page.png) {
-    window.webContents.send('ambitus-page-thumb', {caminho: page.caminho, pagina: page.pagina, thumb: `data:image/png;base64,${page.png}`});
+    /* O `recorte` vai junto: é ele que diz a qual dos trechos da mesma página a miniatura pertence. */
+    window.webContents.send('ambitus-page-thumb', {caminho: page.caminho, pagina: page.pagina, ...(page.recorte ? {recorte: page.recorte} : {}), thumb: `data:image/png;base64,${page.png}`});
   } else if (typeof readNotebook === 'function') {
     void sendPageThumbnail(page, {readNotebook, win, log});
   }

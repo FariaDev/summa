@@ -11,6 +11,7 @@ import {h} from './sidechat-message-view.mjs';
 import {notebookCardOf, notebookSendFacts} from './ambitus-page.mjs';
 import {notebookCardNode} from './notebook-card.mjs';
 import {notebookPageImages} from './notebook-send.mjs';
+import {notebookCardKey} from './notebook-facts.mjs';
 
 /* Clipe e bandeja de anexos do chat lateral: o MESMO desenho do compositor do
    tutor (`.attach-pop`, `#attachments`, `.attachment`, o × e a leitura da
@@ -129,8 +130,8 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   function addNotebook(raw) {
     const card = notebookCardOf(raw);
     if (!card) return false;
-    const old = notebooks.find((item) => item.caminho === card.caminho && item.pagina === card.pagina);
-    const earlyThumb = early.get(`${card.caminho}#${card.pagina}`) || '';
+    const old = notebooks.find((item) => notebookCardKey(item) === notebookCardKey(card));
+    const earlyThumb = early.get(notebookCardKey(card)) || '';
     notebooks = notebooks.filter((item) => item !== old);
     notebooks.push({...card, thumb: old?.thumb || earlyThumb || '', full: old?.full === true || !!earlyThumb});
     notebooks = notebooks.slice(-MAX_NOTEBOOKS);
@@ -143,9 +144,9 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   function setThumb(raw) {
     const {caminho, pagina, thumb} = /** @type {{caminho?: unknown, pagina?: unknown, thumb?: unknown}} */ (raw || {});
     if (typeof thumb !== 'string' || !PNG_DATA_URL.test(thumb)) return false;
-    const card = notebooks.find((item) => item.caminho === caminho && item.pagina === pagina);
+    const card = notebooks.find((item) => notebookCardKey(item) === notebookCardKey(raw));
     if (!card) {
-      if (typeof caminho === 'string' && typeof pagina === 'number') { early.set(`${caminho}#${pagina}`, thumb); if (early.size > MAX_NOTEBOOKS) early.delete(early.keys().next().value); }
+      if (typeof caminho === 'string' && typeof pagina === 'number') { early.set(notebookCardKey(raw), thumb); if (early.size > MAX_NOTEBOOKS) early.delete(early.keys().next().value); }
       return false;
     }
     card.thumb = thumb;
@@ -163,7 +164,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
 
   /** O envio: as imagens da bandeja e o PNG de cada página juntos, como qualquer imagem vai ao motor. */
   async function forSend() {
-    const pages = await notebookPageImages(notebooks, {find: (item) => notebooks.find((card) => card.caminho === item.caminho && card.pagina === item.pagina) || null});
+    const pages = await notebookPageImages(notebooks, {find: (item) => notebooks.find((card) => notebookCardKey(card) === notebookCardKey(item)) || null});
     const all = [...pages, ...images].map((item) => ({dataUrl: item.dataUrl}));
     return {
       ...(all.length ? {images: all} : {}),
@@ -175,9 +176,9 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   /** Tira da bandeja o que o envio levou; o que chegou durante o envio fica. */
   function release(sent) {
     const sentImages = new Set((sent?.images || []).map((item) => item.dataUrl));
-    const sentBooks = new Set((sent?.notebooks || []).map((item) => `${item.caminho}#${item.pagina}`));
+    const sentBooks = new Set((sent?.notebooks || []).map(notebookCardKey));
     images = images.filter((item) => !sentImages.has(item.dataUrl));
-    notebooks = notebooks.filter((item) => !sentBooks.has(`${item.caminho}#${item.pagina}`));
+    notebooks = notebooks.filter((item) => !sentBooks.has(notebookCardKey(item)));
     render();
   }
 
@@ -243,7 +244,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
       /* Página do Ambitus de caderno salvo: cartão com a imagem de miniatura; o caminho segue escondido para o tutor. */
       notebook: (card, thumb) => {
         if (!addNotebook(card)) return false;
-        setThumb({caminho: card.caminho, pagina: card.pagina, thumb});
+        setThumb({caminho: card.caminho, pagina: card.pagina, ...(card.recorte ? {recorte: card.recorte} : {}), thumb});
         return true;
       },
       shutter: clip,

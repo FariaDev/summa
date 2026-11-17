@@ -25,7 +25,7 @@ const path = require('node:path');
 const pendingCore = require('./src/generated/pending.core.js').default;
 const attachCore = require('./src/generated/attachments.core.js').default;
 const {normalizePdfFacts} = require('./src/chat-pdf.mjs');
-const {notebookRecorte} = require('./src/notebook-facts.mjs');
+const {notebookRecorte, notebookCardKey} = require('./src/notebook-facts.mjs');
 const {toNat, wholeNat} = require('./src/bend-nat.mjs');
 const {MAX_DRAFT} = require('./state-adapter.cjs');
 
@@ -97,7 +97,8 @@ function normalizeNotebooks(raw) {
   for (const item of Array.isArray(raw) ? raw : []) {
     if (out.length >= MAX_NOTEBOOKS) break;
     const fact = notebookFact(item);
-    if (!fact || out.some((other) => other.caminho === fact.caminho && other.pagina === fact.pagina)) continue;
+    /* Dois trechos da mesma página são dois cartões (`notebookCardKey`). */
+    if (!fact || out.some((other) => notebookCardKey(other) === notebookCardKey(fact))) continue;
     out.push(fact);
   }
   return out;
