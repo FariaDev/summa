@@ -63,3 +63,24 @@ test('export-chat do descritor nativo continua lendo o conteúdo completo (#121)
   assert.match(body, /\[imagem\]/, 'a imagem continua marcada no export');
   assert.equal(fs.readFileSync(session, 'utf8'), before, 'o descritor não muda ao exportar');
 });
+
+test('export-chat do Pi não mostra a marca nem a frase do envio só com imagem (#109)', async () => {
+  const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-export-so-imagem-'));
+  dirs.push(runtime);
+  const session = path.join(runtime, 's.jsonl');
+  fs.writeFileSync(session, [
+    {message: {role: 'user', content: [{type: 'text', text: '[Só imagem]\nResponda de acordo com a imagem que mandei.'}, {type: 'image'}]}},
+    {message: {role: 'assistant', content: [{type: 'text', text: 'Vejo uma reta.'}]}},
+  ].map(line => JSON.stringify(line)).join('\n') + '\n');
+  const ipcMain = fakeIpcMain();
+  const labels = {'export.you': 'Você', 'export.imageAttached': '[imagem]', 'export.exportedOn': 'em {date}'};
+  const live = {config: {}, courses: [{id: 'calc', name: 'Cálculo'}], courseId: 'calc', session, bridge: null, win: null,
+    languageHost: {t: (key, args) => (labels[key] || key).replace('{date}', args?.date || '')}};
+  registerChatExportHost({ipcMain, live, runtime, envRuntime: runtime, dialog: null, shell: null, appendLog: () => {}, engine: () => 'pi', testClaudeSdkLoader: () => null});
+  const result = await ipcMain.invoke('export-chat');
+  const body = fs.readFileSync(result.file, 'utf8');
+  assert.match(body, /## Você\n\n\[imagem\]\n/, 'a bolha do envio só com imagem leva só a imagem');
+  assert.doesNotMatch(body, /\[Só imagem\]/, 'a marca interna não sai no arquivo');
+  assert.doesNotMatch(body, /Responda de acordo/, 'a frase padrão não sai no arquivo');
+  assert.match(body, /## Pi\n\nVejo uma reta\./);
+});

@@ -108,6 +108,7 @@ function taskRow(task, nowId) {
     meta.push(make('button', {type: 'button', 'data-action': 'open', 'data-id': task.id}, [t('plan.open')]));
   }
   if (pageRefs().length) meta.push(make('button', {type: 'button', 'data-action': 'link', 'data-id': task.id}, [t(task.pdf ? 'plan.relink' : 'plan.link')]));
+  if (task.pdf) meta.push(make('button', {type: 'button', 'data-action': 'unlink', 'data-id': task.id}, [t('plan.unlink')]));
   return make('div', {class: classes}, [
     make('input', {type: 'checkbox', checked: task.done, 'data-action': 'done', 'data-id': task.id, 'aria-label': t('plan.done')}),
     make('div', {class: 'study-plan-main'}, [
@@ -209,6 +210,18 @@ function linkToOpenPdf(id) {
 }
 
 /**
+ * Desliga a tarefa do PDF. O foco vai para "ligar ao PDF aberto" se há PDF
+ * aberto (o "desligar" some); senão, para o texto da tarefa.
+ * @param {string} id
+ * @returns {void}
+ * @example unlinkFromPdf('a')
+ */
+function unlinkFromPdf(id) {
+  const focus = pageRefs().length ? {id, action: 'link'} : {id, action: 'text'};
+  commitPlan(plan.unlinkTask(plan.studyPlanSnapshot(), id), focus);
+}
+
+/**
  * Abre o PDF da tarefa na página dela e fecha a lista.
  * @param {string} id
  * @returns {void}
@@ -251,6 +264,7 @@ function onPopClick(event) {
   if (action === 'add') addTaskAt('');
   else if (action === 'link') linkToOpenPdf(id);
   else if (action === 'open') openTaskPage(id);
+  else if (action === 'unlink') unlinkFromPdf(id);
   else if (action === 'up' || action === 'down' || action === 'remove') moveOrRemove(action, id);
 }
 

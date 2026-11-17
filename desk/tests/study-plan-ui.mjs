@@ -66,6 +66,16 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.equal(await firstRow.locator('[data-action="open"]').count(),1,'tarefa com PDF mostra abrir');
  assert.equal(await page.locator('#study-plan-pop .study-plan-row').nth(1).locator('[data-action="open"]').count(),0,'tarefa sem PDF não mostra abrir');
 
+ /* desligar do PDF tira o PDF e a página; a tarefa volta a oferecer ligar. Ligar de novo deixa a 1ª como estava. */
+ await firstRow.locator('[data-action="unlink"]').click();
+ await page.waitForFunction(()=>!/Lista\.pdf/.test(document.querySelector('#study-plan-pop .study-plan-row')?.textContent||''),undefined,{timeout:5000});
+ assert.equal(await firstRow.locator('[data-action="open"]').count(),0,'desligada, a tarefa não mostra abrir');
+ assert.equal(await firstRow.locator('[data-action="unlink"]').count(),0,'desligada, não sobra desligar');
+ assert.equal(await firstRow.locator('[data-action="link"]').textContent(),'ligar ao PDF aberto','desligada, a tarefa volta a oferecer ligar ao PDF aberto');
+ assert.equal(await page.evaluate(()=>document.activeElement?.dataset.action),'link','o foco vai para ligar, no lugar do botão que sumiu');
+ await firstRow.locator('[data-action="link"]').click();
+ await page.waitForFunction(()=>/Lista\.pdf · p\. 1/.test(document.querySelector('#study-plan-pop .study-plan-row')?.textContent||''),undefined,{timeout:5000});
+
  /* ---------- 4. editar no lugar, marcar a primeira e escrever nas Anotações ---------- */
  await page.locator('#study-plan-pop .study-plan-text').nth(0).fill('Q1 derivadas (regra da cadeia)');
  await firstRow.locator('input[type="checkbox"]').check();

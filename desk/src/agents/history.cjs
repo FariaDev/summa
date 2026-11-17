@@ -64,6 +64,7 @@ const ROLES = {
 
 const {isPlainObject} = require('../../plain-object.cjs');
 const {markOf} = require('../marked-pages.mjs');
+const {isImageOnlyPrompt} = require('../image-only-send.mjs');
 const str = (value) => typeof value === 'string' ? value : (typeof value === 'number' && Number.isFinite(value) ? String(value) : '');
 const clip = (value, max) => value.length > max ? value.slice(0, max) : value;
 
@@ -384,6 +385,8 @@ function exportConversationMarkdown({courseName, engine, messages, now, labels =
     if (message.role !== 'user' && message.role !== 'assistant') continue;
     let text = '';
     for (const part of message.content) {
+      /* Envio só com imagem (#109): a marca e a frase padrão são do motor; o arquivo leva só a imagem. */
+      if (part.type === 'text' && message.role === 'user' && isImageOnlyPrompt(part.text)) continue;
       if (part.type === 'text') text += (text ? '\n' : '') + part.text;
       else if (part.type === 'image') {
         const mark = markOf(part.source);

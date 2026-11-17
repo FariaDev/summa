@@ -202,3 +202,14 @@ test('exportação usa os rótulos recebidos (idioma da interface, #41)', () => 
     '# Summa — Calculus\n\nExported on 1970-01-01T00:00:00.000Z\n\n## You\n\nHi\n[image attached]\n',
   );
 });
+
+test('exportação não mostra a marca nem a frase do envio só com imagem (#109)', () => {
+  const messages = [
+    {role: 'user', content: [{type: 'text', text: '[Só imagem]\nResponda de acordo com a imagem que mandei.'}, {type: 'image', data: 'QUJD', mimeType: 'image/png'}]},
+    {role: 'assistant', content: [{type: 'text', text: 'Vejo uma reta.'}]},
+  ];
+  const body = exportConversationMarkdown({courseName: 'Cálculo I', engine: 'claude', messages, now: 0});
+  assert.equal(body, '# Summa — Cálculo I\n\nExportado em 1970-01-01T00:00:00.000Z\n\n## Você\n\n[imagem anexada]\n\n## Claude\n\nVejo uma reta.\n');
+  assert.equal(body.includes('[Só imagem]'), false, 'a marca interna não sai no arquivo');
+  assert.equal(body.includes('Responda de acordo'), false, 'a frase padrão não sai no arquivo');
+});

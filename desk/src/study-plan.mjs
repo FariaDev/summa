@@ -167,6 +167,18 @@ export function linkTask(plan, id, {pdf = '', page = 1} = {}) {
 }
 
 /**
+ * Desliga a tarefa do PDF ("desligar do PDF"): tira o caminho e a página. A
+ * tarefa volta a oferecer "ligar ao PDF aberto"; as outras não mudam.
+ * @param {StudyPlan} plan
+ * @param {string} id
+ * @returns {StudyPlan}
+ * @example unlinkTask(plan, 'a').tasks[0].pdf // ''
+ */
+export function unlinkTask(plan, id) {
+  return patchTask(plan, id, {pdf: '', page: 0});
+}
+
+/**
  * Troca o bloco de Anotações.
  * @param {StudyPlan} plan
  * @param {string} notes

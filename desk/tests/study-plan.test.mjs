@@ -17,6 +17,7 @@ import {
   setStudyPlan,
   setTaskDone,
   studyPlanSnapshot,
+  unlinkTask,
 } from '../src/study-plan.mjs';
 
 /* Plano de estudo da matéria (#110): as regras do módulo de estado. Cada
@@ -132,6 +133,15 @@ test('ligar ao PDF guarda caminho e página; sem PDF desliga', () => {
   const unlinked = linkTask(linked, 'a', {});
   assert.equal(unlinked.tasks[0].pdf, '');
   assert.equal(unlinked.tasks[0].page, 0);
+});
+
+test('desligar do PDF tira caminho e página e não mexe nas outras tarefas', () => {
+  const linked = linkTask(planOf(['a', 'b']), 'a', {pdf: '/m/Lista.pdf', page: 4});
+  const unlinked = unlinkTask(linked, 'a');
+  assert.deepEqual(unlinked.tasks[0], {id: 'a', text: 'texto a', done: false, pdf: '', page: 0});
+  assert.deepEqual(unlinked.tasks[1], linked.tasks[1], 'a tarefa vizinha fica como estava');
+  assert.equal(linked.tasks[0].pdf, '/m/Lista.pdf', 'o plano de antes não muda');
+  assert.equal(unlinkTask(linked, 'zz'), linked, 'id desconhecido devolve o mesmo plano');
 });
 
 test('a página ligada é inteira e cabe entre 1 e o teto', () => {

@@ -2919,5 +2919,6 @@
   "plan.task": "Task",
   "plan.title": "Study plan",
   "plan.trigger": "Plan",
+  "plan.unlink": "unlink from PDF",
   "plan.up": "Move task up"
 }
