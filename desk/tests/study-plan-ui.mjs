@@ -95,7 +95,9 @@ await withArtifacts('plano-estudo',async ctx=>{
  await page.evaluate(()=>document.querySelector('#course-tabs button[data-id="mesa-free"]').click());
  await enterFree(page);
  assert.equal(await page.locator('#study-plan-menu').isHidden(),true,'o Plano não aparece no Livre');
- await page.locator('#course-tabs button[data-id="Test"]').click();
+ /* A volta também vai pelo DOM (barra compacta), depois de a aba destravar: no Livre o tutor ainda aquece e trava a troca. */
+ await page.waitForFunction(()=>!document.querySelector('#course-tabs button[data-id="Test"]')?.disabled,undefined,{timeout:30000});
+ await page.evaluate(()=>document.querySelector('#course-tabs button[data-id="Test"]').click());
  await page.waitForFunction(()=>document.querySelector('#study-plan-menu') && !document.querySelector('#study-plan-menu').hidden,undefined,{timeout:15000});
  assert.equal(await triggerText(page),'Plano · agora: Q2 limites','a matéria volta com o seu plano');
 
