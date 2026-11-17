@@ -91,7 +91,8 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.equal(await page.locator('.pdf-panel canvas').count()>0,true,'o leitor segue aberto');
 
  /* ---------- 7. no Livre o Plano some; de volta na matéria, reaparece ---------- */
- await page.locator('#course-tabs button[data-id="mesa-free"]').click();
+ /* Na janela estreita (Windows) a barra compacta esconde a aba; o clique vai pelo DOM (#110). */
+ await page.evaluate(()=>document.querySelector('#course-tabs button[data-id="mesa-free"]').click());
  await enterFree(page);
  assert.equal(await page.locator('#study-plan-menu').isHidden(),true,'o Plano não aparece no Livre');
  await page.locator('#course-tabs button[data-id="Test"]').click();
