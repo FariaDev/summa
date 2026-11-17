@@ -15,7 +15,7 @@ on:
     inputs:
       from:
         description: Versão de partida
-        default: v1.1.0
+        default: v1.3.0
         required: true
       versao:
         description: Versão de destino, para ensaiar uma pre-release antes de marcá-la latest (vazio = a latest)
@@ -42,7 +42,7 @@ jobs:
 
       - name: Instalar a versão de partida, como quem baixou o zip
         run: |
-          curl -fsSL -o antiga.zip "https://codeload.github.com/FariaDev/mesa-de-estudos/zip/refs/tags/${FROM_TAG}"
+          curl -fsSL -o antiga.zip "https://codeload.github.com/FariaDev/summa/zip/refs/tags/${FROM_TAG}"
           unzip -q antiga.zip -d instalacao
           DESK="$(cd instalacao/* && pwd -W)/desk"
           echo "DESK=$DESK" >> "$GITHUB_ENV"
