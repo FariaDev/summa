@@ -252,5 +252,8 @@ test('cartão de trecho: o recorte vai ao disco e volta na bandeja e na fila; um
     assert.deepEqual(pending.readPending(runtime, session).items[0].notebooks, [excerpt], 'a fila leva o trecho junto');
     pending.saveTray(runtime, session, [], [], [{...excerpt, recorte: {...recorte, largura: 0}}]);
     assert.deepEqual(pending.readPending(runtime, session).notebooks, [{caminho: xopp, pagina: 2, nome: 'Limites — aula 3', thumb}], 'recorte torto cai; o cartão segue como página inteira');
+    const other = {...excerpt, recorte: {x: 0, y: 0, largura: 595, altura: 286}};
+    pending.saveTray(runtime, session, [], [], [excerpt, other, excerpt]);
+    assert.deepEqual(pending.readPending(runtime, session).notebooks, [excerpt, other], 'dois trechos da mesma página ficam; o repetido sai');
   });
 });
