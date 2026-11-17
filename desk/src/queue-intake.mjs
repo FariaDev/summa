@@ -21,11 +21,12 @@ import {toNat} from './bend-nat.mjs';
  *   state: () => {attachments: unknown[], pdfAttachments: unknown[], connected: boolean, busy: boolean, switching: boolean},
  *   prompt: () => ({value: string, dispatchEvent: (event: Event) => void} | null),
  *   connect: () => Promise<unknown>,
+ *   notebookCount?: () => number,
  * }} deps
  * @returns {{enqueueFromComposer: () => boolean, submit: (value: unknown, options?: {release?: boolean, steer?: boolean}) => unknown}}
  * @example const {submit} = createQueueIntake({enqueue: (text) => {}, release: () => {}, ...});
  */
-export function createQueueIntake({enqueue, release, isHeld, rehold, send, isComposerCommand, state, prompt, connect}) {
+export function createQueueIntake({enqueue, release, isHeld, rehold, send, isComposerCommand, state, prompt, connect, notebookCount = () => 0}) {
  function clearPrompt(el){
   el.value='';
   el.dispatchEvent(new Event('input'));
@@ -36,7 +37,8 @@ export function createQueueIntake({enqueue, release, isHeld, rehold, send, isCom
   if(!el)return false;
   const text=el.value.trim();
   const current=state();
-  if(!text&&!current.attachments.length&&!current.pdfAttachments.length)return false;
+  /* A página do Ambitus sozinha também é mensagem (#109). */
+  if(!text&&!current.attachments.length&&!current.pdfAttachments.length&&!notebookCount())return false;
   enqueue(text);
   clearPrompt(el);
   return true;
@@ -48,7 +50,7 @@ export function createQueueIntake({enqueue, release, isHeld, rehold, send, isCom
   const releases=options.release!==false;
   const wasHeld=releases&&isHeld();
   if(releases)release();
-  const keep=pendingCore.keptWhileOff(!!current.connected,!!current.busy,isComposerCommand(text),text,toNat(current.attachments.length+current.pdfAttachments.length));
+  const keep=pendingCore.keptWhileOff(!!current.connected,!!current.busy,isComposerCommand(text),text,toNat(current.attachments.length+current.pdfAttachments.length+notebookCount()));
   if(!keep){
    const posted=send(value,undefined,options.steer===true?{steer:true}:{});
    if(!wasHeld)return posted;

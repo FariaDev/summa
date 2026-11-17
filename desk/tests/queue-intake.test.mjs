@@ -70,3 +70,17 @@ test('fila que não estava segurada não volta a segurar no envio recusado', asy
   await intake.submit('nova mensagem');
   assert.equal(queue.held, false);
 });
+
+/* Só a página do Ambitus, sem texto (#109): ocupado, o Enter põe na fila; sem `notebookCount`, nada sai. */
+test('a página do Ambitus sozinha entra na fila; sem nada na bandeja, não', () => {
+  const enqueued = [];
+  const make = (count) => createQueueIntake({
+    enqueue: (text) => enqueued.push(text), release: () => {}, isHeld: () => false, rehold: () => {},
+    send: async () => true, isComposerCommand: () => false,
+    state: () => ({attachments: [], pdfAttachments: [], connected: true, busy: true, switching: false}),
+    prompt: () => ({value: '', dispatchEvent: () => {}}), connect: async () => {}, notebookCount: () => count,
+  });
+  assert.equal(make(0).enqueueFromComposer(), false, 'campo vazio e bandeja vazia: nada entra');
+  assert.equal(make(1).enqueueFromComposer(), true, 'o cartão do Ambitus sozinho é mensagem');
+  assert.deepEqual(enqueued, ['']);
+});

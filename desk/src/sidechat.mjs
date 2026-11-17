@@ -437,7 +437,7 @@ async function sendMessage(){
  if(state.uncertain){toast(uiMessage('sidechat.warn'));return;}
  const raw=String(promptEl?.value||'');
  const text=raw.trim();
- if(!text&&!attach?.snapshot?.().images?.length)return;
+ const tray=attach?.snapshot?.()||{};if(!text&&!tray.images?.length&&!tray.notebooks?.length)return; /* a página do Ambitus sozinha também vai (#109) */
  const id=state.id;
  const token=++state.sendGen;
  state.sending=true;
@@ -740,7 +740,7 @@ function paintScope(){
  }
 }
 function paintSend(){
- const hasText=Boolean(String(state.draft||'').trim())||Boolean(attach?.snapshot?.().images?.length); /* #109: só imagem na bandeja liga o Enviar */
+ const tray=attach?.snapshot?.()||{};const hasText=Boolean(String(state.draft||'').trim())||Boolean(tray.images?.length)||Boolean(tray.notebooks?.length); /* #109: só imagem ou página do Ambitus na bandeja liga o Enviar */
  if(sendEl){
   sendEl.classList.toggle('primary',hasText);
   /* Rascunho vazio (ou só espaços) desliga o Enviar (#157, rodada 2, achado 2):
