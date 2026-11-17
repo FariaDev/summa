@@ -41,7 +41,7 @@ function focusMenuItem(el,key){
  items[next].focus();
  return true;
 }
-const NAV_MENUS=['#course-menu','#study-menu','#settings-menu'];
+const NAV_MENUS=['#course-menu','#study-plan-menu','#study-menu','#settings-menu'];
 function closeMenus(options){for(const id of NAV_MENUS)setMenuOpen($(id),false,options);}
 function toggleMenu(el){
  const open=!el.classList.contains('open');

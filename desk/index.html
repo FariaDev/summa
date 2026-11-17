@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="src/release-notes.css">
   <link rel="stylesheet" href="src/opencode-providers.css">
   <link rel="stylesheet" href="src/mini-mode.css">
+  <link rel="stylesheet" href="src/study-plan.css">
 </head>
 <body>
 <!-- Primeira abertura em tela cheia (#64, docs/design/setup-guia-r1/Setup-passos.dc.html):
@@ -38,6 +39,10 @@
       <div class="nav-pop" id="course-pop" role="menu"></div>
     </div>
     <div id="course-tabs" role="tablist" aria-label="Matérias" data-i18n-attr="aria-label=chrome.courses"></div>
+    <div class="nav-menu" id="study-plan-menu" hidden>
+      <button type="button" class="nav-trigger study-plan-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="study-plan-pop" data-i18n-attr="title=plan.title"><span class="study-plan-icon" aria-hidden="true"></span><span data-i18n="plan.trigger">Plano</span><span class="study-plan-now"></span></button>
+      <div class="nav-pop" id="study-plan-pop" role="dialog" data-i18n-attr="aria-label=plan.title"></div>
+    </div>
   </div>
   <div class="header-actions">
     <button type="button" id="update-notice" hidden aria-live="polite" title="Ver atualização e o que mudou" data-i18n-attr="title=chrome.update.title"></button>

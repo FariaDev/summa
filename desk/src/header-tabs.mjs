@@ -6,6 +6,7 @@ import tabsCore from './generated/tabsview.core.js';
 import {renderChildren} from './view-host.mjs';
 import {t} from './ui-text.mjs';
 import {renderTutorMenus} from './tutor-header.mjs';
+import {initStudyPlanView} from './study-plan-view.mjs';
 
 /* Abas de matéria e menus Estudar/Ajustes (#43 fase 2: saiu do main.mjs). As
    ações dos itens moram no main e entram por `initHeaderTabs`. */
@@ -212,6 +213,7 @@ function initHeaderTabs({openSettings,syncPaletteField,menu}){
  {const header=document.querySelector('header');if(header&&typeof ResizeObserver==='function')new ResizeObserver(()=>fitTabs()).observe(header);}
  window.addEventListener('desk-tab-marked',()=>renderCourseMenu());
  window.addEventListener('desk-tabs-lock',()=>renderTabsView());
+ initStudyPlanView();
 }
 
 export {menuHandlers,renderTabsView,renderMenus,selectTab,openReviewToday,moveTabFocus,numberedTabs,cycleToTab,getTabsCourses,setTabsCourses,refreshTabsOnReviewCount,initHeaderTabs};

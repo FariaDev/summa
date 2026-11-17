@@ -65,7 +65,8 @@ function barra(page){
    study:q('#study-menu .nav-trigger'),palette:q('#palette-field'),ajustes:q('#settings-menu .nav-trigger'),
    notice:q('#update-notice'),controls,
    legacy:{mesaMenu:!!document.querySelector('#mesa-menu'),themeCycle:!!document.querySelector('#theme-cycle'),toolsBar:!!document.querySelector('#study-tools-bar'),pdfBar:!!document.querySelector('#course-pdf-bar')},
-   triggers:[...document.querySelectorAll('header .nav-trigger')].filter(shown).map(el=>(el.getAttribute('aria-label')||el.textContent).trim())
+   /* O Plano (#110) é botão da matéria ao lado de Caderno e GeoGebra, não menu da direita. */
+   triggers:[...document.querySelectorAll('header .nav-trigger:not(.study-plan-trigger)')].filter(shown).map(el=>(el.getAttribute('aria-label')||el.textContent).trim())
   };
  });
 }

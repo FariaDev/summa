@@ -10,6 +10,7 @@ const pdfPageCore=require('./src/generated/pdfpageview.core.js').default;
 const {toNat}=require('./src/bend-nat.mjs');
 const {normalizeRecents,normalizeFavorites}=require('./src/model-picker.mjs');
 const {normalizeModelDefault}=require('./src/model-default.mjs');
+const {sanitizeStudyPlan}=require('./src/study-plan.mjs');
 const {normalizeComposerPins,savedComposerPins}=require('./src/composer-pins.mjs');
 const {normalizeMaterialFolders}=require('./src/material-picker.mjs');
 
@@ -79,6 +80,7 @@ function sanitizeCourseState(value){
   study:isPlainObject(source.study)?source.study:{},
   pdfRotations:sanitizePdfRotations(source.pdfRotations),
   materialFolders:normalizeMaterialFolders(source.materialFolders),
+  studyPlan:sanitizeStudyPlan(source.studyPlan),
   ggbBase64:asString(source.ggbBase64)};
 }
 function sanitizeState(value){
