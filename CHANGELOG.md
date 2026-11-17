@@ -1,5 +1,11 @@
 # Novidades da Summa
 
+## 1.3.3
+
+Melhoria na integração com o Ambitus. Quem tem a 1.3.0, a 1.3.1 ou a 1.3.2 recebe pelo **Atualizar**.
+
+- **Só o trecho:** com o Ambitus, o tutor recebe só o trecho da página que você está vendo (ou a seleção), e não a página inteira. Isso continua valendo depois de recarregar a Summa.
+
 ## 1.3.2
 
 Um plano de estudo dentro da Summa e o envio só com imagem. Quem tem a 1.3.0 ou a 1.3.1 recebe pelo **Atualizar**.
