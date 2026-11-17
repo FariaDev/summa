@@ -2,6 +2,7 @@ import attachments from './src/generated/attachments.core.js';
 import {PDF_HEADERS} from './src/chat-pdf.mjs';
 import {withoutTutorPrompt} from './src/agents/tutor-prompt-text.mjs';
 import {t as uiT} from './src/ui-text.mjs';
+import {isImageOnlyPrompt} from './src/image-only-send.mjs';
 
 /* Conteúdo da mensagem (texto + imagens): núcleo Bend (core/attachments.bend).
    O displayUserText da Mesa continua local — os marcadores de contexto/
@@ -49,6 +50,8 @@ export function displayUserText(text){
  const result=t.match(/^\[Resultado do cartão: [^\]]+\]\n([\s\S]*)$/);
  if(result)return /^(?:Quiz|Pergunta):/m.test(result[1])?uiT('quiz.sentQuiz'):uiT('quiz.sentAsk');
  for(const block of CONTEXT_BLOCKS)t=t.replace(block,'');
+ /* Só imagem (#109): o pedido leva a frase padrão marcada; a bolha fica só com a imagem. */
+ if(isImageOnlyPrompt(t))return '';
  if(/^\/conferir\b/.test(t.trim())||/Conferência visual solicitada pelo usuário/.test(text)){
   const extra=t.replace(/^\/conferir\s*/,'').replace(/^Confira minha resolução e indique o primeiro erro relevante\.?\s*/i,'').trim();
   const label=uiT('conferir.sessionLabel');

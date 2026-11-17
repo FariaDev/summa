@@ -11,6 +11,7 @@ const {message}=require('./src/i18n.mjs');
 const {causeArg,invalidRequest}=require('./src/error-detail.mjs');
 const {validMentions,mentionBlock}=require('./mentions-host.cjs');
 const {notebookNote}=require('./notebook-note.cjs');
+const {imageOnlyPrompt}=require('./src/image-only-send.mjs');
 
 /* Envio de mensagem ao tutor (`pi-prompt`; #43 fase 2: saiu do main.cjs).
    Monta o texto (refs de PDF, menções `@`, bloco de estudo) e entrega pelo
@@ -58,6 +59,8 @@ function registerTutorPromptHost({ipcMain,live,runtime,FREE_ID,allowedXopp,ggb,a
   /* `promptText`, não `message`: o nome sombreava a função do i18n e a ref
      inválida virava TypeError (#43 fase 2). */
   let promptText=payload.text;
+  /* Só imagem, sem texto (#109): o motor recebe a frase padrão marcada; a bolha não mostra. */
+  if(!promptText.trim()&&Array.isArray(payload.images)&&payload.images.length)promptText=imageOnlyPrompt(live.languageHost.tutorT('send.imageOnly'));
   const kind=engine();
   warmListedPdfs(payload.refs);
   const refs=(payload.refs||[]).slice(0,2).map(r=>{

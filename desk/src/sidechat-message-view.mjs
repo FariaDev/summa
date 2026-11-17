@@ -90,7 +90,12 @@ export function sidechatMessageCard(message,engineLabel){
 function paintUserAttachments(body,message){
  const images=Array.isArray(message.images)?message.images:[];
  const notebooks=Array.isArray(message.notebooks)?message.notebooks:[];
- if(!images.length){paintNotebookChips(body,notebooks);return;}
+ /* Só imagem (#109) e sem a imagem (o histórico não guarda imagens): a bolha fica com a palavra "imagem", não some. */
+ if(!images.length){
+  paintNotebookChips(body,notebooks);
+  if(!notebooks.length&&!String(message.text||'').trim())body.append(h('span',{class:'message-file',text:uiT('attach.imageWord')}));
+  return;
+ }
  for(const src of images)body.append(h('img',{class:'shot',src,alt:uiT('talk.imageSent'),loading:'lazy',decoding:'async'}));
  /* A página vai na bolha como as imagens do tutor; sem elas (histórico que só
     guardou o bloco), o chip antigo continua sendo a reserva. */

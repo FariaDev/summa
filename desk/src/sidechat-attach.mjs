@@ -49,7 +49,7 @@ export function sidechatAttachParts() {
  * com o PNG das páginas junto das imagens), `release` (tira o que foi enviado),
  * `clear`, `addNotebook` e `setThumb` (a imagem chega depois do cartão).
  * @param {ReturnType<typeof sidechatAttachParts>} parts
- * @param {{prompt: HTMLTextAreaElement, root: HTMLElement}} deps `prompt`: o campo, que ganha o foco e recebe o colar de imagem; `root`: o chat lateral, onde o atalho do Conferir vale
+ * @param {{prompt: HTMLTextAreaElement, root: HTMLElement, onChange?: () => void}} deps `prompt`: o campo, que ganha o foco e recebe o colar de imagem; `root`: o chat lateral, onde o atalho do Conferir vale; `onChange`: a bandeja mudou (o Enviar confere se há imagem)
  * @returns {{snapshot: () => {images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number, nome: string}>},
  *   forSend: () => Promise<{images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number, nome: string}>, pages: Array<{dataUrl: string}>}>,
  *   release: (sent: {images?: Array<{dataUrl: string}>, notebooks?: Array<{caminho: string, pagina: number}>}) => void,
@@ -57,7 +57,7 @@ export function sidechatAttachParts() {
  *   labels: () => void}}
  * @example const attach = bindSidechatAttach(sidechatAttachParts(), {prompt, root}); attach.addNotebook({caminho: '/c/a.xopp', pagina: 1});
  */
-export function bindSidechatAttach(parts, {prompt, root}) {
+export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   const {tray, clip, pop, input, check, file} = parts;
   /** @type {Array<{dataUrl: string, mimeType?: string, name?: string}>} */
   let images = [];
@@ -93,6 +93,8 @@ export function bindSidechatAttach(parts, {prompt, root}) {
     renderChildren(tray, views, handlers);
     tray.append(...notebooks.map(notebookCard));
     tray.hidden = !images.length && !notebooks.length;
+    /* Só imagem envia (#109): o Enviar do lateral precisa saber da bandeja. */
+    onChange();
   }
 
   /** Imagens já lidas entram na bandeja (o teto é o mesmo do tutor); devolve quantas entraram. */

@@ -113,9 +113,10 @@ function sidechatAttachments(raw){
  }
  return out;
 }
-function sidechatText(value,message){
+/* Texto vazio só passa com imagem na bandeja (#109): o envio leva a frase padrão. */
+function sidechatText(value,message,withImages=false){
  const text=asString(value,message,MAX_SIDE_TEXT);
- if(!text.trim())fail(message);
+ if(!text.trim()&&!withImages)fail(message);
  return text;
 }
 /* ---------- IPC: mensagem limpa e um aviso por erro ---------- */
@@ -455,7 +456,7 @@ const deskApi={
  /* Chat lateral: canais próprios, escopados à conversa principal atual. */
  sidechatOpen:p=>invoke('sidechat-open',sidechatOpenArgs(p)),
  sidechatRead:p=>invoke('sidechat-read',sidechatArgs(p)),
- sidechatPrompt:p=>{const raw=asPlain(p,'Pedido inválido.');return invoke('sidechat-prompt',{...sidechatArgs(raw),text:sidechatText(raw.text,'Mensagem inválida.'),...sidechatAttachments(raw)});},
+ sidechatPrompt:p=>{const raw=asPlain(p,'Pedido inválido.');return invoke('sidechat-prompt',{...sidechatArgs(raw),text:sidechatText(raw.text,'Mensagem inválida.',Array.isArray(raw.images)&&raw.images.length>0),...sidechatAttachments(raw)});},
  sidechatWarm:p=>invoke('sidechat-warm',sidechatArgs(p)),
  sidechatAbort:p=>invoke('sidechat-abort',sidechatArgs(p)),
  sidechatSave:p=>invoke('sidechat-save',{...sidechatArgs(p),draft:asString(asPlain(p,'Pedido inválido.').draft??'','Rascunho inválido.',MAX_SIDE_TEXT)}),

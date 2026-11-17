@@ -2200,6 +2200,7 @@
   "search.title.review": "Review notebook",
   "search.topic": "Topic: {topic}",
   "search.truncated": "Too many results: refine the search or pick a course or content type.",
+  "send.imageOnly": "Answer according to the image I sent.",
   "send.needsImages": "Pick a model that supports images to attach.",
   "send.noSteer": "The tutor does not interrupt the answer — use the queue (⏎) or wait.",
   "send.refused": "The tutor refused the message.",
