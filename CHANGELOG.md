@@ -1,5 +1,13 @@
 # Novidades da Summa
 
+## 1.3.2
+
+Um plano de estudo dentro da Summa e o envio só com imagem. Quem tem a 1.3.0 ou a 1.3.1 recebe pelo **Atualizar**.
+
+- **Plano de estudo:** o botão **Plano**, na barra de cima ao lado de Caderno e GeoGebra, mostra a tarefa de agora. As tarefas se editam no próprio texto (Enter cria a próxima), podem ser ligadas ao PDF e à página abertos e reabertas com **abrir**, ou desligadas do PDF. No fim fica um bloco de **Anotações** livre. Cada matéria tem o seu plano.
+- **Só imagem:** dá para mandar uma imagem ao tutor sem escrever nada; ele responde a partir dela. Vale no tutor e no chat lateral, e a exportação da conversa mostra só a imagem.
+- **Ensaio do Windows:** o teste de atualização no Windows parte das versões do Summa.
+
 ## 1.3.1
 
 Correções. Quem tem a 1.3.0 recebe pelo **Atualizar**.
