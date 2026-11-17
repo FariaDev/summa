@@ -10,7 +10,7 @@ import {build,renderChildren,preserveFocus} from './view-host.mjs';
 import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
 import {icon} from '../icons.mjs';
-import {createQueueIntake} from './queue-intake.mjs';
+import {createQueueIntake} from './queue-intake.mjs';import {tutorNotebookCount} from './tutor-notebooks.mjs';
 
 /* Fila de mensagens da Mesa — nasceu como espelho da fila da Conversa (aposentada na #50)
    e segue sobre o núcleo (`core/composerview.bend`), com uma diferença que aqui é
@@ -338,7 +338,7 @@ function onPromptKeydown(e){
  if(e.key!=='Enter'||e.shiftKey)return;
  if(!S.busy)return;
  const text=el.value.trim();
- if(!text&&!S.attachments.length&&!S.pdfAttachments.length)return;
+ if(!text&&!S.attachments.length&&!S.pdfAttachments.length&&!tutorNotebookCount())return;
  e.preventDefault();
  enqueue(text);
  el.value='';
@@ -398,7 +398,7 @@ const intake=createQueueIntake({
  enqueue:(text)=>enqueue(text),release:()=>release(),isHeld:()=>held,
  rehold:()=>{if(held||!queue.length)return;held=true;renderQueue();persist(true);},
  send:(text,images,options)=>send(text,images,options),isComposerCommand:(text)=>isComposerCommand(text),
- state:()=>S,prompt:()=>$('#prompt'),connect:()=>connect()
+ state:()=>S,notebookCount:()=>tutorNotebookCount(),prompt:()=>$('#prompt'),connect:()=>connect()
 });
 export const enqueueFromComposer=intake.enqueueFromComposer;
 export const submit=intake.submit;

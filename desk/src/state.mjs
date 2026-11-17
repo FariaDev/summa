@@ -33,6 +33,7 @@ import {applyDisplayState} from './display-preferences.mjs';
 import {normalizeComposerPins} from './composer-pins.mjs';
 import {loadStudyPlan,studyPlanSnapshot} from './study-plan.mjs';
 import {applyComposerHeight} from './composer-resize.mjs';
+import {tutorNotebookCount} from './tutor-notebooks.mjs';
 
 export function $(s){return document.querySelector(s);}
 export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,windowCaptureOk:false,ambitusLink:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
@@ -285,13 +286,13 @@ export function studySnapshot(){return {title:$('#exercise-title').value.trim(),
 export function pageRefs(){return S.panels.filter(p=>p.path).map(p=>({path:p.path,page:p.page}));}
 export function layoutSnapshot(){return {draft:$('#prompt').value,study:studySnapshot(),pdfs:pdfSnapshot(),pdfRotations:pdfRotationsSnapshot(),materialFolders:materialFoldersSnapshot(),pdfSplit:pdfSplitValue(),referenceVisible:S.refVisible,chatWidth:parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chat')),calcHeight:calcHeightPx(),theme:S.currentTheme,accent:S.currentAccent,readingSize:S.readingSize,readingWidth:S.readingWidth,codeSize:S.codeSize,pdfDark:S.pdfDark,composerPins:S.composerPins,composerHeight:Math.round($('#prompt').getBoundingClientRect().height),viewLayout:captureViewLayout(),modelRecents:modelRecentsSnapshot(),modelFavorites:modelFavoritesSnapshot(),modelDefault:modelDefaultSnapshot(),modelLast:modelLastSnapshot(),releaseNotesSeen:releaseNotesSeen(),studyPlan:studyPlanSnapshot()};}
 /* A seta de Enviar só acende quando há o que enviar: texto (sem só espaços),
-   imagem ou PDF na bandeja. A fila não conta: o botão envia o composer, e a
+   imagem, PDF ou página do Ambitus na bandeja. A fila não conta: o botão envia o composer, e a
    fila tem o "Enviar agora" da própria faixa. O estado de Parar não muda. */
 export function paintComposerSend(){
  const send=$('#send');
  if(!send)return;
  const text=$('#prompt')?.value||'';
- send.classList.toggle('primary',Boolean(String(text).trim()||S.attachments.length||S.pdfAttachments.length));
+ send.classList.toggle('primary',Boolean(String(text).trim()||S.attachments.length||S.pdfAttachments.length||tutorNotebookCount()));
 }
 export function save(immediate=false){paintComposerSend();clearTimeout(S.saveTimer);if(immediate){window.desk.save(layoutSnapshot()).catch(e=>toast(e.message));return;}S.saveTimer=setTimeout(()=>window.desk.save(layoutSnapshot()).catch(e=>toast(e.message)),400);}
 export function refs(){return S.includeRefs?S.panels.filter((p,i)=>p.path&&(i===0||S.refVisible)).map(p=>({path:p.path,page:p.page})):[];}

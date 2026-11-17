@@ -295,7 +295,8 @@ export async function send(text,images,options={}){
  const pending=fromComposer?S.attachments.slice():images;
  const pdfs=Array.isArray(options.pdfs)?options.pdfs:(fromComposer?S.pdfAttachments.slice():[]);
  const notebooks=Array.isArray(options.notebooks)?options.notebooks:(fromComposer?tutorNotebooksSnapshot():[]);/* cartões de caderno do modo mini; o caminho segue escondido ao motor */
- if(!text.trim()&&!pending.length&&!pdfs.length)return false;
+ /* Só a página do Ambitus, sem texto, também é envio: ela vai como imagem (#109). */
+ if(!text.trim()&&!pending.length&&!pdfs.length&&!notebooks.length)return false;
  if(images===undefined&&COMPACT_CMD.test(text.trim())){if(!supportsCapability('compact')){toast(uiMessage('compact.notAvailable'));
    return false;}if(S.busy){toast(uiMessage('compact.stopFirst'));
    return false;}$('#prompt').value='';paintComposerSend();

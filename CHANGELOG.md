@@ -5,6 +5,8 @@
 Melhoria na integração com o Ambitus. Quem tem a 1.3.0, a 1.3.1 ou a 1.3.2 recebe pelo **Atualizar**.
 
 - **Só o trecho:** com o Ambitus, o tutor recebe só o trecho da página que você está vendo (ou a seleção), e não a página inteira. Isso continua valendo depois de recarregar a Summa.
+- **Vários trechos:** dois trechos da mesma página viram dois cartões.
+- **Só a página:** dá para mandar a página do Ambitus ao tutor sem escrever nada, como já dava com uma imagem.
 
 ## 1.3.2
 
