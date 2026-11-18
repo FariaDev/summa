@@ -27,9 +27,47 @@ const HOME_VAULT=path.join(os.homedir(),'Documents','Obsidian Vault');
 /* Raiz do clone de origem: `install-source.json` (gravado pelo install-app no
    bundle) ou, rodando de fonte, o pai de desk/. Não presume que o repo está
    dentro do vault. */
-function installRoot(){
- try{const s=JSON.parse(fs.readFileSync(path.join(__dirname,'install-source.json'),'utf8'));if(s&&typeof s.path==='string'&&s.path)return s.path;}catch{}
- return path.resolve(__dirname,'..');
+function installRoot(dir=__dirname){
+ try{const s=JSON.parse(fs.readFileSync(path.join(dir,'install-source.json'),'utf8'));if(s&&typeof s.path==='string'&&s.path)return s.path;}catch{}
+ return path.resolve(dir,'..');
+}
+
+/**
+ * O código roda de um clone (ou da pasta do zip)? No app instalado pelo `.exe`
+ * não há `desk/` acima do payload (#119).
+ * @param {string} [dir] pasta do payload
+ * @returns {boolean}
+ * @example hasSourceTree('C:\\Users\\ana\\summa\\desk') // true
+ */
+function hasSourceTree(dir=__dirname){
+ return fs.existsSync(path.join(installRoot(dir),'desk','package.json'));
+}
+
+/**
+ * Runtime da instalação por clone que o `.exe` substituiu (#119). O instalador
+ * guarda a origem antiga em `previous-install-source.json`; sem isso, quem nunca
+ * salvou a config abriria sem as sessões que continuam na pasta do clone.
+ * @param {string} [dir] pasta do payload
+ * @returns {string} caminho do runtime antigo, ou vazio
+ * @example legacyCloneRuntime('C:\\Users\\ana\\AppData\\Local\\Programs\\Summa\\resources\\app')
+ */
+function legacyCloneRuntime(dir=__dirname){
+ try{
+  const source=JSON.parse(fs.readFileSync(path.join(dir,'previous-install-source.json'),'utf8'));
+  const runtime=path.join(String(source.path),'desk','.runtime');
+  return source.path&&fs.existsSync(runtime)?runtime:'';
+ }catch{return '';}
+}
+
+/**
+ * Runtime inicial de uma config nova. Vazio faz o app usar a pasta de dados do
+ * usuário: dentro da pasta instalada, as sessões sumiriam na atualização (#119).
+ * @param {string} [dir] pasta do payload
+ * @returns {string}
+ * @example seedRuntimePath('/home/ana/summa/desk') // '/home/ana/summa/desk/.runtime'
+ */
+function seedRuntimePath(dir=__dirname){
+ return hasSourceTree(dir)?path.join(installRoot(dir),'desk','.runtime'):legacyCloneRuntime(dir);
 }
 
 // Fatos para o núcleo: `None` = ausente/inválido (o núcleo usa o default);
@@ -164,7 +202,7 @@ function seedConfig({runtimePath}={}){
  const vaultPath=homeVaultExists()?HOME_VAULT:'';
  return normalize({
   vaultPath,
-  runtimePath:runtimePath||path.join(installRoot(),'desk','.runtime'),
+  runtimePath:runtimePath||seedRuntimePath(),
   piPath:'',
   xournalPath:detectXournalPath(),
   courses:vaultPath?discoverCourses(vaultPath).map(c=>({id:c.id,name:c.name,path:c.path})):[]
@@ -213,4 +251,4 @@ function pickPdfs(library,panels){
  return picked;
 }
 
-module.exports={HOME_VAULT,installRoot,defaultDesk,normalizeDesk,normalize,readConfig,writeConfig,homeVaultExists,seedConfig,needsSetup,nameMatches,pickPdfs};
+module.exports={HOME_VAULT,installRoot,hasSourceTree,legacyCloneRuntime,seedRuntimePath,defaultDesk,normalizeDesk,normalize,readConfig,writeConfig,homeVaultExists,seedConfig,needsSetup,nameMatches,pickPdfs};

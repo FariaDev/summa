@@ -43,12 +43,14 @@ export function makeSignedRelease(options = {}) {
     manifest: manifestOverride = null,
     signatureBytes,
     zipDownload,
+    installer = null,
   } = options;
   const manifest = manifestOverride || {
     version,
     commit,
     zipSha256: crypto.createHash('sha256').update(zip).digest('hex'),
     zipBytes: zip.length,
+    ...(installer ? {exeSha256: crypto.createHash('sha256').update(installer).digest('hex'), exeBytes: installer.length} : {}),
   };
   const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   const signature = signatureBytes !== undefined

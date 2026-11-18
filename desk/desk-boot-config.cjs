@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 
-const {readConfig,writeConfig,seedConfig,normalize}=require('./config.cjs');
+const {readConfig,writeConfig,seedConfig,normalize,legacyCloneRuntime}=require('./config.cjs');
 
 /* Config da partida (#43 fase 2: saiu do main.cjs). Os overrides de ambiente
    valem só para esta execução e eram repetidos duas vezes no main: na leitura
@@ -34,7 +34,9 @@ function loadBootConfig({configFile,env,persist}){
   if(env.LEARNING_VAULT)config=normalize({vaultPath:env.LEARNING_VAULT,runtimePath:envRuntime||'',xournalPath:'',courses:[]});
   else{
    config=seedConfig({runtimePath:envRuntime||''});
-   if(persist&&(config.vaultPath||config.courses.length))writeConfig(configFile,config);
+   /* #119: o runtime do clone antigo fica gravado na primeira abertura do `.exe`. */
+   const keepsCloneRuntime=!!config.runtimePath&&config.runtimePath===legacyCloneRuntime();
+   if(persist&&(config.vaultPath||config.courses.length||keepsCloneRuntime))writeConfig(configFile,config);
   }
  }
  return applyEnvOverrides(config,env);

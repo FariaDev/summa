@@ -51,6 +51,10 @@ O nome é o mesmo nas duas línguas: **Summa**.
 
 ## Começar
 
+**No Windows**, baixe `Summa-Setup-X.Y.Z.exe` na [página de versões](https://github.com/FariaDev/summa/releases/latest) e abra o arquivo. Não precisa de administrador, Node nem terminal.
+
+**No macOS, ou a partir do código:**
+
 ```sh
 cd desk
 npm ci
