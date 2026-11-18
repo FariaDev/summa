@@ -10,10 +10,11 @@ const {reopenInstalled}=require('./install-location.cjs');
 const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 const {isAppBundle}=require('./legacy-bundle.cjs');
+const windowsInstallerUpdate=require('./windows-installer-update.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
-function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost}){
+function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate}){
  const TEST_MODE=testMode;
  /* ---------- updater por clique + painel de componentes ----------
     Somente GETs públicos (releases do GitHub + registry npm); zero telemetria.
@@ -67,6 +68,36 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
   return {mode,rootDir:root,deskDir,runtime,sourceInfo:source,reopen,publicKey};
  }
+ /* #119: no Windows instalado, o próprio app baixa e confere o instalador; o
+    worker com Node do sistema, o clone e o `npm ci` ficam só para quem roda do
+    código. Falha antes de abrir o instalador deixa a Summa aberta nesta versão. */
+ const installerDir=path.join(runtime,'update-installer');
+ async function applyWithInstaller(target,installed){
+  const lock=updater.acquireLock(runtime);
+  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  try{
+   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
+   const {file}=await installerUpdate.prepareInstallerUpdate({version:target,publicKey,dir:installerDir});
+   await installerUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
+   const readyFile=installerUpdate.installerReadyFile({env});
+   try{
+    const child=await installerUpdate.launchInstaller({file,readyFile,env});
+    await installerUpdate.waitForInstallerReady({child,readyFile});
+   }catch(error){
+    await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+    throw Error(uiMsg('err.update.installerStart',{error:causeArg(error)}));
+   }
+  }finally{updater.releaseLock(lock.file);}
+  appendLog('update',`instalador da v${target} conferido e aberto`);
+  setTimeout(()=>app.quit(),400);
+  return {ok:true,version:target};
+ }
+ /* O instalador não escreve no `update.json`: a abertura seguinte compara a
+    versão pedida com a que subiu e o Sobre mostra o resultado real. */
+ if(!TEST_MODE&&platform==='win32'){
+  installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:installerDir,failureReason:uiMsg('err.update.installerFailed')})
+   .catch(error=>appendLog('update',`resultado do instalador não registrado: ${causeArg(error)}`));
+ }
  ipcMain.handle('update-origin',()=>originFacts());
  ipcMain.handle('update-check',async(_e,opts)=>{
   /* Origem que não recebe atualização não vira "Atualizada": o Sobre diz que
@@ -88,6 +119,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
      mais nova que a instalada. */
   const installed=app.getVersion();
   if(!updater.isNewer(target,installed))throw Error(uiMsg('err.update.notNewer',{announced:target,installed}));
+  if(installerUpdate.isWindowsInstalledApp({platform,deskDir,env}))return applyWithInstaller(target,installed);
   /* #21: clone/bundle do repositório antigo não recebe a tag do Summa —
      recusa antes do lock, do worker e de qualquer git/rede; reinstalar é o
      caminho, e a pasta de dados não muda. */
