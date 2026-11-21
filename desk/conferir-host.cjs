@@ -15,8 +15,8 @@ const {message: uiMsg} = require('./src/i18n.mjs');
    - `capture-choose`   → {id} captura a janela escolhida e guarda o APP dela
    - `capture-default`  → volta ao Xournal++ (esquece a escolha)
 
-   O que fica salvo é o app (`{app, key}`: nome para mostrar e nome em
-   minúsculas), nunca o id da janela, que muda a cada abertura. */
+   O app fica salvo em `desk.json`; no Windows, o PID escolhido acompanha o
+   app para que capturas posteriores não troquem de instância. */
 /** @type {import('./types/bend-core').ConferirCore} */
 const core = require('./src/generated/conferir.core.js').default;
 
@@ -36,7 +36,9 @@ function normalizeChoice(value) {
   const app = typeof value.app === 'string' ? value.app.trim() : '';
   if (!app || app.length > MAX_APP) return null;
   const key = normKey(app);
-  return key ? {app, key} : null;
+  const processId = String(value.processId ?? '');
+  const target = /^[1-9]\d*$/.test(processId) && Number(processId) <= 0xffffffff ? {processId} : {};
+  return key ? {app, key, ...target} : null;
 }
 
 /** @returns {import('./types/bend-core').BendMaybe<import('./types/bend-core').ConfChoice>} */
@@ -115,7 +117,8 @@ function createConferirHost(deps) {
     if (viaAmbitus()) return ambitusPage();
     const {raw, facts} = await list();
     const choice = currentChoice();
-    const decision = core.decide(toList(facts), choiceFact(choice));
+    const targets = platform === 'win32' && choice?.processId ? facts.filter(w => w.id === choice.processId) : facts;
+    const decision = core.decide(toList(targets), choiceFact(choice));
     if (decision.$ === 'ConfCapture') {
       const fact = facts.find((w) => w.id === decision.id);
       const shot = await shoot(fact, raw);
@@ -137,7 +140,7 @@ function createConferirHost(deps) {
     for (let node = core.eligibleWins(toList(facts)); node && node.$ === 'Con'; node = node.tail) eligible.push(node.head);
     const fact = eligible.find((w) => w.id === id);
     if (!fact) throw Error(uiMsg('err.conferir.windowGone'));
-    const picked = {app: core.displayName(fact.app, fact.key), key: fact.key};
+    const picked = {app: core.displayName(fact.app, fact.key), key: fact.key, ...(platform === 'win32' ? {processId: fact.id} : {})};
     const shot = await capturePicked(fact, raw);
     setChoice(picked);
     return {...shot, choice: picked};
