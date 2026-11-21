@@ -4,7 +4,7 @@ import {renderComponentRows} from './dialogs.mjs';
 import {$, S, toast, reconnectAfterBridgeStop} from './state.mjs';
 import {visibleEngines} from './visible-engines-ui.mjs';
 import {text, t, LANGUAGE_EVENT} from './ui-text.mjs';
-import {createNoticeCoreLoader} from './notice-core-loader.mjs';
+import {createLazyModule} from './lazy-module.mjs';
 
 /* Avisos de atualização do Pi e do Claude Code no renderizador (#45).
    A decisão (linha, ponto, "mais nova que a testada", textos) é do núcleo
@@ -24,7 +24,7 @@ const runs = new Map();
 let lastRows = [];
 let lastNotices = {lines: [], dot: false};
 let handlers = {};
-const noticeCore = createNoticeCoreLoader();
+const noticeCore = createLazyModule({importModule: () => import('./generated/updatenotice.core.js').then((module) => module.default)});
 
 const rowIdOf = (event) => event.currentTarget?.closest?.('.component-row')?.dataset?.id || '';
 const rowOf = (id) => lastRows.find((row) => row.id === id);

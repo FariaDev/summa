@@ -13,7 +13,7 @@ import path from 'node:path';
      uma verificação que ninguém roda). */
 const DESK = path.resolve(import.meta.dirname, '..');
 const TYPECHECK_FLOOR = 566;
-const SKIPPED_DIRS = new Set(['node_modules', 'tests', 'generated']);
+const SKIPPED_DIRS = new Set(['node_modules', 'tests', 'generated', 'out']);
 const TS_CHECK = '// @ts-check';
 
 /* `include`/`exclude` só usam `*` (dentro de um segmento) e `**` (qualquer
@@ -34,7 +34,7 @@ function listedFiles() {
 function sourceFilesAll(dir = DESK, prefix = '') {
   const out = [];
   for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
-    if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'tests') continue;
+    if (entry.name.startsWith('.') || entry.name === 'node_modules' || entry.name === 'tests' || entry.name === 'out') continue;
     const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isDirectory()) out.push(...sourceFilesAll(path.join(dir, entry.name), relative));
     else if (/\.(cjs|mjs|js)$/.test(entry.name)) out.push(relative);

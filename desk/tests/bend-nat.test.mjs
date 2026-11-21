@@ -46,7 +46,7 @@ test('roundNat arredonda antes de levar a Nat', () => {
    isso a varredura olha o literal e não só o `BigInt(`. */
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SCANNED = ['desk', 'core'];
-const SKIPPED_DIRS = new Set(['node_modules', 'generated', '.runtime']);
+const SKIPPED_DIRS = new Set(['node_modules', 'generated', '.runtime', 'out']);
 const CODE_FILE = /\.(?:mjs|cjs|js|ts)$/;
 const ALLOWED = new Map([
   ['desk/src/bend-nat.mjs', 'a casca cita o BigInt antigo no comentário'],

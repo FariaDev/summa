@@ -5,6 +5,9 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
     "test": "node --test --test-timeout=180000 --test-force-exit tests/*.test.mjs",
     "pretest": "node scripts/core-gate.mjs",
     "check": "node tests/syntax-check.mjs",
@@ -50,9 +53,11 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "^1.65.1",
+    "electron-vite": "6.0.0",
     "eslint": "10.14.0",
     "globals": "17.13.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "7.3.8"
   },
   "productName": "Summa"
 }

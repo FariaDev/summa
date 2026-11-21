@@ -17,7 +17,7 @@ function sourceFiles(dir) {
   for (const entry of fs.readdirSync(path.join(DESK, dir), {withFileTypes: true})) {
     const rel = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!['node_modules', '.runtime', 'generated', 'tests'].includes(entry.name)) out.push(...sourceFiles(rel));
+      if (!['node_modules', '.runtime', 'generated', 'tests', 'out'].includes(entry.name)) out.push(...sourceFiles(rel));
       continue;
     }
     if (/\.(css|mjs|html)$/.test(entry.name)) out.push(rel);

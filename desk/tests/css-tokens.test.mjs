@@ -65,7 +65,7 @@ function cssFiles(){
  const out=[];
  const walk=dir=>{
   for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
-   if(['node_modules','.runtime'].includes(entry.name))continue;
+   if(['node_modules','.runtime','out'].includes(entry.name))continue;
    const full=path.join(dir,entry.name);
    if(entry.isDirectory()){if(entry.name!=='generated')walk(full);}
    else if(entry.name.endsWith('.css'))out.push(full);

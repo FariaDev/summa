@@ -25,7 +25,7 @@ const correctness = {
 };
 
 export default [
-  {ignores: ['node_modules/**', 'src/generated/**', '.runtime/**', '.*/**', 'assets/**', 'vendor/**']},
+  {ignores: ['node_modules/**', 'out/**', 'src/generated/**', '.runtime/**', '.*/**', 'assets/**', 'vendor/**']},
   {
     files: ['**/*.cjs'],
     languageOptions: {sourceType: 'commonjs', ecmaVersion: 'latest', globals: {...globals.node}},

@@ -2,6 +2,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nativeImage,nativeTheme,WebContentsView,Notification,powerMonitor,protocol,safeStorage,clipboard}=require('electron');
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
+const {rendererEntry,loadRenderer}=require('./renderer-entry.cjs');
 const {promisify}=require('node:util');const {execFile}=require('node:child_process');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
@@ -461,7 +462,7 @@ app.whenReady().then(async()=>{
  /* O reload do renderer (⌘R) derruba a página que ligava a View nativa: sem
     isso a view fica presa por cima de uma Mesa que nem sabe que ela existe. */
  win.webContents.on('did-start-navigation',(_e,_url,_isInPlace,isMainFrame)=>{if(isMainFrame)ggb.hideView();});
- win.on('close',()=>persist());win.loadFile(path.join(__dirname,'index.html'));
+ win.on('close',()=>persist());loadRenderer(win,rendererEntry({env:process.env,deskDir:__dirname}));
  scheduleUpdateCheck();
 });
 
