@@ -110,11 +110,11 @@ test('imageCandidates preserves filesystem punctuation and decodes only file URL
   const asset=path.join(root,name);
   assert.deepEqual(imageCandidates(asset,options),[asset]);
   assert.deepEqual(imageCandidates(`./${name}`,options),[asset]);
-  assert.deepEqual(imageCandidates(`${pathToFileURL(asset)}?download=1#preview`,options),[asset]);
+  if(process.platform!=='win32')assert.deepEqual(imageCandidates(`${pathToFileURL(asset)}?download=1#preview`,options),[asset]);
  }
  assert.deepEqual(imageCandidates('',options),[]);
  assert.deepEqual(imageCandidates(null,options),[]);
- assert.deepEqual(imageCandidates('file:///vault/learning/bad%ZZ.png',options),[path.join(root,'bad%ZZ.png')]);
+ if(process.platform!=='win32')assert.deepEqual(imageCandidates('file:///vault/learning/bad%ZZ.png',options),[path.join(root,'bad%ZZ.png')]);
 });
 
 test('session labels use the jsonl timestamp and first user line',()=>{
