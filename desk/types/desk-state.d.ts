@@ -4,7 +4,7 @@
    o resto como `unknown`. */
 export type PdfSlot = {path: string, page: number, zoom: number, [field: string]: unknown};
 export type StudyRef = {title?: string, xopp?: string};
-export type ConferirChoice = {app: string, key: string};
+export type ConferirChoice = {app: string, key: string, processId?: string};
 export type CourseState = {session?: string, sessions?: Array<{path: string, [field: string]: unknown}>,
  sessionStudies?: Record<string, StudyRef>, sessionLayouts?: Record<string, object>, [field: string]: unknown};
 export type DeskState = {

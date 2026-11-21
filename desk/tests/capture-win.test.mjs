@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {ptMatches, ptText} from './pt-text.mjs';
+import {tempDir} from './temp-dir.mjs';
+import {captureScriptExec} from './fake-capture-win.mjs';
 
 /* A captura do Windows (PowerShell + .NET do sistema) sem Windows: o script é
    puro (conferido por texto/escapamento) e o runner aceita `exec`/`tmp`
@@ -13,14 +15,29 @@ import {ptMatches, ptText} from './pt-text.mjs';
    deixar lixo no temporário. */
 const require = createRequire(import.meta.url);
 const {buildScript, captureXournalWindow, EXIT_MESSAGES} = require('../capture-win.cjs');
+const {listWindows} = require('../capture-win.cjs');
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-capture-win-test-'));
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(200, 7)]);
 
+for (const [filename, capture] of [['capture.ps1', captureXournalWindow], ['list.ps1', listWindows]]) {
+  test(`${filename}: UTF-8 com BOM preserva caminhos acentuados no PowerShell 5.1`, async () => {
+    const dir = tempDir('mesa-José');
+    await capture({tmp: () => dir, exec: captureScriptExec(filename)});
+    assert.equal(fs.existsSync(dir), false);
+  });
+}
+
+test('PowerShell real: grava arquivo em caminho com José', {skip: process.platform !== 'win32'}, async () => {
+  const dir = tempDir('mesa-José');
+  await captureXournalWindow({tmp: () => dir, exec: captureScriptExec('capture.ps1', true)});
+  assert.equal(fs.existsSync(dir), false);
+});
+
 test('buildScript: acha o xournalpp, captura a janela e escapa o caminho', () => {
   const script = buildScript("C:\\Users\\Ana O'Brien\\cap.png");
   assert.match(script, /Get-Process -Name 'xournalpp'/);
-  assert.match(script, /CopyFromScreen/);
+  assert.doesNotMatch(script, /CopyFromScreen/);
   assert.match(script, /PrintWindow/);
   assert.match(script, /Ana O''Brien/, 'aspas simples do caminho são duplicadas (literal PowerShell)');
   assert.match(script, /SetProcessDPIAware/, 'o retângulo tem de bater com os pixels físicos');

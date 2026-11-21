@@ -1,8 +1,8 @@
 /* Captura de janela no Windows — paridade com o `screencapture -l` do macOS
    (host do Conferir, `conferir-host.cjs`): acha o processo (por padrão o
    `xournalpp`; o Conferir com outros programas passa o do app escolhido),
-   tira a janela pelo retângulo dela (WYSIWYG; fallback PrintWindow com
-   PW_RENDERFULLCONTENT) e devolve {title, dataUrl}. `listWindows` lista os
+   renderiza a janela com PrintWindow (PW_RENDERFULLCONTENT), sem ler pixels
+   da tela, e devolve {title, dataUrl}. `listWindows` lista os
    processos com janela para o seletor. Só PowerShell + .NET do próprio
    Windows — nada instalado, sem rede, sem telemetria.
 
@@ -30,6 +30,7 @@ function exitMessages(label=DEFAULT_LABEL){
   3:uiMsg('err.capture.openFirst',{app:label}),
   4:uiMsg('err.capture.minimized',{app:label}),
   5:uiMsg('err.capture.saveFail'),
+  6:uiMsg('err.capture.renderFail',{app:label}),
  };
 }
 const EXIT_MESSAGES=exitMessages();
@@ -41,6 +42,11 @@ const EXIT_MESSAGES=exitMessages();
 const PS_QUOTE=/['‘’‚‛]/g;
 function psLiteral(value){
  return String(value).replace(/[\r\n]+/g,' ').replace(PS_QUOTE,q=>q+q);
+}
+
+/* Sem BOM, o PowerShell 5.1 lê UTF-8 como ANSI e corrompe caminhos acentuados. */
+function writePowerShellScript(scriptPath,script){
+ fs.writeFileSync(scriptPath,'\uFEFF'+script,'utf8');
 }
 
 /* Nome do processo vai para o script como literal, então entra só uma lista
@@ -55,12 +61,14 @@ function assertProcessName(name){
 }
 
 /* O script: DPI-aware (o retângulo bate com os pixels físicos), acha a
-   primeira janela do processo, copia os pixels do retângulo (PrintWindow se a
-   cópia de tela falhar) e grava o PNG no caminho embutido. O título da janela
+   janela do processo, renderiza só seu HWND e grava o PNG no caminho embutido.
+   O título da janela
    sai no stdout (uma linha) — mesmo formato do listing do macOS. */
-function buildScript(outFile,processName=PROCESS_NAME){
+function buildScript(outFile,processName=PROCESS_NAME,processId=null){
  const saida=psLiteral(outFile);
  const processo=psLiteral(assertProcessName(processName));
+ if(processId!==null&&(!/^[1-9]\d*$/.test(String(processId))||Number(processId)>0xffffffff))throw Error(`Invalid process ID: ${processId}. Expected a positive 32-bit integer.`);
+ const selector=processId===null?`-Name '${processo}'`:`-Id ${processId}`;
  return `$ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
@@ -76,7 +84,7 @@ public class MesaWin {
 }
 '@
 [void][MesaWin]::SetProcessDPIAware()
-$procs=@(Get-Process -Name '${processo}' -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
+$procs=@(Get-Process ${selector} -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
 if($procs.Count -eq 0){ exit 3 }
 $p=$procs[0]
 if([MesaWin]::IsIconic($p.MainWindowHandle)){ exit 4 }
@@ -87,17 +95,18 @@ $h=$rect.Bottom-$rect.Top
 if(($w -le 0) -or ($h -le 0)){ exit 4 }
 $bmp=New-Object System.Drawing.Bitmap $w,$h
 $g=[System.Drawing.Graphics]::FromImage($bmp)
-$copied=$true
-try { $g.CopyFromScreen($rect.Left,$rect.Top,0,0,$bmp.Size) } catch { $copied=$false }
-$g.Dispose()
-if(-not $copied){
-  $g2=[System.Drawing.Graphics]::FromImage($bmp)
-  $hdc=$g2.GetHdc()
-  $printed=[MesaWin]::PrintWindow($p.MainWindowHandle,$hdc,2)
-  $g2.ReleaseHdc($hdc)
-  $g2.Dispose()
-  if(-not $printed){ $bmp.Dispose(); exit 5 }
+try {
+  $hdc=$g.GetHdc()
+  try {
+    $printed=[MesaWin]::PrintWindow($p.MainWindowHandle,$hdc,2)
+  } finally { $g.ReleaseHdc($hdc) }
+} catch {
+  $bmp.Dispose()
+  throw
+} finally {
+  $g.Dispose()
 }
+if(-not $printed){ $bmp.Dispose(); exit 6 }
 try { $bmp.Save('${saida}',[System.Drawing.Imaging.ImageFormat]::Png) } catch { $bmp.Dispose(); exit 5 }
 $bmp.Dispose()
 [Console]::Out.Write($p.MainWindowTitle)
@@ -108,14 +117,14 @@ $bmp.Dispose()
    `exec` e `tmp` são injeção de teste — o caminho feliz usa os do sistema.
    `processName`/`label` escolhem o app (padrão: o Xournal++). */
 async function captureWindow(opts={}){
- const {exec=execFileAsync,tmp=null,processName=PROCESS_NAME,label=DEFAULT_LABEL}=opts;
+ const {exec=execFileAsync,tmp=null,processName=PROCESS_NAME,label=DEFAULT_LABEL,processId=null}=opts;
  const messages=exitMessages(label);
  const dir=tmp?tmp():fs.mkdtempSync(path.join(os.tmpdir(),'mesa-visual-'));
  const scriptPath=path.join(dir,'capture.ps1');
  const outFile=path.join(dir,'attempt.png');
  try{
   /* Dentro do try: um nome recusado pela lista branca não deixa o temporário para trás. */
-  fs.writeFileSync(scriptPath,buildScript(outFile,processName));
+  writePowerShellScript(scriptPath,buildScript(outFile,processName,processId));
   let stdout='';
   try{
    const r=await exec('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',scriptPath],{timeout:20000,maxBuffer:1024*1024});
@@ -149,7 +158,7 @@ async function listWindows(opts={}){
  const {exec=execFileAsync,tmp=null}=opts;
  const dir=tmp?tmp():fs.mkdtempSync(path.join(os.tmpdir(),'mesa-visual-'));
  const scriptPath=path.join(dir,'list.ps1');
- fs.writeFileSync(scriptPath,LIST_SCRIPT);
+ writePowerShellScript(scriptPath,LIST_SCRIPT);
  try{
   let stdout='';
   try{

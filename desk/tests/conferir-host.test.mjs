@@ -15,6 +15,7 @@ import {captureFileName} from '../src/capture-name.mjs';
 const require = createRequire(import.meta.url);
 const {createConferirHost, normalizeChoice, windowFact, normKey} = require('../conferir-host.cjs');
 const {listWindows, captureWindow, psLiteral, buildScript} = require('../capture-win.cjs');
+const {sanitizeState} = require('../desk-state-sanitize.cjs');
 
 const BOUNDS = {X: 0, Y: 0, Width: 1200, Height: 800};
 const win = (id, app, title, extra = {}) => ({id, app, title, bounds: BOUNDS, ...extra});
@@ -22,7 +23,7 @@ const PNG = 'data:image/png;base64,iVBORw0KGgo=';
 
 /* Um host com a lista dada (da frente para trás) e uma escolha salva em memória. */
 function harness({windows, saved = null, platform = 'darwin', selfNames = ['Summa', 'Electron']}) {
-  const store = {choice: saved, shots: [], permission: 0};
+  const store = {choice: saved, shots: []};
   const handlers = new Map();
   const host = createConferirHost({
     ipcMain: {handle: (name, fn) => handlers.set(name, fn)},
@@ -30,12 +31,31 @@ function harness({windows, saved = null, platform = 'darwin', selfNames = ['Summ
     state: () => store.choice,
     setChoice: (value) => { store.choice = value; },
     selfNames: () => selfNames,
-    ensurePermission: async () => { store.permission += 1; },
     listWindows: async () => windows,
     captureWindow: async (raw, label) => { store.shots.push({id: raw.id, label}); return {title: raw.title, dataUrl: PNG}; },
   });
   return {host, store, handlers};
 }
+
+test('Windows: escolher a segunda instância mantém o PID nas capturas seguintes e no estado restaurado', async () => {
+  const windows = [win('5228', 'powershell', 'Instance 1'), win('5272', 'powershell', 'Instance 2')];
+  const {host, store} = harness({platform: 'win32', windows});
+  await host.choose({id: '5272'});
+  assert.equal((await host.ready()).title, 'Instance 2');
+  assert.deepEqual(store.shots.map(shot => shot.id), ['5272', '5272']);
+  assert.equal(store.choice.processId, '5272');
+  const saved = sanitizeState(JSON.parse(JSON.stringify({conferirApp: store.choice}))).conferirApp;
+  const restored = harness({platform: 'win32', windows, saved});
+  assert.equal((await restored.host.ready()).title, 'Instance 2');
+  windows.pop();
+  assert.equal((await host.ready()).absent, true);
+  assert.equal(store.shots.length, 2, 'a instância fechada não vira outra janela');
+});
+
+test('Windows: estado antigo sem PID mantém a busca pelo app', async () => {
+  const {host} = harness({platform: 'win32', windows: [win('5228', 'powershell', 'Instance 1')], saved: {app: 'powershell', key: 'powershell'}});
+  assert.equal((await host.ready()).title, 'Instance 1');
+});
 
 test('sem escolha salva, o Conferir captura o Xournal++ como sempre', async () => {
   const {host, store} = harness({windows: [win('11', 'Safari', 'Aula'), win('12', 'Xournal++', 'Lista 3'), win('13', 'OneNote', 'Notas')]});
@@ -44,7 +64,6 @@ test('sem escolha salva, o Conferir captura o Xournal++ como sempre', async () =
   assert.equal(r.title, 'Lista 3');
   assert.equal(r.dataUrl, PNG);
   assert.deepEqual(store.shots, [{id: '12', label: 'Xournal++'}]);
-  assert.equal(store.permission, 1, 'a permissão de tela é conferida antes de listar');
 });
 
 test('no Windows o processo xournalpp também é o Xournal++', async () => {
@@ -162,8 +181,8 @@ test('captura que falha não troca o app salvo', async () => {
 test('escolher o Xournal++ no seletor guarda o nome único dele', async () => {
   const {host, store} = harness({platform: 'win32', windows: [{id: '80', app: 'xournalpp', title: 'Prova'}]});
   const r = await host.choose({id: '80'});
-  assert.deepEqual(r.choice, {app: 'Xournal++', key: 'xournalpp'});
-  assert.deepEqual(store.choice, {app: 'Xournal++', key: 'xournalpp'});
+  assert.deepEqual(r.choice, {app: 'Xournal++', key: 'xournalpp', processId: '80'});
+  assert.deepEqual(store.choice, {app: 'Xournal++', key: 'xournalpp', processId: '80'});
 });
 
 test('Voltar ao Xournal++ esquece a escolha', async () => {

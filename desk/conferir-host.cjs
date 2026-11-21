@@ -15,8 +15,8 @@ const {message: uiMsg} = require('./src/i18n.mjs');
    - `capture-choose`   → {id} captura a janela escolhida e guarda o APP dela
    - `capture-default`  → volta ao Xournal++ (esquece a escolha)
 
-   O que fica salvo é o app (`{app, key}`: nome para mostrar e nome em
-   minúsculas), nunca o id da janela, que muda a cada abertura. */
+   O app fica salvo em `desk.json`; no Windows, o PID escolhido acompanha o
+   app para que capturas posteriores não troquem de instância. */
 /** @type {import('./types/bend-core').ConferirCore} */
 const core = require('./src/generated/conferir.core.js').default;
 
@@ -36,11 +36,13 @@ function normalizeChoice(value) {
   const app = typeof value.app === 'string' ? value.app.trim() : '';
   if (!app || app.length > MAX_APP) return null;
   const key = normKey(app);
-  return key ? {app, key} : null;
+  const processId = String(value.processId ?? '');
+  const target = /^[1-9]\d*$/.test(processId) && Number(processId) <= 0xffffffff ? {processId} : {};
+  return key ? {app, key, ...target} : null;
 }
 
 /** @returns {import('./types/bend-core').BendMaybe<import('./types/bend-core').ConfChoice>} */
-const choiceFact = (choice) => (choice ? {$: 'Some', value: {app: choice.app, key: choice.key}} : NONE);
+const choiceFact = (choice) => (choice ? {$: 'Some', value: {app: choice.app, key: choice.key, windowId: choice.processId ? {$: 'Some', value: choice.processId} : NONE}} : NONE);
 
 /* Janela bruta do helper → fato do núcleo. `bounds` vem do helper do macOS
    (`Width`/`Height`); no Windows não há tamanho e a janela vale. */
@@ -65,7 +67,7 @@ function windowFact(raw, selfKeys) {
 function createConferirHost(deps) {
   const {
     ipcMain, platform = process.platform, state, setChoice, selfNames = () => [],
-    listWindows, captureWindow, ensurePermission = async () => {}, fixture = null, ambitus = null,
+    listWindows, captureWindow, fixture = null, ambitus = null,
   } = deps;
 
   const selfKeys = () => new Set(selfNames().map(normKey).filter(Boolean));
@@ -79,7 +81,6 @@ function createConferirHost(deps) {
       return {raw: data.windows || [], facts: (data.windows || []).map((w) => windowFact(w, selfKeys()))};
     }
     if (platform !== 'darwin' && platform !== 'win32') throw Error(uiMsg('err.conferir.platform'));
-    await ensurePermission();
     const raw = await listWindows();
     return {raw, facts: raw.map((w) => windowFact(w, selfKeys()))};
   }
@@ -138,7 +139,7 @@ function createConferirHost(deps) {
     for (let node = core.eligibleWins(toList(facts)); node && node.$ === 'Con'; node = node.tail) eligible.push(node.head);
     const fact = eligible.find((w) => w.id === id);
     if (!fact) throw Error(uiMsg('err.conferir.windowGone'));
-    const picked = {app: core.displayName(fact.app, fact.key), key: fact.key};
+    const picked = {app: core.displayName(fact.app, fact.key), key: fact.key, ...(platform === 'win32' ? {processId: fact.id} : {})};
     const shot = await capturePicked(fact, raw);
     setChoice(picked);
     return {...shot, choice: picked};
