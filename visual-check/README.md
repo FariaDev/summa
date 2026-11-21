@@ -10,7 +10,8 @@ O botão **Conferir Xournal++** (ou do programa escolhido) lista as janelas pelo
 helper `visual-check/windows`, captura a janela visível com
 `/usr/sbin/screencapture -lID` e anexa a imagem à próxima mensagem. A Mesa não usa
 a extensão `index.ts` nem precisa do motor Pi para isso. `desk/main.cjs` chama o
-helper; `desk/scripts/visual-helper.mjs` compila `windows.swift` quando ele falta.
+helper; `desk/scripts/visual-helper.mjs` compila `windows.swift` se o binário
+faltar ou estiver desatualizado (`npm run setup` no modo fonte).
 
 A captura mostra somente o conteúdo visível da janela, incluindo escrita não
 salva. Não lê o `.xopp`, não salva ou modifica a resolução e não inclui páginas
@@ -18,8 +19,9 @@ fora da visualização. Ajuste o zoom quando necessário. Não há fallback para
 inteira, outra aplicação ou imagem antiga: uma falha bloqueia a conferência e
 mostra o motivo.
 
-O macOS deve permitir **Gravação de Tela** ao aplicativo que hospeda a Mesa. A
-permissão do terminal não é compartilhada automaticamente. O PNG temporário é
+O macOS deve permitir **Gravação de Tela** ao aplicativo que hospeda a Mesa.
+Sem a permissão, o Conferir pede que o macOS mostre o aviso antes de listar janelas.
+A permissão do terminal não é compartilhada automaticamente. O PNG temporário é
 removido após a leitura; a imagem anexada passa a integrar a conversa e pode ser
 persistida no JSONL e enviada ao provedor do modelo, como qualquer imagem
 anexada. No Windows o Conferir usa o PowerShell do sistema

@@ -31,6 +31,22 @@ test('helper já compilado não recompila',t=>{
  assert.equal(result,'present');
 });
 
+test('fonte mais novo recompila o helper da instalação anterior',t=>{
+ const root=cloneWithoutHelper(t);
+ const helper=path.join(root,'visual-check','windows');
+ const source=path.join(root,'visual-check','windows.swift');
+ const old=new Date('2020-01-01T00:00:00Z');
+ fs.writeFileSync(helper,'binário antigo');
+ fs.utimesSync(helper,old,old);
+ fs.writeFileSync(source,'fonte atualizado');
+ const result=ensureVisualHelper({root,platform:'darwin',compile:(_source,output)=>{
+  fs.writeFileSync(output,'binário novo');
+  return {status:0};
+ }});
+ assert.equal(result,'compiled');
+ assert.equal(fs.readFileSync(helper,'utf8'),'binário novo');
+});
+
 test('sem swiftc a instalação recebe "failed" em vez de exceção',t=>{
  const root=cloneWithoutHelper(t);
  assert.equal(ensureVisualHelper({root,platform:'darwin',compile:()=>({status:null})}),'failed');

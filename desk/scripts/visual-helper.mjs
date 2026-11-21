@@ -7,7 +7,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 
 /**
- * Compila o helper do Conferir se ele faltar. Fora do macOS não faz nada.
+ * Compila o helper do Conferir se ele faltar ou o fonte for mais novo. Fora do macOS não faz nada.
  * Falhar não interrompe a instalação: o resto da Mesa funciona sem o Conferir,
  * e o chamador avisa como resolver.
  * @param {{root:string, platform?:string, compile?:(source:string,output:string)=>{status:number|null}}} options
@@ -18,9 +18,12 @@ import {spawnSync} from 'node:child_process';
 export function ensureVisualHelper({root,platform=process.platform,compile=compileWithSwiftc}){
  if(platform!=='darwin')return 'not-mac';
  const visual=path.join(root,'visual-check');
+ const source=path.join(visual,'windows.swift');
  const helper=path.join(visual,'windows');
- if(fs.existsSync(helper))return 'present';
- const result=compile(path.join(visual,'windows.swift'),helper);
+ const compiledTime=fs.statSync(helper,{throwIfNoEntry:false})?.mtimeMs;
+ const sourceTime=fs.statSync(source,{throwIfNoEntry:false})?.mtimeMs;
+ if(compiledTime!==undefined&&(sourceTime===undefined||compiledTime>=sourceTime))return 'present';
+ const result=compile(source,helper);
  return result.status===0&&fs.existsSync(helper)?'compiled':'failed';
 }
 

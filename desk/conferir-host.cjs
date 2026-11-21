@@ -65,7 +65,7 @@ function windowFact(raw, selfKeys) {
 function createConferirHost(deps) {
   const {
     ipcMain, platform = process.platform, state, setChoice, selfNames = () => [],
-    listWindows, captureWindow, ensurePermission = async () => {}, fixture = null, ambitus = null,
+    listWindows, captureWindow, fixture = null, ambitus = null,
   } = deps;
 
   const selfKeys = () => new Set(selfNames().map(normKey).filter(Boolean));
@@ -79,7 +79,6 @@ function createConferirHost(deps) {
       return {raw: data.windows || [], facts: (data.windows || []).map((w) => windowFact(w, selfKeys()))};
     }
     if (platform !== 'darwin' && platform !== 'win32') throw Error(uiMsg('err.conferir.platform'));
-    await ensurePermission();
     const raw = await listWindows();
     return {raw, facts: raw.map((w) => windowFact(w, selfKeys()))};
   }
