@@ -60,7 +60,7 @@ function resolveDrop(paths){
  throw Error(uiMsg('err.firstrun.dropPdfs'));
 }
 
-/* #21: Documents vem do sistema para respeitar redirecionamento e tradução.
+/* Documents vem do sistema para respeitar redirecionamento e tradução.
    Dentro do home do Electron, rebase para os.homedir(): o HOME isolado dos
    testes continua valendo como no config.cjs; pastas externas ficam intactas. */
 /** Suggest the configured vault or the system Documents folder, respecting HOME overrides.
