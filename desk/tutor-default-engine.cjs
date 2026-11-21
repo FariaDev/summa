@@ -58,7 +58,7 @@ function detectTutorEngines({config = {}, env = process.env, home = '', platform
   const opencodePath = testMode
     ? existingFile(env.LEARNING_DESK_OPENCODE) || existingFile(config.opencodePath)
     || (env.LEARNING_DESK_OPENCODE_SHELL ? findOpenCodeInLoginShell({shellPath: env.LEARNING_DESK_OPENCODE_SHELL, env, platform}) : '')
-    : findOpenCodeLauncher({envPath: env.LEARNING_DESK_OPENCODE || '', configuredPath: config.opencodePath || '', ...(runtimeDir ? {runtime: runtimeDir} : {}), ...(home ? {home} : {}), platform});
+    : findOpenCodeLauncher({envPath: env.LEARNING_DESK_OPENCODE || '', configuredPath: config.opencodePath || '', ...(runtimeDir ? {runtime: runtimeDir} : {}), ...(home ? {home} : {}), env, platform});
   /* A 1.x tem o `serve` v2 incompleto: não conta como motor pronto (#93).
      Versão ilegível não bloqueia; só o 1.x confirmado sai da fila. */
   const opencodeOld = opencodePath && !testMode ? oldOpenCode(readOpenCodeVersionSync(opencodePath)) : null;

@@ -11,7 +11,7 @@ const {DescriptorCache}=require('./src/agents/descriptor-cache.cjs');
 const {claudePrompt,openCodePrompt}=require('./src/agents/desk-prompts.cjs');
 const {importedTranscriptFromMessages}=require('./src/agents/conversation-transcript.cjs');
 const {findClaudeLauncher,detectClaude}=require('./src/agents/claude-environment.cjs');
-const {candidatePaths,findOpenCodeLauncher}=require('./src/agents/opencode-process.cjs');
+const {findOpenCodeLauncher,findOpenCodeLauncherAsync}=require('./src/agents/opencode-process.cjs');
 const {findOpenCodeInLoginShell,findOpenCodeInLoginShellAsync}=require('./src/agents/opencode-shell.cjs');
 const {sessionPreviewFromJsonl}=require('./lib.cjs');
 const {detectTutorEngines}=require('./tutor-default-engine.cjs');
@@ -130,15 +130,8 @@ function createTutorEngineHost({live,runtime,deskDir,TEST_MODE,FREE_ID}){
   const local=TEST_MODE?[...new Set([envPath,configuredPath])].map(file=>{try{return fs.statSync(file).isFile()?file:'';}catch{return '';}}).find(Boolean)||'':'';
   const find=TEST_MODE
    ?Promise.resolve(local||(testShell?findOpenCodeInLoginShellAsync({shellPath:testShell,env:process.env}):''))
-   :findOpenCodeLauncherFreshAsync(envPath,configuredPath);
+   :findOpenCodeLauncherAsync({envPath,configuredPath,runtime});
   return find.then(found=>found?readOpenCodeVersion(found,{timeoutMs:3000}):'').then(()=>null).catch(()=>null);
- }
- /* Mesma ordem do `findOpenCodeLauncher`: caminhos fixos primeiro (só `stat`) e
-    o shell de login assíncrono quando nenhum existe. A resposta entra no cache
-    compartilhado, então a chamada síncrona do `init` lê sem abrir processo. */
- function findOpenCodeLauncherFreshAsync(envPath,configuredPath){
-  const found=candidatePaths({envPath,configuredPath}).find(file=>{try{return fs.statSync(file).isFile();}catch{return false;}});
-  return found?Promise.resolve(found):findOpenCodeInLoginShellAsync({env:process.env});
  }
  /* Motor de uma conversa nova quando não há nada salvo (#93). Em teste só os
     fakes do ambiente contam; fora dele vale a preferência OpenCode → Claude. */

@@ -77,7 +77,7 @@ function systemLabel(run,platform){
 function engineVersions({run,env,home,config,runtime}){
  const missing='não instalado';
  const sdk=packageVersion(path.join(deskDir,'node_modules','@anthropic-ai','claude-agent-sdk','package.json'));
- const opencodeBin=findOpenCodeLauncher({envPath:env.LEARNING_DESK_OPENCODE||'',configuredPath:config.opencodePath||'',runtime,home});
+ const opencodeBin=findOpenCodeLauncher({envPath:env.LEARNING_DESK_OPENCODE||'',configuredPath:config.opencodePath||'',runtime,home,env});
  return {opencodeBin,engines:[
   {name:'Claude Agent SDK',version:sdk||missing},
   {name:'OpenCode',version:opencodeBin?(firstLine(run,opencodeBin,['--version'])||'não respondeu'):missing},

@@ -8,7 +8,7 @@
    login. Perguntamos ao shell da pessoa (`-ilc`), com prazo, e aceitamos só um
    arquivo executável de verdade. O rc pode imprimir qualquer coisa antes do
    comando; por isso o caminho vem entre marcadores. O Windows não tem shell de
-   login (o comportamento de lá continua o dos caminhos fixos). */
+   login. */
 
 const fs = require('node:fs');
 const path = require('node:path');
