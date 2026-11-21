@@ -945,6 +945,7 @@
   "err.pkg.badEntry": "manifesto com entrada inválida",
   "err.pkg.badRel": "manifesto com caminho relativo inválido: {path}",
   "err.pkg.badRoute": "manifesto com rota inconsistente: {path}",
+  "err.pkg.collidingPaths": "pacote tem arquivos que colidem sem diferenciar maiúsculas: \"{first}\" e \"{second}\"; esperados caminhos distintos após normalização NFC e conversão para minúsculas",
   "err.pkg.destExists": "destino já existe, nada foi importado: {dir}",
   "err.pkg.exportRoot": "Escolha uma pasta para o arquivo da matéria (a raiz do volume não vale).",
   "err.pkg.format": "formato de pacote não suportado ({format})",

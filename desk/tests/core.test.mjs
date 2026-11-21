@@ -3,6 +3,8 @@ import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {createRequire} from 'node:module';
 import {calculate} from '../calculator.mjs';
 import {ptMatches} from './pt-text.mjs';
+import {message} from '../src/i18n.mjs';
+import {text} from '../src/ui-text.mjs';
 const require2=createRequire(import.meta.url);
 
 test('calculator precedence, functions and angle units',()=>{assert.equal(calculate('2+3*4'),'14');assert.equal(calculate('(2+3)*4'),'20');assert.equal(calculate('2*(3+4*(1+1))'),'22');assert.equal(calculate('-2^2'),'-4');assert.equal(calculate('2^3^2'),'512');assert.equal(calculate('sqrt(16)+sin(pi/2)'),'5');assert.equal(calculate('sin(30)',true),'0.5');assert.equal(calculate('1,5+2'),'3.5');assert.equal(calculate('2^-2'),'0.25');assert.equal(calculate('2*pi'),'6.28318530718');assert.equal(calculate('1,5+1'),'2.5');assert.equal(calculate('log(100)'),'2');assert.equal(calculate('ln(e)'),'1');});
@@ -466,6 +468,24 @@ function loadPreloadWithMockElectron(){
   emit:(name,data)=>{for(const fn of listeners.get(name)||[])fn({},data);}
  };
 }
+
+test('preload: erro de pacote marcado chega traduzível ao renderer',async()=>{
+ const {desk,onInvoke}=loadPreloadWithMockElectron();
+ const token=message('err.pkg.collidingPaths',{first:'materials/A.pdf',second:'materials/a.pdf'});
+ onInvoke(()=>Promise.reject(Error(`Error invoking remote method 'share-import-preview': PackageError: ${token}`)));
+ await assert.rejects(desk.shareImportPreview({}),error=>{
+  assert.equal(error.message,token);
+  const translated=text(error.message);
+  assert.match(translated,/pacote tem arquivos que colidem sem diferenciar maiúsculas/);
+  assert.ok(translated.includes('"materials/A.pdf" e "materials/a.pdf"'));
+  assert.doesNotMatch(translated,/[\uE000\uE001]/);
+  return true;
+ });
+ for(const original of ['mensagem comum','PackageError: mensagem comum','packageError: '+token,'NotAnErrorName: '+token]){
+  onInvoke(()=>Promise.reject(Error(`Error invoking remote method 'share-import-preview': Error: ${original}`)));
+  await assert.rejects(desk.shareImportPreview({}),error=>error.message===original);
+ }
+});
 
 test('preload: invoke perde o boilerplate do Electron e a conexão que falha gera um aviso só',async()=>{
  const {desk,onInvoke,emit}=loadPreloadWithMockElectron();

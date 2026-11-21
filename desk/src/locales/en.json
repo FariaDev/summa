@@ -945,6 +945,7 @@
   "err.pkg.badEntry": "manifest with an invalid entry",
   "err.pkg.badRel": "manifest with an invalid relative path: {path}",
   "err.pkg.badRoute": "manifest with an inconsistent route: {path}",
+  "err.pkg.collidingPaths": "package has files whose paths collide without case sensitivity: \"{first}\" and \"{second}\"; expected distinct paths after NFC normalization and conversion to lowercase",
   "err.pkg.destExists": "destination already exists, nothing was imported: {dir}",
   "err.pkg.exportRoot": "Choose a folder for the course file (the volume root does not work).",
   "err.pkg.format": "unsupported package format ({format})",
