@@ -1,4 +1,4 @@
-import {ptMatches} from './pt-text.mjs';
+import {ptMatches, ptText} from './pt-text.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -344,6 +344,51 @@ test('pacote: gravação exclusiva nunca sobrescreve arquivo existente', () => {
 test('pacote: zip com nome repetido é recusado', () => {
   const dup = zipkit.writeZip([{name: 'a.txt', data: Buffer.from('1')}, {name: 'a.txt', data: Buffer.from('2')}]);
   assert.throws(() => zipkit.readZip(dup), ptMatches(/repetida/));
+});
+
+function packageWithMaterials(paths) {
+  const files = paths.map((rel, index) => {
+    const data = Buffer.concat([PDF_BYTES, Buffer.from(`% conteúdo ${index}\n`)]);
+    return {name: `payload/materials/${rel}`, data};
+  });
+  const manifest = {
+    kind: 'mesa-study-package', format: packages.PACKAGE_FORMAT,
+    files: files.map(({name, data}, index) => ({
+      archivePath: name, kind: 'materials', rel: paths[index], bytes: data.length,
+      sha256: require('node:crypto').createHash('sha256').update(data).digest('hex'),
+    })),
+  };
+  return zipkit.writeZip([...files, {name: packages.MANIFEST_NAME, data: Buffer.from(JSON.stringify(manifest))}]);
+}
+
+for (const paths of [['A.pdf', 'a.pdf'], ['Café.pdf', 'Cafe\u0301.pdf'], ['Aula/X.pdf', 'aula/x.pdf']]) {
+  test(`pacote: destinos que colidem são recusados: ${paths.join(', ')}`, () => {
+    const root = tempDir('mesa-collision');
+    const destination = path.join(root, 'importado');
+    const buffer = packageWithMaterials(paths);
+    const collision = (error) => {
+      assert.equal(error.code, 'MESA_PACKAGE_ERROR');
+      const message = ptText(error.message);
+      assert.match(message, /colidem sem diferenciar maiúsculas/);
+      for (const rel of paths) assert.ok(message.includes(`materials/${rel}`));
+      return true;
+    };
+    try {
+      assert.throws(() => packages.openPackage(buffer), collision);
+      assert.throws(() => packages.previewImport({buffer, destination}), collision);
+      assert.throws(() => packages.importPackage({buffer, destination}), collision);
+      assert.equal(fs.existsSync(path.join(destination, 'materiais')), false);
+      assert.deepEqual(fs.readdirSync(root), []);
+    } finally {
+      cleanup(root);
+    }
+  });
+}
+
+test('pacote: diretórios com caixa diferente e nomes distintos não colidem', () => {
+  const buffer = packageWithMaterials(['Aula/x.pdf', 'aula/y.pdf']);
+  assert.equal(packages.openPackage(buffer).entries.length, 2);
+  assert.equal(packages.openPackage(packageWithMaterials([])).entries.length, 0);
 });
 
 test('pacote: manifesto com rota de kind diferente do caminho é recusado', () => {
