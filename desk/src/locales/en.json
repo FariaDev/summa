@@ -1738,6 +1738,7 @@
   "menu.stop": "Stop",
   "menu.toggleTutor": "Toggle tutor",
   "menu.view": "View",
+  "menu.window": "Window",
   "meter.tip": "Model context: {pct}% · {used} of {window} tokens used · /compact compacts",
   "more.collapse.hide": "Collapse the tutor (⌘\\)",
   "more.collapse.show": "Show the tutor (⌘\\)",

@@ -4,6 +4,7 @@
   "description": "Summa: dois PDFs, calculadora e tutor numa janela, ao lado do Xournal++",
   "main": "main.cjs",
   "scripts": {
+    "prestart": "node scripts/visual-helper.mjs",
     "start": "electron .",
     "dev": "electron-vite dev",
     "build": "electron-vite build",

@@ -21,10 +21,10 @@
         npm run update -- --versao X.Y.Z (aplica uma versão específica — modo zip)
         npm run update -- --sem-reabrir  (não reabre a Mesa no fim) */
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
+import {userDataDirectory} from '../user-data.cjs';
 
 const require = createRequire(import.meta.url);
 const updater = require('../updater.cjs');
@@ -34,11 +34,9 @@ const desk = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = path.dirname(desk);
 const args = process.argv.slice(2);
 
-/* Mesma resolução de runtime do doctor.mjs: é lá que moram o desk.log e o
-   cache do updater (nunca tocamos config.json, sessões, PDFs ou templates). */
-const configDir = process.env.LEARNING_DESK_RUNTIME || (process.platform === 'win32'
- ? path.join(process.env.APPDATA || '', 'Mesa de Estudos')
- : path.join(os.homedir(), 'Library', 'Application Support', 'Mesa de Estudos'));
+/* O runtime guarda o desk.log e o cache do updater (nunca tocamos
+   config.json, sessões, PDFs ou templates). */
+const configDir = userDataDirectory();
 let runtime = process.env.LEARNING_DESK_RUNTIME || '';
 try {
  const config = JSON.parse(fs.readFileSync(path.join(configDir, 'config.json'), 'utf8'));

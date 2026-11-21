@@ -51,6 +51,7 @@ const {createTutorBridgeHost}=require('./tutor-bridge-host.cjs');
 const {createOpenCodeTutorHost}=require('./opencode-tutor-host.cjs');const {createOpenCodeInstallHost}=require('./opencode-install-host.cjs');
 const {createPromptImages}=require('./prompt-images.cjs');
 const {captureWindow:captureWindowWin,listWindows:listWindowsWin}=require('./capture-win.cjs');
+const {listWindowsMac}=require('./capture-mac.cjs');
 const {createConferirHost}=require('./conferir-host.cjs');
 const {createPhoneHost}=require('./phone-host.cjs');
 const {readPalette,phoneLookCss}=require('./phone-look.cjs');
@@ -642,26 +643,14 @@ const conferirHost=createConferirHost({
  selfNames:()=>[app.getName(),'Summa',...(app.isPackaged?[]:['Electron'])],
  fixture:conferirFixture(),
  ambitus:{linked:()=>ambitusLinked(),request:()=>ambitusBridge.requestPage()},
- ensurePermission:async()=>{
-  if(process.platform!=='darwin')return;
-  let status=systemPreferences.getMediaAccessStatus('screen');
-  if(status!=='granted'){
-   /* Não há pedido de tela no Electron: `askForMediaAccess` só aceita câmera e
-      microfone e recusava 'screen' (o catch engolia). O aviso do macOS sai na
-      primeira captura; até lá vale a mensagem de autorização (#43 fase 3). */
-   status=systemPreferences.getMediaAccessStatus('screen');
-   if(status!=='granted')throw Error(message('err.capture.permission'));
-  }
- },
  listWindows:async()=>{
   /* Windows: processos com janela via PowerShell/.NET do sistema (capture-win.cjs). */
   if(process.platform==='win32')return listWindowsWin();
-  const helper=captureHelper();
-  if(!helper)throw Error(message('err.capture.helperMissing'));
-  const {stdout}=await execFileAsync(helper,[],{timeout:15000,maxBuffer:1024*1024});
-  let listed;try{listed=JSON.parse(stdout);}catch{throw Error(message('err.capture.listFail'));}
-  if(!listed.permission)throw Error(message('err.capture.permission'));
-  return Array.isArray(listed.windows)?listed.windows:[];
+  return listWindowsMac({
+   helper:captureHelper(),
+   screenStatus:()=>systemPreferences.getMediaAccessStatus('screen'),
+   execFile:execFileAsync,
+  });
  },
  captureWindow:async(window,label)=>{
   if(process.platform==='win32')return captureWindowWin({processName:window.app,label});
