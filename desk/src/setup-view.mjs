@@ -102,12 +102,13 @@ function codeNode(command){
 }
 
 /**
- * O binário do OpenCode pronto para colar num shell. No Windows o caminho real
- * termina em `.exe`. Em macOS/Linux a pasta pessoal pode virar `~` só quando o
- * resto do caminho não tem espaço nem metacaractere — assim o comando continua
+ * O binário do OpenCode pronto para colar num shell. No Windows preserva a
+ * extensão executável e usa `&` do PowerShell com aspas. Em macOS/Linux a pasta
+ * pessoal pode virar `~` só quando o resto do caminho não tem espaço nem
+ * metacaractere — assim o comando continua
  * colável sem aspas; com espaço, vai o caminho completo entre aspas.
  * @param {string} binary caminho detectado ou instalado
- * @param {string} [platform] `win32` para o `.exe`
+ * @param {string} [platform] `win32` para o PowerShell
  * @returns {string} caminho (com aspas quando precisa)
  * @example loginBinary('/home/ana/.opencode/bin/opencode', 'linux') // '~/.opencode/bin/opencode'
  * @example loginBinary('C:\\Users\\ana\\.opencode\\bin\\opencode', 'win32') // 'C:\\Users\\ana\\.opencode\\bin\\opencode.exe'
@@ -115,10 +116,10 @@ function codeNode(command){
 export function loginBinary(binary,platform=''){
  const raw=String(binary||'').trim();
  if(!raw)return '';
- let file=platform==='win32'&&!/\.exe$/i.test(raw)?`${raw}.exe`:raw;
+ let file=platform==='win32'&&!/\.(cmd|bat|exe|com)$/i.test(raw)?`${raw}.exe`:raw;
  const homeAt=file.indexOf('/.opencode/bin/');
  if(platform!=='win32'&&homeAt>0&&!/\s/.test(file))file=`~${file.slice(homeAt)}`;
- return /\s/.test(file)?`"${file}"`:file;
+ return /\s/.test(file)?`${platform==='win32'?'& ':''}"${file}"`:file;
 }
 
 /** Texto e comando de entrada no OpenCode; o comando fica copiável. @param {HTMLElement} target @param {boolean} visible @param {SetupFacts} facts */
