@@ -43,6 +43,48 @@ await withArtifacts('chat-model-4paths',async ctx=>{
   assert.deepEqual(facts.cardFors.filter(Boolean),[],`cartão deixou for: ${JSON.stringify(facts.cardFors)}`);
   assert.deepEqual(facts.dialogFors.filter(Boolean),[],`diálogo deixou for: ${JSON.stringify(facts.dialogFors)}`);
   assert.equal(facts.quizOptionHasFor,false,'quiz deixou for');
+  const messageText='Resposta só no fechamento.';
+  const timestamp=Date.UTC(2024,0,2,14,5);
+  const model='provider/model-completo';
+  const modelName='Modelo curto';
+  const messageId='chat-model-attrs-regression';
+  await page.evaluate(()=>{
+    window.__chatModelAttrsEvents=[];
+    window.desk.onEvent(event=>window.__chatModelAttrsEvents.push(event));
+  });
+  const browserWindow=await app.browserWindow(page);
+  await browserWindow.evaluate(win=>{
+    win.webContents.send('pi-event',{type:'agent_start'});
+    win.webContents.send('pi-event',{type:'message_end',message:{
+      id:'chat-model-attrs-regression',
+      role:'assistant',
+      content:'Resposta só no fechamento.',
+      timestamp:Date.UTC(2024,0,2,14,5),
+      model:'provider/model-completo',
+      modelName:'Modelo curto',
+    }});
+  });
+  await page.waitForFunction(id=>window.__chatModelAttrsEvents.some(event=>event.message?.id===id),messageId);
+  const messageFacts=await page.evaluate(async ({text,time,fullModel,shortModel})=>{
+    const {formatDate}=await import(new URL('src/ui-text.mjs',location.href).href);
+    const bubble=[...document.querySelectorAll('.message.assistant')].find(el=>el.querySelector('.body')?.textContent.trim()===text);
+    const label=bubble?.querySelector('.message-time');
+    const clock=formatDate(new Date(time),{hour:'2-digit',minute:'2-digit',hour12:false});
+    return {
+      time:bubble?._time,
+      model:bubble?._model,
+      modelName:bubble?._modelName,
+      label:label?.textContent,
+      title:label?.title,
+      expectedLabel:`${clock} · ${shortModel}`,
+      fullModel,
+    };
+  },{text:messageText,time:timestamp,fullModel:model,shortModel:modelName});
+  assert.equal(messageFacts.time,timestamp,'message_end preservou o horário');
+  assert.equal(messageFacts.model,model,'message_end preservou o modelo completo');
+  assert.equal(messageFacts.modelName,modelName,'message_end preservou o nome curto do modelo');
+  assert.equal(messageFacts.label,messageFacts.expectedLabel,'a linha mostra horário e nome curto');
+  assert.equal(messageFacts.title,model,'o título da linha mostra o modelo completo');
   await app.close();ctx.app=null;
 });
 console.log('chat-model-attrs-4paths-ui: ok');
