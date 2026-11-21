@@ -63,9 +63,11 @@ function assertProcessName(name){
    primeira janela do processo, copia os pixels do retângulo (PrintWindow se a
    cópia de tela falhar) e grava o PNG no caminho embutido. O título da janela
    sai no stdout (uma linha) — mesmo formato do listing do macOS. */
-function buildScript(outFile,processName=PROCESS_NAME){
+function buildScript(outFile,processName=PROCESS_NAME,processId=null){
  const saida=psLiteral(outFile);
  const processo=psLiteral(assertProcessName(processName));
+ if(processId!==null&&(!/^[1-9]\d*$/.test(String(processId))||Number(processId)>0xffffffff))throw Error(`Invalid process ID: ${processId}. Expected a positive 32-bit integer.`);
+ const selector=processId===null?`-Name '${processo}'`:`-Id ${processId}`;
  return `$ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
@@ -81,7 +83,7 @@ public class MesaWin {
 }
 '@
 [void][MesaWin]::SetProcessDPIAware()
-$procs=@(Get-Process -Name '${processo}' -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
+$procs=@(Get-Process ${selector} -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
 if($procs.Count -eq 0){ exit 3 }
 $p=$procs[0]
 if([MesaWin]::IsIconic($p.MainWindowHandle)){ exit 4 }
@@ -113,14 +115,14 @@ $bmp.Dispose()
    `exec` e `tmp` são injeção de teste — o caminho feliz usa os do sistema.
    `processName`/`label` escolhem o app (padrão: o Xournal++). */
 async function captureWindow(opts={}){
- const {exec=execFileAsync,tmp=null,processName=PROCESS_NAME,label=DEFAULT_LABEL}=opts;
+ const {exec=execFileAsync,tmp=null,processName=PROCESS_NAME,label=DEFAULT_LABEL,processId=null}=opts;
  const messages=exitMessages(label);
  const dir=tmp?tmp():fs.mkdtempSync(path.join(os.tmpdir(),'mesa-visual-'));
  const scriptPath=path.join(dir,'capture.ps1');
  const outFile=path.join(dir,'attempt.png');
  try{
   /* Dentro do try: um nome recusado pela lista branca não deixa o temporário para trás. */
-  writePowerShellScript(scriptPath,buildScript(outFile,processName));
+  writePowerShellScript(scriptPath,buildScript(outFile,processName,processId));
   let stdout='';
   try{
    const r=await exec('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',scriptPath],{timeout:20000,maxBuffer:1024*1024});
