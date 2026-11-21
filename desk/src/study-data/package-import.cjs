@@ -10,6 +10,7 @@ const {PackageError, isPlainObject, newId, writeInside} = require('./package-com
 const {importNoteStore} = require('./package-source.cjs');
 const {openPackage} = require('./package-read.cjs');
 const {piSessionMessages} = require('./package-transcript.cjs');
+const {remapSourcePath} = require('./source-path.cjs');
 
 /* Pacote de matéria — importação: caminhos e ids remapeados para a matéria
    nova, anotações mescladas e conversas gravadas.
@@ -27,11 +28,9 @@ function remapValue(value, {oldBase, newBase, oldId, newId, mappings = []} = {})
     let out = value;
     for (const map of table) {
       if (!map || !map.from || !map.to) continue;
-      const sourcePath = /^(?:[a-z]:[\\/]|\\\\|\/\/)/i.test(map.from) ? path.win32 : path.posix;
-      if (!sourcePath.isAbsolute(out)) continue;
-      const relative = sourcePath.relative(sourcePath.resolve(map.from), out);
-      if (relative === '..' || relative.startsWith(`..${sourcePath.sep}`) || sourcePath.isAbsolute(relative)) continue;
-      out = path.join(map.to, ...relative.split(sourcePath.sep).filter(Boolean));
+      const remapped = remapSourcePath(out, map.from, map.to);
+      if (remapped === null) continue;
+      out = remapped;
       break;
     }
     if (oldId && newId && out === oldId) out = newId;
