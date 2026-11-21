@@ -451,12 +451,25 @@ function $choiceKey(_c_0) {
   const _key_0 = _c_0["key"];
   return _key_0;
 }
+function $matchesWindow(_windowId_0, _w_0) {
+  if (_windowId_0.$ === "None") {
+    return true;
+  } else {
+    const _target_0 = _windowId_0["value"];
+    const _id_0 = _w_0["id"];
+    return $String_eq(_id_0, _target_0);
+  }
+}
+function $choiceWindow(_c_0) {
+  const _windowId_0 = _c_0["windowId"];
+  return _windowId_0;
+}
 function $wanted(_w_0, _choice_0) {
   if (_choice_0.$ === "None") {
     return $defaultKey($$keyOf(_w_0));
   } else {
     const _c_0 = _choice_0["value"];
-    return $String_eq($$keyOf(_w_0), $$choiceKey(_c_0));
+    return $Bool_and($$String_eq($$keyOf(_w_0), $$choiceKey(_c_0)), $$matchesWindow($$choiceWindow(_c_0), _w_0));
   }
 }
 function $wantedLabel(_choice_0) {
@@ -809,6 +822,8 @@ var $$eligible = $eligible;
 var $$eligibleWins = $eligibleWins;
 var $$keyOf = $keyOf;
 var $$choiceKey = $choiceKey;
+var $$choiceWindow = $choiceWindow;
+var $$matchesWindow = $matchesWindow;
 var $$wanted = $wanted;
 var $$matchingWins = $matchingWins;
 var $$displayName = $displayName;
@@ -939,6 +954,8 @@ var conferir_default = {
   keyOf: run_lib((a0) => str_out(run_loop($keyOf(a0))), 1),
   choiceApp: run_lib((a0) => str_out(run_loop($choiceApp(a0))), 1),
   choiceKey: run_lib((a0) => str_out(run_loop($choiceKey(a0))), 1),
+  matchesWindow: run_lib((a0, a1) => run_loop($matchesWindow(a0, a1)), 2),
+  choiceWindow: run_lib((a0) => run_loop($choiceWindow(a0)), 1),
   wanted: run_lib((a0, a1) => run_loop($wanted(a0, a1)), 2),
   wantedLabel: run_lib((a0) => str_out(run_loop($wantedLabel(a0))), 1),
   isSaved: run_lib((a0) => run_loop($isSaved(a0)), 1),

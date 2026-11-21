@@ -42,7 +42,7 @@ function normalizeChoice(value) {
 }
 
 /** @returns {import('./types/bend-core').BendMaybe<import('./types/bend-core').ConfChoice>} */
-const choiceFact = (choice) => (choice ? {$: 'Some', value: {app: choice.app, key: choice.key}} : NONE);
+const choiceFact = (choice) => (choice ? {$: 'Some', value: {app: choice.app, key: choice.key, windowId: choice.processId ? {$: 'Some', value: choice.processId} : NONE}} : NONE);
 
 /* Janela bruta do helper → fato do núcleo. `bounds` vem do helper do macOS
    (`Width`/`Height`); no Windows não há tamanho e a janela vale. */
@@ -117,8 +117,7 @@ function createConferirHost(deps) {
     if (viaAmbitus()) return ambitusPage();
     const {raw, facts} = await list();
     const choice = currentChoice();
-    const targets = platform === 'win32' && choice?.processId ? facts.filter(w => w.id === choice.processId) : facts;
-    const decision = core.decide(toList(targets), choiceFact(choice));
+    const decision = core.decide(toList(facts), choiceFact(choice));
     if (decision.$ === 'ConfCapture') {
       const fact = facts.find((w) => w.id === decision.id);
       const shot = await shoot(fact, raw);
