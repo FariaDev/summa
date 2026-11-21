@@ -10,7 +10,7 @@ import {sceneOf,sceneTabOf,scenePdfLabel,ringFor} from './setup-scene.mjs';
    `setup-flow.mjs`. */
 
 /**
- * @typedef {object} SetupFacts
+ * @typedef {Record<string, any>} SetupFacts
  * @property {string} kind "setup" ou "empty"
  * @property {boolean} claudeFound
  * @property {boolean} opencodeFound
@@ -24,7 +24,7 @@ import {sceneOf,sceneTabOf,scenePdfLabel,ringFor} from './setup-scene.mjs';
  * @property {string[]} [visibleEngines]
  */
 
-/** @typedef {{Connect:()=>void, UseFreeModels:()=>void, OpenPiSettings:()=>void, OpenTutorSettings:()=>void, ChangeDataFolder:()=>void, InstallOpenCode:()=>void, UpdateOpenCode:()=>void, ChooseOpenCode:()=>void, OpenOpenCodeHelp:()=>void}} SetupActions */
+/** @typedef {{Connect:()=>void, UseFreeModels:()=>void, OpenTutorSettings:()=>void, ChangeDataFolder:()=>void, InstallOpenCode:()=>void, UpdateOpenCode:()=>void, ChooseOpenCode:()=>void, OpenOpenCodeHelp:()=>void}} SetupActions */
 
 /** @typedef {{state:'idle'|'installing'|'done'|'error', phase?:string, percent?:number, errorCode?:string, error?:string, version?:string}} SetupInstall */
 

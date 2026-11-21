@@ -1,3 +1,4 @@
+// @ts-check
 import settingsCore from './generated/settingsview.core.js';
 import {build, childrenOf, preserveFocus, renderChildren, renderInto} from './view-host.mjs';
 import {LANGUAGE_EVENT} from './ui-text.mjs';
@@ -32,6 +33,7 @@ function renderNav(focus) {
 /* Mostra uma seção e esconde as outras. Seção desconhecida cai em Matérias
    (decisão do núcleo). Trocar de seção nunca salva nem descarta nada: os campos
    das seções escondidas continuam no DOM com o que foi digitado. */
+/** @param {any} id @param {{focus?: boolean}} [options] */
 export function showSection(id, {focus = false} = {}) {
   current = settingsCore.activeSection(String(id ?? ''));
   const body = $('#settings-body');
@@ -103,6 +105,7 @@ function paintFooter() {
 
 /* O host avisa quando o tutor começa/termina a resposta e quando a pessoa
    mexe num campo; o rodapé e o Salvar acompanham na hora. */
+/** @param {{busy?: any, dirty?: any}} [options] */
 export function setSettingsFooter({busy = footer.busy, dirty = footer.dirty} = {}) {
   footer = {busy: !!busy, dirty: !!dirty};
   paintFooter();
@@ -125,6 +128,7 @@ export function showSaveError(message) {
 
 /* Abertura do diálogo: sempre em Matérias (ou na seção pedida) e sem avisos
    de uma tentativa anterior. */
+/** @param {{section?: string}} [options] */
 export function prepareSettings({section = ''} = {}) {
   clearErrors();
   showSaveError('');

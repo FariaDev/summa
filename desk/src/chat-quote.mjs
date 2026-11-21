@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,save} from './state.mjs';
 import {t} from './ui-text.mjs';
 import {addAttachments} from './chat-attachments.mjs';
@@ -25,7 +26,7 @@ export function selectionInsideMessages(){
  if(!selection||selection.isCollapsed||!selection.rangeCount)return false;
  const node=selection.anchorNode;
  const el=node?.nodeType===1?node:node?.parentElement;
- return !!el?.closest?.('#messages');
+ return !!/** @type {HTMLElement} */ (el)?.closest?.('#messages');
 }
 function selectionInPdf(selection){
  if(!selection||selection.isCollapsed||!selection.rangeCount)return null;
@@ -67,6 +68,7 @@ function pdfQuote(selection,pdf){
  return {text:text+`\n\n(${file}, p. ${pdf.page})`};
 }
 /* O recorte sai do canvas já desenhado (sem render novo): é o que o aluno vê. */
+/** @param {{canvas?: any, rect?: any, name?: any}} options */
 async function attachCrop({canvas,rect,name}){
  const out=document.createElement('canvas');
  out.width=rect.width;out.height=rect.height;
@@ -93,7 +95,7 @@ function selectionQuote(){return selectionQuoteOf(window.getSelection())?.text||
 export function messageQuote(selection){
  const range=selection.getRangeAt(0);
  const host=range.commonAncestorContainer.nodeType===1?range.commonAncestorContainer:range.commonAncestorContainer.parentElement;
- if(!host?.closest?.('#messages'))return '';
+ if(!/** @type {HTMLElement} */ (host)?.closest?.('#messages'))return '';
  const onlyTex=enclosingTex(range);
  if(onlyTex)return onlyTex;
  const fragment=range.cloneContents();

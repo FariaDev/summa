@@ -1,3 +1,4 @@
+// @ts-check
 /* Aplicador da rolagem da coluna do tutor: mede o DOM e aplica a decisão pura
    de `chat-scroll.mjs`. Saiu de `state.mjs`, que passava do teto de linhas;
    `state.mjs` reexporta o que os outros módulos já importavam de lá. */

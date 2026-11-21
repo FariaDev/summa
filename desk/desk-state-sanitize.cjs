@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path=require('node:path');
@@ -32,7 +33,7 @@ function asComposerHeight(value){
 function asBounds(value){
  if(!isPlainObject(value))return undefined;
  const x=value.x,y=value.y,width=value.width,height=value.height;
- const finite=n=>typeof n==='number'&&Number.isFinite(n);
+ const finite=/** @type {(n: unknown) => n is number} */ (n=>typeof n==='number'&&Number.isFinite(n));
  if(!finite(x)||!finite(y)||!finite(width)||!finite(height)||width<=0||height<=0)return undefined;
  return {x,y,width,height};
 }
@@ -85,7 +86,7 @@ function sanitizeCourseState(value){
 }
 function sanitizeState(value){
  const source=isPlainObject(value)?value:{};
- const out={...source,
+ const out=/** @type {Record<string, any>} */ ({...source,
   pdfs:asArray(source.pdfs),
   session:asString(source.session),
   study:isPlainObject(source.study)?source.study:{},
@@ -124,7 +125,7 @@ function sanitizeState(value){
   composerPins:normalizeComposerPins(source.composerPins),
   /* Novidades: a última versão cuja janela já abriu (`src/release-notes.mjs`). */
   releaseNotesSeen:asString(source.releaseNotesSeen).slice(0,24),
-  courseStates:{}};
+  courseStates:{}});
  const states=isPlainObject(source.courseStates)?source.courseStates:{};
  for(const [id,entry] of Object.entries(states)){if(id==='__proto__')continue;out.courseStates[id]=sanitizeCourseState(entry);}
  const composerHeight=asComposerHeight(source.composerHeight);

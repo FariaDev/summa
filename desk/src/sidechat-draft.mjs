@@ -1,3 +1,4 @@
+// @ts-check
 /* Rascunho do chat lateral (#43 fase 2: saiu de sidechat.mjs para caber no
    teto). O estado e o bridge continuam no sidechat; entram por parâmetro, com
    o campo de texto e o repaint do Enviar lidos na hora (só existem depois do
@@ -52,6 +53,7 @@ export function createSidechatDraft({state,api,available,scopeOf,promptEl,paintS
   return {text:text===null?'':String(text),meta};
  }
  let draftRev=0;
+ /** @param {any} text @param {{dirty?: boolean, id?: any, scope?: any}} [options] */
  function mirrorDraft(text,{dirty=true,id=state.id,scope=null}={}){
   const target=scope||state.scope||scopeOf();
   const value=String(text??'');
@@ -69,12 +71,13 @@ export function createSidechatDraft({state,api,available,scopeOf,promptEl,paintS
   paintSend();
   mirrorDraft(state.draft,{scope:state.scope});
   clearTimeout(draftTimer);
-  draftTimer=setTimeout(saveDraftNow,DRAFT_SAVE_MS);
+  draftTimer=/** @type {any} */ (setTimeout(saveDraftNow,DRAFT_SAVE_MS));
  }
  /* Confirma o save SÓ quando ele ainda corresponde ao registro local (valor,
     revisão e id): o ACK de um save antigo não pode limpar o `dirty` de um input
     novo. Um erro mantém o `dirty` (o texto só existe localmente; a restauração
     reagenda o save). */
+ /** @param {{id?: any, draft?: any, scope?: any, rev?: any}} options */
  function ackDraftSave({id,draft,scope,rev}){
   const record=draftRecord(scope);
   if(!record?.meta?.dirty)return;

@@ -1,3 +1,4 @@
+// @ts-check
 import {createLazyModule} from './lazy-module.mjs';
 import {S} from './state.mjs';
 import {isFreeData} from './free-study-base.mjs';
@@ -7,7 +8,7 @@ import {isFreeData} from './free-study-base.mjs';
  * aba aparece (workspace livre), um pedido de PDF com o tutor abre ou o tutor
  * entrega um material. `init` também liga os ouvintes internos do módulo.
  * @param {() => Promise<typeof import('./free-study.mjs')>} importModule
- * @returns {{init: () => Promise<void>, openTutorPdfDialog: (...args: Parameters<typeof import('./free-study.mjs').openTutorPdfDialog>) => Promise<void>, receiveWorkspace: (data: object) => Promise<void>, receiveTutorMaterial: (data: object) => Promise<void>, current: () => any | null}}
+ * @returns {{init: () => Promise<void>, openTutorPdfDialog: (...args: Parameters<typeof import('./free-study.mjs').openTutorPdfDialog>) => Promise<void>, receiveWorkspace: (data: Record<string, any>) => Promise<void>, receiveTutorMaterial: (data: Record<string, any>) => Promise<void>, current: () => any | null}}
  * @example const free = createFreeStudyLoader(); await free.openTutorPdfDialog('Lista 3');
  */
 export function createFreeStudyLoader(importModule = () => import('./free-study.mjs')) {
@@ -68,7 +69,7 @@ export function mountFreeStudyBoot({loader = freeStudy, window: win = globalThis
   };
   win.addEventListener('desk-workspace', onWorkspace);
   win.addEventListener('desk-chrome', onChrome);
-  const offMaterial = win.desk?.onTutorMaterial?.(onTutorMaterial);
+  const offMaterial = /** @type {(() => void)|undefined} */ (/** @type {unknown} */ (win.desk?.onTutorMaterial?.(onTutorMaterial)));
   return () => {
     win.removeEventListener('desk-workspace', onWorkspace);
     win.removeEventListener('desk-chrome', onChrome);

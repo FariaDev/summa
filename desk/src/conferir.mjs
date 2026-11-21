@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,conferirAppName,updateCheckButton} from './state.mjs';
 import {build} from './view-host.mjs';
 import {closeTutorPops} from './tutor-header.mjs';
@@ -110,6 +111,7 @@ export function openConferirSettings(){
 
 export function conferirNoteOpen(){const el=note();return !!el&&!el.hidden;}
 
+/** @param {{restoreFocus?: boolean}} [options] */
 export function closeConferirNote({restoreFocus=false}={}){
  const el=note();
  if(!el||el.hidden)return;
@@ -139,6 +141,7 @@ export function placeConferirNote(){
  }
 }
 
+/** @param {{app?: any, saved?: any}} options */
 function showAbsent({app,saved}){
  const el=note();
  if(!el)return;
@@ -158,7 +161,7 @@ export function initConferir(){
  window.addEventListener(LANGUAGE_EVENT,()=>{paintConferirField();if(listOpen())paintList().catch(()=>{});});
  document.addEventListener('click',event=>{
   if(!conferirNoteOpen())return;
-  if(event.target?.closest?.('#check-note, #check'))return;
+  if(/** @type {HTMLElement} */ (event.target)?.closest?.('#check-note, #check'))return;
   closeConferirNote();
  });
  window.addEventListener('resize',()=>placeConferirNote());

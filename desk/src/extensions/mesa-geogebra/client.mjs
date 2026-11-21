@@ -1,3 +1,4 @@
+// @ts-check
 import {readFileSync} from 'node:fs';
 
 /* Cliente da ponte local do GeoGebra para o Pi: a Mesa publica `{port, token}`
@@ -20,7 +21,7 @@ function readBridge(bridgeFile) {
  * @param {'run'|'state'|'screenshot'} action
  * @param {{command?: string, continuar?: boolean}} params
  * @param {AbortSignal} [signal]
- * @returns {Promise<{ok?: boolean, error?: string, state?: object, board?: object, png?: string}>}
+ * @returns {Promise<{ok?: boolean, error?: string, state?: Record<string, any>, board?: Record<string, any>, png?: string}>}
  */
 export async function callGeogebra(bridgeFile, action, params, signal) {
   let bridge;

@@ -1,3 +1,4 @@
+// @ts-check
 /* Conferir: captura a janela do programa de escrita (ou a página do Ambitus pela ponte) e
    entrega na bandeja do tutor ou do chat lateral. Saiu do chat.mjs inteiro, sem mudança. */
 import {$,S,toast,conferirAppName,layoutSnapshot} from './state.mjs';

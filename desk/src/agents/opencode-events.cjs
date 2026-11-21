@@ -28,7 +28,7 @@ const {modelFields} = require('./history.cjs');
  *          reader.handle('session.text.delta', {sessionID: 'ses_1', assistantMessageID: 'msg_a', delta: 'oi'});
  */
 class OpenCodeEventReader {
-  /** @param {{emit?: (type: string, payload?: object) => void, sessionId?: string, now?: () => number}} [options] */
+  /** @param {{emit?: (type: string, payload?: Record<string, any>) => void, sessionId?: string, now?: () => number}} [options] */
   constructor({emit, sessionId = '', now = () => Date.now()} = {}) {
     this.emit = typeof emit === 'function' ? emit : () => {};
     this.sessionId = sessionId;

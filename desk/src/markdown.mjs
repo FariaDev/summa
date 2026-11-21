@@ -1,3 +1,4 @@
+// @ts-check
 import {marked} from '../node_modules/marked/lib/marked.esm.js';
 import DOMPurify from '../node_modules/dompurify/dist/purify.es.mjs';
 import {highlightCode} from '../highlight.mjs';
@@ -148,7 +149,7 @@ function holdLateMarkers(){
    for(const mutation of mutations){
     for(const node of mutation.addedNodes){
      if(node?.nodeType!==1)continue;
-     if(node.matches?.(MATH_MARKER_SELECTOR)||node.querySelector?.(MATH_MARKER_SELECTOR)){hydrateMath();scheduleMathObserverStop();return;}
+     if(/** @type {HTMLElement} */ (node).matches?.(MATH_MARKER_SELECTOR)||/** @type {HTMLElement} */ (node).querySelector?.(MATH_MARKER_SELECTOR)){hydrateMath();scheduleMathObserverStop();return;}
     }
    }
   });
@@ -158,7 +159,7 @@ function holdLateMarkers(){
 }
 function scheduleMathObserverStop(){
  clearTimeout(mathObserverTimer);
- mathObserverTimer=setTimeout(()=>{hydrateMath();mathObserver?.disconnect();mathObserver=null;},2000);
+ mathObserverTimer=/** @type {any} */ (setTimeout(()=>{hydrateMath();mathObserver?.disconnect();mathObserver=null;},2000));
 }
 /* Faixa do modelo antes dos nossos (#seg-markup): o `marked.parse` entrega o
    HTML do modelo cru (fórmula, figura, asset e código ainda são texto

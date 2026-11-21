@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,reconnectAfterBridgeStop,labelBtn} from './state.mjs';
 import {send} from './chat.mjs';
 import {createModelPanel} from './material-models-ui.mjs';
@@ -52,7 +53,7 @@ async function receiveTutorMaterial(data){
  * Recebe um material preparado que chegou antes de a aba Livre carregar: o
  * carregador guarda o evento e chama isto depois do `initFreeStudy`
  * (#desempenho). Depois da carga, o próprio módulo escuta `tutor-material`.
- * @param {{courseId?: string, conversationId?: string, status?: string, draft?: object, workspace?: object}} data
+ * @param {{courseId?: string, conversationId?: string, status?: string, draft?: Record<string, any>, workspace?: Record<string, any>}} data
  * @returns {Promise<void>}
  * @example await receiveFreeTutorMaterial({courseId: 'A', conversationId: '/s.jsonl', status: 'prepared', draft})
  */
@@ -63,7 +64,7 @@ export function receiveFreeTutorMaterial(data){
 /**
  * Recebe o `desk-workspace` que disparou a carga sob demanda (#desempenho):
  * o carregador repassa o mesmo payload, sem redespachar o evento global.
- * @param {object} data payload integral do host
+ * @param {Record<string, any>} data payload integral do host
  * @example receiveFreeWorkspace({courseId: 'mesa-free', workspace: {kind: 'free'}})
  */
 export function receiveFreeWorkspace(data){
@@ -281,6 +282,7 @@ function initMoreMenu(){
  const trigger=$('#free-more'),pop=$('#free-more-pop');
  if(!trigger||!pop)return;
  const items=()=>[...pop.querySelectorAll('button')].filter(item=>!item.hidden);
+ /** @param {{restoreFocus?: boolean}} [options] */
  const hide=({restoreFocus=false}={})=>{
   if(pop.hidden)return;
   pop.hidden=true;
@@ -314,7 +316,7 @@ function initMoreMenu(){
     encontra o foco já no ··· e o devolve para lá ao fechar. */
  pop.addEventListener('click',()=>hide({restoreFocus:true}),true);
  document.addEventListener('click',event=>{
-  if(pop.hidden||event.target?.closest?.('#free-more, #free-more-pop'))return;
+  if(pop.hidden||/** @type {HTMLElement} */ (event.target)?.closest?.('#free-more, #free-more-pop'))return;
   hide();
  });
  document.addEventListener('keydown',event=>{

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Revert por fronteira do OpenCode (#164): o "tentar de novo" marca a fala do
@@ -7,7 +8,11 @@
 
 const {PROMPT_TIMEOUT_MS} = require('./opencode-delivery.cjs');
 
-class OpenCodeRevert {
+/* Base só de tipo: os métodos vão para o protótipo do OpenCodeAdapter
+   (`installPrototypeMethods`), que traz `connect`, `http` e `route`. */
+const RevertBase = /** @type {new () => Record<string, any>} */ (/** @type {unknown} */ (Object));
+
+class OpenCodeRevert extends RevertBase {
   /**
    * Marca no OpenCode o ponto de revert antes da fala do aluno (#164). O
    * `prompt` seguinte comita o revert; até lá dá para desfazer com

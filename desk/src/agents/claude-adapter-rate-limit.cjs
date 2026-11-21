@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Limites e avisos do ClaudeAdapter: rate limit por janela, overage, retomada,
@@ -31,7 +32,11 @@ function formatWaitMs(waitMs) {
   return minutes ? `${hours}h${minutes}min` : `${hours}h`;
 }
 
-class ClaudeAdapterRateLimit {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterRateLimit extends AdapterBase {
   _handleApiRetry(message) {
     const retry = turnPolicy.classifyApiRetry(message);
     if (!retry) return;

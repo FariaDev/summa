@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Contexto de estudo que acompanha a mensagem da Mesa: fronteira com o núcleo
@@ -114,6 +115,7 @@ function captureFact(capture, exerciseNow, language) {
    decide isso por `capturePresent`), então entrar na chave não mandava nada a
    mais: só fazia o turno SEGUINTE, com o mesmo contexto, ser reenviado porque a
    chave tinha mudado por causa de uma captura que não estava mais lá. */
+/** @param {{course?: any, exercise?: any, xopp?: any, refs?: any}} options */
 function contextKey({course, exercise, xopp, refs}) {
   return JSON.stringify([course || '', exercise || '', xopp || '', refs]);
 }
@@ -121,17 +123,17 @@ function contextKey({course, exercise, xopp, refs}) {
 /**
  * @param {object} options
  * @param {string} options.course       nome da matéria ativa
- * @param {object} options.study        {title, xopp} já saneado por study.cjs
+ * @param {Record<string, any>} options.study        {title, xopp} já saneado por study.cjs
  * @param {Array<string | {path: string, page?: number}>} [options.refs] referências abertas
  *   (texto já formatado, ou `{path, page}`, que o `formatRefs` formata)
- * @param {object|null} [options.capture] {capturedAt, exercise, app} do anexo
+ * @param {Record<string, any>|null} [options.capture] {capturedAt, exercise, app} do anexo
  * @param {string} [options.previousKey] chave do último envio nesta sessão
  * @param {string} [options.language]  idioma do texto que vai ao modelo ("pt-BR" ou "en")
  * @returns {{text: string, key: string, changed: boolean}} `changed` diz que o
  *   bloco foi montado neste turno (uma captura o monta mesmo com o contexto
  *   igual); quem decide o reenvio é a chave estável.
  */
-function buildStudyContext({course, study, refs, capture, previousKey, language} = {}) {
+function buildStudyContext({course, study, refs, capture, previousKey, language} = /** @type {any} */ ({})) {
   const lang = isLanguage(language) ? language : FALLBACK_LANGUAGE;
   const exercise = oneLine(study?.title);
   const xopp = oneLine(study?.xopp);

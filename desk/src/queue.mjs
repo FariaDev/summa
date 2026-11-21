@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,connect,toast,refs,mayAdvanceQueue,supportsCapability} from './state.mjs';
 import {mentionIds,clearMentions} from './mentions.mjs';
 import {send,isComposerCommand,resetAttachments,persistTray,tutorNotebooksSnapshot,queuedNotebooks} from './chat.mjs';
@@ -63,7 +64,7 @@ function listOf(xs){
 function liveEditText(item){
  if(item.id!==editingId)return item.text;
  const input=document.querySelector('.queue-edit');
- return input?input.value:editDraft;
+ return input?/** @type {HTMLInputElement} */ (input).value:editDraft;
 }
 
 /* Mensagem só com anexo (a captura do Conferir, sem texto) não pode virar uma
@@ -112,7 +113,7 @@ function persist(immediate=false){
    if(out?.dropped)toast(message('queue.dropped',{count:out.dropped}));
   }).catch(e=>toast(e.message));
  };
- if(immediate)write();else saveTimer=setTimeout(write,400);
+ if(immediate)write();else saveTimer=/** @type {any} */ (setTimeout(write,400));
 }
 
 const handlers={
@@ -299,7 +300,7 @@ function finishEdit(keep,refocus){
  editDraft='';
  editJustStarted=false;
  if(keep&&item&&input){
-  const next=input.value.trim();
+  const next=/** @type {HTMLInputElement} */ (input).value.trim();
   if(!next){
    const at=queue.indexOf(item);
    if(at>=0)queue.splice(at,1);
@@ -345,7 +346,7 @@ function onPromptKeydown(e){
  el.dispatchEvent(new Event('input'));
 }
 
-async function flushQueue({force=false}={}){
+/** @param {{force?: boolean}} [options] */ async function flushQueue({force=false}={}){
  if(flushing||!queue.length||held||retries.pending)return;
  /* O avanço da fila é a decisão provada do núcleo (`core/agentdelivery.bend`
     → `mayAdvanceQueue`): turno aberto, permissão pendente, entrega incerta ou
@@ -447,7 +448,7 @@ export function init(){
     foco do input de edição, mas não pode confirmar a edição (senão o
     re-render tira o botão debaixo do clique e a linha só sai no segundo
     clique). */
- document.addEventListener('pointerdown',e=>{removeIntent=!!e.target?.closest?.('.queue-item button');},true);
+ document.addEventListener('pointerdown',e=>{removeIntent=!!/** @type {HTMLElement} */ (e.target)?.closest?.('.queue-item button');},true);
  document.addEventListener('pointerup',()=>{removeIntent=false;},true);
  window.addEventListener('desk-idle',()=>flushQueue());
  /* O "Enviar agora" da linha existe só com o tutor ocupado e motor com steer:

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Ponte da ferramenta de atividade: credencial efêmera por conversa, escopo
@@ -28,7 +29,7 @@ const PREVIEW_ID_PATTERN = /^prv-[a-z0-9]{8,24}$/;
 const MAX_BODY_BYTES = 300000;
 const MAX_BODY_TIME = 15000;
 
-function createCallRegistry({ttlMs = 10 * 60 * 1000, max = 256, now = Date.now} = {}) {
+/** @param {{ttlMs?: any, max?: number, now?: any}} [options] */ function createCallRegistry({ttlMs = 10 * 60 * 1000, max = 256, now = Date.now} = {}) {
   const calls = new Map();
   const prune = () => {
     const at = now();
@@ -41,7 +42,7 @@ function createCallRegistry({ttlMs = 10 * 60 * 1000, max = 256, now = Date.now} 
     }
   };
   return {
-    registerCall({callRef, toolCallId, conversationId, generation = 0, paramsHash = '', scopeRef = ''} = {}) {
+    /** @param {{callRef?: any, toolCallId?: any, conversationId?: any, generation?: number, paramsHash?: string, scopeRef?: string}} [options] */ registerCall({callRef, toolCallId, conversationId, generation = 0, paramsHash = '', scopeRef = ''} = {}) {
       if (typeof callRef !== 'string' || callRef.length < 8 || callRef.length > 80) throw new Error(invalidValue('callRef', callRef, 'string de 8 a 80 caracteres'));
       if (typeof toolCallId !== 'string' || toolCallId.trim() === '' || toolCallId.length > 160) throw new Error(invalidValue('toolCallId', toolCallId, 'string não vazia de até 160 caracteres'));
       if (typeof conversationId !== 'string' || conversationId.trim() === '' || conversationId.length > 512) throw new Error(invalidValue('conversationId', conversationId, 'string não vazia de até 512 caracteres'));
@@ -58,7 +59,7 @@ function createCallRegistry({ttlMs = 10 * 60 * 1000, max = 256, now = Date.now} 
       prune();
       return {callRef: callRef.slice(0, 12)};
     },
-    resolve(callRef, {conversationId, generation, paramsHash} = {}) {
+    /** @param {any} callRef @param {{conversationId?: any, generation?: any, paramsHash?: any}} [options] */ resolve(callRef, {conversationId, generation, paramsHash} = {}) {
       if (typeof callRef !== 'string' || callRef === '') return null;
       const entry = calls.get(callRef);
       if (!entry) return null;
@@ -185,9 +186,9 @@ function pickPayload(raw) {
 }
 
 /**
- * @param {{publish?: (scope: object, spec: object, caller: {toolCallId: string, callRef?: string}) => Promise<unknown>,
- *   preview?: ((raw: unknown, options: object) => Promise<unknown>) | null, publishPreview?: ((scope: object, result: object) => Promise<object>) | null,
- *   figure?: ((raw: unknown) => Promise<unknown>) | null, pdfPage?: ((raw: {path?: unknown, first?: unknown, last?: unknown, imagem?: unknown, girar?: unknown, recorte?: unknown, ampliar?: unknown, marcas?: unknown}) => Promise<object>) | null,
+ * @param {{publish?: (scope: Record<string, any>, spec: Record<string, any>, caller: {toolCallId: string, callRef?: string}) => Promise<any>,
+ *   preview?: ((raw: unknown, options: object) => Promise<any>) | null, publishPreview?: ((scope: object, result: object) => Promise<object>) | null,
+ *   figure?: ((raw: unknown) => Promise<any>) | null, pdfPage?: ((raw: {path?: unknown, first?: unknown, last?: unknown, imagem?: unknown, girar?: unknown, recorte?: unknown, ampliar?: unknown, marcas?: unknown}) => Promise<object>) | null,
  *   notebookPage?: ((raw: {caminho?: unknown, pagina?: unknown}) => Promise<object>) | null,
  *   searchMaterial?: ((scope: object, raw: {consulta?: unknown, limite?: unknown}) => Promise<object>) | null,
  *   materialList?: ((scope: object) => Promise<object>) | null,
@@ -284,7 +285,7 @@ function createActivityBridge({publish, preview = null, publishPreview = null, f
         res.on('close', onClose);
         try {
           const result = await reviewProposal({...grant.scope}, raw, {signal: abort.signal});
-          const agent = result && typeof result === 'object' ? (({items, ...rest}) => rest)(result) : result;
+          const agent = result && typeof result === 'object' ? (({items, ...rest}) => rest)(/** @type {Record<string, any>} */ (result)) : result;
           reply(res, 200, agent);
         } finally {
           res.off('close', onClose);
@@ -349,18 +350,18 @@ function createActivityBridge({publish, preview = null, publishPreview = null, f
     start() {
       if (closed) return Promise.reject(Error('Ponte de atividades encerrada.'));
       if (!startPromise) {
-        startPromise = new Promise((resolve, reject) => {
+        startPromise = new Promise(/** @param {(value?: unknown) => void} resolve */ (resolve, reject) => {
           server.once('error', reject);
           server.listen(0, '127.0.0.1', () => {
             server.removeListener('error', reject);
-            port = server.address().port;
+            port = /** @type {import('node:net').AddressInfo} */ (server.address()).port;
             resolve();
           });
         });
       }
       return startPromise;
     },
-    grant(scope, {engine: engineName}={}) {
+    /** @param {any} scope @param {{engine?: any}} [options] */ grant(scope, {engine: engineName}={}) {
       if (!port || closed) throw Error(`Ponte de atividades ainda indisponível (porta ${port}, ${closed ? 'encerrada' : 'sem start()'}).`);
       if (!scope || typeof scope.conversationId !== 'string' || scope.conversationId.trim() === '') throw Error(invalidValue('scope.conversationId', scope?.conversationId, 'string não vazia'));
       const token = crypto.randomBytes(32).toString('hex');
@@ -401,11 +402,11 @@ function paramsHashOfToolInput(input) {
    muda de host para host: store, runtime, registry (Claude), isScopeActive
    (revalida a conversa capturada no momento da publicação) e emit (evento ao
    renderer). Nenhum caminho/URL do modelo atravessa esta função. */
-function createActivityService({store, runtime, registry, emit, isScopeActive, engine = 'opencode'} = {}) {
+/** @param {{store?: any, runtime?: any, registry?: any, emit?: any, isScopeActive?: any, engine?: string}} [options] */ function createActivityService({store, runtime, registry, emit, isScopeActive, engine = 'opencode'} = {}) {
   if (!store || typeof store.publish !== 'function') throw new Error(invalidValue('store', store, '{publish, ...}'));
   if (!runtime || typeof runtime.remember !== 'function') throw new Error(invalidValue('runtime', runtime, '{remember, ...}'));
   const fail = (code, message) => {
-    const error = new Error(message);
+    const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(message));
     error.code = code;
     throw error;
   };

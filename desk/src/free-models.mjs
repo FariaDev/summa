@@ -1,3 +1,4 @@
+// @ts-check
 import {$, S, connect, connectionState, invalidateConnect, reconnectAfterBridgeStop, toast} from './state.mjs';
 import {t, text, LANGUAGE_EVENT} from './ui-text.mjs';
 import {newSession, sessionSwitchBlocked} from './course-conversations.mjs';

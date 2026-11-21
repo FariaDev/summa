@@ -1,3 +1,4 @@
+// @ts-check
 import guideCore from './generated/guideview.core.js';
 import {renderChildren,applyIcons} from './view-host.mjs';
 import {icon} from '../icons.mjs';
@@ -52,6 +53,7 @@ function titleAndBody(unit) {
   return [unit.querySelector('span[data-i18n]'), unit.querySelector('.guide-combo')];
 }
 
+/** @param {{id?: any, unit?: any}} options */
 function hitRow({id, unit}) {
   const [title, body] = titleAndBody(unit);
   const row = document.createElement('section');

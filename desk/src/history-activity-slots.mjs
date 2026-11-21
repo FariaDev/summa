@@ -1,3 +1,4 @@
+// @ts-check
 /* Histórico: devolve o slot das atividades que só existem no store.
    A prévia publicada no fim do turno (`previa:prv-…`) e o id de fallback do
    OpenCode (`opencode-mcp:…`) não têm passo de ferramenta no transcript; sem
@@ -40,9 +41,9 @@ function escaped(value) {
  * Itens do store (já da conversa atual) que ainda não têm slot no DOM, do mais
  * antigo para o mais novo. Mesmo `toolCallId` conta uma vez: vale a versão mais
  * alta, como na hidratação normal.
- * @param {Array<object>} items itens de `activityList`
+ * @param {Array<Record<string, any>>} items itens de `activityList`
  * @param {(toolCallId: string) => boolean} hasSlot
- * @returns {Array<object>}
+ * @returns {Array<Record<string, any>>}
  * @example activityItemsWithoutSlot([{toolCallId: 'previa:prv-1', createdAt: 1}], () => false)
  */
 export function activityItemsWithoutSlot(items, hasSlot) {
@@ -110,6 +111,7 @@ function previewAnchor(root, toolCallId) {
   return root.querySelector(`[data-preview-id="${escaped(id.slice(prefix.length))}"]`);
 }
 
+/** @param {{doc?: any, root?: any, ranges?: any, item?: any}} options */
 function insertSlot({doc, root, ranges, item}) {
   const toolCallId = String(item.toolCallId || '');
   const slot = doc.createElement('div');
@@ -154,7 +156,7 @@ function insertSlot({doc, root, ranges, item}) {
  * @returns {Promise<Array<{toolCallId: string, element: Element}>>}
  * @example await recoverActivitySlots({root, ranges, list: () => desk.activityList()})
  */
-export async function recoverActivitySlots({root, ranges = [], list, isCurrent = () => true, conversationId = '', dispatch = () => {}, doc = root && root.ownerDocument} = {}) {
+export async function recoverActivitySlots({root, ranges = [], list, isCurrent = () => true, conversationId = '', dispatch = () => {}, doc = root && root.ownerDocument} = /** @type {any} */ ({})) {
   if (!root || typeof list !== 'function' || !doc) return [];
   let result;
   try { result = await list(); } catch { return []; }

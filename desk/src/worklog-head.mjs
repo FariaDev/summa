@@ -1,3 +1,4 @@
+// @ts-check
 /* Cabeçalho do diário ("Trabalhou por 2s"): a duração e a frase. Saiu de
    `worklog.mjs`, que passava do teto de linhas. Carimbo ausente vira 0 no
    histórico do OpenCode, e `Date.now()` contra início 0 pintava "29888217m"

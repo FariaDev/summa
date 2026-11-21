@@ -1,3 +1,4 @@
+// @ts-check
 /* PDF solto no leitor alvo.
    O arrasto entrega um `File` do sistema; o caminho real só existe no preload
    (`webUtils.getPathForFile`), então aqui não se lê arquivo nenhum: valida-se o
@@ -39,6 +40,7 @@ function hasFiles(dataTransfer) {
 // Liga o painel como alvo. `onActive(Bool)` liga/desliga a dica e o realce;
 // `onDrop(File)` recebe o primeiro arquivo do drop (o host valida de novo).
 // Devolve um `destroy` para o chamador soltar os listeners quando quiser.
+/** @param {any} el @param {{onActive?: any, onDrop?: any}} [options] */
 export function bindPdfDrop(el, {onActive = () => {}, onDrop = () => {}} = {}) {
   if (!el || typeof el.addEventListener !== 'function') return {destroy() {}};
   const setActive = (on) => onActive(!!on);

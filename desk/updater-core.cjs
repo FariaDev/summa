@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs=require('node:fs');
@@ -24,6 +25,7 @@ const CODE_ROOT_DIRS=new Set(['core','geogebra','visual-check','.githooks']);
 const CODE_ROOT_FILES=new Set(['README.md','AGENTS.md','LICENSE','.gitignore']);
 const SKIP_TREE=new Set(['node_modules','.git','.runtime']);
 /* O worker escreve no mesmo `desk.log` do main, no mesmo formato (`src/log-entry.mjs`, #43 fase 3). */
+/** @param {any} logFile @param {any} line @param {{level?: any}} [options] */
 function appendLog(logFile,line,{level,...fields}={}){
  try{
   const entry=logEntryLine({area:'update',msg:line,level,fields});

@@ -1,3 +1,4 @@
+// @ts-check
 import escapeCore from './generated/mesaqolescape.core.js';
 
 /* ---------------------------------------------------------------------------

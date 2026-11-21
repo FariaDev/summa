@@ -35,7 +35,7 @@ function excerptOf(item){
  * (`allowedXopp`): caminho desconhecido recusa o envio inteiro, antes de escrever.
  * Cartão com `recorte` sai na linha de trecho (`sidechatctx.notebookExcerpt`).
  * @param {unknown} notebooks `[{caminho, pagina, nome, recorte?}]` como veio do renderer
- * @param {{allowedXopp: Set<string>, tutorT: (key: string, args?: object) => string}} deps
+ * @param {{allowedXopp: Set<string>, tutorT: (key: string, args?: Record<string, any>) => string}} deps
  * @returns {string} bloco vazio quando não há caderno
  * @example notebookNote([{caminho: '/c/Limites.xopp', pagina: 2, nome: 'Limites'}], {allowedXopp, tutorT}) // '[Cadernos anexados à mensagem]\n- caderno “Limites”, pág. 2, arquivo /c/Limites.xopp; a imagem anexada é esta página (use ler_caderno para reler esta ou outras páginas)'
  */

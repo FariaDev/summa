@@ -1,3 +1,4 @@
+// @ts-check
 import {createLazyModule} from './lazy-module.mjs';
 
 /**
@@ -34,4 +35,4 @@ export const refreshOpenCodeProviders = (...args) => providers.refresh(...args);
  * @returns {void}
  * @example cancelOpenCodeProviderLogin('opencode');
  */
-export const cancelOpenCodeProviderLogin = (...args) => providers.cancel(...args);
+export const cancelOpenCodeProviderLogin = (...args) => /** @type {Function} */ (providers.cancel)(...args);

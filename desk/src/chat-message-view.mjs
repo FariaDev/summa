@@ -1,3 +1,4 @@
+// @ts-check
 import {displayUserText} from '../text.mjs';
 import {$,toast,applyChatScroll} from './state.mjs';
 import {message as uiMessage} from './i18n.mjs';
@@ -23,6 +24,7 @@ import {notebookFactsOf} from './notebook-facts.mjs';
    imagens) e atualizar no fluxo.
    Saiu de chat.mjs na #43 fase 2. */
 
+/** @type {Intl.DateTimeFormatOptions} */
 const CLOCK={hour:'2-digit',minute:'2-digit',hour12:false};
 /** Hora da resposta no relógio da interface; '' sem carimbo. @param {number} stamp */
 function clockText(stamp){

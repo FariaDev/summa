@@ -1,3 +1,4 @@
+// @ts-check
 /* Editor visual do `desk.panels` (Configurações → Leitores de PDF).
 
    O casco `#cfg-layout` é do host; aqui ficam o DOM e a leitura dos campos.

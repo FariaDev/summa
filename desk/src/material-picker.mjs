@@ -12,7 +12,7 @@ import {foldSearch, stepActive} from './model-picker.mjs';
 /** @typedef {{name: string, path: string, folder?: string}} MaterialEntry */
 /** @typedef {{kind: 'group', folder: string, label: string, open: boolean, count: number, depth: number} | {kind: 'file', entry: MaterialEntry, folder: string, depth: number}} MaterialRow */
 /**
- * @typedef {object} FolderNode
+ * @typedef {Record<string, any>} FolderNode
  * @property {string} folder
  * @property {string} label
  * @property {MaterialEntry[]} files

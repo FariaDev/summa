@@ -1,3 +1,4 @@
+// @ts-check
 /* Ambiente do Claude Code para a ponte experimental (fase 1).
  *
  * Escopo deste módulo: achar o Claude Code que a pessoa instalou, conferir se a
@@ -118,6 +119,7 @@ function expandHome(candidate, home) {
 
 /* Caminhos candidatos, em ordem: o configurado pelo usuário e o launcher
    padrão do instalador oficial (`~/.local/bin/claude` → versions/<v>). */
+/** @param {{configuredPath?: any, home?: any, platform?: any}} [options] */
 function candidatePaths({configuredPath, home = os.homedir(), platform = process.platform} = {}) {
   const out = [];
   /* Todos os candidatos passam pelo mesmo `path.resolve` (o do `expandHome`):
@@ -207,8 +209,8 @@ function defaultExecFile(file, args, options) {
   return new Promise((resolve, reject) => {
     nodeExecFile(file, args, options, (error, stdout, stderr) => {
       if (error) {
-        error.stdout = stdout;
-        error.stderr = stderr;
+        /** @type {any} */ (error).stdout = stdout;
+        /** @type {any} */ (error).stderr = stderr;
         reject(error);
       } else {
         resolve({stdout, stderr});

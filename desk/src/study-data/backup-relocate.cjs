@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -104,6 +105,7 @@ function remapRuntimePaths(value, from, to) {
 }
 /* Caminhos absolutos que continuam fora do runtime novo e não existem aqui:
    a prévia avisa (não finge que restaurou material de outra máquina). */
+/** @param {any} value @param {{ignoreRoot?: any, out?: any}} [options] */
 function staleAbsolutePaths(value, {ignoreRoot, out = new Set()} = {}) {
   if (typeof value === 'string') {
     if (value.length > 3 && value.length < 500 && path.isAbsolute(value) && value !== ignoreRoot && !value.startsWith(ignoreRoot + path.sep)) {

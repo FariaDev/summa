@@ -1,3 +1,4 @@
+// @ts-check
 /* Citar do PDF quando a seleção é fórmula (#70). A camada de texto do pdf.js põe
    cada índice, colchete e traço de fração de uma fonte matemática numa caixa
    própria, fora da ordem de leitura: `lim f(x)→0 sen[f(x)]/f(x) = 1` vira

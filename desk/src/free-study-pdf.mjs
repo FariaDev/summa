@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast} from './state.mjs';
 import {htmlNode,renderInto} from './view-host.mjs';
 import {renderMaterialHtml,prepareMaterialMarkdown,checkMaterialMath,materialRevision,measureMaterialModel,MATERIAL_TEMPLATE_VERSION} from './materials/template.mjs';
@@ -276,10 +277,10 @@ function onModelChange(){
 }
 function scheduleRealPreview(){
  clearTimeout(freeState.realPreviewTimer);
- freeState.realPreviewTimer=setTimeout(()=>{
+ freeState.realPreviewTimer=/** @type {any} */ (setTimeout(()=>{
   if(!$('#free-pdf-dialog')?.open||freeState.inflight)return;
   verifyPdf({auto:true}).catch(()=>{});
- },600);
+ },600));
 }
 function previewStillCurrent(job){
  return freeState.previewJob===job&&$('#free-pdf-dialog')?.open&&
@@ -322,6 +323,7 @@ async function renderPreviewPages(bytes,job){
 }
 /* Gera os bytes da revisão atual pelo host (`renderPdf`), desenha as páginas
    reais com pdf.js e descarta tudo que chegou fora de hora. */
+/** @param {{auto?: boolean}} [options] */
 async function verifyPdf({auto=false}={}){
  const dialog=$('#free-pdf-dialog');
  if(!dialog||!dialog.open||freeState.inflight)return;

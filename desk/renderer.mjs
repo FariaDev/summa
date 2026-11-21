@@ -1,3 +1,4 @@
+// @ts-check
 import './src/chat.mjs';
 import './src/pdf.mjs';
 import './src/ggb.mjs';

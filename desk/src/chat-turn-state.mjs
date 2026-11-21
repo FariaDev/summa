@@ -1,3 +1,4 @@
+// @ts-check
 
 
 /* Coluna do tutor — estado do turno vivo e da fala do assistente, âncoras

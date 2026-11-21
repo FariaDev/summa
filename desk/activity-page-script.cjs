@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Atividades — o runtime da página (ponte com o host, altura, erros), o CSS

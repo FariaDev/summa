@@ -1,3 +1,4 @@
+// @ts-check
 /* #62: a prévia SEM erro no console publica o quadro na hora, no ponto da
    chamada `previsualizar_atividade`. O host grava a atividade com o id
    sintético `previa:prv-…` e emite `published`; aqui o renderer lê a marca
@@ -25,7 +26,7 @@ import {turnState} from './chat-turn-state.mjs';
  * @returns {{previaId: string, published: boolean}|null}
  * @example recordPreviewEnd({result: {content: [{type: 'text', text: 'Quadro publicado: act-1 v1'}]}})
  */
-export function recordPreviewEnd({result, anchor = null} = {}) {
+export function recordPreviewEnd({result, anchor = null} = /** @type {any} */ ({})) {
   const text = resultText(result);
   const previaId = previewIdOfText(text);
   if (!previaId) return null;
@@ -47,7 +48,7 @@ export function recordPreviewEnd({result, anchor = null} = {}) {
  * @returns {{previaId: string, published: {id: string, version: number}}|null}
  * @example recordActivityEnd({toolCallId: 'call-2', result: {content: [{type: 'text', text: 'previaId "prv-1" … Quadro publicado: act-1 v2'}]}})
  */
-export function recordActivityEnd({toolCallId, result, anchor = null} = {}) {
+export function recordActivityEnd({toolCallId, result, anchor = null} = /** @type {any} */ ({})) {
   const text = resultText(result);
   const previaId = previewIdOfText(text);
   if (!previaId) return null;

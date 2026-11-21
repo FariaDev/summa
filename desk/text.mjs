@@ -1,3 +1,4 @@
+// @ts-check
 import attachments from './src/generated/attachments.core.js';
 import {PDF_HEADERS} from './src/chat-pdf.mjs';
 import {withoutTutorPrompt} from './src/agents/tutor-prompt-text.mjs';

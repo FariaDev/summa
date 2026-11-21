@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path = require('node:path');
@@ -30,6 +31,7 @@ const AUTO_RETRY_MS = 15 * 60 * 1000;
    reinicia a contagem — backup nunca corre com o Pi escrevendo. Atividade
    DEPOIS de `now` (relógio torto ou cálculo feito fora) também conta como
    "em uso": na dúvida, não roda. */
+/** @param {{runtime?: any, root?: any, settings?: Record<string, any>, now?: any, activityAt?: any, autoState?: any}} options */
 function shouldAutoBackup({runtime, root, settings = {}, now = Date.now(), activityAt = null, autoState = null}) {
   if (!settings.auto) return {due: false, why: 'automático desligado'};
   if (!root) return {due: false, why: 'sem destino de backup'};
@@ -81,6 +83,7 @@ function autoFlightKey(root) {
    "já rodou" (`lastAutoAt`) só é gravado DEPOIS do snapshot dar certo: se
    falhar ou o app cair no meio, o próximo tique tenta de novo em vez de ler
    "já rodou" sem snapshot novo. */
+/** @param {{runtime?: any, root?: any, deskDir?: string, materials?: any[], external?: any[], settings?: Record<string, any>, now?: any, activityAt?: any, allowActive?: boolean, log?: any, takeSnapshot?: any}} options */
 async function runAutoBackup({runtime, root, deskDir = '', materials = [], external = [], settings = {}, now = Date.now(), activityAt = null, allowActive = false, log = () => {}, takeSnapshot = backupNow}) {
   /* Atividade calculada uma vez: o gate e o snapshot veem o mesmo instante. */
   const activity = activityAt === null ? latestActivity(runtime, {ignore: root}) : activityAt;

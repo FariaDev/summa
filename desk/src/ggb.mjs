@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,markCourseTab,updateContextSummary,toast} from './state.mjs';
 import {text,t} from './ui-text.mjs';
 import boardCore from './generated/ggbboard.core.js';
@@ -35,7 +36,7 @@ const openOverlays=()=>document.querySelectorAll(OVERLAY_SELECTOR).length;
 /* Arrasto do divisor do chat (ajustes do GeoGebra): a view nativa não segue o
    DOM e recarrega o applet a cada tamanho, então durante o arrasto ela vira uma
    captura parada (`ggbFreeze` no host) e o retângulo só vai uma vez, no fim. */
-const ggbDrag={frozen:false,shot:null,freezing:Promise.resolve()};
+const ggbDrag={frozen:false,shot:null,freezing:/** @type {Promise<any>} */ (Promise.resolve())};
 function ggbArea(){
  const ref=$('#references').getBoundingClientRect(),bar=$('#ggb-bar');
  return {x:Math.round(ref.left),y:Math.round(ref.top+bar.offsetHeight),width:Math.round(ref.width),height:Math.round(Math.max(0,ref.height-bar.offsetHeight)),top:bar.offsetHeight};
@@ -118,7 +119,7 @@ function showBoardNote(note){
  clearTimeout(noteTimer);
  el.textContent=note?text(note):'';
  el.hidden=!note;
- if(note)noteTimer=setTimeout(()=>{el.hidden=true;el.textContent='';},12000);
+ if(note)noteTimer=/** @type {any} */ (setTimeout(()=>{el.hidden=true;el.textContent='';},12000));
 }
 /* A barra espelha o carregamento do applet (auditoria de UI/UX, rodada 1,
    A4): "Carregando…" desde a abertura até o `ggb-ready` chegar; falha fica à

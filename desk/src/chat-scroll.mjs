@@ -1,3 +1,4 @@
+// @ts-check
 /** Folga de `atBottom` em `state.mjs`: dentro dela a vista ainda está no fim. */
 export const CHAT_SCROLL_THRESHOLD = 80;
 

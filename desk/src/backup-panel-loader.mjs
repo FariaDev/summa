@@ -8,7 +8,7 @@ import {ensureStyles} from './backup-panel-style.mjs';
 /**
  * Cria a fachada do painel de backup.
  * @param {() => Promise<typeof import('./backup-panel.mjs')>} [importModule]
- * @returns {{init: (documento: Document, ipc?: object, options?: object) => void, load: () => Promise<any>, abrirBackup: () => Promise<void>, abrirCompartilhar: () => Promise<void>}}
+ * @returns {{init: (documento: Document, ipc?: Record<string, any>, options?: Record<string, any>) => void, load: () => Promise<any>, abrirBackup: () => Promise<void>, abrirCompartilhar: () => Promise<void>}}
  * @example const backup = createBackupPanelLoader(); backup.init(document, ipc); await backup.abrirBackup();
  */
 export function createBackupPanelLoader(importModule = () => import('./backup-panel.mjs')) {
@@ -31,7 +31,7 @@ export function createBackupPanelLoader(importModule = () => import('./backup-pa
 const backup = createBackupPanelLoader();
 /**
  * Guarda o `document`/IPC da partida; o painel é criado na primeira abertura.
- * @param {Document} documento @param {object} [ipc] @param {object} [options]
+ * @param {Document} documento @param {Record<string, any>} [ipc] @param {Record<string, any>} [options]
  * @returns {{abrirBackup: () => Promise<void>, abrirCompartilhar: () => Promise<void>}}
  * @example const studyBackup = mountBackupPanelBoot(document, ipc);
  */

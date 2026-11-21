@@ -1,3 +1,4 @@
+// @ts-check
 /* Divisão pura do texto do stream em prefixo estável + último trecho.
  *
  * O tutor repinta a resposta a cada ~80 ms (`chat-message-view.mjs`). Repintar

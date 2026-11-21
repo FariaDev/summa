@@ -1,3 +1,4 @@
+// @ts-check
 import notesCore from './generated/studyannotations.core.js';
 import {showUndoNotice, cancelUndoNotice} from './undo-deletion.mjs';
 import {t, text, LANGUAGE_EVENT} from './ui-text.mjs';

@@ -1,3 +1,4 @@
+// @ts-check
 /* Microinterações da #61 (docs/design/identidade/animados-r2.html): copiar,
    guardar e conferir tocam uma vez, no sucesso da ação. Só animam traço,
    recorte e cor (nada escala, então nada treme; o conferir acende o fundo do
@@ -28,7 +29,7 @@ export function savedMark(){
 
 /** Troca o conteúdo do chip pela marca e um rótulo, e devolve o original depois.
  * Um segundo clique durante a marca só reinicia o relógio, sem perder o original.
- * @param {HTMLElement} button chip de ação (Copiar, Guardar)
+ * @param {HTMLElement & {_motionTimer?: any, _motionOriginal?: string}} button chip de ação (Copiar, Guardar)
  * @param {string} mark SVG de copiedMark() ou savedMark()
  * @param {string} label texto que acompanha a marca
  * @param {{ms?: number, setTimer?: typeof setTimeout, clearTimer?: typeof clearTimeout}} [clock]

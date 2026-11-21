@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -12,6 +13,7 @@ const {BackupError, normalizeBinaryPolicy, runtimeExclusion} = require('./backup
 
 /* Monta a lista de entradas a copiar. Não lê arquivos: só decide caminho,
    tipo e motivo de exclusão (o hash vem no `snapshot`). */
+/** @param {{runtime: string, deskDir?: string, materials?: any[], external?: any[], binaries?: string}} options */
 function buildSources({runtime, materials = [], external = [], binaries = 'include'}) {
   const sources = [];
   const excluded = [];

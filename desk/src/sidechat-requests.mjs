@@ -1,3 +1,4 @@
+// @ts-check
 import {toast} from './state.mjs';
 import {t as uiT,text as uiText} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';
@@ -11,7 +12,7 @@ import {h} from './sidechat-message-view.mjs';
 /**
  * Cria o desenho e a resposta dos pedidos do motor no chat lateral.
  * @param {{state:{id:string,requests:Map<string,HTMLElement>},api:()=>any,messagesEl:()=>HTMLElement|null,scrollBottom:()=>void}} deps
- * @returns {{showRequest:(event:object)=>void,answerRequest:(card:HTMLElement|null,response:object)=>void,submitFreeAnswer:(card:HTMLElement|null)=>void}}
+ * @returns {{showRequest:(event:Record<string, any>)=>void,answerRequest:(card:HTMLElement|null,response:Record<string, any>)=>void,submitFreeAnswer:(card:HTMLElement|null)=>void}}
  * @example const {showRequest}=createSidechatRequests({state,api:()=>window.desk,messagesEl:()=>el,scrollBottom(){}});
  */
 export function createSidechatRequests({state,api,messagesEl,scrollBottom}){

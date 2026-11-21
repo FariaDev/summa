@@ -10,14 +10,14 @@ export const PROTOCOL_VERSION = '2025-06-18';
 /**
  * @typedef {{type: 'text', text: string} | {type: 'image', data: string, mimeType: string}} ToolContent
  * @typedef {{content: ToolContent[], isError?: boolean}} ToolResult
- * @typedef {{name: string, description: string, inputSchema: object, call: (args: Record<string, unknown>) => Promise<ToolResult>}} McpTool
+ * @typedef {{name: string, description: string, inputSchema: Record<string, any>, call: (args: Record<string, unknown>) => Promise<ToolResult>}} McpTool
  * @typedef {{jsonrpc?: string, id?: string|number|null, method?: string, params?: {protocolVersion?: string, name?: unknown, arguments?: unknown}}} RpcMessage
  */
 
 /**
  * O tratador de mensagens: recebe uma linha e devolve a resposta (ou null para notificação).
  * @param {{tools: McpTool[], name: string, version: string, log?: (line: string) => void}} options
- * @returns {(line: string) => Promise<object|null>}
+ * @returns {(line: string) => Promise<Record<string, any>|null>}
  * @example const reply = createMcpServer({tools, name: 'mesa', version: '0.5.0'}); await reply('{"jsonrpc":"2.0","id":1,"method":"ping"}') // {jsonrpc: '2.0', id: 1, result: {}}
  */
 export function createMcpServer({tools, name, version, log = () => {}}) {
@@ -57,7 +57,7 @@ export function createMcpServer({tools, name, version, log = () => {}}) {
 
 /**
  * Liga o tratador a um par de streams (stdin/stdout no processo real).
- * @param {(line: string) => Promise<object|null>} reply
+ * @param {(line: string) => Promise<Record<string, any>|null>} reply
  * @param {{input: NodeJS.ReadableStream, output: NodeJS.WritableStream}} streams
  * @returns {void}
  */

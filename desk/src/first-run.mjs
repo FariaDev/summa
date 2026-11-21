@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,connect,invalidateConnect,applyAccent,save} from './state.mjs';
 import {wireAccentPicker} from './accent-picker.mjs';
 import {applyIcons} from './view-host.mjs';
@@ -29,12 +30,16 @@ let kind='setup';
    aba Livre), só volta quando passa de ter matéria a não ter nenhuma. */
 let seenCourses=null;
 let state=initialSetup('setup');
+/** @type {Record<string, any>} */
 let facts={kind:'setup',claudeFound:false,opencodeFound:false,opencodeBinary:'',opencodeOldVersion:'',installSupported:false,platform:'',dataFolder:'',pdfNames:[],elsewhere:0,visibleEngines:['claude','opencode']};
 let creating=false;
 let wired=false;
+/** @type {{createCourse: (course: Record<string, any>) => Promise<unknown>}} */
 let hooks={createCourse:async()=>{}};
+/** @type {HTMLElement[]} */
 let benched=[];
 /** Estado vivo da instalação do OpenCode na tela (#release OpenCode). */
+/** @type {import('./setup-view.mjs').SetupInstall} */
 let install={state:'idle',phase:'',percent:-1,errorCode:'',error:'',version:''};
 /* O passeio do "Como funciona" anda sozinho, um quadro a cada 2,6 s, e para de
    vez no primeiro clique em Próximo/Voltar ou num indicador de quadro, ou na
@@ -178,7 +183,8 @@ async function chooseLanguage(event){
    Mesa escondida e o leitor de tela lê só os passos. */
 function bench(on){
  if(!on){for(const el of benched)el.inert=false;benched=[];return;}
- for(const el of document.body.children){
+ for(const child of document.body.children){
+  const el=/** @type {HTMLElement} */ (child);
   if(el.id==='setup'||el.id==='toast'||el.tagName==='DIALOG'||el.tagName==='SCRIPT'||el.inert)continue;
   el.inert=true;benched.push(el);
  }
@@ -205,7 +211,7 @@ async function runInstall(){
   if(typeof window.desk.openCodeInstall!=='function')throw Error(t('firstrun.install.failed'));
   const result=await window.desk.openCodeInstall();
   if(!result?.ok){
-   const failure=Error(String(result?.message||t('firstrun.install.failed')));
+   const failure=/** @type {Error & {code?: string, [field: string]: any}} */ (Error(String(result?.message||t('firstrun.install.failed'))));
    failure.code=String(result?.code||'failed');
    throw failure;
   }

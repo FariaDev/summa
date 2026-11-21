@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -18,6 +19,7 @@ const {piSessionMessages} = require('./package-transcript.cjs');
 /* Remove do objeto JSON toda referência local que aponta para o caminho antigo
    ou o id antigo, trocando pela referência nova. Percorre recursivamente;
    strings que são só caminho são trocadas inteiras. */
+/** @param {any} value @param {{oldBase?: any, newBase?: any, oldId?: any, newId?: any, key?: any, mappings?: any[]}} [options] */
 function remapValue(value, {oldBase, newBase, oldId, newId, mappings = []} = {}) {
   const table = [
     ...(oldBase && newBase ? [{from: oldBase, to: newBase}] : []),
@@ -58,6 +60,7 @@ function remapValue(value, {oldBase, newBase, oldId, newId, mappings = []} = {})
    (fatia crua com caminho absoluto do autor), reancorando SEMPRE nas raízes do
    destino. O v1 ainda passa pelo remap de caminho/id antes da reancoragem.
    Formato desconhecido é preservado como veio (nunca vira lista vazia calada). */
+/** @param {any} raw @param {{materialsDir?: any, learningDir?: any, oldBase?: any, oldLearning?: any, oldId?: any, newCourseId?: any, warnings?: any}} options */
 function importPackageNotes(raw, {materialsDir, learningDir, oldBase, oldLearning, oldId, newCourseId, warnings}) {
   const roots = [materialsDir, learningDir].filter(Boolean);
   const isPortable = isPlainObject(raw) && raw.version === 1 && Array.isArray(raw.items);
@@ -80,6 +83,7 @@ function importPackageNotes(raw, {materialsDir, learningDir, oldBase, oldLearnin
 /* Escreve o conteúdo do pacote num destino novo. Ordem: payload → stores
    remapeados → conversas renomeadas → manifesto de importação (last). Falha em
    qualquer passo remove o destino novo (nada de matéria pela metade). */
+/** @param {{buffer?: any, destination?: any, courseId?: string, log?: any}} options */
 function importPackage({buffer, destination, courseId = '', log = () => {}}) {
   const opened = openPackage(buffer);
   const {manifest, entries} = opened;
@@ -194,6 +198,7 @@ function importPackage({buffer, destination, courseId = '', log = () => {}}) {
    (`conversations.cjs`). O id antigo e o `nativeSessionId` antigo NÃO são
    reaproveitados: id/arquivo/sessão nascem novos, `nativeEstablished` é false
    e o arquivo só serve de transcrição — nunca anuncia retomada nativa. */
+/** @param {{record?: any, name?: any, dir?: any, newCourseId?: any, written?: any, log?: any, engine?: string}} options */
 function writeClaudeTranscript({record, name, dir, newCourseId, written, log, engine = 'claude'}) {
   fs.mkdirSync(dir, {recursive: true});
   const staging = fs.mkdtempSync(path.join(dir, '.mesa-transcript-'));
@@ -257,6 +262,7 @@ function piTranscriptRecord(data, name) {
 /* Conversa importada: id novo (nunca reusa o id nativo do pacote), pasta de
    mesa nova e Referências apontando para o novo destino. Descritor Claude vira
    transcrição: `nativeEstablished` volta a false (o id antigo não abre aqui). */
+/** @param {{entry?: any, data?: any, dir?: any, newCourseId?: any, written?: any, log?: any}} options */
 function writeConversation({entry, data, dir, newCourseId, written, log}) {
   const name = path.basename(entry.archivePath);
   const nativeEngine = entry.engine === 'opencode' || /^opencode-/.test(name) ? 'opencode'

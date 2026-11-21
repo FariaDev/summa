@@ -1,3 +1,4 @@
+// @ts-check
 import * as worklog from './worklog.mjs';
 import * as timeline from './timeline.mjs';
 import {$,S,activity,activityLive} from './state.mjs';
@@ -202,7 +203,7 @@ function openTurnLog(){
  turnState.turnActivityCalls=new Set();
  turnState.turnPreview=null;turnState.turnPublished=false;
  clearInterval(turnState.liveTick);
- turnState.liveTick=setInterval(paintLive,1000);
+ turnState.liveTick=/** @type {any} */ (setInterval(paintLive,1000));
  openSegment();
 }
 function openSegment(){
@@ -219,6 +220,7 @@ function openSegment(){
 function segmentLog(seg){
  return {startedAt:seg.startedAt,endedAt:seg.endedAt,reason:seg.reason,text:'',steps:timeline.segmentSteps(turnState.turnLog,seg)};
 }
+/** @param {any} seg @param {{live?: any, note?: string, hasAnswer?: any, isFreeLimit?: any}} [options] */
 function renderSegment(seg,{live,note='',hasAnswer=turnState.turnHadAnswer,isFreeLimit=turnState.turnFreeLimit}={}){
  if(!seg?.view||!seg.view.el?.isConnected)return;
  seg.view.render(segmentLog(seg),{live:live!==undefined?live:!seg.closed,note,hasAnswer,isFreeLimit});
@@ -226,6 +228,7 @@ function renderSegment(seg,{live,note='',hasAnswer=turnState.turnHadAnswer,isFre
 /* Declaração (`toolcall_end`/`content_block_start`) e execução separam-se: a
    declaração reserva a posição (passo idempotente por ID) e a execução atualiza
    o MESMO passo. Só a declaração de ferramenta publica slot de atividade. */
+/** @param {{id?: any, name?: any, args?: any, pending?: boolean, contentIndex?: any}} [options] */
 function declareTool({id,name,args,pending=false,contentIndex=null}={}){
  if(id==null||id==='')return null;
  ensureAssistantId();
@@ -257,6 +260,7 @@ function closeAssistantForTool(){
 /* Slot de atividade: shell EXTERNO ao diário (irmão do `article.work`), nunca
    repintado pelo `renderSegment`; o renderer de atividades hidrata pelo evento
    e o slot permanece no lugar original mesmo com o texto final chegando. */
+/** @param {any} toolCallId @param {{status?: string, anchor?: any, artifactId?: any, version?: any}} [options] */
 function ensureActivitySlot(toolCallId,{status='pending',anchor=null,artifactId=null,version=null}={}){
  const id=String(toolCallId||'');
  if(!id)return null;
@@ -374,7 +378,7 @@ function closeSegment(){
 /* Deltas de pensamento chegam em rajada: repinta no máximo a cada ~90ms. */
 function scheduleTurn(){
  if(turnState.renderTimer)return;
- turnState.renderTimer=setTimeout(()=>{turnState.renderTimer=0;if(turnState.turnLog)renderTurn();},90);
+ turnState.renderTimer=/** @type {any} */ (setTimeout(()=>{turnState.renderTimer=0;if(turnState.turnLog)renderTurn();},90));
 }
 /* Aposenta os ids de ferramenta do turno recolhido: um evento atrasado que os
    cite não volta a pintar aqui (N1). Teto para não crescer sem fim. */
@@ -398,6 +402,7 @@ function retireHostRun(){
  retiredHostRuns.add(value);
  while(retiredHostRuns.size>64)retiredHostRuns.delete(retiredHostRuns.values().next().value);
 }
+/** @param {{reason?: string}} [options] */
 function settleTurn({reason=''}={}){
  turnState.promptArmed=false;
  retireTurnTools();

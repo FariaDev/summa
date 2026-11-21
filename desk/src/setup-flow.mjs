@@ -20,7 +20,7 @@ export const TOUR = /** @type {const} */ ([
 ]);
 
 /**
- * @typedef {object} SetupState
+ * @typedef {Record<string, any>} SetupState
  * @property {number} step índice em STEPS
  * @property {number} frame quadro do passeio (só no passo "tour")
  * @property {boolean} tourHeld o passeio automático parou (clique ou tecla, #90)

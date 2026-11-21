@@ -1,3 +1,4 @@
+// @ts-check
 import {icon} from '../icons.mjs';
 import {build,renderChildren,applyIcons} from './view-host.mjs';
 import core from './generated/toolmentions.core.js';

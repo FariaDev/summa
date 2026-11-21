@@ -1,3 +1,4 @@
+// @ts-check
 /* Avisos de atualização do Claude Code, e "Atualizar" de dentro da Mesa
    (#45).
 
@@ -66,17 +67,27 @@ function storedMemory(memory){
  * @param {object} deps tudo entra por parâmetro (o main reatribui `state`).
  * @param {string} deps.runtime pasta do runtime (cache e lock)
  * @param {string} deps.deskDir
- * @param {()=>object} deps.config
- * @param {()=>object} deps.state estado de interface (`desk.json`)
+ * @param {()=>Record<string, any>} deps.config
+ * @param {()=>Record<string, any>} deps.state estado de interface (`desk.json`)
  * @param {()=>void} deps.persist
  * @param {()=>Promise<boolean>} deps.isBusy o tutor está respondendo?
  * @param {()=>boolean} deps.hasBridge há tutor conectado?
  * @param {()=>void} deps.relink derruba a ponte para o renderer religar
- * @param {(channel:string,payload:object)=>void} deps.send evento para o renderer
+ * @param {(channel:string,payload:Record<string, any>)=>void} deps.send evento para o renderer
  * @param {(src:string,line:string)=>void} deps.appendLog
  * @param {string[]=} deps.searchDirs só os testes: onde procurar `brew`/`npm`
  *   (um PATH de fakes; o PATH real nunca entra num teste)
  * @param {boolean=} deps.allowRunInTest só os testes: libera `run` com fakes
+ * @param {boolean=} deps.testMode
+ * @param {NodeJS.ProcessEnv=} deps.env
+ * @param {string=} deps.home
+ * @param {(()=>number)=} deps.now
+ * @param {Function=} deps.run injetável nos testes (padrão: `updater.defaultRun`)
+ * @param {Function=} deps.fetchJson injetável nos testes (padrão: `updater.defaultFetchJson`)
+ * @param {Function=} deps.runTool injetável nos testes (padrão: `toolRun.runTool`)
+ * @param {Record<string, any>=} deps.latestOverride
+ * @param {unknown=} deps.claudeLauncher
+ * @param {(()=>string[])=} deps.visibleEngines motores que aparecem na interface
  */
 function createToolUpdates(deps){
  const {
@@ -124,7 +135,7 @@ function createToolUpdates(deps){
   return {lines,dot,items};
  }
 
- /** Só o que já se sabe (cache): é o que o ponto do ⚙ lê ao abrir a Mesa. */
+ /** Só o que já se sabe (cache): é o que o ponto do ⚙ lê ao abrir a Mesa. @param {{cacheOnly?: boolean, manual?: boolean}} [options] */
  async function notices({cacheOnly=true,manual=false}={}){
   const tools=await components.collectTools(toolOpts({cacheOnly,manual}));
   return summarize(tools);

@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,save,conferirAppName,paintComposerSend} from './state.mjs';
 import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {icon} from '../icons.mjs';
@@ -182,6 +183,7 @@ function placeAttachMenu(){
  pop.style.bottom=`${Math.round(box.bottom-at.top+4)}px`;
  pop.style.left=`${Math.max(8,Math.round(at.left-box.left))}px`;
 }
+/** @param {{restoreFocus?: boolean}} [options] */
 function closeAttachMenu({restoreFocus=false}={}){
  if(!attachMenuOpen())return;
  const hadFocus=attachPop().contains(document.activeElement);
@@ -279,6 +281,7 @@ function placeAttachPinMenu(){
  pop.style.bottom=`${Math.round(box.bottom-at.top+4)}px`;
  pop.style.left=`${Math.max(8,Math.round(at.left-box.left))}px`;
 }
+/** @param {{restoreFocus?: boolean}} [options] */
 function closeAttachPinMenu({restoreFocus=false}={}){
  if(!attachPinOpen())return;
  const hadFocus=attachPinPop().contains(document.activeElement);
@@ -350,12 +353,12 @@ function initAttachMenu(){
  });
  document.addEventListener('click',event=>{
   if(!attachMenuOpen())return;
-  if(event.target?.closest?.('#attach-pop, #attach'))return;
+  if(/** @type {HTMLElement} */ (event.target)?.closest?.('#attach-pop, #attach'))return;
   closeAttachMenu();
  });
  document.addEventListener('click',event=>{
   if(!attachPinOpen())return;
-  if(event.target?.closest?.('#attach-pin-pop, #attach'))return;
+  if(/** @type {HTMLElement} */ (event.target)?.closest?.('#attach-pin-pop, #attach'))return;
   closeAttachPinMenu();
  });
  window.addEventListener('resize',()=>{if(attachMenuOpen())placeAttachMenu();if(attachPinOpen())placeAttachPinMenu();});

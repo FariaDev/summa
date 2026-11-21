@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Backup local, restauração e retenção da Mesa (domínio estudo/compartilhar).
@@ -58,6 +59,7 @@ const OPENCODE_BINARY_RE = /^opencode\/[^/]+\/bin\/opencode(?:\.exe)?$/;
 /* Lê o manifesto, confere o snapshot inteiro e MONTA a prévia: o que seria
    substituído, o que é novo, o que ficou fora da versão e quantos bytes. Não
    escreve nada no runtime — é o texto que a UI mostra antes da confirmação. */
+/** @param {{runtime?: any, root?: any, snapshotId?: any, recentMs?: number, allowActive?: boolean, log?: any}} options */
 async function prepareRestore({runtime, root, snapshotId, recentMs = 0, allowActive = false, log = () => {}}) {
   assertRuntimeAtRest({runtime, root, recentMs, allowActive});
   const dir = snapshotDirFor(path.resolve(root || ''), snapshotId);
@@ -200,6 +202,7 @@ function dropPlan(runtime, planId) {
   removeQuiet(path.join(stateDir, 'restore', `${id}.json`));
 }
 
+/** @param {{runtime?: any, planId?: any}} options */
 function cancelRestore({runtime, planId}) {
   dropPlan(runtime, planId);
   return {cancelled: true, planId};
@@ -210,6 +213,7 @@ function cancelRestore({runtime, planId}) {
    gravado ANTES da primeira escrita; falha no meio = rollback automático e o
    erro sobe. Nunca apaga arquivo arbitrário do usuário: substituição é sempre
    reversível pelo backup do pré-restore. */
+/** @param {{runtime?: any, planId?: any, materials?: string, recentMs?: number, allowActive?: boolean, log?: any}} options */
 async function applyRestore({runtime, planId, materials = 'auto', recentMs = 0, allowActive = false, log = () => {}}) {
   /* Confere de novo na aplicação: entre a prévia e a confirmação o usuário
      pode ter voltado a estudar. */
@@ -306,6 +310,7 @@ async function applyRestore({runtime, planId, materials = 'auto', recentMs = 0, 
 /* Desfaz uma aplicação pelo diário: devolve os arquivos substituídos do
    pré-restore e remove os criados pela restauração. Idempotente e seguro para
    rodar depois de queda (o diário é a verdade). */
+/** @param {{runtime?: any, planId?: any, log?: any}} options */
 function rollbackRestore({runtime, planId, log = () => {}}) {
   const runtimeAbs = path.resolve(runtime);
   const stateDir = path.join(runtimeAbs, '.backup');
@@ -349,7 +354,7 @@ function rollbackRestore({runtime, planId, log = () => {}}) {
 
 /* Recuperação de queda: diário sem `finished` = restauração interrompida;
    devolve o estado anterior antes de qualquer outra coisa. */
-/** @param {{runtime: string, log?: (message: string) => void}} options */
+/** @param {{runtime?: any, log?: any}} options */
 function recoverRestore({runtime, log = () => {}}) {
   const stateDir = path.join(path.resolve(runtime), '.backup');
   const journalDir = path.join(stateDir, 'journal');
@@ -418,5 +423,4 @@ const api = {
   hashBuffer,
 };
 
-module.exports = api;
-module.exports.default = api;
+module.exports = Object.assign(api, {default: api});

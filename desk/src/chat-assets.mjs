@@ -1,3 +1,4 @@
+// @ts-check
 import {$,toast} from './state.mjs';
 import talkCore from './generated/talkview.core.js';
 import {build,renderChildren} from './view-host.mjs';

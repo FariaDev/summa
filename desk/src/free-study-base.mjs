@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S} from './state.mjs';
 
 /* Aba Livre — estado mutável da aba, ponte com o host e os fatos da sessão
@@ -9,7 +10,7 @@ const FREE_DIALOGS=['#free-pdf-dialog','#free-promote-dialog','#tutor-pdf-dialog
 /* Estado mutável da aba num objeto só (#43 fase 2): os módulos da aba Livre
    o dividem sem reatribuir import. */
 const freeState={
- generation:0,lastData:null,inflight:'',renaming:false,sources:[],previewFrame:0,paintFrame:0,
+ generation:0,lastData:null,inflight:/** @type {any} */ (''),renaming:false,sources:[],previewFrame:0,paintFrame:0,
  /* Modelo do PDF: o painel (cartões e opções) é a fonte; a origem da escolha só
     alimenta a frase do rodapé e vira `changed` quando a pessoa troca. */
  modelPanel:null,modelSource:'default',realPreviewTimer:0,

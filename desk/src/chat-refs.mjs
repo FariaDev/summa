@@ -1,3 +1,4 @@
+// @ts-check
 import {S} from './state.mjs';
 import refCore from './generated/pdfref.core.js';
 import {text as uiText} from './ui-text.mjs';

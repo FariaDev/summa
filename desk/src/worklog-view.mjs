@@ -1,3 +1,4 @@
+// @ts-check
 /* Visão do diário de trabalho do turno. A árvore vem do núcleo
    `core/worklogview.bend`; este arquivo só traduz o log em fatos, aplica no
    DOM (`view-host.mjs`), injeta os SVG e guarda o fold / o relógio.
@@ -173,6 +174,7 @@ function isToolRow(step){
  return !!step&&step.kind!==STEP.THINKING&&step.kind!==STEP.ERROR&&isPdfRead(step);
 }
 
+/** @param {any} log @param {{live?: boolean, expanded?: boolean, note?: string, now?: any, openIds?: any}} [options] */
 export function workRowFrom(log,{live=false,expanded=true,note='',now=Date.now(),openIds=new Set()}={}){
  const current=live?runningStep(log):null;
  const title=live?(current?liveHead(current):(note||t('work.live.idle'))):headLineFor(log);
@@ -401,9 +403,10 @@ export function createWorkLogView(){
  }
  function ensureTimer(){
   if(timer||!live)return;
-  timer=setInterval(tick,1000);
+  timer=/** @type {any} */ (setInterval(tick,1000));
  }
 
+ /** @param {any} nextLog @param {{live?: boolean, note?: string, hasAnswer?: boolean, isFreeLimit?: boolean}} [options] */
  function render(nextLog,{live:isLive=false,note:nextNote='',hasAnswer=false,isFreeLimit=false}={}){
   log=nextLog;
   const wasLive=live;

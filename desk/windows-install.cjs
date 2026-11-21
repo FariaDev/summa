@@ -1,3 +1,4 @@
+// @ts-check
 /* Instalação por usuário no Windows (#181), irmã do `Summa.app` do
    macOS. Sem NSIS, Squirrel ou electron-builder (ADR 0005):
    - copia o Electron de `node_modules/electron/dist` e o MESMO payload do .app

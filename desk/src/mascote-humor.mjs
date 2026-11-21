@@ -9,7 +9,7 @@
 /** @typedef {'normal'|'feliz'|'pensando'|'aflita'|'sono'|'escrevendo'|'atento'|'lendo'} MascoteHumor */
 
 /**
- * @typedef {object} MascoteFlags
+ * @typedef {Record<string, any>} MascoteFlags
  * @property {MascoteMood} [mood] humor de base que a tela pede
  * @property {boolean} [sleepy] parada há um tempo (sono)
  * @property {boolean} [writing] alguém está digitando (lápis rabiscando)

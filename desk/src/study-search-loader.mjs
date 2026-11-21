@@ -8,7 +8,7 @@ import {createLazyModule} from './lazy-module.mjs';
 /**
  * Cria a fachada da busca de estudos.
  * @param {() => Promise<typeof import('./study-search.mjs')>} [importModule]
- * @returns {{init: (options?: object) => void, load: () => Promise<any>, open: (preset?: object) => Promise<any>, close: () => void, current: () => any | null}}
+ * @returns {{init: (options?: Record<string, any>) => void, load: () => Promise<any>, open: (preset?: Record<string, any>) => Promise<any>, close: () => void, current: () => any | null}}
  * @example const search = createStudySearchLoader(); search.init({onOpenResult}); await search.open();
  */
 export function createStudySearchLoader(importModule = () => import('./study-search.mjs')) {
@@ -29,8 +29,7 @@ export function createStudySearchLoader(importModule = () => import('./study-sea
 const studySearch = createStudySearchLoader();
 /**
  * Guarda os callbacks da busca e liga os gatilhos que a partida já tem.
- * @param {{onOpenResult?: Function, onAnnotate?: Function, notify?: (message: string) => void, document?: Document}} options
- * @returns {{open: (preset?: object) => Promise<any>, close: () => void}}
+ * @returns {{open: (preset?: Record<string, any>) => Promise<any>, close: () => void}}
  * @example mountStudySearchBoot({onOpenResult, notify: toast});
  */
 export function mountStudySearchBoot(options = {}) {
@@ -58,7 +57,7 @@ export function mountStudySearchBoot(options = {}) {
 }
 
 /** Abre a busca, importando o módulo na primeira vez.
- * @param {object} [preset] @returns {Promise<any>} @example await openStudySearch();
+ * @param {Record<string, any>} [preset] @returns {Promise<any>} @example await openStudySearch();
  */
 export const openStudySearch = (preset = {}) => studySearch.open(preset);
 /** Fecha a busca se ela já foi importada.

@@ -1,6 +1,8 @@
+// @ts-check
 'use strict';
 
 // One native MCP server keeps every study tool under the existing mesa name.
+/** @param {{createMaterial?: any, createActivity?: any, previewActivity?: any, viewFigure?: any, geogebra?: any, readPdf?: any, readNotebook?: any, searchMaterial?: any, proposeReview?: any, listMaterials?: any, suggestNote?: any, showCard?: any, tutorLanguage?: any}} [options] */
 async function createStudyToolsServer({createMaterial,createActivity,previewActivity,viewFigure,geogebra,readPdf,readNotebook,searchMaterial,proposeReview,listMaterials,suggestNote,showCard,tutorLanguage}={}) {
  const {createSdkMcpServer}=await import('@anthropic-ai/claude-agent-sdk');
  /* As fábricas não dependem uma da outra, mas carregam em série: em paralelo,

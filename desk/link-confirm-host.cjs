@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Confirmação do link externo de uma view web (#81). O applet do GeoGebra abre
@@ -18,14 +19,14 @@ const {isExternalLink} = require('./web-guards.cjs');
 
 /**
  * Pergunta ao renderer se pode abrir um link e espera o "Abrir" do diálogo.
- * @param {{send: (channel: string, payload: object) => boolean,
+ * @param {{send: (channel: string, payload: Record<string, any>) => boolean,
  *   allowSender?: (event: Electron.IpcMainInvokeEvent) => boolean,
  *   newId?: () => string}} deps
  *   `send` devolve `false` quando a janela não existe; aí o link não abre.
  * @returns {{confirm: (url: string) => Promise<boolean>, respond: (event: Electron.IpcMainInvokeEvent, payload: unknown) => {ok: boolean, stale?: boolean}, cancelAll: () => void, register: (ipcMain: {handle: Function}) => void, pending: Map<string, LinkJob>}}
  * @example const confirmHost = createLinkConfirmHost({send: (channel, payload) => win.webContents.send(channel, payload)});
  */
-function createLinkConfirmHost({send, allowSender, newId = () => crypto.randomUUID()} = {}) {
+function createLinkConfirmHost({send, allowSender, newId = () => crypto.randomUUID()} = /** @type {any} */ ({})) {
   if (typeof send !== 'function') throw new Error('send ausente');
   const pending = new Map();
 

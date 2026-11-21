@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,connect,cancelConnect,applyEngineData} from './state.mjs';
 import {build,preserveFocus} from './view-host.mjs';
 import tutorStateCore from './generated/tutorstate.core.js';
@@ -29,6 +30,7 @@ function reasonFactsFor(raw){
  return {reason:value,fix:''};
 }
 
+/** @type {Record<string, Function>} */
 let host={newSession:()=>{},continueSession:()=>{},openLog:()=>{},openAbout:()=>{},updateClaude:()=>{},openReleaseNotes:()=>{}};
 let painted='';
 /* Até o boot decidir se liga o tutor, a coluna não diz "desligado": o convite

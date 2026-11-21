@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Ponte mínima da página de impressão: recebe o material do main, entrega para

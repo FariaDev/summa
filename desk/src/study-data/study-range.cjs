@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Data civil do `<input type=date>` → dia desde a época, o mesmo domínio que

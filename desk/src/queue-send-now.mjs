@@ -1,3 +1,4 @@
+// @ts-check
 /* Estado do "Enviar agora" da faixa da fila (#36). O comando do aluno solta a
    fila segurada pelo Parar, mas não reenvia o que o host já recusou: a entrega
    incerta pode ter chegado, e o núcleo veda começar um envio novo com

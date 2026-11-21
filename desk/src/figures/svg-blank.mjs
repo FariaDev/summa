@@ -1,3 +1,4 @@
+// @ts-check
 /* Fallback do SVG solto que o sanitizador esvazia (#150): a cerca `svg` com
    `style`, `use` ou `image` já virava código, mas o SVG inline do modelo
    passava direto pelo DOMPurify e, sem esses elementos, sobrava um `<svg>`

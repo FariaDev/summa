@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,activity} from './state.mjs';
 import {text as uiText} from './ui-text.mjs';
 import {limitNoticeState} from './claude-questions.mjs';

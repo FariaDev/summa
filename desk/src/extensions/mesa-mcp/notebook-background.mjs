@@ -1,3 +1,4 @@
+// @ts-check
 /* Lista branca do fundo do `ler_caderno` (#135, revisão 8cbca4cc; #213): nunca
    copia o tag `<background` original — gera um tag NOVO só com atributos
    conhecidos e valores validados. Fundo PDF só entra se a autorização de PDF
@@ -129,7 +130,7 @@ function isUnderDir(file, root, caseSensitive) {
   return fileNorm === rootNorm || fileNorm.startsWith(rootNorm + sep);
 }
 
-/** @param {string} value @param {typeof fs.realpathSync} realpath @returns {string} */
+/** @param {string} value @param {(path: string) => string} realpath @returns {string} */
 function realpathOrResolve(value, realpath) {
   try { return realpath(String(value)); } catch { return path.resolve(String(value)); }
 }
@@ -202,7 +203,7 @@ function solidTag(attrs) {
   return {tag: DEFAULT_WHITE, ignored: true};
 }
 
-/** @param {string} type @param {Map<string, string>} attrs @param {{notebookDir: string, realDir: string, pdfAuthorize?: (file: string) => string, realpath: typeof fs.realpathSync, caseSensitive: boolean}} deps @returns {{tag: string, ignored: boolean}} */
+/** @param {string} type @param {Map<string, string>} attrs @param {{notebookDir: string, realDir: string, pdfAuthorize?: (file: string) => string, realpath: (path: string) => string, caseSensitive: boolean}} deps @returns {{tag: string, ignored: boolean}} */
 function absoluteTag(type, attrs, {notebookDir, realDir, pdfAuthorize, realpath, caseSensitive}) {
   const filename = attrs.get('filename');
   if (!filename) return {tag: DEFAULT_WHITE, ignored: true};
@@ -227,7 +228,7 @@ function absoluteTag(type, attrs, {notebookDir, realDir, pdfAuthorize, realpath,
   return {tag: `<background type="pixmap" domain="absolute" filename="${esc}"/>`, ignored: false};
 }
 
-/** @param {string} type @param {Map<string, string>} attrs @param {{notebookPath: string, realDir: string, realpath: typeof fs.realpathSync, existsSync: typeof fs.existsSync, statSync: typeof fs.statSync, caseSensitive: boolean}} deps @returns {{tag: string, ignored: boolean, copy?: {source: string, filename: string}}} */
+/** @param {string} type @param {Map<string, string>} attrs @param {{notebookPath: string, realDir: string, realpath: (path: string) => string, existsSync: typeof fs.existsSync, statSync: typeof fs.statSync, caseSensitive: boolean}} deps @returns {{tag: string, ignored: boolean, copy?: {source: string, filename: string}}} */
 function attachTag(type, attrs, {notebookPath, realDir, realpath, existsSync, statSync, caseSensitive}) {
   const filename = attrs.get('filename');
   if (!filename) return {tag: DEFAULT_WHITE, ignored: true};
@@ -254,7 +255,7 @@ function attachTag(type, attrs, {notebookPath, realDir, realpath, existsSync, st
   return {tag: `<background type="pixmap" domain="attach" filename="${esc}"/>`, ignored: false, copy};
 }
 
-/** Cópia com lista branca de fundo (base no ORIGINAL, `realpath`); gera tags novos. @param {string} xml @param {{notebookPath: string, notebookDir: string, pdfAuthorize?: (file: string) => string, realpath: typeof fs.realpathSync, existsSync?: typeof fs.existsSync, statSync?: typeof fs.statSync, caseSensitive: boolean}} deps @returns {{xml: string, backgroundIgnored: boolean, attachCopies: Array<{source: string, filename: string}>}} @example sanitizeBackgrounds('<background type="pdf" filename="/fora/privado.pdf"/>', {notebookPath: '/curso/aula.xopp', notebookDir: '/curso', realpath: fs.realpathSync, caseSensitive: true}).backgroundIgnored // true */
+/** Cópia com lista branca de fundo (base no ORIGINAL, `realpath`); gera tags novos. @param {string} xml @param {{notebookPath: string, notebookDir: string, pdfAuthorize?: (file: string) => string, realpath: (path: string) => string, existsSync?: typeof fs.existsSync, statSync?: typeof fs.statSync, caseSensitive: boolean}} deps @returns {{xml: string, backgroundIgnored: boolean, attachCopies: Array<{source: string, filename: string}>}} @example sanitizeBackgrounds('<background type="pdf" filename="/fora/privado.pdf"/>', {notebookPath: '/curso/aula.xopp', notebookDir: '/curso', realpath: fs.realpathSync, caseSensitive: true}).backgroundIgnored // true */
 export function sanitizeBackgrounds(xml, {notebookPath, notebookDir, pdfAuthorize, realpath, existsSync = fs.existsSync, statSync = fs.statSync, caseSensitive}) {
   const source = String(xml);
   const realDir = realpathOrResolve(notebookDir, realpath);
@@ -313,7 +314,7 @@ export function sanitizeBackgrounds(xml, {notebookPath, notebookDir, pdfAuthoriz
   return {xml: out, backgroundIgnored: ignored, attachCopies: copies};
 }
 
-/** PDF de fundo aceito que não está no disco (`attach`/`clone` e fundo não autorizado não avisam; #213: só consulta o disco depois da autorização). @param {string} pageXml @param {string} notebookDir @param {typeof fs.existsSync} existsSync @param {{pdfAuthorize?: (file: string) => string, realpath?: typeof fs.realpathSync}} [deps] @returns {boolean} @example missingPdfOf('<background type="pdf" filename="fundo.pdf"/>', '/notas', fs.existsSync, {pdfAuthorize}) // true quando o PDF autorizado não existe */
+/** PDF de fundo aceito que não está no disco (`attach`/`clone` e fundo não autorizado não avisam; #213: só consulta o disco depois da autorização). @param {string} pageXml @param {string} notebookDir @param {typeof fs.existsSync} existsSync @param {{pdfAuthorize?: (file: string) => string, realpath?: (path: string) => string}} [deps] @returns {boolean} @example missingPdfOf('<background type="pdf" filename="fundo.pdf"/>', '/notas', fs.existsSync, {pdfAuthorize}) // true quando o PDF autorizado não existe */
 export function missingPdfOf(pageXml, notebookDir, existsSync, deps = {}) {
   const {pdfAuthorize, realpath = fs.realpathSync} = deps;
   const source = String(pageXml);

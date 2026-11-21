@@ -1,3 +1,4 @@
+// @ts-check
 import searchCore from './generated/studysearch.core.js';
 import {t, text, currentLanguage, LANGUAGE_EVENT} from './ui-text.mjs';
 import {displayCourseName} from './free-names.mjs';
@@ -369,7 +370,7 @@ async function refresh() {
 
 function scheduleRefresh() {
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => refresh(), Number.isFinite(deps.debounceMs) ? deps.debounceMs : 180);
+  debounceTimer = /** @type {any} */ (setTimeout(() => refresh(), Number.isFinite(deps.debounceMs) ? deps.debounceMs : 180));
 }
 
 /* ---------- destino ---------- */

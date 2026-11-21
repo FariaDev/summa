@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const {deskLayout}=require('../../state-adapter.cjs');
 const plain=x=>!!x&&typeof x==='object'&&!Array.isArray(x);

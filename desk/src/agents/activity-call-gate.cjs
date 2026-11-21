@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const crypto=require('node:crypto');
 const {createCallRegistry,pickPayload}=require('../../activity-bridge.cjs');
@@ -6,6 +7,7 @@ const {describeReceived}=require('../error-detail.mjs');
 
 // The SDK handler has no tool-use ID. Only PreToolUse may mint a reference;
 // model-supplied references and references from previous turns cannot publish.
+/** @param {{current?: any, publish?: any}} [options] */
 function createActivityCallGate({current,publish}={}) {
  const registry=createCallRegistry();
  const turns=new Map();

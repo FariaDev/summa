@@ -1,3 +1,4 @@
+// @ts-check
 /* `perguntar` — UM texto, um esquema e um resultado para os três motores
    (Pi `mesa_perguntar`, Claude `mcp__mesa__perguntar`, OpenCode
    `mesa_perguntar`). A ferramenta MOSTRA o cartão e volta na hora; o aluno

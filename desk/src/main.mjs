@@ -1,3 +1,4 @@
+// @ts-check
 import {bindPointerDrag} from './pointer-drag.mjs';
 import {icon} from '../icons.mjs';
 import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,applyCaptureAvailability,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
@@ -242,8 +243,8 @@ window.addEventListener('keydown',e=>{
   if(e.key==='\\'){e.preventDefault();toggleChat();return;}
   if(/^[1-9]$/.test(e.key)){e.preventDefault();const tab=numberedTabs()[Number(e.key)-1];if(tab)selectTab(tab.dataset.id);return;}
  }
- if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&e.target?.closest?.('#course-tabs')){e.preventDefault();moveTabFocus(e.key==='ArrowRight'?1:-1);return;}
- if(typingTarget(e.target)||e.target===document.getElementById('divider')||e.target===document.getElementById('calc-divider')||e.target?.classList?.contains('pdf-divider'))return;
+ if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&/** @type {HTMLElement|null} */ (e.target)?.closest?.('#course-tabs')){e.preventDefault();moveTabFocus(e.key==='ArrowRight'?1:-1);return;}
+ if(typingTarget(e.target)||e.target===document.getElementById('divider')||e.target===document.getElementById('calc-divider')||/** @type {HTMLElement|null} */ (e.target)?.classList?.contains('pdf-divider'))return;
  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){const panel=document.activeElement?.closest?.('.pdf-panel')||S.panels[0]?.el;const inst=S.panels.find(p=>p.el===panel);if(!inst)return;e.preventDefault();inst.goto(inst.page+(e.key==='ArrowRight'?1:-1));}
 });
 initModelPicker({pick:async({provider,id,zenPaid})=>{
@@ -305,7 +306,7 @@ initTutorHeader({
 });
 mountTriageBoot(document,toast);
 
-async function openStudyResult(_destination,hit,{annotate=false}={}){
+/** @param {any} _destination @param {any} hit @param {{annotate?: boolean}} [options] */ async function openStudyResult(_destination,hit,{annotate=false}={}){
  if(S.busy||S.connecting||S.switching)throw Error(t('study.waitOpen'));
  clearTimeout(S.saveTimer);await window.desk.save(layoutSnapshot());
  const result=await window.desk.studySearchOpen({id:hit.id}),destination=result.destination;
@@ -431,7 +432,7 @@ function readSettingsForm(){
 }
 /* `section`/`focus` levam o diálogo a um campo (o "Ajustes do tutor" abre em
    Pastas e programas com o campo do motor focado); sem eles abre em Matérias. */
-async function openSettings({section='',focus=''}={}){
+/** @param {{section?: string, focus?: string}} [options] */ async function openSettings({section='',focus=''}={}){
  await initOpenCodeProviders();
  const [settings,info]=await Promise.all([settingsModule.load(),window.desk.getConfig()]);
  S.appConfig={...S.appConfig,...info.config,platform:info.platform};
@@ -532,7 +533,7 @@ async function adoptSavedConfig(data){
    matéria. A pasta de dados confirmada é criada e gravada na configuração local
    (`vaultPath`, o "Pasta do vault / dados" das Configurações) pelo mesmo
    `save-config` das Configurações; depois a Mesa vai para a matéria nova. */
-async function createFirstCourse({id,name,folder,dataFolder}){
+/** @param {{id?: any, name?: any, folder?: any, dataFolder?: any}} options */ async function createFirstCourse({id,name,folder,dataFolder}){
  if(dataFolder)await window.desk.firstRunPrepare(dataFolder);
  const info=await window.desk.getConfig();
  const config={...info.config,courses:[...(info.config?.courses||[]),{id,name,path:folder}]};

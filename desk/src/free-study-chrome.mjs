@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,loadCourse,layoutSnapshot} from './state.mjs';
 import {t,text as translated} from './ui-text.mjs';
 import {displayFreeTitle} from './free-names.mjs';
@@ -141,7 +142,7 @@ function showTutorPdfDraft(draft){
 }
 /* O diálogo de PDF mora num módulo acima deste (free-study-pdf.mjs): o
    initFreeStudy entrega o abridor antes de o primeiro dado chegar (#43 fase 2). */
-let pdfDialogOpener=()=>{};
+let pdfDialogOpener=/** @type {Function} */ (()=>{});
 function connectPdfDialog(open){pdfDialogOpener=open;}
 function notice(selector,text,kind='error'){
  const element=$(selector);
@@ -163,7 +164,7 @@ function assistantSources(){
   /* Texto cru do chat (`_raw`), nunca o DOM com KaTeX: a fonte é fiel ao que o
      tutor escreveu. `typing` fica fora — resposta em andamento não vira PDF. */
   if(element.classList.contains('typing'))continue;
-  const raw=typeof element._raw==='string'?element._raw:'';
+  const raw=typeof /** @type {HTMLElement & Record<string, any>} */ (element)._raw==='string'?/** @type {HTMLElement & Record<string, any>} */ (element)._raw:'';
   if(!raw.trim())continue;
   index++;
   out.push({raw,index,preview:messagePreview(element,raw)});

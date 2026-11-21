@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Monta a fachada de boot da paleta: `window.mesaPalette` e o ⌘K existem desde
  * o começo, mas o módulo da paleta só carrega no primeiro uso. O listener do

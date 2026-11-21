@@ -1,3 +1,4 @@
+// @ts-check
 import {$, S, capabilities, toast, toastFailure } from './state.mjs';
 import { t, LANGUAGE_EVENT } from './ui-text.mjs';
 import { icon } from '../icons.mjs';

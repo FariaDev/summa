@@ -26,8 +26,8 @@ const GRACE_MS = 3000;
 const WAIT_POLL_MS = 2000;
 
 /**
- * @typedef {{send: (code: number, payload?: object) => void, onClose: (fn: () => void) => void}} PollHandle
- * @typedef {{ok: true, answer: object}|{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'}} PageOutcome
+ * @typedef {{send: (code: number, payload?: Record<string, any>) => void, onClose: (fn: () => void) => void}} PollHandle
+ * @typedef {{ok: true, answer: Record<string, any>}|{ok: false, reason: 'not-connected'|'timeout'|'invalid'|'closed'}} PageOutcome
  */
 
 /**
@@ -68,7 +68,7 @@ function createPageBroker({holdMs = HOLD_MS, answerMs = ANSWER_MS, graceMs = GRA
     graceTimer.unref?.();
   }
 
-  /** @param {number} code @param {object} [payload] */
+  /** @param {number} code @param {Record<string, any>} [payload] */
   function endPoll(code, payload) {
     if (!current) return;
     const ended = current;
@@ -134,7 +134,7 @@ function createPageBroker({holdMs = HOLD_MS, answerMs = ANSWER_MS, graceMs = GRA
   /** Se o id é de um pedido que ainda espera resposta. @param {string} id */
   const has = (id) => outstanding.has(id);
 
-  /** Entrega a resposta ao pedido; false se o id é desconhecido ou expirou. @param {string} id @param {object} payload */
+  /** Entrega a resposta ao pedido; false se o id é desconhecido ou expirou. @param {string} id @param {Record<string, any>} payload */
   function answer(id, payload) {
     const entry = outstanding.get(id);
     if (!entry) return false;

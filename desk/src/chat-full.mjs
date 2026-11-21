@@ -1,3 +1,4 @@
+// @ts-check
 /* Chat na tela inteira (#98): estado de interface GLOBAL, não por aba, e só da
    execução aberta — não entra no `layoutSnapshot` nem no `localStorage`. O
    `body.chat-full` esconde a área de referências (os leitores só saem de vista;

@@ -1,3 +1,4 @@
+// @ts-check
 /* Lint só de erros (#43 fase 3): regras de correção, nenhuma de estilo. O
    repositório não é formatado (apagaria o `git blame`); o que entra aqui pega
    variável e import mortos, nome indefinido e comparação frouxa entre tipos.

@@ -1,3 +1,4 @@
+// @ts-check
 /* Janela do chat lateral solto (#157, fatias 1 e 2): a única liberação de
    `window.open` da Mesa. Só `about:blank` com o nome fixo do chat abre — com
    opções seguras e tamanho inicial estreito, bem menor que os 900×650 da
@@ -157,7 +158,7 @@ function guardSidechatChildWindow(child){
  * debounce e ao fechar, e aplica/persiste o "sempre por cima" no desk.json.
  * @param {{webContents: {setWindowOpenHandler: (fn: (details: {url?: string, frameName?: string}) => object) => void, on: (event: string, fn: (...args: any[]) => void) => void}, on: (event: string, fn: () => void) => void, getBackgroundColor?: () => string, getBounds?: () => {x: number, y: number, width: number, height: number}}} win
  * @param {string | (() => string) | {getTheme?: () => string, theme?: string, currentTheme?: string}} [getTheme] tema atual ou leitor (sem, infere do fundo)
- * @param {{screen?: object, loadState?: () => object, saveState?: (patch: object) => void, ipcMain?: {handle: (channel: string, fn: (event: object, payload: object) => unknown) => void}, debounceMs?: number}} [host] telas e acessores do estado (sem eles, só o guarda da fatia 1)
+ * @param {{screen?: Record<string, any>, loadState?: () => object, saveState?: (patch: Record<string, any>) => void, ipcMain?: {handle: (channel: string, fn: (event: Record<string, any>, payload: Record<string, any>) => unknown) => void}, debounceMs?: number}} [host] telas e acessores do estado (sem eles, só o guarda da fatia 1)
  * @returns {void}
  * @example registerSidechatWindowGuard(win) */
 function registerSidechatWindowGuard(win,getTheme,host={}){
@@ -165,6 +166,7 @@ function registerSidechatWindowGuard(win,getTheme,host={}){
  const lastBounds=new Map();
  let saveTimer=null,mainGone=false;
  const debounceMs=Number.isFinite(host.debounceMs)?host.debounceMs:350;
+ /** @returns {Record<string, any>} */
  const shared=()=>{try{return typeof host.loadState==='function'?host.loadState()||{}:{};}catch{return{};}};
  const savePatch=(patch)=>{if(typeof host.saveState==='function')try{host.saveState(patch);}catch{}};
  const scheduleSave=(child)=>{

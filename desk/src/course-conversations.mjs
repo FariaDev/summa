@@ -1,3 +1,4 @@
+// @ts-check
 import * as queue from './queue.mjs';
 import {$,S,toast,toastFailure,connectionState,layoutSnapshot,fillSessions,sessionNameParts,applyStudy,connect,invalidateConnect,loadCourse} from './state.mjs';
 import {setLegacySession,visibleEngines} from './visible-engines-ui.mjs';

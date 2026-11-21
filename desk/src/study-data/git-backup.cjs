@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Destino Git OPCIONAL do backup — separado do repositório do aplicativo.
@@ -83,6 +84,7 @@ function removeQuiet(abs) {
 const DEFAULT_TIMEOUT_MS = 120000;
 const DEFAULT_MAX_BUFFER = 64 * 1024 * 1024;
 
+/** @param {{gitDir?: any, workTree?: string, args?: any, cwd?: any, input?: any, env?: Record<string, any>, timeoutMs?: any, maxBuffer?: any}} options */
 function defaultRunner({gitDir, workTree = '', args, cwd, input = null, env = {}, timeoutMs = DEFAULT_TIMEOUT_MS, maxBuffer = DEFAULT_MAX_BUFFER}) {
   /* `--work-tree` à frente: o `core.worktree` do arquivo NÃO vence a linha de
      comando (prova: `-c core.worktree=` perde do arquivo; `--work-tree` vence).
@@ -159,6 +161,7 @@ function sanitizeRemote(url) {
   return {url: value, insecure: false, reason: ''};
 }
 
+/** @param {any} destDir @param {{deskDir?: string, repoRoot?: string}} [options] */
 function looksLikeAppRepo(destDir, {deskDir = '', repoRoot = ''} = {}) {
   /* Realpath: um symlink para dentro do app (ou o app symlinkado dentro do
      destino) conta como clash; `path.resolve` sozinho não vê isso. */
@@ -204,6 +207,7 @@ function looksLikeGitInTree(dest) {
 
 /* ---------- repositório ---------- */
 
+/** @param {{root?: any, runner?: any, deskDir?: string, repoRoot?: string, runtime?: string, backupRoot?: string}} [options] */
 function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime = '', backupRoot = ''} = {}) {
   if (!root) throw new GitBackupError(invalidValue('raiz do destino git', root, 'caminho absoluto'));
   const dest = realPathOf(root);
@@ -452,6 +456,7 @@ function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime
   }
 
   /* Commit de um snapshot. `manifest` já vem validado pelo `backup.cjs`. */
+  /** @param {{snapshotDir?: any, manifest?: any, remote?: string, branch?: string, log?: any}} options */
   function commitSnapshot({snapshotDir, manifest, remote = '', log = () => {}}) {
     if (!manifest || !manifest.id) throw new GitBackupError(invalidValue('manifesto do snapshot', manifest, '{id, format: 1}'));
     if (Number(manifest.format || 0) !== 1) throw new GitBackupError(`manifesto de formato desconhecido (${manifest.format})`);
@@ -496,6 +501,7 @@ function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime
   /* Push do commit atual para um remoto JÁ CONFIGURADO pelo usuário. Sem
      `--force`, sem `pull`, sem merge: rejeição (non-fast-forward) fica no
      ledger e o commit local continua valendo. */
+  /** @param {{remote?: any, branch?: any, log?: any}} options */
   function push({remote, branch = BRANCH, log = () => {}}) {
     const clean = sanitizeRemote(remote);
     if (!clean.url) {
@@ -527,6 +533,7 @@ function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime
     return clean;
   }
 
+  /** @param {{out?: string, log?: any}} options */
   function bundle({out = '', log = () => {}}) {
     ensureRoot();
     const target = out ? path.resolve(out) : path.join(dest, `snapshot-${Date.now()}.bundle`);
@@ -587,6 +594,7 @@ function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime
   /* Recuperação: operação morta no meio (`mesas/<id>/journal.json` sem
      `finished`) ou árvore suja (queda entre copiar e commitar). Devolve a
      árvore ao último commit sem force push nenhum — o remoto não é tocado. */
+  /** @param {{log?: any}} [options] */
   function recover({log = () => {}} = {}) {
     const report = {reset: false, cleaned: [], head: ''};
     if (!fs.existsSync(gitDir)) return report;
@@ -630,6 +638,7 @@ function api({root, runner = defaultRunner, deskDir = '', repoRoot = '', runtime
     return report;
   }
 
+  /** @param {{snapshotDir?: any, manifest?: any, remote?: string, branch?: any, log?: any}} options */
   function integrate({snapshotDir, manifest, remote = '', branch = BRANCH, log = () => {}}) {
     const created = ensureRoot();
     const result = commitSnapshot({snapshotDir, manifest, remote, branch, log});

@@ -1,3 +1,4 @@
+// @ts-check
 import paletteCore from './generated/mesaqolpalette.core.js';
 import {foldSearch} from './pdf.mjs';
 import {icon} from '../icons.mjs';

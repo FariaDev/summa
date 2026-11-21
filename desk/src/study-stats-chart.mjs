@@ -1,3 +1,4 @@
+// @ts-check
 /* Desenho do gráfico de Estatísticas (#34/#124): uma barra por dia ou, em
    janela longa, por semana/mês (`study-stats-range.mjs` agrupa sem cortar dia).
    Só toca no DOM que recebe; os valores e o texto de acessibilidade saem do

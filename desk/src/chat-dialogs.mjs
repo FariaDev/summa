@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S} from './state.mjs';
 import {renderPiDialog} from './dialogs.mjs';
 import {markupInline} from './markdown.mjs';

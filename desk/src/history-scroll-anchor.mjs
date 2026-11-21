@@ -1,3 +1,4 @@
+// @ts-check
 /* Âncora de rolagem do histórico preguiçoso (#118): formatar uma bolha não
    pode mover o que o aluno lê. A âncora nativa do Chromium perde o nó quando
    o `content-visibility: auto` (#67) troca a altura reservada (160px) pela
@@ -48,7 +49,7 @@ export function anchorDrift({anchorTop, previousTop, scrollTop, previousScroll})
 
 /**
  * Liga a âncora ao rolador da conversa (o `showHistory` chama no lote).
- * @param {(() => {scrollTop: number, scrollHeight: number, clientHeight: number, style: object, getBoundingClientRect: () => DOMRect})|null} getter
+ * @param {(() => {scrollTop: number, scrollHeight: number, clientHeight: number, style: Record<string, any>, getBoundingClientRect: () => DOMRect})|null} getter
  * @returns {void}
  * @example setHistoryAnchorScroller(messageScroller)
  */
@@ -315,7 +316,7 @@ export function stopHistoryAnchor() {
  * antes e depois; o que a mudança moveu acima da vista volta ao `scrollTop`.
  * A âncora escolhida continua valendo nos quadros seguintes, quando o
  * `content-visibility` aplica a altura real.
- * @param {object} scroller o rolador da conversa
+ * @param {Record<string, any>} scroller o rolador da conversa
  * @param {() => void} run a pintura que muda a altura
  * @param {Element|null} [skip] o filho que está sendo formatado; se ele for a âncora, usa o irmão seguinte (#149)
  * @returns {void}

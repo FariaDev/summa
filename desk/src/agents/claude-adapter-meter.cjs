@@ -26,7 +26,7 @@ class ClaudeAdapterMeter extends AdapterBase {
   }
 
   /* Resposta sem uso não troca a amostra; uso com campo torto a APAGA. */
-  /** @param {unknown} raw @param {object|null} usage @param {string|null} model */
+  /** @param {unknown} raw @param {Record<string, any>|null} usage @param {string|null} model */
   _noteUsageSample(raw, usage, model) {
     if (raw && !usageMod.isSaneUsage(raw)) this._usageSample = null;
     else if (usage) this._usageSample = {usage, model};

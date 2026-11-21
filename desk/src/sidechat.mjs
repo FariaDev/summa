@@ -1,3 +1,4 @@
+// @ts-check
 import {S,toast,labelBtn} from './state.mjs';
 import {icon} from '../icons.mjs';
 import sidechatCore from './generated/sidechat.core.js';
@@ -168,7 +169,7 @@ function toggleMorePop(){
  morePop.hidden=false;
  root.querySelector('#sidechat-more')?.setAttribute('aria-expanded','true');
 }
-function hideMorePop({restoreFocus=false}={}){
+/** @param {{restoreFocus?: boolean}} [options] */ function hideMorePop({restoreFocus=false}={}){
  if(!morePop||morePop.hidden)return;
  const hadFocus=morePop.contains((morePop.ownerDocument||document).activeElement);
  morePop.hidden=true;
@@ -271,7 +272,7 @@ export function setSidechatVisible(visible){
  else{freeLimit.hide();saveDraftNow();}
 }
 
-export function openSidechat({fresh=false}={}){
+/** @param {{fresh?: boolean}} [options] */ export function openSidechat({fresh=false}={}){
  if(!sidechatAvailable()){
   state.unavailable=true;
   renderUnavailable();
@@ -338,12 +339,12 @@ function indexedMessages(raw){
  return (Array.isArray(raw)?raw:[]).map(item=>{
   const message=normalizeMessage(item),spoken=String(message?.text||'').trim();
   if(!message||(!spoken&&message.role!=='user'))return null;
-  if(spoken&&(message.role==='user'||message.role==='assistant'))message.messageIndex=++messageIndex;
+  if(spoken&&(message.role==='user'||message.role==='assistant'))/** @type {Record<string, any>} */ (message).messageIndex=++messageIndex;
   return message;
  }).filter(Boolean);
 }
 
-function adopt(payload,{scope=null,useLocal=true}={}){
+/** @param {any} payload @param {{scope?: any, useLocal?: boolean}} [options] */ function adopt(payload,{scope=null,useLocal=true}={}){
  payload=payload&&typeof payload==='object'?payload:{};
  state.scope=scope||state.scope||scopeOf();
  sideScroll?.setFollowing(true);
@@ -525,7 +526,7 @@ function normalizeMessage(raw){
  return {role,text,id:String(raw.id||''),...(Array.isArray(raw.notebooks)&&raw.notebooks.length?{notebooks:raw.notebooks.slice(0,4).map(item=>({nome:String(item?.nome||''),pagina:Math.max(1,Math.trunc(Number(item?.pagina))||1)})).filter(item=>item.nome)}:{})};
 }
 
-function noteText(text,{error=false}={}){
+/** @param {any} text @param {{error?: boolean}} [options] */ function noteText(text,{error=false}={}){
  if(error)failureNoted=true;
  state.messages.push({role:'assistant',text:String(text||''),id:'',error:!!error});
  renderMessages();
@@ -646,14 +647,14 @@ function ensureLive(){
 }
 function schedulePaint(){
  if(paintTimer)return;
- paintTimer=setTimeout(()=>{
+ paintTimer=/** @type {any} */ (setTimeout(()=>{
   paintTimer=0;
   if(!liveEl||!liveEl.isConnected)return;
   const follow=sideScroll?.isFollowing()??true;
   if(liveText)liveEl.setAttribute('aria-busy','false');
   paintSidechatBody(liveEl.querySelector('.sidechat-body'),liveText,true);
   sideScroll?.scrollBottom(follow);
- },80);
+ },80));
 }
 
 /* ---------- desenho ---------- */
@@ -783,8 +784,8 @@ function renderMessages(){
    O seam de teste pode trocar o bridge e o listener é registrado no novo. */
 export function initSidechat(){
  const source=api();
- if(initSidechat.source===source)return;
- initSidechat.source=source;
+ if(/** @type {any} */ (initSidechat).source===source)return;
+ /** @type {any} */ (initSidechat).source=source;
  source?.onSidechatEvent?.(payload=>{
   const id=payload&&payload.id!==undefined?String(payload.id):'';
   if(!id||!state.id||id!==state.id)return;

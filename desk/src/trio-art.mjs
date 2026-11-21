@@ -20,7 +20,7 @@ export const AMBAR = '#e8862a';
 
 /**
  * @typedef {[number, number]} Ponto
- * @typedef {object} Desenho
+ * @typedef {Record<string, any>} Desenho
  * @property {string} corpo o símbolo, já pintado
  * @property {[Ponto, Ponto]} ombro esquerdo e direito
  * @property {Ponto[]} quadril sem pernas, vazio

@@ -62,7 +62,7 @@ export function bindSidechatAttach(parts, {prompt, root, onChange = () => {}}) {
   const {tray, clip, pop, input, check, file} = parts;
   /** @type {Array<{dataUrl: string, mimeType?: string, name?: string}>} */
   let images = [];
-  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string, full?: boolean, recorte?: object}>} */
+  /** @type {Array<{caminho: string, pagina: number, nome: string, thumb: string, full?: boolean, recorte?: Record<string, any>}>} */
   let notebooks = [];
   let generation = 0;
   /* A miniatura pode chegar antes do cartão (o chat lateral ainda monta): fica guardada até ele entrar. */

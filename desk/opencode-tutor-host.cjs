@@ -34,7 +34,7 @@ const MCP_SERVER = path.join(__dirname, 'src', 'extensions', 'mesa-mcp', 'server
 /**
  * O ambiente do MCP `mesa`: as pontes da conversa e o idioma; nada de chave.
  * O Node é o do Electron (`ELECTRON_RUN_AS_NODE`), que o app já carrega.
- * @param {{execPath: string, ggbBridge: string, activityGrant: object|null, materialGrant?: object|null, cardGrant?: object|null, tutorLanguage: string, pdfOnly?: boolean}} options
+ * @param {{execPath: string, ggbBridge: string, activityGrant: Record<string, any>|null, materialGrant?: Record<string, any>|null, cardGrant?: Record<string, any>|null, tutorLanguage: string, pdfOnly?: boolean}} options
  * @returns {{type: 'local', command: string[], environment: Record<string, string>, enabled: true, codemode: false}}
  * @example mesaMcpConfig({execPath: process.execPath, ggbBridge: '/r/ggb.json', activityGrant: grant, tutorLanguage: 'pt-BR'})
  */

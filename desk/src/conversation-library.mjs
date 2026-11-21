@@ -1,3 +1,4 @@
+// @ts-check
 import view from './generated/chatlibraryview.core.js';
 import {build} from './view-host.mjs';
 import {S,toast} from './state.mjs';

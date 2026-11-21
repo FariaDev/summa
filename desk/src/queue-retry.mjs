@@ -1,8 +1,10 @@
+// @ts-check
 import core from './generated/pending.core.js';
 import {message} from './i18n.mjs';
 import {toNat} from './bend-nat.mjs';
 
 // One retry budget per queued item. Only a proven non-delivery may repeat.
+/** @param {{retry?: any, hold?: any, waiting?: any, schedule?: any, cancel?: any}} options */
 export function createQueueRetry({retry,hold,waiting=()=>{},schedule=setTimeout,cancel=clearTimeout}){
  let failures=0,timer=null,generation=0;
  function reset(){generation++;if(timer!==null)cancel(timer);timer=null;failures=0;}

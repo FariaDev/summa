@@ -19,7 +19,7 @@ import {trioSvg} from './trio-art.mjs';
    linha em PERSONAGENS, com a chave do nome em `src/locales/*.json`. */
 
 /**
- * @typedef {object} Personagem
+ * @typedef {Record<string, any>} Personagem
  * @property {(uid:string, options?:{pincel?:boolean})=>string} draw o SVG, com recortes prefixados por `uid`
  * @property {string} nameKey a chave do nome no catálogo (vai no aria-label)
  */
@@ -87,7 +87,7 @@ function replay(/** @type {Element} */ el, /** @type {string} */ cls) {
 let serial = 0;
 
 /**
- * @typedef {object} Mascote
+ * @typedef {Record<string, any>} Mascote
  * @property {HTMLElement} el
  * @property {(next:MascoteState)=>void} set troca o humor e os laços (entrar em "feliz" comemora)
  * @property {(dx:number,dy:number)=>void} look olhar num deslocamento
@@ -130,7 +130,7 @@ export function createMascote({personagem, humor = 'normal', tamanho, label = ''
     for (const [cls, on] of Object.entries(view.classes)) el.classList.toggle(cls, on);
     const still = reducedMotion();
     const [dx, dy] = mascoteLook(view.humor, still ? 0 : pointer[0], still ? 0 : pointer[1]);
-    for (const pupils of el.querySelectorAll('.mascote-look')) /** @type {SVGGElement} */ (pupils).style.transform = `translate(${dx}px,${dy}px)`;
+    for (const pupils of el.querySelectorAll('.mascote-look')) pupils.style.transform = `translate(${dx}px,${dy}px)`;
     /** @type {SVGGElement} */ (el.querySelector('.mascote-tilt')).style.transform = `rotate(${still ? 0 : mascoteTilt(pointer[0])}deg)`;
   }
 

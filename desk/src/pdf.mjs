@@ -1,3 +1,4 @@
+// @ts-check
 import {bindPointerDrag} from './pointer-drag.mjs';
 import {loadPdfjs} from './pdfjs-loader.mjs';
 import {nearestPageIndex} from './pdf-scroll.mjs';
@@ -131,7 +132,7 @@ if(typeof window!=='undefined')window.addEventListener('focus',()=>{refreshSheet
 const openMore=()=>(S.panels||[]).filter(panel=>panel.q?.('.pdf-more-pop')?.hidden===false);
 document.addEventListener('click',event=>{
  for(const panel of S.panels||[])panel.materialPicker?.closeOutside(event.target);
- if(event.target?.closest?.('.pdf-more-pop,.more'))return;
+ if(/** @type {Element|null} */ (event.target)?.closest?.('.pdf-more-pop,.more'))return;
  for(const panel of openMore())panel.setMore(false);
 });
 document.addEventListener('keydown',event=>{
@@ -154,7 +155,13 @@ const PDF_MAX_RETAINED_CANVASES=12;
 const PDF_MAX_RETAINED_PIXELS=40*1024*1024;
 export class PdfPanel {
  constructor(index,label){
-  Object.assign(this,{index,label,page:1,zoom:1,scrollX:0,scrollY:0,invert:false,minimized:false,findOpen:false,loading:false,path:null,doc:null,rotation:0,renderTasks:new Map(),pageEls:[],version:0,_renderSeq:0,docMemo:new Map(),findTerm:'',findPages:[],findTotal:0,textDoc:null,textPages:null,pageLabels:[],pageOffset:null,printedOpen:false,dropHint:null,printedRow:null,_dropping:false,_dropOver:false,_drop:null});
+  /** @type {number} */ this.index=index;
+  /** @type {string} */ this.label=label;
+  /** @type {Map<number, any>} */ this.renderTasks=new Map();
+  /** @type {number} */ this.version=0;
+  /** @type {number} */ this._renderSeq=0;
+  /** @type {Map<any, any>} */ this.docMemo=new Map();
+  Object.assign(this,{page:1,zoom:1,scrollX:0,scrollY:0,invert:false,minimized:false,findOpen:false,loading:false,path:null,doc:null,rotation:0,pageEls:[],findTerm:'',findPages:[],findTotal:0,textDoc:null,textPages:null,pageLabels:[],pageOffset:null,printedOpen:false,dropHint:null,printedRow:null,_dropping:false,_dropOver:false,_drop:null});
   this.handlers={
    // A última opção do seletor é "Abrir PDF…": ela abre o arquivo e devolve a
    // seleção ao documento atual (o `<select>` não fica preso na sentinela).

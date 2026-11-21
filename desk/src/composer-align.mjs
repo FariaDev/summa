@@ -1,3 +1,4 @@
+// @ts-check
 /* Alinha o fio do composer do chat lateral ao do tutor. A calculadora só existe
    na coluna do tutor, então a medida vira variável de CSS e o lateral usa essa
    altura a mais no próprio campo. */

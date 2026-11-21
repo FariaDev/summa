@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Histórico de conversa Claude → forma do renderer da Mesa (e exportação).
@@ -374,7 +375,7 @@ function escapeMarkdownAlt(text) {
 }
 
 /**
- * @param {{courseName?: string, engine?: string, messages?: object[], now?: Date | number,
+ * @param {{courseName?: string, engine?: string, messages?: Record<string, any>[], now?: Date | number,
  *   labels?: {you: string, imageAttached: string, imageMarkedPage?: (page: number, file: string) => string, exportedOn: (iso: string) => string}}} [options]
  */
 function exportConversationMarkdown({courseName, engine, messages, now, labels = PT_EXPORT_LABELS} = {}) {

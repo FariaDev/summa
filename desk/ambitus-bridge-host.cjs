@@ -78,7 +78,7 @@ function writeBridgeAtomic(file, bytes) {
   }
 }
 
-/** @param {import('node:http').ServerResponse} res @param {number} code @param {object} payload */
+/** @param {import('node:http').ServerResponse} res @param {number} code @param {Record<string, any>} payload */
 function bridgeReply(res, code, payload) {
   res.on('error', () => {});
   const body = JSON.stringify(payload);

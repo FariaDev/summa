@@ -1,3 +1,4 @@
+// @ts-check
 /* `ler_caderno` (#135, só leitura; #213 fundo PDF): PNG do Xournal++ sobre cópia temporária, texto/LaTeX do XML em gzip; só `.xopp` conhecido (canônico guardado na autorização, sem re-resolver a lista); fundo PDF da cópia só o que a autorização de PDF do tutor aceitaria (fora vira sólido com aviso; dentro vira absoluto). Nome final OpenCode: `mesa_ler_caderno`. */
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
@@ -24,11 +25,11 @@ export const NOTEBOOK_FIELDS = {
 };
 /* O filtro antigo (regex de `attrOf` + `sanitizeBackgrounds` aqui) virou lista
    branca em `notebook-background.mjs`: tag NOVO, nunca copiado. */
-/** @param {unknown} value @param {typeof fs.realpathSync} realpath @returns {string} */
+/** @param {unknown} value @param {(path: string) => string} realpath @returns {string} */
 function normalizeForCompare(value, realpath) {
   try { return realpath(String(value || '')); } catch { return path.resolve(String(value || '')); }
 }
-/** Só `.xopp` conhecido; lista guarda canônico, aqui só `realpath` da entrada × canônico, sem re-resolver a lista (#135). @param {unknown} caminho @param {Iterable<string>} allowedXopp @param {typeof fs.realpathSync} realpath @returns {string} */
+/** Só `.xopp` conhecido; lista guarda canônico, aqui só `realpath` da entrada × canônico, sem re-resolver a lista (#135). @param {unknown} caminho @param {Iterable<string>} allowedXopp @param {(path: string) => string} realpath @returns {string} */
 function authorizedPath(caminho, allowedXopp, realpath) {
   const normalized = normalizeForCompare(caminho, realpath);
   const known = new Set([...allowedXopp]);
@@ -68,7 +69,7 @@ function runXournalpp({binary, copy, out, page, timeoutMs, spawnProcess = spawn}
     const timer = setTimeout(() => { timedOut = true; try { child.kill('SIGKILL'); } catch { /* o processo já era */ } }, timeoutMs);
     child.on('error', (error) => {
       clearTimeout(timer);
-      reject(Error(message('err.notebook.spawnFailed', {received: path.basename(binary), cause: String(error?.code || 'unknown')})));
+      reject(Error(message('err.notebook.spawnFailed', {received: path.basename(binary), cause: String(/** @type {NodeJS.ErrnoException} */ (error)?.code || 'unknown')})));
     });
     child.on('close', (code) => {
       clearTimeout(timer);
@@ -132,10 +133,10 @@ async function exportPage({file, page, xournalPath, timeoutMs, spawnProcess, exi
    + CLI do Xournal++), um caminho só para o `ler_caderno` e o índice da
    tinta (#158, passo 2). O XML vem de quem já leu o `.xopp` uma vez (hash
    por página da tinta), então o chamador não paga a leitura de novo.
-    @param {{file: string, page: number, xml: string, xournalPath?: string, timeoutMs?: number, courseRoots?: string[], pdfAuthorize?: (file: string) => string, caseSensitive?: boolean, spawnProcess?: typeof spawn, readFile?: typeof fs.readFileSync, realpath?: typeof fs.realpathSync, existsSync?: typeof fs.existsSync, copyFile?: typeof fs.copyFileSync, writeFile?: typeof fs.writeFileSync, mkdtemp?: typeof fs.mkdtempSync, rm?: typeof fs.rmSync, tmpdir?: typeof os.tmpdir, readdir?: typeof fs.readdirSync, statSync?: typeof fs.statSync, lstatSync?: typeof fs.lstatSync, gzip?: typeof zlib.gzipSync}} options `courseRoots` fica aceito para o índice da tinta, mas é ignorado desde a #213 (a raiz da matéria não autoriza fundo)
+    @param {{file: string, page: number, xml: string, xournalPath?: string, timeoutMs?: number, courseRoots?: string[], pdfAuthorize?: (file: string) => string, caseSensitive?: boolean, spawnProcess?: typeof spawn, readFile?: typeof fs.readFileSync, realpath?: (path: string) => string, existsSync?: typeof fs.existsSync, copyFile?: typeof fs.copyFileSync, writeFile?: typeof fs.writeFileSync, mkdtemp?: typeof fs.mkdtempSync, rm?: typeof fs.rmSync, tmpdir?: typeof os.tmpdir, readdir?: typeof fs.readdirSync, statSync?: typeof fs.statSync, lstatSync?: typeof fs.lstatSync, gzip?: typeof zlib.gzipSync}} options `courseRoots` fica aceito para o índice da tinta, mas é ignorado desde a #213 (a raiz da matéria não autoriza fundo)
    @returns {Promise<{png: Buffer, backgroundIgnored: boolean}>} os bytes do PNG e se o fundo foi ignorado @example await exportPageImage({file: '/notas/aula.xopp', page: 2, xml}) // {png: Buffer, backgroundIgnored: false}
 */
-export async function exportPageImage({file, page, xml, xournalPath = '', timeoutMs = NOTEBOOK_TIMEOUT_MS, courseRoots = [], pdfAuthorize, caseSensitive, spawnProcess, readFile = fs.readFileSync, realpath = fs.realpathSync.native, existsSync = fs.existsSync, copyFile = fs.copyFileSync, writeFile = fs.writeFileSync, mkdtemp = fs.mkdtempSync, rm = fs.rmSync, tmpdir = os.tmpdir, readdir = fs.readdirSync, statSync = fs.statSync, lstatSync = fs.lstatSync, gzip = zlib.gzipSync} = {}) {
+export async function exportPageImage({file, page, xml, xournalPath = '', timeoutMs = NOTEBOOK_TIMEOUT_MS, courseRoots = [], pdfAuthorize, caseSensitive, spawnProcess, readFile = fs.readFileSync, realpath = fs.realpathSync.native, existsSync = fs.existsSync, copyFile = fs.copyFileSync, writeFile = fs.writeFileSync, mkdtemp = fs.mkdtempSync, rm = fs.rmSync, tmpdir = os.tmpdir, readdir = fs.readdirSync, statSync = fs.statSync, lstatSync = fs.lstatSync, gzip = zlib.gzipSync} = /** @type {any} */ ({})) {
   void courseRoots;
   const sensitive = caseSensitive ?? (process.platform !== 'win32' && process.platform !== 'darwin');
   const sanitized = sanitizeBackgrounds(xml, {notebookPath: String(file || ''), notebookDir: path.dirname(String(file || '')), pdfAuthorize, realpath, existsSync, statSync, caseSensitive: sensitive});
@@ -143,7 +144,7 @@ export async function exportPageImage({file, page, xml, xournalPath = '', timeou
   const png = await exportPage({file, page, xournalPath, timeoutMs, spawnProcess, existsSync, copyFile, copyBytes, attachCopies: sanitized.attachCopies, writeFile, mkdtemp, rm, tmpdir, readFile, readdir, statSync, lstatSync});
   return {png, backgroundIgnored: sanitized.backgroundIgnored};
 }
-/** Lê uma página de `.xopp` conhecido (lista antes de ler; fundo higienizado na cópia, PDF só com a autorização do tutor). @param {{caminho?: unknown, pagina?: unknown}} args @param {{allowedXopp?: Iterable<string>, xournalPath?: string, timeoutMs?: number, pdfAuthorize?: (file: string) => string, caseSensitive?: boolean, spawnProcess?: typeof spawn, readFile?: typeof fs.readFileSync, realpath?: typeof fs.realpathSync, existsSync?: typeof fs.existsSync, copyFile?: typeof fs.copyFileSync, writeFile?: typeof fs.writeFileSync, mkdtemp?: typeof fs.mkdtempSync, rm?: typeof fs.rmSync, tmpdir?: typeof os.tmpdir, readdir?: typeof fs.readdirSync, statSync?: typeof fs.statSync, lstatSync?: typeof fs.lstatSync, gunzip?: typeof zlib.gunzipSync, gzip?: typeof zlib.gzipSync}} [options] @returns {Promise<{file: string, page: number, total: number, text: string[], latex: string[], missingPdf: boolean, backgroundIgnored: boolean, image: string}>} @example await readNotebookPage({caminho: '/notas/aula.xopp', pagina: 2}, {allowedXopp: ['/notas/aula.xopp']}) */
+/** Lê uma página de `.xopp` conhecido (lista antes de ler; fundo higienizado na cópia, PDF só com a autorização do tutor). @param {{caminho?: unknown, pagina?: unknown}} args @param {{allowedXopp?: Iterable<string>, xournalPath?: string, timeoutMs?: number, pdfAuthorize?: (file: string) => string, caseSensitive?: boolean, spawnProcess?: typeof spawn, readFile?: typeof fs.readFileSync, realpath?: (path: string) => string, existsSync?: typeof fs.existsSync, copyFile?: typeof fs.copyFileSync, writeFile?: typeof fs.writeFileSync, mkdtemp?: typeof fs.mkdtempSync, rm?: typeof fs.rmSync, tmpdir?: typeof os.tmpdir, readdir?: typeof fs.readdirSync, statSync?: typeof fs.statSync, lstatSync?: typeof fs.lstatSync, gunzip?: typeof zlib.gunzipSync, gzip?: typeof zlib.gzipSync}} [options] @returns {Promise<{file: string, page: number, total: number, text: string[], latex: string[], missingPdf: boolean, backgroundIgnored: boolean, image: string}>} @example await readNotebookPage({caminho: '/notas/aula.xopp', pagina: 2}, {allowedXopp: ['/notas/aula.xopp']}) */
 export async function readNotebookPage(args, {
   allowedXopp = [], xournalPath = '', timeoutMs = NOTEBOOK_TIMEOUT_MS,
   pdfAuthorize, caseSensitive,
@@ -153,7 +154,7 @@ export async function readNotebookPage(args, {
   readdir = fs.readdirSync, statSync = fs.statSync, lstatSync = fs.lstatSync,
   gunzip = zlib.gunzipSync, gzip = zlib.gzipSync,
 } = {}) {
-  const pagina = args?.pagina;
+  const pagina = /** @type {number} */ (args?.pagina);
   if (!Number.isInteger(pagina) || pagina < 1) {
     throw Error(message('err.notebook.badPage', {received: JSON.stringify(pagina)}));
   }

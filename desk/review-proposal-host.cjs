@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Proposta de card do tutor. O diálogo é o que já existe; este host só segura
@@ -18,11 +19,11 @@ const DEFAULT_TIMEOUT_MS = 120000;
 const RENDERER_STATUSES = new Set(['approved', 'edited', 'discarded', 'busy']);
 
 /**
- * @param {{status: string, saved?: boolean, item?: object | null, reason?: string}} input
- * @returns {{proposed: true, status: string, saved: boolean, item: object | null, reason?: string}}
+ * @param {{status: string, saved?: boolean, item?: Record<string, any> | null, reason?: string}} input
+ * @returns {{proposed: true, status: string, saved: boolean, item: Record<string, any> | null, reason?: string}}
  */
 function agentResult({status, saved = false, item = null, reason = ''}) {
-  const out = {proposed: true, status, saved, item};
+  const out = /** @type {{proposed: true, status: string, saved: boolean, item: Record<string, any> | null, reason?: string}} */ ({proposed: true, status, saved, item});
   if (reason) out.reason = reason;
   return out;
 }
@@ -55,7 +56,7 @@ function publicItem(item) {
  *   deliver?: (win: Electron.BrowserWindow, payload: object) => boolean}} options
  * @example const host = createReviewProposalHost({window: () => win, scopeIsCurrent, save, allowSender})
  */
-function createReviewProposalHost({window: windowOf, scopeIsCurrent, canReview = () => true, save, allowSender, timeoutMs = DEFAULT_TIMEOUT_MS, deliver} = {}) {
+function createReviewProposalHost({window: windowOf, scopeIsCurrent, canReview = () => true, save, allowSender, timeoutMs = DEFAULT_TIMEOUT_MS, deliver} = /** @type {any} */ ({})) {
   if (typeof scopeIsCurrent !== 'function') throw new Error('scopeIsCurrent ausente');
   if (typeof save !== 'function') throw new Error('save ausente');
   const pending = new Map();
@@ -102,6 +103,7 @@ function createReviewProposalHost({window: windowOf, scopeIsCurrent, canReview =
     }
   }
 
+  /** @param {any} scope @param {any} raw @param {{signal?: any}} [options] */
   async function propose(scope, raw, {signal} = {}) {
     if (!scopeIsCurrent(scope)) throw new Error(message('review.error.sessionChanged'));
     if (!canReview(scope)) throw new Error(message('review.error.free'));

@@ -1,3 +1,4 @@
+// @ts-check
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {discoverCourses}=require('./courses.cjs');
 
@@ -160,6 +161,7 @@ function detectXournalPath(){
  return '';
 }
 
+/** @param {{runtimePath?: any}} [options] */
 function seedConfig({runtimePath}={}){
  const vaultPath=homeVaultExists()?HOME_VAULT:'';
  return normalize({
@@ -197,7 +199,7 @@ function pickPdfs(library,panels){
    self:!!nameMatches(entry&&entry.name,panel.prefer||[]),
    other:!!nameMatches(entry&&entry.name,others)
   }));
-  const step=core.pickStep(facts,toCoreList(mask,value=>value));
+  const step=/** @type {any} */ (core).pickStep(facts,toCoreList(mask,value=>value));
   let hit=null;
   if(step.at&&step.at.$==='Some'){
    const entry=list[Number(step.at.value)];

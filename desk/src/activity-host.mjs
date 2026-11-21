@@ -1,3 +1,4 @@
+// @ts-check
 /* Host da URL de atividade (#89): a versão entra no host para que cada
    revisão da mesma atividade ganhe site e processo próprios no Chromium. O
    formato é `act-<id>--v<versão>` (publicado) e `pv-<id>--v<versão>` (prévia).

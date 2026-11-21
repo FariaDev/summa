@@ -1,3 +1,4 @@
+// @ts-check
 import {icon} from '../icons.mjs';
 import {build, htmlNode, renderChildren} from './view-host.mjs';
 import core from './generated/slashview.core.js';

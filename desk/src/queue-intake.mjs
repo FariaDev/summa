@@ -1,3 +1,4 @@
+// @ts-check
 import pendingCore from './generated/pending.core.js';
 import {toNat} from './bend-nat.mjs';
 

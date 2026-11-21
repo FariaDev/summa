@@ -1,3 +1,4 @@
+// @ts-check
 /* H4: o tutor pré-visualiza a atividade e termina a resposta sem
    publicar — às vezes dizendo que publicou. A prévia não é exibida ao aluno,
    então no fim do turno normal a última prévia vira quadro na conversa. Se a
@@ -20,7 +21,7 @@ import {t} from './ui-text.mjs';
  */
 export function resultText(result) {
   if (typeof result === 'string') return result;
-  const content = result && typeof result === 'object' ? result.content : '';
+  const content = result && typeof result === 'object' ? /** @type {Record<string, any>} */ (result).content : '';
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) return content.map((part) => (part && typeof part.text === 'string' ? part.text : '')).join('\n');
   return '';
@@ -51,11 +52,11 @@ function visibleNote(messages) {
  * O `anchor` é o segmento da chamada `previsualizar_atividade`: o quadro entra
  * ali, não no fim de `#messages` (#61).
  * @param {{previaId: string, conversationId?: string|null, anchor?: Element|null}} preview
- * @param {{desk?: object, messages?: Element|null, session?: () => string|null}} [deps]
- * @returns {Promise<object|null>} a atividade publicada, ou null
+ * @param {{desk?: Record<string, any>, messages?: Element|null, session?: () => string|null}} [deps]
+ * @returns {Promise<Record<string, any>|null>} a atividade publicada, ou null
  * @example await showUnpublishedPreview({previaId: 'prv-0123456789ab', conversationId: 'conv', anchor: article})
  */
-export async function showUnpublishedPreview({previaId, conversationId = null, anchor = null} = {}, {desk = window.desk, messages = null, session = () => S.currentSession} = {}) {
+export async function showUnpublishedPreview({previaId, conversationId = null, anchor = null} = /** @type {any} */ ({}), {desk = window.desk, messages = null, session = () => S.currentSession} = /** @type {any} */ ({})) {
   if (!previaId) return null;
   const stillHere = () => !conversationId || session() === conversationId;
   /* O host precisa estar ligado antes da publicação: o evento chega antes do

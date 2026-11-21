@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Estado persistido da Mesa: fronteira com o núcleo Bend

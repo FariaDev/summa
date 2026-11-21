@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* "Ver o que desenhei" (#60): o tutor manda o SVG ou o corpo de uma cerca
@@ -98,7 +99,7 @@ function cleanRequest(raw) {
 /**
  * @param {{createWindow?: (size: {width: number}) => import('electron').BrowserWindow, loadMs?: number}} [options]
  *   `createWindow` entra por parâmetro nos testes (janela falsa); o padrão é a real.
- * @returns {{preview: (raw: unknown) => Promise<object>}}
+ * @returns {{preview: (raw: unknown) => Promise<Record<string, any>>}}
  * @example const {preview} = createFigurePreview({createWindow}); const {screenshot} = await preview({kind: 'plot', source: 'funcao: x^2'});
  */
 function createFigurePreview({createWindow = (size) => createFigureWindow(require('electron'), size), loadMs = 10000} = {}) {
@@ -135,7 +136,7 @@ function createFigurePreview({createWindow = (size) => createFigureWindow(requir
     }
   }
 
-  return {preview: (raw) => serial(() => draw(cleanRequest(raw)))};
+  return {preview: (raw) => /** @type {Promise<Record<string, any>>} */ (/** @type {unknown} */ (serial(() => draw(cleanRequest(raw)))))};
 }
 
 module.exports = {createFigurePreview, cleanRequest, cleanWidth, lockFigureSession, allowedFile, captureWithRetry};

@@ -1,3 +1,4 @@
+// @ts-check
 /* Painel Backup e Compartilhar (Mesa) — módulo de UI independente.
 
    Exporta `initBackupPanel(documento, ipc, opções)` (e o par puro
@@ -80,7 +81,7 @@ export function reasonLabel(reason) {
  * Modelo da prévia de importação (#140): resumo e texto da transcrição que o
  * tutor vai ler. Devolve SÓ dados — quem pinta usa `textContent`, porque o
  * texto vem de um pacote de outra pessoa e nunca é confiável.
- * @param {{destination?: {name?: string, dir?: string}, conversations?: object[]}} [preview]
+ * @param {{destination?: {name?: string, dir?: string}, conversations?: Record<string, any>[]}} [preview]
  * @returns {{title: string, destination: string, summary: string, note: string,
  *   hasTranscript: boolean, conversations: {label: string, preview: string, text: string,
  *   messages: number, characters: number, truncated: boolean}[]}}
@@ -110,6 +111,7 @@ export function importPreviewView(preview = {}) {
   };
 }
 
+/** @param {{status?: Record<string, any>, versions?: any[], course?: Record<string, any>, config?: Record<string, any>, section?: string, now?: any}} [options] */
 export function buildBackupPanelView({status = {}, versions = [], course = {}, config = {}, section = 'backup', now = new Date()} = {}) {
   const destination = status.destination || config.destination || '';
   const auto = {...(config.auto ? {auto: true} : {}), ...(status.auto || {})};
@@ -250,6 +252,7 @@ export function renderBackupPanelView(view) {
 
 /* ---------- painel ---------- */
 
+/** @type {Record<string, (...args: any[]) => Promise<any>>} */
 const DEFAULT_IPC = {
   status: async () => ({available: false, versions: []}),
   listar: async () => [],
@@ -272,7 +275,7 @@ const DEFAULT_IPC = {
 
 export function initBackupPanel(documento, ipc = {}, options = {}) {
   if (!documento) throw Error('initBackupPanel precisa do document');
-  const api = {...DEFAULT_IPC, ...ipc};
+  const api = /** @type {typeof DEFAULT_IPC} */ ({...DEFAULT_IPC, ...ipc});
   const confirmar = typeof options.confirmar === 'function' ? options.confirmar : null;
   const target = options.alvo || documento.body;
   const prefix = String(options.prefixoCss || 'mesa-bkp');

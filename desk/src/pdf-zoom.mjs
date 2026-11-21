@@ -1,3 +1,4 @@
+// @ts-check
 /* Atalho de zoom do leitor (#111): ⌘/Ctrl + (=/+) aumenta e ⌘/Ctrl - diminui o
    zoom do leitor selecionado — o último em que a pessoa clicou ou rolou,
    enquanto ele continua visível e aberto. O zoom da janela não muda. Sem leitor
@@ -51,7 +52,7 @@ export function selectedPdfReader(){
 /**
  * Aplica o passo de zoom no leitor selecionado. Consome o evento (preventDefault)
  * apenas quando há alvo; sem alvo devolve false para o caminho de antes seguir.
- * @param {{preventDefault?: Function}} event keydown
+ * @param {{key?: string, metaKey?: boolean, ctrlKey?: boolean, altKey?: boolean, preventDefault?: Function}} event keydown
  * @param {Array<{el?: Element, nudgeZoom: Function}>} panels leitores vivos
  * @returns {boolean} true quando o atalho foi consumido pelo leitor
  * @example handlePdfZoomKey(event,S.panels) // true

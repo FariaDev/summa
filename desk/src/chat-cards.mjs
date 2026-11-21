@@ -1,3 +1,4 @@
+// @ts-check
 /* Cartões do tutor na coluna da conversa (#92): criação pelo evento do host,
    atualização quando o aluno responde/conclui e remontagem no histórico.
    A posição no histórico sai do `createdAt` do cartão; a conversa que seguiu
@@ -6,10 +7,10 @@
 import {cardElement, updateCard} from './cards-view.mjs';
 
 /**
- * @param {{messages: () => HTMLElement|null, api: object, onSending?: Function,
+ * @param {{messages: () => HTMLElement|null, api: {answer: Function, draft: Function, dismiss: Function, conclude: Function, noteSave?: Function}, onSending?: Function,
  *   onSettled?: Function, onFailed?: Function}} options
- * @returns {{make: (card: object) => HTMLElement, mount: (card: object) => void,
- *   update: (card: object) => void, reset: () => void, api: object}}
+ * @returns {{make: (card: Record<string, any>) => HTMLElement, mount: (card: Record<string, any>) => void,
+ *   update: (card: Record<string, any>) => void, reset: () => void, api: object, handle: (payload: Record<string, any>) => void}}
  * @example const board = createCardBoard({messages: () => document.querySelector('#messages'), api});
  */
 export function createCardBoard({messages, api, onSending = () => {}, onSettled = () => {}, onFailed = () => {}}) {

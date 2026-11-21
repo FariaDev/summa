@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Fila e bandeja que sobrevivem ao fechamento (Mesa): `runtime/pending.json`.

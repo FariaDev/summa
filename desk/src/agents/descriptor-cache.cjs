@@ -1,3 +1,4 @@
+// @ts-check
 const fs=require('node:fs');
 // Display-only cache. Transport operations still validate the real descriptor.
 class DescriptorCache{

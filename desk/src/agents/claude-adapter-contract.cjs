@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Contrato do ClaudeAdapter: limites, listas de ferramentas, capacidades,

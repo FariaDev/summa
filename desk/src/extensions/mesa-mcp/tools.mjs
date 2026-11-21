@@ -45,7 +45,7 @@ const {toolErrorText} = toolErrorModule;
 /**
  * Resultado de texto do MCP; `isError` marca falha de ponte/applet (B1).
  * @param {string} value
- * @param {{isError?: boolean, details?: object}} [options]
+ * @param {{isError?: boolean, details?: Record<string, any>}} [options]
  * @returns {import('./protocol.mjs').ToolResult}
  * @example text('ok') // {content: [{type: 'text', text: 'ok'}]}
  */

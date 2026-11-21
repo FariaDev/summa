@@ -1,3 +1,4 @@
+// @ts-check
 /* O prompt do tutor não é fala do aluno. O OpenCode antigo o colava no
  * primeiro (e, às vezes, num) envio; ao reler a sessão ele voltava como bolha.
  * Os três motores passam por aqui na hora de mostrar ou de guardar o histórico.

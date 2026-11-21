@@ -1,3 +1,4 @@
+// @ts-check
 /* Diário de trabalho do turno: passos de pensamento, busca e ferramentas, com
    rótulos em PT-BR e resumo no fim. Módulo puro (sem DOM) — a visão fica em
    worklog-view.mjs e a fiação dos eventos em chat.mjs.
@@ -307,7 +308,7 @@ export function findToolStep(log,id){
  return null;
 }
 
-export function startTool(log,{id,name,args,now=Date.now()}={}){
+/** @param {any} log @param {{id?: any, name?: any, args?: any, now?: any}} [options] */ export function startTool(log,{id,name,args,now=Date.now()}={}){
  const existing=findToolStep(log,id);
  if(existing)return existing;
  const step=makeToolStep({id,name,args,now});
@@ -315,7 +316,7 @@ export function startTool(log,{id,name,args,now=Date.now()}={}){
  return step;
 }
 
-export function finishTool(log,{id,result,isError,now=Date.now()}={}){
+/** @param {any} log @param {{id?: any, result?: any, isError?: any, now?: any}} [options] */ export function finishTool(log,{id,result,isError,now=Date.now()}={}){
  const steps=log.steps||[];
  for(let i=steps.length-1;i>=0;i--){
   if(steps[i].id===id&&steps[i].status==='running')return applyResult(steps[i],result,isError,now);
@@ -329,7 +330,7 @@ export function addError(log,message,now=Date.now()){
  return log.steps.at(-1);
 }
 
-export function finishLog(log,{now=Date.now(),reason=''}={}){
+/** @param {any} log @param {{now?: any, reason?: string}} [options] */ export function finishLog(log,{now=Date.now(),reason=''}={}){
  sync(log,core.finishLog(toCore(log),wholeNat(now),String(reason||'')));
 }
 

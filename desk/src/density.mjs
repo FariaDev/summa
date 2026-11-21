@@ -1,3 +1,4 @@
+// @ts-check
 import {$} from './state.mjs';
 import {build,preserveFocus,renderChildren} from './view-host.mjs';
 import aux from './generated/auxview.core.js';

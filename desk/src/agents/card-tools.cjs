@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `quiz` e `perguntar` no caminho Claude (#92): o MESMO guia da extensão do Pi
@@ -18,14 +19,14 @@ async function load() {
 
 /**
  * As duas ferramentas de cartão do Claude.
- * @param {(kind: 'quiz'|'ask', args: object) => Promise<{id: string}>} showCard
+ * @param {(kind: 'quiz'|'ask', args: Record<string, any>) => Promise<{id: string}>} showCard
  * @param {{language?: string}} [options]
- * @returns {Promise<Array<object>>}
+ * @returns {Promise<Array<Record<string, any>>>}
  */
 async function createCardTools(showCard, {language} = {}) {
   const [{tool}, {z}, quiz, ask, fields] = await load();
   return [
-    tool('quiz', quiz.QUIZ_DESCRIPTION, z.object(fields.zodShape(z, quiz.QUIZ_FIELDS)), async (args) => {
+    tool('quiz', quiz.QUIZ_DESCRIPTION, /** @type {any} */ (z.object(fields.zodShape(z, quiz.QUIZ_FIELDS))), async (args) => {
       try {
         const result = await showCard('quiz', {...args});
         return {content: [{type: 'text', text: quiz.quizText()}], details: {cardId: result.id}};
@@ -33,7 +34,7 @@ async function createCardTools(showCard, {language} = {}) {
         return {isError: true, content: [{type: 'text', text: toolErrorText(error, language, 'err.card.invalid')}]};
       }
     }, {annotations: {readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false}, alwaysLoad: true}),
-    tool('perguntar', ask.ASK_DESCRIPTION, z.object(fields.zodShape(z, ask.ASK_FIELDS)), async (args) => {
+    tool('perguntar', ask.ASK_DESCRIPTION, /** @type {any} */ (z.object(fields.zodShape(z, ask.ASK_FIELDS))), async (args) => {
       try {
         const result = await showCard('ask', {...args});
         return {content: [{type: 'text', text: ask.askText()}], details: {cardId: result.id}};

@@ -1,3 +1,4 @@
+// @ts-check
 /* Chat lateral solto numa janela filha (#157, fatias 1 e 2): `window.open`
    (`about:blank`, nome fixo) cria a filha e o nó do chat lateral que já existe
    muda de documento para dentro dela — mesmo estado, mesma conexão, mesmo
@@ -51,9 +52,9 @@ export function isDetachedSidechat(){return !!(detachedWin&&!detachedWin.closed)
  * @example paintDetachButton() */
 export function paintDetachButton(){
  const root=sidechatElement();if(!root)return null;
- const pop=root.querySelector('#sidechat-more-pop');if(!pop)return null;
+ const pop=/** @type {HTMLElement|null} */ (root.querySelector('#sidechat-more-pop'));if(!pop)return null;
  const doc=root.ownerDocument||document;
- let button=pop.querySelector('#sidechat-detach');
+ let button=/** @type {HTMLButtonElement|null} */ (pop.querySelector('#sidechat-detach'));
  if(!button){
   button=doc.createElement('button');
   button.type='button';button.id='sidechat-detach';button.setAttribute('role','menuitem');
@@ -77,7 +78,7 @@ export function paintDetachButton(){
  const label=t(detached?'sidechat.attach':'sidechat.detach');
  const slot=button.querySelector('span');
  if(slot&&slot.textContent!==label)slot.textContent=label;
- let top=pop.querySelector('#sidechat-always-on-top');
+ let top=/** @type {HTMLButtonElement|null} */ (pop.querySelector('#sidechat-always-on-top'));
  if(!top){
   top=doc.createElement('button');
   top.type='button';top.id='sidechat-always-on-top';top.dataset.icon='pin';top.setAttribute('role','menuitemcheckbox');
@@ -98,7 +99,7 @@ export function paintDetachButton(){
  top.dataset.state=t(alwaysOnTop?'sidechat.alwaysOnTop.on':'sidechat.alwaysOnTop.off');
  /* Sinal discreto no cabeçalho da filha (achado 15): fora do menu, o estado
     ligado aparece no selo do alfinete, com nome acessível. */
- const pin=root.querySelector('#sidechat-pin');
+ const pin=/** @type {HTMLElement|null} */ (root.querySelector('#sidechat-pin'));
  if(pin){
   if(!pin.querySelector('.icon'))pin.innerHTML=icon('pin');
   pin.hidden=!(detached&&alwaysOnTop);
@@ -178,7 +179,7 @@ function startChromeSync(childWin){
  chromeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
  headObserver=new MutationObserver(mutations=>{
   if(!childWin.document)return;
-  for(const mutation of mutations)for(const node of mutation.addedNodes)if(node&&['LINK','STYLE'].includes(node.tagName))childWin.document.head.appendChild(styleClone(node,childWin.document));
+  for(const mutation of mutations)for(const node of mutation.addedNodes)if(node&&['LINK','STYLE'].includes(/** @type {HTMLElement} */ (node).tagName))childWin.document.head.appendChild(styleClone(node,childWin.document));
  });
  headObserver.observe(document.head,{childList:true});
 }

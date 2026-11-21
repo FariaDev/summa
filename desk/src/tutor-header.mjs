@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,labelBtn,paintSessionTitle} from './state.mjs';
 import {visibleEngines} from './visible-engines-ui.mjs';
 import {icon} from '../icons.mjs';

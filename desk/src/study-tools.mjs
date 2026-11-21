@@ -1,3 +1,4 @@
+// @ts-check
 import {toast} from './state.mjs';
 import {t} from './ui-text.mjs';
 

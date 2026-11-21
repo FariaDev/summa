@@ -1,3 +1,4 @@
+// @ts-check
 /* ---------------------------------------------------------------------------
    Painel de Estatísticas de estudo (aba flutuante, independente do shell).
 

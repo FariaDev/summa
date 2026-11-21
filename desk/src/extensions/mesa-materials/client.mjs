@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente de `listar_materiais` para o Pi e o OpenCode: a mesma ponte local do
    quadro (`LEARNING_DESK_ACTIVITY_BRIDGE`), rota `/materials`. O host recorta
    a matéria/Livre e devolve só os PDFs; o modelo não manda caminho. */

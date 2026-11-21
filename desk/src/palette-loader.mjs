@@ -1,8 +1,9 @@
+// @ts-check
 import {createLazyModule} from './lazy-module.mjs';
 
 /**
  * Mantém a paleta fora do boot até abrir; fechar antes disso não importa nada.
- * @param {{importModule?: () => Promise<typeof import('./command-palette.mjs')>, options: object}} options
+ * @param {{importModule?: () => Promise<typeof import('./command-palette.mjs')>, options: Record<string, any>}} options
  * @returns {{open: () => Promise<boolean>, close: () => boolean, current: () => any | null}}
  * @example const palette = createPaletteLoader({options}); await palette.open();
  */

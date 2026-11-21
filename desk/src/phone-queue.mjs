@@ -8,7 +8,7 @@
 
 /**
  * @template T
- * @typedef {object} PhoneQueue
+ * @typedef {Record<string, any>} PhoneQueue
  * @property {(item: T) => Promise<void>} push guarda e entrega (se um laço já roda, ele leva o item e esta promessa resolve logo)
  * @property {() => Promise<void>} release retoma depois que `canRun` voltou a valer
  * @property {() => number} size quantas esperam

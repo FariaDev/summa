@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -25,6 +26,7 @@ function newRecord(sessionId, title) {
     updatedAt: now,
   };
 }
+/** @param {any} runtime @param {{sessionId?: any, title?: any}} [options] */
 function createWorkspace(runtime, {sessionId, title} = {}) {
   const id = normalizeSessionId(sessionId);
   assertWorkspaceSafe(runtime, id);
@@ -35,6 +37,7 @@ function createWorkspace(runtime, {sessionId, title} = {}) {
   writeRecord(file, record);
   return record;
 }
+/** @param {any} runtime @param {{sessionId?: any, title?: any}} [options] */
 function ensureWorkspace(runtime, {sessionId, title} = {}) {
   const id = normalizeSessionId(sessionId);
   assertWorkspaceSafe(runtime, id);
@@ -78,7 +81,7 @@ function listWorkspaces(runtime) {
   out.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)) || a.id.localeCompare(b.id));
   return out;
 }
-function updateWorkspace(runtime, sessionId, patch = {}, {expectRev} = {}) {
+function updateWorkspace(runtime, sessionId, patch = {}, {expectRev} = /** @type {{expectRev?: number}} */ ({})) {
   const {file, record} = mustLoad(runtime, sessionId);
   if (expectRev !== undefined && expectRev !== null && record.rev !== whole(expectRev)) {
     fail('STALE', uiMsg('err.freews.staleNothing'), {expected: whole(expectRev), current: record.rev});

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `listar_materiais` no Claude (#91): o MESMO guia da extensão do Pi
@@ -7,7 +8,7 @@ const MATERIALS_TOOL_NAME = 'mcp__mesa__listar_materiais';
 const {toolErrorText} = require('./tool-error-text.cjs');
 
 /**
- * @param {(args: object) => Promise<{materials: Array<{name: string, path: string}>, truncated: boolean}>} listMaterials
+ * @param {(args: Record<string, any>) => Promise<{materials: Array<{name: string, path: string}>, truncated: boolean}>} listMaterials
  * @param {{language?: string}} [options]
  */
 async function createMaterialsTool(listMaterials, {language} = {}) {

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Compartilhar matéria num ARQUIVO PORTÁTIL (`.mesa-materia`, zip com
@@ -36,6 +37,7 @@ const {transcriptOfPackageConversation} = require('./package-transcript.cjs');
    `materialsDir` e `learningDir` são caminhos CONFERIDOS pelo host (nunca
    vindos do renderer como autorização). Devolve o Buffer do arquivo — quem
    grava é o host (`writePackageFile`, com criação exclusiva). */
+/** @param {{runtime?: any, course?: Record<string, any>, materialsDir?: string, learningDir?: string, include?: Record<string, any>, now?: any, appVersion?: string}} options */
 function buildPackage({
   runtime,
   course = {},
@@ -138,6 +140,7 @@ function buildPackage({
 
 /* Prévia: o que entra, quantos bytes, o que vai para conversa nova e onde o
    host deve registrar a matéria. Zero escrita. */
+/** @param {{buffer?: any, destination?: any, now?: any}} options */
 function previewImport({buffer, destination, now = new Date()}) {
   const {manifest, entries, buffers} = openPackage(buffer);
   const dir = path.resolve(destination.dir || destination);

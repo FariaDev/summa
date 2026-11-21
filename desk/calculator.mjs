@@ -1,3 +1,4 @@
+// @ts-check
 // Small numeric parser: no eval, assignments, property access, or executable input.
 import {message} from './src/i18n.mjs';
 

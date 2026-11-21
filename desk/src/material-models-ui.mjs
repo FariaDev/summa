@@ -1,3 +1,4 @@
+// @ts-check
 import {
   modelList, modelId, optionSpecs, normalizeOptions, columnChoices, columnsLabel, spaceLabel, SPACE_CHOICES, MAX_OPTION_TEXT,
 } from './materials/model.mjs';

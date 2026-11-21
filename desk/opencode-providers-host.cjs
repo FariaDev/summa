@@ -81,7 +81,7 @@ function createOpenCodeProvidersHost(deps) {
   async function readIntegrations() {
     const response = await (await client()).request('GET', '/api/integration', {timeoutMs: LIST_TIMEOUT_MS});
     if (!response.ok) {
-      const error = /** @type {Error & {code?: string}} */ (Error(`HTTP ${response.status}`));
+      const error = /** @type {Error & {code?: string, [field: string]: any}} */ (Error(`HTTP ${response.status}`));
       error.code = statusFailure(response.status);
       throw error;
     }

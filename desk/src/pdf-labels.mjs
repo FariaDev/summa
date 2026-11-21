@@ -1,3 +1,4 @@
+// @ts-check
 /* Numeração impressa do leitor de PDF.
    O núcleo (`core/pdfpageview.bend`) decide rótulo/deslocamento/navegação; aqui
    ficam só os fatos do mundo: o que o backend devolveu (`pdf-page-labels-get`),

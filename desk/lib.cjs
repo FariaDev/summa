@@ -1,3 +1,4 @@
+// @ts-check
 const path=require('node:path');
 const core=require('./src/generated/sessions.core.js').default;
 const {toNat}=require('./src/bend-nat.mjs');

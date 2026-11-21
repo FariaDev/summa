@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Serviços de backup/compartilhamento para o host (mesmo padrão de
@@ -32,7 +33,7 @@ const {message: uiMsg}=require('../i18n.mjs');
 const BACKUP_ERROR = 'MESA_BACKUP_SERVICE_ERROR';
 
 function serviceError(message) {
-  const error = new Error(message);
+  const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(message));
   error.code = BACKUP_ERROR;
   return error;
 }
@@ -113,6 +114,7 @@ function studyDirOf(runtime, course) {
   }
 }
 
+/** @param {{runtime?: any, deskDir?: string, repoRoot?: string, settingsFile?: string, backupRoot?: any, gitRoot?: any, courses?: any, allowed?: any, external?: any, gitRunner?: any, log?: any}} options */
 function createBackupServices({
   runtime,
   deskDir = '',
@@ -275,6 +277,7 @@ function createBackupServices({
     return out;
   }
 
+  /** @param {{reason?: string, label?: string}} [options] */
   async function run({reason = 'manual', label = ''} = {}) {
     const settingsNow = settings();
     const root = guardDestination(settingsNow.destination);
@@ -351,6 +354,7 @@ function createBackupServices({
     return {...plan, materials};
   }
 
+  /** @param {any} planId @param {{materials?: string}} [options] */
   async function applyRestore(planId, {materials = 'auto'} = {}) {
     /* A remapeação é explícita: 'remap' força, 'auto' só quando a pasta de
        origem não existe nesta máquina, 'keep' preserva as referências. */
@@ -388,6 +392,7 @@ function createBackupServices({
 
   /* Aceita o id do plano OU um objeto `{external:[…]}` (o resultado de
      `applyRestore`), porque a aplicação descarta o plano depois de gravar. */
+  /** @param {any} planIdOrPlan @param {{ref?: any, apply?: boolean}} [options] */
   function restoreExternal(planIdOrPlan, {ref, apply = false} = {}) {
     const entry = externalPlan(planIdOrPlan).find((item) => item.ref === String(ref || ''));
     if (!entry) throw serviceError(uiMsg('err.backup.externalMissing', {ref}));
@@ -474,6 +479,7 @@ function createBackupServices({
     return {file: written.file, bytes: built.buffer.length, renamed: written.renamed, features: built.manifest.features, counts: built.manifest.counts};
   }
 
+  /** @param {{file?: any, directory?: any, name?: string}} [options] */
   function previewImport({file, directory, name = ''} = {}) {
     const source = String(file || '').trim();
     if (!source) throw serviceError(uiMsg('err.backup.pickCourseFile'));
@@ -492,6 +498,7 @@ function createBackupServices({
     return {...preview, file: source};
   }
 
+  /** @param {{file?: any, directory?: any, name?: string}} [options] */
   function importCourse({file, directory, name = ''} = {}) {
     const preview = previewImport({file, directory, name});
     const result = packages.importPackage({buffer: fs.readFileSync(preview.file), destination: {dir: preview.destination.dir, name: preview.destination.name}, courseId: preview.courseId});

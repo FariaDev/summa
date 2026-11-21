@@ -7,7 +7,7 @@ import {createLazyModule} from './lazy-module.mjs';
 /**
  * Cria a fachada das anotações.
  * @param {() => Promise<typeof import('./pdf-notes.mjs')>} [importModule]
- * @returns {{init: (options?: object) => void, load: () => Promise<any>, open: (preset?: object) => Promise<any>, close: () => void, current: () => any | null}}
+ * @returns {{init: (options?: Record<string, any>) => void, load: () => Promise<any>, open: (preset?: Record<string, any>) => Promise<any>, close: () => void, current: () => any | null}}
  * @example const notes = createPdfNotesLoader(); notes.init(); await notes.open({page: 2});
  */
 export function createPdfNotesLoader(importModule = () => import('./pdf-notes.mjs')) {
@@ -73,7 +73,7 @@ const pdfNotes = createPdfNotesLoader();
  * O carregador pode entrar por parâmetro para o teste não importar o módulo.
  * @param {any} [options] opções do `initPdfNotes`
  * @param {ReturnType<typeof createPdfNotesLoader>} [loader]
- * @returns {{open: (preset?: object) => Promise<any>, close: () => void}}
+ * @returns {{open: (preset?: Record<string, any>) => Promise<any>, close: () => void}}
  * @example mountPdfNotesBoot();
  */
 export function mountPdfNotesBoot(options = {}, loader = pdfNotes) {
@@ -109,6 +109,6 @@ export function mountPdfNotesBoot(options = {}, loader = pdfNotes) {
 }
 
 /** Abre as anotações, importando o módulo na primeira vez.
- * @param {object} [preset] @returns {Promise<any>} @example await openPdfNotes({page: 3});
+ * @param {Record<string, any>} [preset] @returns {Promise<any>} @example await openPdfNotes({page: 3});
  */
 export const openPdfNotes = (preset = {}) => pdfNotes.open(preset);

@@ -1,3 +1,4 @@
+// @ts-check
 /* `listar_materiais` — UM texto e um formato de resultado para os três
    motores (Pi `mesa_listar_materiais`, Claude e OpenCode `listar_materiais`).
    A lista é a biblioteca da matéria (ou o manifesto da sessão Livre), sempre
@@ -13,7 +14,7 @@ export const MATERIALS_FIELDS = {};
 
 /**
  * O texto que volta ao tutor: uma linha por PDF, com nome e caminho canônico.
- * @param {{materials?: Array<{name?: string, path?: string}>}} result
+ * @param {{materials?: Array<{name?: string, path?: string}>, truncated?: boolean}} result
  * @returns {string}
  * @example materialsText({materials: [{name: 'A.pdf', path: '/c/A.pdf'}]}) // 'Materiais (1):\n- A.pdf — /c/A.pdf'
  */

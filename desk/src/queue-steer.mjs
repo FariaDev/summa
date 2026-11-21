@@ -1,3 +1,4 @@
+// @ts-check
 /* Destino de um item da fila enviado como steer (o "Enviar agora" da linha).
    Decisão pura, separada do `queue.mjs` para testar sem DOM: o transporte só
    devolve `safe` quando PROVA que nada foi escrito (`notSent`, recusa antes do
@@ -25,8 +26,8 @@ export function steerQueuedOutcome(posted, safe) {
 /**
  * Devolve o item à posição original da fila, limitada ao tamanho de agora
  * (outras linhas podem ter saído enquanto o steer voava).
- * @param {Array<object>} items fila viva
- * @param {object} item item que voltou
+ * @param {Array<Record<string, any>>} items fila viva
+ * @param {Record<string, any>} item item que voltou
  * @param {number} at índice guardado antes do envio
  * @returns {number} índice em que o item entrou
  * @example

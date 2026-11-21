@@ -1,3 +1,4 @@
+// @ts-check
 /* Referência de PDF anexado à mensagem. O host guarda caminho, nome e páginas;
    o arquivo fica no disco e o tutor lê com `ler_pdf`. O bloco entra no texto
    do prompt; o histórico o reconhece para desenhar o chip, sem reenviar o PDF. */
@@ -61,7 +62,7 @@ export function normalizePdfFacts(raw) {
  * caminho e o total de páginas, e a ferramenta do motor. O conteúdo do PDF não
  * entra aqui.
  * @param {unknown} pdfs
- * @param {(key: string, args?: object) => string} translate tradutor do idioma do tutor
+ * @param {(key: string, args?: Record<string, any>) => string} translate tradutor do idioma do tutor
  * @param {string} [tool] `mesa_ler_pdf` ou `mcp__mesa__ler_pdf`
  * @returns {string} vazio quando não há PDF
  * @example pdfAttachmentsBlock([{name:'A.pdf', path:'/c/A.pdf', pages:12}], t, 'mesa_ler_pdf')

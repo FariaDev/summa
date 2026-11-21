@@ -70,10 +70,13 @@ function listCodeFiles(dir) {
   return found;
 }
 
-/** @param {string} text @returns {number} linhas, sem contar a quebra final */
+/* A primeira linha `// @ts-check` é pragma exigido em todo arquivo pelo
+   `tests/typecheck-list.test.mjs` (#43 fase 3), não código: fica fora da conta. */
+/** @param {string} text @returns {number} linhas, sem contar a quebra final nem o pragma */
 function countLines(text) {
   if (!text) return 0;
-  return text.replace(/\n$/, '').split('\n').length;
+  const lines = text.replace(/\n$/, '').split('\n');
+  return lines[0].trim() === '// @ts-check' ? lines.length - 1 : lines.length;
 }
 
 const files = listCodeFiles(DESK);

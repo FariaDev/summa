@@ -1,3 +1,4 @@
+// @ts-check
 import {contentParts} from '../text.mjs';
 import {$,S,toast,toastFailure,activity,activityLive,applyChatScroll,revealInChat,connectionState,distanceFromEnd,messageScroller,refs,save,layoutSnapshot,setBusy,refreshMeter,connect,cancelConnect,supportsCapability,syncChatScrollMode,paintComposerSend} from './state.mjs';
 import tutorStateCore from './generated/tutorstate.core.js';
@@ -200,7 +201,7 @@ export function showHistory(messages,cards=[],identity=null){
 export function afterHistoryLayout(){
  return new Promise(resolve=>{
   if(typeof requestAnimationFrame!=='function'){resolve();return;}
-  requestAnimationFrame(()=>requestAnimationFrame(resolve));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()));
  });
 }
 /**
@@ -591,7 +592,7 @@ window.desk.onEvent(e=>{
     setMessageModel(el,model,modelName);
     addChatSearchEntry({text,el});
    }else{
-    const el=message('assistant',text,images,[],[],time,model,modelName);
+    const el=message('assistant',text,images,null,[],[],time,model,modelName);
     addChatSearchEntry({text,el});
    }
   }

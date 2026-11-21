@@ -305,6 +305,7 @@ function previewSession(){
  return ses;
 }
 const activityPreview=createActivityPreview({runtime:activityRuntime,columnWidth:()=>activityHost.columnWidth(),
+ /** @param {{width?: any, height?: any}} options */
  createWindow:({width,height})=>{
   /* Partição própria e em memória (sem `persist:`): a prévia roda em outro
      processo — um laço no documento do tutor não trava os quadros da
@@ -370,7 +371,7 @@ const materialPreviewHost=createMaterialPreviewHost({
 });
 materialPreviewHost.register(ipcMain);
 function materialEvent(scope,payload){if(win&&!win.isDestroyed())win.webContents.send('tutor-material',{courseId:scope.courseId,conversationId:scope.session,...payload});}
-/** @param {import('./types/host-deps').MaterialScope} scope @param {{title?: string, markdown?: string, modelo?: string, opcoes?: object, signal?: AbortSignal}} [request] */
+/** @param {import('./types/host-deps').MaterialScope} scope @param {{title?: string, markdown?: string, modelo?: string, opcoes?: Record<string, any>, signal?: AbortSignal}} [request] */
 async function prepareTutorMaterial(scope,{title,markdown,modelo,opcoes,signal}={}){
  return freeMutate('tutor-pdf',async()=>{
   if(scope.courseId!==courseId||scope.session!==session||(isFree()&&scope.freeSessionId!==freeSessionId))throw Error(message('err.pdf.sessionChanged'));

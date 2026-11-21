@@ -1,3 +1,4 @@
+// @ts-check
 /* Estrutura de cada modelo de PDF, lida pelos TOKENS do Markdown (nunca por
    regex sobre o código-fonte): recebe a lista do `marked.lexer` e devolve a
    lista com os envoltórios HTML que o CSS de cada modelo precisa — grupos de
@@ -45,7 +46,7 @@ function leadStrong(token) {
 
 /* Fim da seção que começa em `from`: o próximo título de profundidade menor
    ou igual (ou `until`, se casar antes). */
-function sectionEnd(tokens, from, depth, until = () => false) {
+function sectionEnd(tokens, from, depth, until = /** @type {Function} */ (() => false)) {
   for (let index = from + 1; index < tokens.length; index += 1) {
     const token = tokens[index];
     if (isHeading(token) && (token.depth <= depth || until(token))) return index;

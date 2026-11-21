@@ -1,3 +1,4 @@
+// @ts-check
 import {toast} from './state.mjs';
 import {t as uiT,formatDate} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';
@@ -9,7 +10,7 @@ import {h} from './sidechat-message-view.mjs';
 
 /**
  * Cria o desenho e a atualização do popover de contexto do chat lateral.
- * @param {{state:{id:string,context:object|null,messages:object[],cards:object[]},api:()=>any,currentRefs:()=>object[],normalizeMessage:(raw:unknown)=>object|null,paintScope:()=>void,root:()=>HTMLElement|null,pop:()=>HTMLElement|null}} deps
+ * @param {{state:{id:string,context:Record<string, any>|null,messages:Record<string, any>[],cards:Record<string, any>[]},api:()=>any,currentRefs:()=>Record<string, any>[],normalizeMessage:(raw:unknown)=>object|null,paintScope:()=>void,root:()=>HTMLElement|null,pop:()=>HTMLElement|null}} deps
  * @returns {{refsLabel:(refs:unknown)=>string,paintContextPop:()=>void,toggleContextPop:()=>void,hideContextPop:()=>void,refreshContext:()=>Promise<void>}}
  * @example const context=createSidechatContext({state,api:()=>window.desk,currentRefs:()=>[],normalizeMessage:(raw)=>raw,paintScope(){},root:()=>null,pop:()=>null});
  */

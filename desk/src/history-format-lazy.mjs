@@ -1,3 +1,4 @@
+// @ts-check
 /* Formatação preguiçosa do histórico (#118): a conversa longa nasce como texto
    real no DOM e o rico (Markdown + KaTeX + sanitize) entra ao chegar perto da
    vista, via `IntersectionObserver` com margem generosa. Nada é desmontado:

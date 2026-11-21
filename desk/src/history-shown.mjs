@@ -1,3 +1,4 @@
+// @ts-check
 /* O que `#messages` mostra veio de qual histórico (#115). O main só deixa de
    reenviar as mensagens quando a identidade pedida bate com a do motor, então
    ela só pode ser pedida enquanto a lista ainda é a da montagem: lista esvaziada

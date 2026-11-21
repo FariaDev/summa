@@ -1,3 +1,4 @@
+// @ts-check
 /* Nomes de ferramenta dos cartões, de uma fonte só (#92). O Pi registra
    `mesa_quiz`/`mesa_perguntar`; o Claude expõe `mcp__mesa__quiz`/
    `mcp__mesa__perguntar`; o OpenCode chama o MCP `mesa` e também vê

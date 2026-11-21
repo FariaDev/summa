@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path = require('node:path');
@@ -53,7 +54,7 @@ function resolveSettings(rootAbs, options = {}) {
 }
 function writeConfig(rootAbs, patch) {
   const current = readConfig(rootAbs);
-  const next = {...current, ...(isPlainObject(patch) ? patch : {})};
+  const next = /** @type {Record<string, any>} */ ({...current, ...(isPlainObject(patch) ? patch : {})});
   delete next.__file;
   const file = configCandidates(rootAbs)[0];
   atomicWrite(file, `${JSON.stringify(next, null, 2)}\n`);

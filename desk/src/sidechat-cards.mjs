@@ -1,3 +1,4 @@
+// @ts-check
 /* Cartões `quiz`/`perguntar` do chat lateral (#92). O estado e o canal
    continuam em `sidechat.mjs`; este módulo só monta a lista, atualiza o
    cartão pelo id e trata o evento `card` que o manager emite. */
@@ -8,8 +9,8 @@ import {cardElement} from './cards-view.mjs';
 
 /**
  * Troca o cartão na lista do lateral (ou inclui, se for novo).
- * @param {{cards: object[]}} state
- * @param {object} card
+ * @param {{cards: Record<string, any>[]}} state
+ * @param {Record<string, any>} card
  * @returns {void}
  * @example replaceSideCard(state, card)
  */
@@ -23,8 +24,8 @@ export function replaceSideCard(state, card) {
 /**
  * Callbacks do cartão para o canal `sidechat-card-*`; o id do chat e o do
  * cartão são campos distintos (o manager resolve o escopo pelo primeiro).
- * @param {{cards: object[], id: string}} state
- * @param {() => object} api
+ * @param {{cards: Record<string, any>[], id: string}} state
+ * @param {() => Record<string, any>} api
  * @returns {{answer: Function, draft: Function, dismiss: Function, conclude: Function}}
  * @example const callbacks = sideCardApi(state, api);
  */
@@ -40,8 +41,8 @@ export function sideCardApi(state, api) {
 /**
  * Acrescenta os cartões ao fragmento do histórico, em ordem de criação.
  * @param {DocumentFragment} fragment
- * @param {{cards: object[]}} state
- * @param {object} api callbacks de `sideCardApi`
+ * @param {{cards: Record<string, any>[]}} state
+ * @param {ReturnType<typeof sideCardApi>} api callbacks de `sideCardApi`
  * @returns {void}
  * @example renderSideCards(fragment, state, sideCardApi(state, api));
  */
@@ -53,8 +54,8 @@ export function renderSideCards(fragment, state, api) {
 
 /**
  * Trata `{type:'card', cardType:'shown'|'sending'|'update'|'failed', card}`.
- * @param {object} event
- * @param {{cards: object[]}} state
+ * @param {Record<string, any>} event
+ * @param {{cards: Record<string, any>[]}} state
  * @param {() => void} render
  * @returns {void}
  * @example handleSideCardEvent(event, state, renderMessages)

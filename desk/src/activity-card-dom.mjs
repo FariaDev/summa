@@ -1,3 +1,4 @@
+// @ts-check
 import * as quadro from './activity-view.mjs';
 import {markup} from './markdown.mjs';
 import {icon} from '../icons.mjs';
@@ -10,7 +11,7 @@ import {HEIGHT_RESERVED} from './activity-messages.mjs';
 
 /**
  * Cria as funções deste grupo sobre o contexto compartilhado do host.
- * @param {object} ctx estado e funções do `createActivityHost` (getters preguiçosos)
+ * @param {Record<string, any>} ctx estado e funções do `createActivityHost` (getters preguiçosos)
  * @returns {{element, setError, openButton, setFullscreen, renderCard, factLines, onEscape}}
  * @example Object.assign(ctx,createActivityCardDom(ctx));
  */
@@ -45,6 +46,7 @@ export function createActivityCardDom(ctx) {
   }
   /* Botão fantasma da Mesa: 30px, sem borda, ícone + rótulo. `iconOnly` deixa só
      o ícone (o rótulo vira aria-label/title). */
+  /** @param {any} parent @param {any} label @param {any} act @param {{hidden?: boolean, iconName?: string, iconOnly?: boolean, className?: string}} [options] */
   function actionButton(parent, label, act, {hidden = true, iconName = '', iconOnly = false, className = 'activity-action'} = {}) {
     const button = element('button', className);
     button.type = 'button';
@@ -94,6 +96,7 @@ export function createActivityCardDom(ctx) {
     ctx.postRaw(ctl, {jsonrpc: '2.0', method: 'ui/notifications/host-context-changed', params: {displayMode: want ? 'fullscreen' : 'inline'}});
     if (!want) ctl.frameHost.style.height = `${quadro.clampHeight(ctl.lastHeight || HEIGHT_RESERVED)}px`;
   }
+  /** @param {any} slot @param {any} item @param {any} spec @param {any} savedState @param {{live?: boolean, stopped?: boolean}} [options] */
   function renderCard(slot, item, spec, savedState, {live = false, stopped = false} = {}) {
     const existing = ctx.host.cards.get(item.toolCallId);
     if (existing && existing.item.id === item.id && existing.item.version === item.version && existing.card.parentNode === slot) {
@@ -156,7 +159,7 @@ export function createActivityCardDom(ctx) {
       }
       ctl.auto = true;
       ctx.mount(ctl);
-      updateButtons(ctl);
+      updateButtons();
     });
     expandBtn.addEventListener('click', () => setFullscreen(ctl, !card.classList.contains('activity-fullscreen')));
     restartBtn.addEventListener('click', () => {
@@ -164,7 +167,7 @@ export function createActivityCardDom(ctx) {
       ctl.opened = true;
       ctl.auto = true;
       ctx.mount(ctl, {fresh: true});
-      updateButtons(ctl);
+      updateButtons();
     });
     stopBtn.addEventListener('click', () => {
       ctx.flushState(ctl);
@@ -176,7 +179,7 @@ export function createActivityCardDom(ctx) {
       ctl.poster.hidden = false;
       ctl.posterText.textContent = t('activity.stopped');
       setError(ctl, '');
-      updateButtons(ctl);
+      updateButtons();
     });
     draftBtn.addEventListener('click', () => {
       const text = ctx.draftFor(ctl);

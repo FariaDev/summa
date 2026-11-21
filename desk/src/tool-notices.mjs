@@ -1,3 +1,4 @@
+// @ts-check
 import {renderChildren} from './view-host.mjs';
 import {renderComponentRows} from './dialogs.mjs';
 import {$, S, toast, reconnectAfterBridgeStop} from './state.mjs';

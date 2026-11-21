@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `ler_caderno` no Claude (#135): o mesmo nome, a mesma descrição e os
@@ -13,9 +14,9 @@ const {toolErrorText} = require('./tool-error-text.cjs');
  * Cria a ferramenta `ler_caderno` para o motor Claude: chama o leitor do
  * processo principal (`readNotebook`) e devolve texto e imagem da página;
  * erro vira resultado com `isError` e a reserva `err.notebook.readFailed`.
- * @param {(raw: {caminho?: unknown, pagina?: unknown}) => Promise<object>} readNotebook o leitor do processo principal
+ * @param {(raw: {caminho?: unknown, pagina?: unknown}) => Promise<Record<string, any>>} readNotebook o leitor do processo principal
  * @param {{language?: string}} [options] a língua do tutor para o texto do erro
- * @returns {Promise<object>} a ferramenta `mcp__mesa__ler_caderno` pronta para o SDK
+ * @returns {Promise<Record<string, any>>} a ferramenta `mcp__mesa__ler_caderno` pronta para o SDK
  * @example const tool = await createNotebookReadTool(readNotebook, {language: 'pt-BR'}); // tool ler_caderno com texto e PNG da página
  */
 async function createNotebookReadTool(readNotebook, {language} = {}) {
@@ -28,7 +29,7 @@ async function createNotebookReadTool(readNotebook, {language} = {}) {
   return tool(notebook.NOTEBOOK_TOOL_NAME, notebook.NOTEBOOK_DESCRIPTION, fields.zodShape(z, notebook.NOTEBOOK_FIELDS), async (args) => {
     try {
       const result = await readNotebook({caminho: args.caminho, pagina: args.pagina});
-      return {content: [{type: 'text', text: notebook.notebookPageText(result)}, {type: 'image', data: result.image, mimeType: 'image/png'}]};
+      return {content: [{type: 'text', text: notebook.notebookPageText(/** @type {any} */ (result))}, {type: 'image', data: result.image, mimeType: 'image/png'}]};
     } catch (error) {
       return {isError: true, content: [{type: 'text', text: toolErrorText(error, language, 'err.notebook.readFailed')}]};
     }

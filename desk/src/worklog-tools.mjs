@@ -1,3 +1,4 @@
+// @ts-check
 /* Rótulos e formas curtas do diário de trabalho (etapa 4): duração, nome da
    ferramenta como o aluno lê, alvo da linha de leitura e duração do passo.
    Puro e sem DOM; worklog.mjs reexporta para os testes e a visão. */

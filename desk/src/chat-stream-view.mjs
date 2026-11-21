@@ -1,3 +1,4 @@
+// @ts-check
 /* Aplicador do stream incremental no DOM da conversa.
  *
  * O `paintMessage` de sempre refazia `markup(texto inteiro)` e trocava o corpo
@@ -82,7 +83,7 @@ export function paintMessageBody(body,text,images=[],live=false){
  if(globalThis.__mesaStreamFull===true){fullPaint(body,value,images,false);return;}
  const split=splitStreamBlocks(value);
  /* O texto vivo pode mudar no começo: só vale o prefixo que continua igual. */
- const state=body._streamPaint&&value.startsWith(body._streamPaint.stableText)?body._streamPaint:null;
+ const state=/** @type {HTMLElement & Record<string, any>} */ (body)._streamPaint&&value.startsWith(/** @type {HTMLElement & Record<string, any>} */ (body)._streamPaint.stableText)?/** @type {HTMLElement & Record<string, any>} */ (body)._streamPaint:null;
  /* O prefixo estável anterior continua seguro quando o texto só cresce — a
     exceção é uma definição de referência nova, que muda links do prefixo.
     Assim o meio de uma fórmula aberta reaproveita os blocos de antes dela em
@@ -133,5 +134,5 @@ export function paintMessageBody(body,text,images=[],live=false){
  }
  /* Nós guardados de antes do import entram aqui; troca os marcadores na hora. */
  hydrateMathIn(body);
- body._streamPaint={stableEnd,stableText,stableNodes,tailNodes};
+ /** @type {HTMLElement & Record<string, any>} */ (body)._streamPaint={stableEnd,stableText,stableNodes,tailNodes};
 }

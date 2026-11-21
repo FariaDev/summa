@@ -1,3 +1,4 @@
+// @ts-check
 // Transitional facade: the renderer keeps its IPC names while each engine owns
 // its transport. No extra process is created for a Claude conversation.
 const {EventEmitter}=require('node:events');
@@ -66,7 +67,7 @@ function rendererEvent(e){
    canSteer, outcome, mayRetry) são as de `agentdelivery.bend`. */
 class NativeService extends EventEmitter{
  /**
-  * @param {{adapter: import('./claude-adapter.cjs').ClaudeAdapter|import('./opencode-adapter.cjs').OpenCodeAdapter, engine?: 'claude'|'opencode', onEvent?: (event: object) => void,
+  * @param {{adapter: import('../../types/agent').EngineAdapter, engine?: 'claude'|'opencode', onEvent?: (event: Record<string, any>) => void,
   *   onMessages?: (messages: import('../../types/agent').AgentMessage[], meta: {importedPrefixLength: number}) => void,
   *   onInit?: (event: import('../../types/agent').AgentInitEvent) => void, onSelection?: (patch: object) => void,
   *   lastTurn?: () => ({user: string, messageId: string}|null),
@@ -96,7 +97,7 @@ class NativeService extends EventEmitter{
      ENVIO (attemptId + sequência ativa), nunca global: o próximo Enviar nasce
      limpo e não apaga a marca do anterior (#r5-A). */
   this._cancelledAttempts=new Set();this._cancelledSeqs=new Set();this._activePrompts=new Map();this._sendSeq=0;this._stopped=false;
-  /** @type {Map<string, {role: 'user', content: object[], uuid: string}>} */
+  /** @type {Map<string, import('../../types/agent').AgentMessage>} */
   this._pendingUsers=new Map();
   adapter.on('event',e=>{
    if((e.type==='delivery'&&e.status==='uncertain')||(e.type==='turn_end'&&e.uncertain===true))this.uncertain=true;
@@ -208,6 +209,7 @@ class NativeService extends EventEmitter{
     segundos sem `message_end`, e o que já estava na tela sumia numa queda dura.
     O parcial só vai para o disco: a lista em memória e o cache do adaptador
     continuam só com mensagens completas. */
+ /** @param {{messageId?: any, kind?: any, delta?: any}} options */
  _notePartial({messageId,kind,delta}){
   if(typeof delta!=='string'||!delta)return;
   const key=messageId??'';
@@ -217,6 +219,7 @@ class NativeService extends EventEmitter{
   this._messagesPending=true;
   this._armFlush();
  }
+ /** @param {{id?: any, uuid?: any}} options */
  _settlePartial({id,uuid}){
   const known=this._partials.delete(id)||this._partials.delete(uuid);
   if(!known)this._partials.clear();
@@ -274,13 +277,14 @@ class NativeService extends EventEmitter{
   }
  }
  _busy(){return !!this._sending||!!this._retrying||!!this._configuring||!!this.adapter.snapshot().busy;}
- _cancelled(){const error=Error(uiMsg('tutor.error.cancelled'));error.cancelled=true;error.notSent=true;return error;}
+ _cancelled(){const error=/** @type {Error & {code?: string, cancelled?: boolean, notSent?: boolean}} */ (Error(uiMsg('tutor.error.cancelled')));error.cancelled=true;error.notSent=true;return error;}
  isRunning(state){return !!(this._busy()||state?.isStreaming||state?.isCompacting||this.adapter.snapshot().compacting);}
  /* Turno em voo para navegação: conectar/configurar controles não conta. O
     MCP do OpenCode pode demorar no macOS; trocar de matéria, salvar Ajustes ou
     apagar matéria não pode esperar por isso. */
  isTurnActive(state){return !!(this._sending||this.adapter.snapshot().busy||state?.isStreaming||state?.isCompacting||this.adapter.snapshot().compacting);}
- _refuse(text){const e=Error(text);e.notSent=true;return e;}
+ /** @param {string} text @returns {Error & {code?: string, notSent?: boolean}} */
+ _refuse(text){const e=/** @type {Error & {code?: string, notSent?: boolean}} */ (Error(text));e.notSent=true;return e;}
   async request(type,args={}){
    /* Ponte parada (troca de sessão, save-config): não responde como vivo (#r5-D). */
    if(this._stopped)throw this._cancelled();
@@ -358,7 +362,7 @@ class NativeService extends EventEmitter{
      menções) e as imagens já validadas. A memória vence quando é o MESMO
      turno; reabrir a conversa cai nas mensagens do descritor. */
   _retryPackage(index){
-   const message=this.messages[index]||{};
+   const message=/** @type {Record<string, any>} */ (this.messages[index]||{});
    const parts=Array.isArray(message.content)?message.content:[];
    const text=parts.filter(part=>part&&part.type==='text').map(part=>String(part.text||'')).join('\n');
    const images=parts.filter(part=>part&&part.type==='image');
@@ -419,6 +423,7 @@ class NativeService extends EventEmitter{
   /* Steer (⌘/Ctrl+⏎) só com turno do motor em voo e nada nosso pendente
     (`canSteer`); sem turno, é um envio normal. `/nome` do catálogo do motor
     vira comando nativo, com as MESMAS regras de entrega. */
+  /** @param {any} args @param {{retry?: boolean}} [options] */
   async _deliverPrompt(args,{retry=false}={}){
    const attemptId=typeof args.attemptId==='string'?args.attemptId:'';
    /* Parar chegou antes deste prompt (o botão nasce no connect do renderer):

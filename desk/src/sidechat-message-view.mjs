@@ -1,3 +1,4 @@
+// @ts-check
 import {toast} from './state.mjs';
 import {icon} from '../icons.mjs';
 import {copiedMark,flashMark} from './icon-motion.mjs';
@@ -43,7 +44,7 @@ function copyNameFor(role){
 
 /**
  * Cartão de uma mensagem do lateral, com copiar e (resposta do tutor) levar à sessão principal.
- * @param {{role:string,text?:string}} message
+ * @param {{role:string,text?:string,error?:boolean}} message
  * @param {string} engineLabel rótulo do motor para a resposta do tutor
  * @returns {HTMLElement}
  * @example sidechatMessageCard({role:'assistant',text:'oi'},'Tutor')
@@ -64,7 +65,7 @@ export function sidechatMessageCard(message,engineLabel){
   mark.innerHTML=icon('alert');
   card.append(h('div',{class:'sidechat-error-row'},mark,body));
  }else card.append(body);
- card._text=String(message.text||'');
+ /** @type {HTMLElement & Record<string, any>} */ (card)._text=String(message.text||'');
  const actions=h('div',{class:'sidechat-msg-actions'});
  /* "Tentar de novo" devolve a última pergunta ao campo e foca (sidechat.mjs),
     sem reenviar sozinho; o Copiar fica como ação secundária. */
