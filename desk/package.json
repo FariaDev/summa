@@ -4,6 +4,7 @@
   "description": "Summa: dois PDFs, calculadora e tutor numa janela, ao lado do Xournal++",
   "main": "main.cjs",
   "scripts": {
+    "prestart": "node scripts/visual-helper.mjs",
     "start": "electron .",
     "test": "node --test --test-timeout=180000 --test-force-exit tests/*.test.mjs",
     "pretest": "node scripts/core-gate.mjs",

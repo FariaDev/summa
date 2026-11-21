@@ -22,7 +22,7 @@ const PNG = 'data:image/png;base64,iVBORw0KGgo=';
 
 /* Um host com a lista dada (da frente para trás) e uma escolha salva em memória. */
 function harness({windows, saved = null, platform = 'darwin', selfNames = ['Summa', 'Electron']}) {
-  const store = {choice: saved, shots: [], permission: 0};
+  const store = {choice: saved, shots: []};
   const handlers = new Map();
   const host = createConferirHost({
     ipcMain: {handle: (name, fn) => handlers.set(name, fn)},
@@ -30,7 +30,6 @@ function harness({windows, saved = null, platform = 'darwin', selfNames = ['Summ
     state: () => store.choice,
     setChoice: (value) => { store.choice = value; },
     selfNames: () => selfNames,
-    ensurePermission: async () => { store.permission += 1; },
     listWindows: async () => windows,
     captureWindow: async (raw, label) => { store.shots.push({id: raw.id, label}); return {title: raw.title, dataUrl: PNG}; },
   });
@@ -44,7 +43,6 @@ test('sem escolha salva, o Conferir captura o Xournal++ como sempre', async () =
   assert.equal(r.title, 'Lista 3');
   assert.equal(r.dataUrl, PNG);
   assert.deepEqual(store.shots, [{id: '12', label: 'Xournal++'}]);
-  assert.equal(store.permission, 1, 'a permissão de tela é conferida antes de listar');
 });
 
 test('no Windows o processo xournalpp também é o Xournal++', async () => {
