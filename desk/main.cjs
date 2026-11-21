@@ -651,7 +651,7 @@ const conferirHost=createConferirHost({
   });
  },
  captureWindow:async(window,label)=>{
-  if(process.platform==='win32')return captureWindowWin({processName:window.app,label});
+  if(process.platform==='win32')return captureWindowWin({processName:window.app,label,processId:window.id});
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mesa-visual-'));
   try{
    const file=path.join(dir,'attempt.png');
