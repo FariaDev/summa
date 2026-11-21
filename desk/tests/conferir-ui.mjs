@@ -6,7 +6,7 @@
 // + título, a Mesa e o sistema fora); escolher vale na hora e Cancelar não
 // desfaz; a caixa de mensagem guarda só o botão "Conferir <app>" (sem ▾); o
 // rótulo, o anexo, o toast e a linha que vai ao tutor seguem o app; a escolha é
-// o APP (sobrevive a outro id de janela); app ausente diz isso numa frase e a
+// o APP (no Windows, com o PID escolhido); app ausente diz isso numa frase e a
 // ação "Escolher outro programa…" leva ao campo, sem capturar outra janela;
 // "Voltar ao Xournal++" pelas Configurações; a busca de comandos leva ao campo.
 // Nos dois temas, em 1440×900 e 900×650. Capturas só com MESA_REVIEW_SHOTS.
@@ -24,6 +24,7 @@ const size=(app,page,width,height)=>resizeWindow(app,page,width,height);
 const rect=(page,selector)=>page.evaluate(sel=>{const el=document.querySelector(sel);if(!el)return null;const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right,width:b.width,height:b.height};},selector);
 const DATA_URL='data:image/png;base64,'+PLOT_PNG;
 const BOUNDS={X:0,Y:0,Width:1200,Height:800};
+const selectedOneNote={app:'OneNote',key:'onenote',...(process.platform==='win32'?{processId:'103'}:{})};
 const win=(id,app,title,extra={})=>({id,app,title,bounds:BOUNDS,dataUrl:DATA_URL,...extra});
 
 await withArtifacts('conferir',async ctx=>{
@@ -129,14 +130,13 @@ await withArtifacts('conferir',async ctx=>{
  assert.equal(await page.locator('#cfg-conferir-back').isVisible(),true,'agora há como voltar ao Xournal++');
  assert.equal(await page.locator('#cfg-conferir-back').textContent(),'Voltar ao Xournal++');
  assert.equal(await page.locator('#attachments .attachment').count(),0,'escolher não anexa a imagem da captura de prova');
- await savedApp({app:'OneNote',key:'onenote'});
- assert.equal(JSON.stringify(desk().conferirApp).includes('103'),false,'o que fica salvo é o app, não o id da janela');
+ await savedApp(selectedOneNote);
  assert.match(await page.locator('#settings-hint').textContent(),/O programa de escrita vale na hora/,'o aviso do rodapé diz que o programa vale na hora');
  await reviewShot(page,out,'campo-onenote-claro-1440.png');
  await closeSettings('cancel');
  assert.equal(await label(),'Conferir OneNote','Cancelar não desfaz: o botão nomeia o app escolhido');
  assert.equal(await page.locator('#check').getAttribute('title').then(t=>/OneNote/.test(t||'')),true,'a dica também nomeia o app');
- assert.deepEqual(desk().conferirApp,{app:'OneNote',key:'onenote'});
+ assert.deepEqual(desk().conferirApp,selectedOneNote);
  await clickCheck();
  await page.waitForSelector('#attachments .attachment');
  assert.deepEqual(await attachments(),['Anexo: onenote.png'],'o anexo leva o nome do programa');
@@ -144,12 +144,19 @@ await withArtifacts('conferir',async ctx=>{
  await reviewShot(page,out,'onenote-anexado-claro-1440.png');
  await clearAttachments();
 
- /* ---------- 4. a escolha é o APP: o id muda e o Conferir segue no OneNote ---------- */
+ /* ---------- 4. outro PID não substitui a instância escolhida no Windows ---------- */
  setWindows([win('901','Safari','Aula'),win('902','OneNote','Janela da frente agora'),win('903','OneNote','Atrás')]);
  await clickCheck();
- await page.waitForSelector('#attachments .attachment');
- assert.deepEqual(await attachments(),['Anexo: onenote.png']);
- await clearAttachments();
+ if(process.platform==='win32'){
+  await page.locator('#check-note').waitFor({state:'visible'});
+  assert.equal(await page.locator('#attachments .attachment').count(),0,'outro PID não substitui a janela escolhida');
+  await page.keyboard.press('Escape');
+  await page.locator('#check-note').waitFor({state:'hidden'});
+ }else{
+  await page.waitForSelector('#attachments .attachment');
+  assert.deepEqual(await attachments(),['Anexo: onenote.png']);
+  await clearAttachments();
+ }
 
  /* ---------- 5. app ausente: uma frase, a saída leva ao campo, nada é capturado ---------- */
  setWindows([win('910','Safari','Aula'),win('911','Xournal++','Lista')]);
