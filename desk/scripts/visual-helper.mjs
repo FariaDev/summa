@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 
 /**
  * Compila o helper do Conferir se ele faltar ou o fonte for mais novo. Fora do macOS não faz nada.
@@ -29,4 +30,10 @@ export function ensureVisualHelper({root,platform=process.platform,compile=compi
 
 function compileWithSwiftc(source,output){
  return spawnSync('swiftc',[source,'-o',output],{stdio:'inherit'});
+}
+
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+ const result=ensureVisualHelper({root:fileURLToPath(new URL('../../',import.meta.url))});
+ if(result==='compiled')console.log('Helper do Conferir recompilado.');
+ if(result==='failed')console.warn('Não foi possível atualizar o helper do Conferir. Instale as Command Line Tools do Xcode e rode npm run setup.');
 }

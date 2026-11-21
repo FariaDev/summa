@@ -11,7 +11,8 @@ helper `visual-check/windows`, captura a janela visível com
 `/usr/sbin/screencapture -lID` e anexa a imagem à próxima mensagem. A Mesa não usa
 a extensão `index.ts` nem precisa do motor Pi para isso. `desk/main.cjs` chama o
 helper; `desk/scripts/visual-helper.mjs` compila `windows.swift` se o binário
-faltar ou estiver desatualizado (`npm run setup` no modo fonte).
+faltar ou estiver desatualizado (`npm run setup`, `npm start` no modo fonte ou
+`npm run install-app` para o bundle).
 
 A captura mostra somente o conteúdo visível da janela, incluindo escrita não
 salva. Não lê o `.xopp`, não salva ou modifica a resolução e não inclui páginas
