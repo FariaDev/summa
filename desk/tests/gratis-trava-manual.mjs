@@ -44,7 +44,7 @@ const {OpenCodeAdapter} = require(path.join(DESK, 'src/agents/opencode-adapter.c
 const {createOpenCodeClient} = require(path.join(DESK, 'src/agents/opencode-http.cjs'));
 const {openCodePrompt} = require(path.join(DESK, 'src/agents/desk-prompts.cjs'));
 
-const MCP_SERVER = path.join(DESK, 'src', 'extensions', 'mesa-mcp', 'server.mjs');
+const MCP_SERVER = path.join(DESK, 'src', 'extensions', 'summa-mcp', 'server.mjs');
 const MODELS = ['opencode/deepseek-v4.1-flash-free', 'opencode/glm-5.3-flash-free'];
 const FORBIDDEN_NATIVES = ['bash', 'shell', 'edit', 'write', 'multiedit', 'apply_patch', 'patch', 'glob', 'grep', 'list', 'task', 'subagent', 'webfetch', 'websearch', 'browser', 'todowrite', 'todoread', 'question', 'execute', 'codemode', 'tool_search'];
 const READ_SKILL = 'skill-manual';

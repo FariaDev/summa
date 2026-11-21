@@ -347,7 +347,7 @@ function readTutorPdf(raw){
 /* #213/#224: o fundo PDF do `ler_caderno` e do índice da tinta passa pela MESMA autorização do tutor. */
 const authorizeNotebookPdf=file=>{try{return resolveTutorPdfArg(file);}catch{return '';}};
 live.readTutorPdf=readTutorPdf;
-live.readTutorNotebook=raw=>require('./src/extensions/mesa-mcp/notebook-tool.mjs').readNotebookPage({caminho:raw&&raw.caminho,pagina:raw&&raw.pagina},{allowedXopp:[...allowedXopp],xournalPath:config.xournalPath||'',pdfAuthorize:authorizeNotebookPdf});
+live.readTutorNotebook=raw=>require('./src/extensions/summa-mcp/notebook-tool.mjs').readNotebookPage({caminho:raw&&raw.caminho,pagina:raw&&raw.pagina},{allowedXopp:[...allowedXopp],xournalPath:config.xournalPath||'',pdfAuthorize:authorizeNotebookPdf});
 /* O envio pula o PDF que sumiu e segue (`onSkip`): o motivo fica no log, sem o caminho. */
 const chatPdfHost=createChatPdfHost({pageCount:file=>pdfPageReader.count(file),grant:file=>chatPdfGrants.grant(file),sources:()=>chatPdfGrants.list(),onSkip:text=>appendLog('chat-pdf',text)});
 const activityHost=createActivityHost({store:activityStore,runtime:activityRuntime,captureScope:captureActivityScope,scopeIsCurrent:activityScopeIsCurrent,mutate:activityMutate,allowSender:trustedMainSender,

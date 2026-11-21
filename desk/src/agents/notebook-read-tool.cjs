@@ -23,7 +23,7 @@ async function createNotebookReadTool(readNotebook, {language} = {}) {
   const [{tool}, {z}, notebook, fields] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),
     import('zod'),
-    import('../extensions/mesa-mcp/notebook-tool.mjs'),
+    import('../extensions/summa-mcp/notebook-tool.mjs'),
     import('../extensions/tool-fields.mjs'),
   ]);
   return tool(notebook.NOTEBOOK_TOOL_NAME, notebook.NOTEBOOK_DESCRIPTION, fields.zodShape(z, notebook.NOTEBOOK_FIELDS), async (args) => {

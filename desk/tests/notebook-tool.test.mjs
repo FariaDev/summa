@@ -14,8 +14,8 @@ import path from 'node:path';
 import {gzipSync, gunzipSync, inflateSync} from 'node:zlib';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {notebookBridgeTool, notebookPageText, readNotebookPage} from '../src/extensions/mesa-mcp/notebook-tool.mjs';
-import {mesaTools} from '../src/extensions/mesa-mcp/tools.mjs';
+import {notebookBridgeTool, notebookPageText, readNotebookPage} from '../src/extensions/summa-mcp/notebook-tool.mjs';
+import {mesaTools} from '../src/extensions/summa-mcp/tools.mjs';
 import {createCountingReadFileSync} from './fake-read-file.mjs';
 import {spawnFakeXournalpp} from './fake-xournalpp-spawn.mjs';
 import {authorizedXopp} from './xopp-authorized.mjs';
@@ -749,7 +749,7 @@ test('item 8: primeira chamada apaga mesa-ler-caderno-* com mais de 1 hora', asy
   fs.utimesSync(velho, velhoAt, velhoAt);
   fs.utimesSync(novo, novoAt, novoAt);
   fs.utimesSync(outro, velhoAt, velhoAt);
-  const {readNotebookPage: fresh} = await import('../src/extensions/mesa-mcp/notebook-tool.mjs?orfao=' + Date.now());
+  const {readNotebookPage: fresh} = await import('../src/extensions/summa-mcp/notebook-tool.mjs?orfao=' + Date.now());
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-notebook-orfao-src-'));
   try {
     const file = writeXopp(dir, xmlDuasPaginas());
@@ -1583,7 +1583,7 @@ test('#213: aba Livre sem matéria só aceita PDF da sessão', async () => {
 });
 
 test('#213: pixmap em subpasta da matéria, fora da pasta do caderno, vira branco', async () => {
-  const {sanitizeBackgrounds} = await import('../src/extensions/mesa-mcp/notebook-background.mjs');
+  const {sanitizeBackgrounds} = await import('../src/extensions/summa-mcp/notebook-background.mjs');
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-notebook-213-pix-'));
   try {
     const course = path.join(base, 'Calculo');
@@ -1609,7 +1609,7 @@ test('#213: pixmap em subpasta da matéria, fora da pasta do caderno, vira branc
 /* --- auditoria final: 4 regressões do `ler_caderno` --- */
 
 test('auditoria final 1: 80 mil páginas com clones em O(n log n)', async () => {
-  const {sanitizeBackgrounds} = await import('../src/extensions/mesa-mcp/notebook-background.mjs');
+  const {sanitizeBackgrounds} = await import('../src/extensions/summa-mcp/notebook-background.mjs');
   /* Crescimento, não teto em ms: o teto de 1 s estourava com a suíte
      carregada. 4× mais páginas custa ~4–5× no O(n log n) e ~16× no O(n²). */
   const sanitize = (count) => {
@@ -1720,7 +1720,7 @@ test('auditoria final 4: limpeza de órfãos com fake de fs (lstat, formato e ui
       if (!byPath.has(target)) return fs.rmSync(target, options);
       removed.push(target);
     };
-    const {readNotebookPage: fresh} = await import('../src/extensions/mesa-mcp/notebook-tool.mjs?orfaoFake=' + String(Date.now()) + Math.random());
+    const {readNotebookPage: fresh} = await import('../src/extensions/summa-mcp/notebook-tool.mjs?orfaoFake=' + String(Date.now()) + Math.random());
     await fresh({caminho: file, pagina: 1}, {
       allowedXopp: [...authorizedXopp(file)], xournalPath: FAKE, spawnProcess: spawnFakeXournalpp,
       tmpdir: () => tmpRoot,

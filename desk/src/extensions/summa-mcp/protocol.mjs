@@ -40,7 +40,7 @@ export function createMcpServer({tools, name, version, log = () => {}}) {
       const args = rpc.params?.arguments;
       return ok(id, await tool.call(args && typeof args === 'object' && !Array.isArray(args) ? /** @type {Record<string, unknown>} */ (args) : {}));
     } catch (error) {
-      log(JSON.stringify({level: 'warn', area: 'mesa-mcp', msg: 'ferramenta falhou', tool: tool.name, error: String(error?.message || error)}));
+      log(JSON.stringify({level: 'warn', area: 'summa-mcp', msg: 'ferramenta falhou', tool: tool.name, error: String(error?.message || error)}));
       return ok(id, {content: [{type: 'text', text: String(error?.message || error)}], isError: true});
     }
   }

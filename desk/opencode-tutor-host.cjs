@@ -26,7 +26,7 @@ const conversations = require('./src/agents/conversations.cjs');
 const attachments = require('./src/agents/conversation-attachments.cjs');
 const {message} = require('./src/i18n.mjs');
 
-const MCP_SERVER = path.join(__dirname, 'src', 'extensions', 'mesa-mcp', 'server.mjs');
+const MCP_SERVER = path.join(__dirname, 'src', 'extensions', 'summa-mcp', 'server.mjs');
 /**
  * @typedef {{toolCallId?: string, callRef?: string, paramsHash?: string, engine?: string}} ActivityCaller
  */

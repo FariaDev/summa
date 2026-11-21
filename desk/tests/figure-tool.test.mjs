@@ -6,7 +6,7 @@ import {figureMarkdown, blankLineWarning, removedNames, stackedTextWarning} from
 import {CHAT_FIGURE_OFFER, FIGURE_CHOICE, FIGURE_DESCRIPTION, FIGURE_FIELDS, FIGURE_RULES, FIGURE_RULES_EN, MAX_SVG_CHARS, PDF_FIGURE_GUIDE, PLOT_EXAMPLE, PLOT_FORMAT, figureLimitError, figureText} from '../src/extensions/mesa-figure/guide.mjs';
 import {parsePlot, KEY_NAMES, LIMITS} from '../src/figures/plot-spec.mjs';
 import {viewFigure} from '../src/extensions/mesa-figure/client.mjs';
-import {figureTool, mesaTools} from '../src/extensions/mesa-mcp/tools.mjs';
+import {figureTool, mesaTools} from '../src/extensions/summa-mcp/tools.mjs';
 import {canonical, canonicalFields} from '../src/extensions/tool-fields.mjs';
 import {PLOT_PARABOLA as PARABOLA_BODY, TRIANGLE_SVG as TRIANGLE_BODY} from './figures-fixtures.mjs';
 const require = createRequire(import.meta.url);

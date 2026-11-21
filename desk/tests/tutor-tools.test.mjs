@@ -15,7 +15,7 @@ import {noteText} from '../src/extensions/mesa-notes/guide.mjs';
 import {createActivityBridge} from '../activity-bridge.cjs';
 import {createTutorMaterialBridge, noteRequestProblem} from '../tutor-materials.cjs';
 import {saveNote, noteStem} from '../src/study-data/course-notes.cjs';
-import {materialPdfTool, mesaTools} from '../src/extensions/mesa-mcp/tools.mjs';
+import {materialPdfTool, mesaTools} from '../src/extensions/summa-mcp/tools.mjs';
 import {createStudyServices} from '../src/study-data/services.cjs';
 
 const require = createRequire(import.meta.url);

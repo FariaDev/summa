@@ -16,7 +16,7 @@ async function createPdfReadTool(readPdf, {language} = {}) {
   const [{tool}, {z}, pdf, fields] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),
     import('zod'),
-    import('../extensions/mesa-mcp/pdf-tool.mjs'),
+    import('../extensions/summa-mcp/pdf-tool.mjs'),
     import('../extensions/tool-fields.mjs'),
   ]);
   const session = pdf.createPdfSession();

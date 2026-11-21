@@ -11,7 +11,7 @@ import {MAX_NOTEBOOKS, notebookRecorte} from './notebook-facts.mjs';
    página renderizada é cortada por ele. Se o corte falhar, a reduzida é o que
    sobra, e ela já é o trecho; a página inteira nunca vai no lugar dele. */
 
-/* O mesmo DPI do `ler_caderno` (`NOTEBOOK_DPI` em src/extensions/mesa-mcp/notebook-tool.mjs):
+/* O mesmo DPI do `ler_caderno` (`NOTEBOOK_DPI` em src/extensions/summa-mcp/notebook-tool.mjs):
    o recorte vem em pontos e a página renderizada tem pixels = pontos × 120/72. */
 const RENDER_DPI = 120;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];

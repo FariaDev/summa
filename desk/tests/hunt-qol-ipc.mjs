@@ -12,7 +12,7 @@ import {testEnv} from './electron-env.mjs';
 import {trackTempDir} from './temp-dir.mjs';
 const free=createRequire(import.meta.url)('../free-workspaces.cjs');
 await withArtifacts('qol-ipc',async ctx=>{
- const userData=ctx.runtime=trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(),'mesa-qol-userdata-')));
+ const userData=ctx.runtime=trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(),'summa-qol-userdata-')));
  const runtime=path.join(userData,'runtime'),course=path.join(userData,'materials');
  fs.mkdirSync(course,{recursive:true});fs.mkdirSync(runtime,{recursive:true});
  const base=path.join(course,'Base.pdf'),other=path.join(course,'Other.pdf');

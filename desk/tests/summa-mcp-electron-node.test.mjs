@@ -10,7 +10,7 @@ import {createRequire} from 'node:module';
 
 const require=createRequire(import.meta.url);
 const electron=require('electron');
-const server=path.join(import.meta.dirname,'..','src','extensions','mesa-mcp','server.mjs');
+const server=path.join(import.meta.dirname,'..','src','extensions','summa-mcp','server.mjs');
 
 test('o MCP sobe no Node do Electron e lista as ferramentas sem Node do sistema', async () => {
  const child=spawn(electron,[server],{

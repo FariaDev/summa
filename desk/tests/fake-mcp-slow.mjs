@@ -4,7 +4,7 @@
    faz com o estado do MCP depois de uma chamada longa, de um erro da
    ferramenta e da morte do processo filho. */
 import fs from 'node:fs';
-import {createMcpServer, serveLines} from '../src/extensions/mesa-mcp/protocol.mjs';
+import {createMcpServer, serveLines} from '../src/extensions/summa-mcp/protocol.mjs';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -19,7 +19,7 @@ const {canonical, canonicalFields} = await import('../src/extensions/tool-fields
 const {REVIEW_DESCRIPTION, REVIEW_FIELDS, proposalText} = await import('../src/extensions/mesa-review/guide.mjs');
 const {proposeReview} = await import('../src/extensions/mesa-review/client.mjs');
 const {proposalDecision, showProposal} = await import('../src/review-proposal.mjs');
-const {reviewTool, mesaTools} = await import('../src/extensions/mesa-mcp/tools.mjs');
+const {reviewTool, mesaTools} = await import('../src/extensions/summa-mcp/tools.mjs');
 const {createReviewTool, REVIEW_TOOL_NAME} = require('../src/agents/review-tool.cjs');
 const {ClaudeAdapter} = require('../src/agents/claude-adapter.cjs');
 
