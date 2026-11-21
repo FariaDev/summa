@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
 import {PLOT_PNG} from './helpers.mjs';
 
@@ -31,6 +32,17 @@ test('readableImage só lê dentro de learning/ e com extensão de imagem', () =
   fs.writeFileSync(path.join(runtime, 'fora.png'), 'x');
   assert.equal(images.readableImage(inside)?.mime, 'image/png');
   assert.equal(images.readableImage(path.join(runtime, 'fora.png')), null);
+});
+
+test('readableImage preserves hash and percent filenames in paths and encoded file URLs', () => {
+  for (const name of ['Aula #3.png', '100%25.png']) {
+    const file = path.join(learningRoot, name);
+    fs.writeFileSync(file, Buffer.from(PLOT_PNG, 'base64'));
+    for (const input of [file, `${pathToFileURL(file)}?download=1#preview`]) {
+      assert.equal(images.readableImage(input)?.file, file);
+      assert.deepEqual(images.readableImage(input)?.bytes, Buffer.from(PLOT_PNG, 'base64'));
+    }
+  }
 });
 
 test('trimMessageImages mantém as últimas N mensagens com imagem e tira as antigas', () => {

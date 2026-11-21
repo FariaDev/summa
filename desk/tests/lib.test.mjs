@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {displayUserText,contentParts} from '../text.mjs';
 const {placeWindow,sessionStartedFromPath,formatSessionLabel,sessionPreviewFromJsonl,imageCandidates}=createRequire(import.meta.url)('../lib.cjs');
 
@@ -100,6 +101,20 @@ test('imageCandidates only resolves image files inside the learning root',()=>{
  assert.deepEqual(imageCandidates('/vault/desk/.runtime/learning-extra/plot.png',options),[]);
  assert.deepEqual(imageCandidates(path.join(root,'plot.pdf'),options),[]);
  assert.deepEqual(imageCandidates('https://example.com/plot.png',options),[]);
+});
+
+test('imageCandidates preserves filesystem punctuation and decodes only file URLs',()=>{
+ const root=path.resolve('/vault/learning');
+ const options={learningRoot:root,roots:[root]};
+ for(const name of ['Aula #3.png','100%25.png','question?.png','encoded%23.png']){
+  const asset=path.join(root,name);
+  assert.deepEqual(imageCandidates(asset,options),[asset]);
+  assert.deepEqual(imageCandidates(`./${name}`,options),[asset]);
+  assert.deepEqual(imageCandidates(`${pathToFileURL(asset)}?download=1#preview`,options),[asset]);
+ }
+ assert.deepEqual(imageCandidates('',options),[]);
+ assert.deepEqual(imageCandidates(null,options),[]);
+ assert.deepEqual(imageCandidates('file:///vault/learning/bad%ZZ.png',options),[path.join(root,'bad%ZZ.png')]);
 });
 
 test('session labels use the jsonl timestamp and first user line',()=>{
