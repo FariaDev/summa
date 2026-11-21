@@ -10,6 +10,8 @@ const {MANIFEST_NAME, PACKAGE_FORMAT, PackageError, isPlainObject, safeDirName, 
    Saiu de packages.cjs na #43 fase 2. */
 
 const PACKAGE_KINDS = new Set(['materials', 'learning', 'store', 'conversations']);
+
+/* Volumes sem distinção de caixa (Windows/macOS padrão) sobrescreveriam um arquivo com outro, mas a importação anunciaria sucesso. */
 function assertDistinctDestination(destinations, destination) {
   const key = destination.normalize('NFC').toLowerCase();
   const previous = destinations.get(key);
