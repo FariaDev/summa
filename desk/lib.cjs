@@ -19,9 +19,11 @@ function imageCandidates(input,{learningRoot='',roots=[]}={}){
  let raw=input.trim();
  if(raw.length>4096)return [];
  if(raw.startsWith('<')&&raw.endsWith('>'))raw=raw.slice(1,-1);
- if(/^file:\/\//i.test(raw))raw=raw.replace(/^file:\/\//i,'');
- try{raw=decodeURIComponent(raw);}catch{}
- raw=raw.replace(/[?#].*$/,'').trim();
+ if(/^file:\/\//i.test(raw)){
+  raw=raw.replace(/^file:\/\//i,'').replace(/[?#].*$/,'');
+  try{raw=decodeURIComponent(raw);}catch{}
+  if(process.platform==='win32'&&/^\/[a-z]:\//i.test(raw))raw=raw.slice(1);
+ }
  if(!raw||!LOCAL_IMAGE_PREFIX.test(raw)||!IMAGE_EXT.test(raw))return [];
  const base=learningRoot?path.resolve(learningRoot):'';
  if(!base)return [];

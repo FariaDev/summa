@@ -35,7 +35,7 @@
    `opções`: {alvo, confirmar, abrirPasta, prefixoCss}. Nada aqui lê/escreve
    arquivo: quem faz isso é o main. */
 
-import {t, formatDate, LANGUAGE_EVENT} from './ui-text.mjs';
+import {t, text, formatDate, LANGUAGE_EVENT} from './ui-text.mjs';
 import {ensureStyles} from './backup-panel-style.mjs';
 export {ensureStyles};
 import {displayCourseName} from './study/free-names.mjs';
@@ -410,7 +410,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       state.gitRoot = state.view.settings.gitRoot;
       paint();
     } catch (error) {
-      live(t('backup.msg.readFail', {error: error.message}), 'error');
+      live(t('backup.msg.readFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -422,7 +422,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       live(t('backup.msg.done', {count: result.entries, size: formatBytes(result.bytes), pruned}), 'ok');
       await refresh();
     } catch (error) {
-      live(t('backup.msg.runFail', {error: error.message}), 'error');
+      live(t('backup.msg.runFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -453,7 +453,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       live(t('backup.msg.saved'), 'ok');
       await refresh();
     } catch (error) {
-      live(t('backup.msg.saveFail', {error: error.message}), 'error');
+      live(t('backup.msg.saveFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -465,7 +465,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       paint();
       live(versions.length ? t('backup.msg.versions', {count: versions.length}) : t('backup.msg.noVersions'), versions.length ? 'ok' : 'error');
     } catch (error) {
-      live(t('backup.msg.listFail', {error: error.message}), 'error');
+      live(t('backup.msg.listFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -498,7 +498,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       }
       live(t('backup.msg.previewReady'), 'ok');
     } catch (error) {
-      live(t('backup.msg.previewFail', {error: error.message}), 'error');
+      live(t('backup.msg.previewFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -522,7 +522,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       live(t('backup.msg.restored', {count: result.written, remapped, kept: result.backupOfReplaced ? t('backup.msg.previousKept') : '', warnings: warnings ? ` ${warnings}` : ''}), warnings ? 'warn' : 'ok');
       await refresh();
     } catch (error) {
-      live(t('backup.msg.restoreFail', {error: error.message}), 'error');
+      live(t('backup.msg.restoreFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -539,7 +539,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
         live(t('backup.msg.pushIncomplete', {reason: result?.error || result?.reason || t('backup.msg.noRemote')}), 'error');
       }
     } catch (error) {
-      live(t('backup.msg.pushFail', {error: error.message}), 'error');
+      live(t('backup.msg.pushFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -554,7 +554,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       const result = await api.exportar(state.destination, {conversations: includeConversations});
       live(t('backup.msg.exported', {file: result.file, size: formatBytes(result.bytes)}), 'ok');
     } catch (error) {
-      live(t('backup.msg.exportFail', {error: error.message}), 'error');
+      live(t('backup.msg.exportFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -575,7 +575,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
     } catch (error) {
       state.importPreview = null;
       paintImportPreview();
-      live(t('backup.msg.importFail', {error: error.message}), 'error');
+      live(t('backup.msg.importFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -591,7 +591,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       live(t('backup.msg.imported', {destination: result.destination, count: result.files}), 'ok');
       if (typeof options.aoImportar === 'function') options.aoImportar(result);
     } catch (error) {
-      live(t('backup.msg.importFail', {error: error.message}), 'error');
+      live(t('backup.msg.importFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -609,7 +609,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
       const result = await api.verificar(snapshotId);
       live(result.ok ? t('backup.msg.intact', {count: result.checked}) : t('backup.msg.problem', {errors: result.errors.join('; ')}), result.ok ? 'ok' : 'error');
     } catch (error) {
-      live(t('backup.msg.verifyFail', {error: error.message}), 'error');
+      live(t('backup.msg.verifyFail', {error: text(error.message)}), 'error');
     }
   }
 
@@ -664,7 +664,7 @@ export function initBackupPanel(documento, ipc = {}, options = {}) {
   };
 
   dialog.addEventListener('click', (event) => {
-    onClick(event).catch((error) => live(t('backup.msg.unexpected', {error: error.message}), 'error'));
+    onClick(event).catch((error) => live(t('backup.msg.unexpected', {error: text(error.message)}), 'error'));
   });
   dialog.addEventListener('change', onChange);
   const onKeydown = (event) => {

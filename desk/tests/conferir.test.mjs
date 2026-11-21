@@ -10,7 +10,7 @@ const {ptText, enText} = await import('./pt-text.mjs');
 
 const list = items => items.reduceRight((tail, head) => ({$: 'Con', head, tail}), {$: 'Nil'});
 const w = (id, app, title = '', over = {}) => ({$: 'ConfWin', id, app, key: app.toLowerCase(), title, usable: true, self: false, ...over});
-const some = (app, key = app.toLowerCase()) => ({$: 'Some', value: {app, key}});
+const some = (app, key = app.toLowerCase(), windowId = {$: 'None'}) => ({$: 'Some', value: {app, key, windowId}});
 const none = {$: 'None'};
 
 test('sem escolha: o Xournal++, em qualquer grafia', () => {
@@ -23,6 +23,13 @@ test('sem escolha: o Xournal++, em qualquer grafia', () => {
 test('com escolha ausente: ConfAbsent, nunca outra janela', () => {
   const d = core.decide(list([w('1', 'Safari'), w('2', 'Xournal++')]), some('OneNote'));
   assert.deepEqual({kind: d.$, app: d.app, saved: d.saved}, {kind: 'ConfAbsent', app: 'OneNote', saved: true});
+});
+
+test('id salvo vence a primeira instância; id ausente nunca vira outra janela', () => {
+  const choice = some('OneNote', 'onenote', {$: 'Some', value: '2'});
+  assert.equal(core.decide(list([w('1', 'OneNote'), w('2', 'OneNote')]), choice).id, '2');
+  assert.equal(core.decide(list([w('1', 'OneNote')]), choice).$, 'ConfAbsent');
+  assert.equal(core.decide(list([]), choice).$, 'ConfAbsent');
 });
 
 test('a janela da frente vence; a Mesa, o sistema e a janela minúscula nunca entram', () => {

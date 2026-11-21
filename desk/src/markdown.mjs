@@ -32,13 +32,13 @@ export {modelAttrsPresent,stripModelAttrs} from './model-attrs.mjs';
    módulo carrega, e ler `katex.version` aqui quebrava o arquivo inteiro. */
 const MARKED_VERSION='18.2.0';
 const KATEX_VERSION='0.19.1';
-const MARKUP_PIPELINE=`marked=${MARKED_VERSION};katex=${KATEX_VERSION};dompurify=${DOMPurify.version};sanitize=2;figures=1;highlight=1;model-attrs=1`;
+const MARKUP_PIPELINE=`marked=${MARKED_VERSION};katex=${KATEX_VERSION};dompurify=${DOMPurify.version};sanitize=2;figures=2;highlight=1;model-attrs=1`;
 setMarkupPipeline(MARKUP_PIPELINE);
 
 const ASSET_EXT=/\.(?:png|jpe?g|gif|webp|svg)$/i;
 const ASSET_LOCAL=/^(?:file:\/\/|\.{0,2}[\\/]|[\\/]|desk[\\/]|[a-zA-Z]:[\\/])/i;
 const ASSET_MARKDOWN=/!\[([^\]]*)\]\(\s*(?:<([^<>]+)>|((?:file:\/\/|\.{0,2}[\\/]|[\\/]|desk[\\/]|[a-zA-Z]:[\\/])[^)]*?\.(?:png|jpe?g|gif|webp|svg))(?:\s+"[^"]*")?)\s*\)/gi;
-export function assetSource(value){const text=String(value||'').trim();return ASSET_LOCAL.test(text)&&ASSET_EXT.test(text.split(/[?#]/)[0]);}
+export function assetSource(value){const text=String(value||'').trim();return ASSET_LOCAL.test(text)&&ASSET_EXT.test(/^file:\/\//i.test(text)?text.split(/[?#]/)[0]:text);}
 export function assetLocalPath(value){const text=String(value||'').trim();if(!text||text.length>4096||/[\n\r]/.test(text)||!assetSource(text))return '';return text;}
 export function attrValue(value){return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 /* O marked entrega o código já escapado (&gt;, &amp;) e o realce escapa de novo — sem isso

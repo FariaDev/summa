@@ -73,6 +73,12 @@ def Laws.conferir_escolha_xournal_vale():
 def Laws.conferir_varias_janelas_vale_a_da_frente():
   {==}
 
+def Laws.conferir_id_salvo_vence_a_janela_da_frente():
+  {==}
+
+def Laws.conferir_id_ausente_nunca_captura_outra_instancia():
+  {==}
+
 def Laws.conferir_varias_janelas_do_xournal_vale_a_da_frente():
   {==}
 

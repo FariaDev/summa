@@ -13,7 +13,7 @@ import ../view.bend as V
 #   3. app ausente é `ConfAbsent`: o núcleo NUNCA devolve outra janela nem a
 #      tela inteira;
 #   4. a Mesa, o sistema e as janelas sem tamanho de janela ficam fora, e
-#      entre várias janelas do mesmo app vale a da frente (a primeira).
+#      com id salvo só aquela janela vale; sem id, vale a da frente.
 #
 # O que o enunciado NÃO prova: a medida da janela (o host entrega `usable`),
 # as minúsculas/aparo do nome (o host entrega `key`) e listar/capturar (mundo).
@@ -31,7 +31,7 @@ def mesa(id: String, app: String, key: String, title: String) -> C.ConfWin:
   C.ConfWin{id, app, key, title, True{}, True{}}
 
 def onenote() -> C.ConfChoice:
-  C.ConfChoice{"OneNote", "onenote"}
+  C.ConfChoice{"OneNote", "onenote", None{}}
 
 # ---------- identidade do app ----------
 
@@ -131,7 +131,7 @@ law conferir_escolha_sem_janelas_e_ausente:
 law conferir_escolha_xournal_vale:
   {C.decide([
     win("30", "Xournal++", "xournal++", "Lista 3")
-  ], Some{C.ConfChoice{"Xournal++", "xournal++"}}) == C.ConfCapture{"30", "Xournal++", "Lista 3"} : C.ConfDecision}
+  ], Some{C.ConfChoice{"Xournal++", "xournal++", None{}}}) == C.ConfCapture{"30", "Xournal++", "Lista 3"} : C.ConfDecision}
 
 # ---------- várias janelas, a Mesa e o sistema ----------
 
@@ -160,7 +160,7 @@ law conferir_pula_janela_sem_tamanho:
 law conferir_a_mesa_fica_fora:
   {C.decide([
     mesa("50", "Mesa de Estudos", "mesa de estudos", "Mesa")
-  ], Some{C.ConfChoice{"Mesa de Estudos", "mesa de estudos"}}) == C.ConfAbsent{"Mesa de Estudos", True{}} : C.ConfDecision}
+  ], Some{C.ConfChoice{"Mesa de Estudos", "mesa de estudos", None{}}}) == C.ConfAbsent{"Mesa de Estudos", True{}} : C.ConfDecision}
 
 law conferir_a_mesa_nao_atrapalha_o_xournal:
   {C.decide([
@@ -172,7 +172,18 @@ law conferir_a_mesa_nao_atrapalha_o_xournal:
 law conferir_sistema_nunca_e_capturado:
   {C.decide([
     win("60", "Dock", "dock", "")
-  ], Some{C.ConfChoice{"Dock", "dock"}}) == C.ConfAbsent{"Dock", True{}} : C.ConfDecision}
+  ], Some{C.ConfChoice{"Dock", "dock", None{}}}) == C.ConfAbsent{"Dock", True{}} : C.ConfDecision}
+
+law conferir_id_salvo_vence_a_janela_da_frente:
+  {C.decide([
+    win("40", "OneNote", "onenote", "Frente"),
+    win("41", "OneNote", "onenote", "Escolhida")
+  ], Some{C.ConfChoice{"OneNote", "onenote", Some{"41"}}}) == C.ConfCapture{"41", "OneNote", "Escolhida"} : C.ConfDecision}
+
+law conferir_id_ausente_nunca_captura_outra_instancia:
+  {C.decide([
+    win("40", "OneNote", "onenote", "Outra")
+  ], Some{C.ConfChoice{"OneNote", "onenote", Some{"41"}}}) == C.ConfAbsent{"OneNote", True{}} : C.ConfDecision}
 
 # ---------- rótulos e textos ----------
 

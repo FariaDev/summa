@@ -153,6 +153,21 @@ test('o comando de login usa o caminho do binário, com ~ colável e aspas só c
  assert.equal(loginBinary('', 'linux'),'');
 });
 
+test('o login no PowerShell preserva extensões executáveis e chama caminhos com espaço',()=>{
+ for(const extension of ['cmd','bat','exe','com','CMD','BAT','EXE','COM']){
+  assert.equal(loginBinary(`C:\\op dir\\opencode.${extension}`,'win32'),`& "C:\\op dir\\opencode.${extension}"`);
+  assert.equal(loginBinary(`C:\\opdir\\opencode.${extension}`,'win32'),`C:\\opdir\\opencode.${extension}`);
+ }
+ assert.equal(loginBinary('C:\\opdir\\opencode','win32'),'C:\\opdir\\opencode.exe');
+ assert.equal(loginBinary('C:\\op dir\\opencode','win32'),'& "C:\\op dir\\opencode.exe"');
+ assert.equal(loginBinary('','win32'),'');
+ for(const platform of ['linux','darwin']){
+  assert.equal(loginBinary('/home/ana/.opencode/bin/opencode',platform),'~/.opencode/bin/opencode');
+  assert.equal(loginBinary('/opt/op dir/opencode.cmd',platform),'"/opt/op dir/opencode.cmd"');
+  assert.equal(loginBinary('/opt/opdir/opencode',platform),'/opt/opdir/opencode');
+ }
+});
+
 /* O Windows recusa renomear sobre arquivo aberto; o caminho dele é `replaceWindows`. */
 test('placeBinary troca por rename atômico e quem está rodando segue no arquivo antigo',{skip:process.platform==='win32'&&'rename sobre arquivo aberto é só POSIX'},async()=>{
  const root=trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(),'mesa-opencode-atomic-')));

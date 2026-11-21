@@ -18,10 +18,8 @@ import view.bend as V
 #      qualquer das grafias que as duas plataformas dão (`defaultKey`).
 #   3. Com escolha salva, o app é o escolhido, comparado pela chave
 #      (`key`: nome do app em minúsculas e aparado, que o host entrega pronta).
-#      O id de janela NUNCA é guardado: muda a cada abertura.
-#   4. Várias janelas do mesmo app: vale a da FRENTE (a primeira da lista).
-#      Não existe "última usada": a ordem de frente para trás já a carrega
-#      sem outro estado para guardar.
+#   4. Com id salvo, só aquela janela vale; se sumiu, `ConfAbsent`.
+#      Sem id salvo, vale a da FRENTE (a primeira da lista).
 #   5. Nenhuma janela do app: `ConfAbsent`. O núcleo NUNCA devolve outra
 #      janela no lugar, nem a tela inteira — quem quiser outra janela a
 #      escolhe de propósito (e a escolha vira o app salvo).
@@ -44,7 +42,7 @@ type ConfWin is Data:
 
 # O app salvo como escolha: nome para mostrar e a chave de comparação.
 type ConfChoice is Data:
-  ConfChoice{app: String, key: String}
+  ConfChoice{app: String, key: String, windowId: Maybe<&2, String>}
 
 # O que o Conferir faz agora.
 type ConfDecision is Data:
@@ -258,21 +256,35 @@ def keyOf(w: ConfWin) -> String:
 
 def choiceApp(c: ConfChoice) -> String:
   match c:
-    case ConfChoice{app, key}:
+    case ConfChoice{app, key, windowId}:
       app
 
 def choiceKey(c: ConfChoice) -> String:
   match c:
-    case ConfChoice{app, key}:
+    case ConfChoice{app, key, windowId}:
       key
 
+def matchesWindow(windowId: Maybe<&2, String>, w: ConfWin) -> Bool:
+  match windowId:
+    case None{}:
+      True{}
+    case Some{target}:
+      match w:
+        case ConfWin{id, app, key, title, usable, self}:
+          String.eq(id, target)
+
+def choiceWindow(c: ConfChoice) -> Maybe<&2, String>:
+  match c:
+    case ConfChoice{app, key, windowId}:
+      windowId
+
 # A janela é do app procurado? Sem escolha, o Xournal++; com ela, a chave salva.
-def wanted(w: ConfWin, choice: Maybe<&2, ConfChoice>) -> Bool:
+def wanted(+w: ConfWin, choice: Maybe<&2, ConfChoice>) -> Bool:
   match choice:
     case None{}:
       defaultKey(keyOf(w))
-    case Some{c}:
-      String.eq(keyOf(w), choiceKey(c))
+    case Some{+c}:
+      Bool.and(String.eq(keyOf(w), choiceKey(c)), matchesWindow(choiceWindow(c), w))
 
 def wantedLabel(choice: Maybe<&2, ConfChoice>) -> String:
   match choice:

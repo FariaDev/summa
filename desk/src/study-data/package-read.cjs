@@ -11,6 +11,17 @@ const {MANIFEST_NAME, PACKAGE_FORMAT, PackageError, isPlainObject, safeDirName, 
    Saiu de packages.cjs na #43 fase 2. */
 
 const PACKAGE_KINDS = new Set(['materials', 'learning', 'store', 'conversations']);
+
+/* Volumes sem distinção de caixa (Windows/macOS padrão) sobrescreveriam um arquivo com outro, mas a importação anunciaria sucesso. */
+function assertDistinctDestination(destinations, destination) {
+  const key = destination.normalize('NFC').toLowerCase();
+  const previous = destinations.get(key);
+  if (previous !== undefined) {
+    throw new PackageError(uiMsg('err.pkg.collidingPaths', {first: previous, second: destination}));
+  }
+  destinations.set(key, destination);
+}
+
 /* Abre o arquivo SEM tocar o disco de destino: valida zip, manifesto, limites
    e o hash de cada arquivo. Devolve manifesto + mapa de buffers prontos para a
    prévia de importação. */
@@ -42,6 +53,7 @@ function openPackage(buffer, {limits = {}} = {}) {
   const maxFiles = Number(limits.maxEntries) > 0 ? Math.trunc(Number(limits.maxEntries)) : 20000;
   if (manifest.files.length > maxFiles) throw new PackageError(uiMsg('err.pkg.tooManyFiles', {count: manifest.files.length}));
   const declared = new Set([MANIFEST_NAME]);
+  const destinations = new Map();
   const missing = [];
   const mismatched = [];
   for (const item of manifest.files) {
@@ -55,6 +67,7 @@ function openPackage(buffer, {limits = {}} = {}) {
     const payloadRel = safeRelPath(item.rel);
     if (!payloadRel) throw new PackageError(uiMsg('err.pkg.badRel', {path: String(item.rel)}));
     if (rel !== `payload/${item.kind}/${payloadRel}`) throw new PackageError(uiMsg('err.pkg.badRoute', {path: item.archivePath}));
+    assertDistinctDestination(destinations, `${item.kind}/${payloadRel}`);
     if (item.kind === 'conversations' && !['pi', 'claude', 'opencode'].includes(item.engine)) {
       throw new PackageError(uiMsg('err.pkg.noEngine', {path: item.archivePath}));
     }

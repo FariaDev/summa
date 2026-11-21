@@ -17,7 +17,7 @@ export type BendMaybe<T> = {$: 'None'} | {$: 'Some', value: T};
 
 /* ---------- core/conferir.bend ---------- */
 export type ConfWin = {$: 'ConfWin', id: string, app: string, key: string, title: string, usable: boolean, self: boolean};
-export type ConfChoice = {app: string, key: string};
+export type ConfChoice = {app: string, key: string, windowId: BendMaybe<string>};
 export type ConfDecision =
  | {$: 'ConfCapture', id: string, app: string, title: string}
  | {$: 'ConfAbsent', app: string, saved: boolean};
