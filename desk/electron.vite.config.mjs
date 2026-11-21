@@ -1,5 +1,5 @@
 // @ts-check
-/* electron-vite (#43 fase 2): servidor com HMR (`npm run dev`) e build
+/* electron-vite (#125): servidor com HMR (`npm run dev`) e build
    otimizado do renderer em `out/renderer/` (`npm run build`, `npm run preview`).
 
    Só o renderer passa pelo Vite. O main (`main.cjs` + `*-host.cjs` +
@@ -24,6 +24,9 @@ const DESK = path.dirname(fileURLToPath(import.meta.url));
 const RUNTIME_COPIES = [
   {dir: 'src/materials', keep: (name) => name.endsWith('.css')},
   {dir: 'assets', keep: () => true},
+  {dir: 'node_modules/pdfjs-dist/cmaps', keep: () => true},
+  {dir: 'node_modules/pdfjs-dist/standard_fonts', keep: () => true},
+  {dir: 'node_modules/pdfjs-dist/wasm', keep: () => true},
 ];
 
 /** @returns {import('vite').Plugin} */

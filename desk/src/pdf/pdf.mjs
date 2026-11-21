@@ -1,6 +1,6 @@
 // @ts-check
 import {bindPointerDrag} from '../pointer-drag.mjs';
-import {loadPdfjs} from './pdfjs-loader.mjs';
+import {loadPdfjs,pdfjsDataUrls} from './pdfjs-loader.mjs';
 import {nearestPageIndex} from './pdf-scroll.mjs';
 import {icon} from '../../icons.mjs';
 import {$,S,toast,save,updateContextSummary,updateWindowTitle,layoutSnapshot,loadCourse} from '../state.mjs';
@@ -46,7 +46,9 @@ async function cachedPdf(file){
   const [bytes,pdfjs]=await Promise.all([window.desk.readPDF(file),loadPdfjs()]);
   // JBIG2/JPEG 2000 e perfis ICC precisam dos decodificadores locais. Sem
   // wasmUrl o PDF.js pode concluir a página omitindo partes da imagem.
-  const loading=pdfjs.getDocument({data:bytes,standardFontDataUrl:new URL('../../node_modules/pdfjs-dist/standard_fonts/',import.meta.url).href,cMapUrl:new URL('../../node_modules/pdfjs-dist/cmaps/',import.meta.url).href,cMapPacked:true,wasmUrl:new URL('../../node_modules/pdfjs-dist/wasm/',import.meta.url).href});
+  // As pastas partem da base do documento: Vite reescreve `new URL` literal
+  // junto de `import.meta.url` e, no build, elas ficam fora do bundle.
+  const loading=pdfjs.getDocument({data:bytes,...pdfjsDataUrls(document.baseURI),cMapPacked:true});
   const doc=await loading.promise;
   const hit={doc,loading};
   pdfCache.set(file,hit);

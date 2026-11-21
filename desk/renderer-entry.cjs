@@ -4,7 +4,7 @@
 const path = require('node:path');
 const fs = require('node:fs');
 
-/* De onde a janela principal carrega o renderer (#43 fase 2). O padrão segue
+/* De onde a janela principal carrega o renderer (#125). O padrão segue
    sendo o código-fonte (`index.html`): zip de release, update e bundle rodam
    `electron .` sem build. O electron-vite só entra quando foi ele que abriu o
    app: `npm run dev` (servidor com HMR, ELECTRON_RENDERER_URL) ou

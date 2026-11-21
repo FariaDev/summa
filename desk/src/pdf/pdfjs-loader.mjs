@@ -8,6 +8,17 @@
 const WORKER_URL = new URL('../../node_modules/pdfjs-dist/build/pdf.worker.mjs', import.meta.url).href;
 
 /**
+ * URLs dos dados de pdf.js relativos à página que os carrega.
+ * @param {string} base URL base do documento (document.baseURI)
+ * @returns {{standardFontDataUrl: string, cMapUrl: string, wasmUrl: string}}
+ * @example pdfjsDataUrls('http://localhost:5173/') // URLs sob /node_modules/pdfjs-dist/
+ */
+export function pdfjsDataUrls(base) {
+  const dir = (name) => new URL(`node_modules/pdfjs-dist/${name}/`, base).href;
+  return {standardFontDataUrl: dir('standard_fonts'), cMapUrl: dir('cmaps'), wasmUrl: dir('wasm')};
+}
+
+/**
  * Cria um carregador de pdf.js com import injetável (teste) e uma promessa só.
  * `loadPdfjs()` devolve o mesmo módulo nas chamadas seguintes; uma falha libera
  * a próxima tentativa.

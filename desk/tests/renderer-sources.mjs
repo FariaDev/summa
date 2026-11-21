@@ -1,5 +1,5 @@
 /* As folhas e módulos do renderer moram na raiz de `src/` e nas pastas de
-   família da #43 fase 4 (`src/chat/`, `src/pdf/`...). As varreduras de CSS
+   famílias da #125 (`src/chat/`, `src/pdf/`...). As varreduras de CSS
    olham essas pastas; `materials/`, `figures/` e as demais têm regra própria. */
 import fs from 'node:fs';
 import path from 'node:path';

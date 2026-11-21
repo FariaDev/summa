@@ -101,7 +101,7 @@ function containedRealpath(file, roots, {caseSensitive = process.platform !== 'w
    `index.html` puxa). Negar por padrão e aceitar só estes saiu tão simples
    quanto negar só o runtime — então vale a lista fechada: aluno nenhum mora
    aqui, e dado novo fora daqui já nasce negado. */
-/* `out/renderer` é o build do electron-vite (`npm run preview`, #43 fase 2). */
+/* `out/renderer` é o build do electron-vite (`npm run preview`, #125). */
 const STATIC_DIRS = ['src', 'assets', 'node_modules', path.join('out', 'renderer')];
 const STATIC_FILES = ['index.html', 'preload.cjs', 'renderer.mjs', 'style.css', 'text.mjs', 'icons.mjs', 'highlight.mjs', 'calculator.mjs'];
 
