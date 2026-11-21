@@ -21,6 +21,7 @@ function imageCandidates(input,{learningRoot='',roots=[]}={}){
  if(/^file:\/\//i.test(raw)){
   raw=raw.replace(/^file:\/\//i,'').replace(/[?#].*$/,'');
   try{raw=decodeURIComponent(raw);}catch{}
+  if(process.platform==='win32'&&/^\/[a-z]:\//i.test(raw))raw=raw.slice(1);
  }
  if(!raw||!LOCAL_IMAGE_PREFIX.test(raw)||!IMAGE_EXT.test(raw))return [];
  const base=learningRoot?path.resolve(learningRoot):'';

@@ -94,11 +94,13 @@ test('imageCandidates only resolves image files inside the learning root',()=>{
  const options={learningRoot:root,roots:[path.resolve('/vault'),path.resolve('/vault/desk')]};
  const asset=path.join(root,'Courses','Calculus I','Sessions','Assets','1','plot.png');
  assert.deepEqual(imageCandidates('file:///vault/desk/.runtime/learning/Courses/Calculus%20I/Sessions/Assets/1/plot.png',options),[asset]);
+ assert.deepEqual(imageCandidates(pathToFileURL(asset).href,options),[asset]);
  assert.deepEqual(imageCandidates('desk/.runtime/learning/Courses/Calculus I/Sessions/Assets/1/plot.png',options),[asset]);
  assert.deepEqual(imageCandidates(`<${asset}>`,options),[asset]);
  assert.deepEqual(imageCandidates(asset.replace('.png','.svg'),options),[asset.replace('.png','.svg')]);
  assert.deepEqual(imageCandidates('/etc/passwd.png',options),[]);
  assert.deepEqual(imageCandidates('/vault/desk/.runtime/learning-extra/plot.png',options),[]);
+ assert.deepEqual(imageCandidates(pathToFileURL(path.resolve('/vault/desk/.runtime/learning-extra/plot.png')).href,options),[]);
  assert.deepEqual(imageCandidates(path.join(root,'plot.pdf'),options),[]);
  assert.deepEqual(imageCandidates('https://example.com/plot.png',options),[]);
 });
@@ -110,7 +112,7 @@ test('imageCandidates preserves filesystem punctuation and decodes only file URL
   const asset=path.join(root,name);
   assert.deepEqual(imageCandidates(asset,options),[asset]);
   assert.deepEqual(imageCandidates(`./${name}`,options),[asset]);
-  if(process.platform!=='win32')assert.deepEqual(imageCandidates(`${pathToFileURL(asset)}?download=1#preview`,options),[asset]);
+  assert.deepEqual(imageCandidates(`${pathToFileURL(asset)}?download=1#preview`,options),[asset]);
  }
  assert.deepEqual(imageCandidates('',options),[]);
  assert.deepEqual(imageCandidates(null,options),[]);

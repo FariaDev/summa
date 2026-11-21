@@ -38,7 +38,7 @@ test('readableImage preserves hash and percent filenames in paths and encoded fi
   for (const name of ['Aula #3.png', '100%25.png']) {
     const file = path.join(learningRoot, name);
     fs.writeFileSync(file, Buffer.from(PLOT_PNG, 'base64'));
-    const inputs = process.platform === 'win32' ? [file] : [file, `${pathToFileURL(file)}?download=1#preview`];
+    const inputs = [file, `${pathToFileURL(file)}?download=1#preview`];
     for (const input of inputs) {
       assert.equal(images.readableImage(input)?.file, fs.realpathSync(file));
       assert.deepEqual(images.readableImage(input)?.bytes, Buffer.from(PLOT_PNG, 'base64'));
