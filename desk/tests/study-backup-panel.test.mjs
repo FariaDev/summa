@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {message} from '../src/i18n.mjs';
 import {initBackupPanel, buildBackupPanelView, renderBackupPanelView, formatBytes, formatWhen, reasonLabel, ensureStyles, BACKUP_PANEL_CSS_ID} from '../src/backup-panel.mjs';
 
 /* Painel Backup/Compartilhar sem navegador: um DOM mínimo (sem dependência
@@ -652,6 +653,32 @@ test('painel: cancelar a prévia não importa e some com a transcrição (#140)'
   assert.ok(!calls.some((call) => call.fn === 'importar'));
   assert.equal(dialog.querySelector('[data-bkp-import]').hidden, true, 'a prévia some ao cancelar');
 });
+
+for (const stage of ['prévia', 'confirmação']) {
+  test(`painel: erro marcado de importação é traduzido na ${stage}`, async () => {
+    const document = makeDocument();
+    const {ipc} = fakeModel();
+    const failImport = async () => {
+      throw new Error(message('err.pkg.collidingPaths', {first: 'materials/A.pdf', second: 'materials/a.pdf'}));
+    };
+    if (stage === 'prévia') ipc.previaImportacao = failImport;
+    else ipc.importar = failImport;
+    const panel = initBackupPanel(document, ipc, {alvo: document.body});
+    await panel.abrir('compartilhar');
+    const dialog = panel.element;
+    dialog.dispatch('click', {target: findAction(dialog, 'importar')});
+    await flush();
+    if (stage === 'confirmação') {
+      dialog.dispatch('click', {target: findAction(dialog, 'importar-confirmar')});
+      await flush();
+    }
+    assert.match(liveText(dialog), /Importação falhou: pacote tem arquivos que colidem sem diferenciar maiúsculas/);
+    assert.ok(liveText(dialog).includes('"materials/A.pdf" e "materials/a.pdf"'));
+    assert.doesNotMatch(liveText(dialog), /[\uE000\uE001]/);
+    assert.equal(dialog.open, true);
+    panel.destroy();
+  });
+}
 
 test('painel: erro de IPC vira aviso na barra, sem quebrar o diálogo', async () => {
   const document = makeDocument();

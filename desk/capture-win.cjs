@@ -43,6 +43,11 @@ function psLiteral(value){
  return String(value).replace(/[\r\n]+/g,' ').replace(PS_QUOTE,q=>q+q);
 }
 
+/* Sem BOM, o PowerShell 5.1 lê UTF-8 como ANSI e corrompe caminhos acentuados. */
+function writePowerShellScript(scriptPath,script){
+ fs.writeFileSync(scriptPath,'\uFEFF'+script,'utf8');
+}
+
 /* Nome do processo vai para o script como literal, então entra só uma lista
    branca: letras de qualquer alfabeto, números, espaço e `. _ + ( ) -` (nomes
    de programa do Windows). Qualquer aspa, inclusive as curvas, é recusada
@@ -117,7 +122,7 @@ async function captureWindow(opts={}){
  const outFile=path.join(dir,'attempt.png');
  try{
   /* Dentro do try: um nome recusado pela lista branca não deixa o temporário para trás. */
-  fs.writeFileSync(scriptPath,buildScript(outFile,processName,processId));
+  writePowerShellScript(scriptPath,buildScript(outFile,processName,processId));
   let stdout='';
   try{
    const r=await exec('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',scriptPath],{timeout:20000,maxBuffer:1024*1024});
@@ -151,7 +156,7 @@ async function listWindows(opts={}){
  const {exec=execFileAsync,tmp=null}=opts;
  const dir=tmp?tmp():fs.mkdtempSync(path.join(os.tmpdir(),'mesa-visual-'));
  const scriptPath=path.join(dir,'list.ps1');
- fs.writeFileSync(scriptPath,LIST_SCRIPT);
+ writePowerShellScript(scriptPath,LIST_SCRIPT);
  try{
   let stdout='';
   try{

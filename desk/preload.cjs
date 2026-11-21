@@ -126,9 +126,11 @@ function sidechatText(value,message,withImages=false){
    `Error invoking remote method '<canal>': Error: <mensagem>`. O renderer só
    quer a mensagem original; a limpeza aqui vale para toda a ponte. */
 const INVOKE_PREFIX=/^Error invoking remote method '[^']*':\s*(?:Error:\s*)?/;
+/* O nome serializado de um erro customizado não pode esconder a marca que o renderer traduz. */
+const TOKEN_ERROR_PREFIX=/^[A-Z]\w*Error:\s*(?=\uE000)/;
 function cleanIpcError(error){
  const raw=String(error&&error.message!==undefined?error.message:error||'');
- const message=raw.replace(INVOKE_PREFIX,'').trim()||uiMsg('err.operation.failed');
+ const message=raw.replace(INVOKE_PREFIX,'').trim().replace(TOKEN_ERROR_PREFIX,'')||uiMsg('err.operation.failed');
  const clean=Error(message);
  if(error&&typeof error==='object'&&typeof error.name==='string'&&error.name!=='Error')clean.name=error.name;
  return clean;
