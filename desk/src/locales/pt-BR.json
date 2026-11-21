@@ -650,6 +650,7 @@
   "err.capture.pathMissing": "Indique o caminho do Xournal++ em Configurações.",
   "err.capture.permission": "Autorize Gravação de Tela para a Summa em Ajustes > Privacidade e Segurança > Gravação de Tela. Depois reabra o aplicativo.",
   "err.capture.saveFail": "Não consegui gravar a captura — tente de novo.",
+  "err.capture.renderFail": "Não consegui renderizar {app}: PrintWindow retornou false; esperado true com PW_RENDERFULLCONTENT=2. Nenhum pixel da tela foi capturado. Restaure ou reabra a janela e tente de novo.",
   "err.ambitus.noAnswer": "O Ambitus não respondeu. Confira se ele está aberto e tente de novo.",
   "err.ambitus.noPage": "O Ambitus não tem uma página aberta para conferir.",
   "err.chatpdf.notFile": "Solte uma imagem ou um PDF deste computador.",

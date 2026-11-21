@@ -37,7 +37,7 @@ test('PowerShell real: grava arquivo em caminho com José', {skip: process.platf
 test('buildScript: acha o xournalpp, captura a janela e escapa o caminho', () => {
   const script = buildScript("C:\\Users\\Ana O'Brien\\cap.png");
   assert.match(script, /Get-Process -Name 'xournalpp'/);
-  assert.match(script, /CopyFromScreen/);
+  assert.doesNotMatch(script, /CopyFromScreen/);
   assert.match(script, /PrintWindow/);
   assert.match(script, /Ana O''Brien/, 'aspas simples do caminho são duplicadas (literal PowerShell)');
   assert.match(script, /SetProcessDPIAware/, 'o retângulo tem de bater com os pixels físicos');

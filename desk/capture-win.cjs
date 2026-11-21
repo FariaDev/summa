@@ -1,8 +1,8 @@
 /* Captura de janela no Windows — paridade com o `screencapture -l` do macOS
    (host do Conferir, `conferir-host.cjs`): acha o processo (por padrão o
    `xournalpp`; o Conferir com outros programas passa o do app escolhido),
-   tira a janela pelo retângulo dela (WYSIWYG; fallback PrintWindow com
-   PW_RENDERFULLCONTENT) e devolve {title, dataUrl}. `listWindows` lista os
+   renderiza a janela com PrintWindow (PW_RENDERFULLCONTENT), sem ler pixels
+   da tela, e devolve {title, dataUrl}. `listWindows` lista os
    processos com janela para o seletor. Só PowerShell + .NET do próprio
    Windows — nada instalado, sem rede, sem telemetria.
 
@@ -30,6 +30,7 @@ function exitMessages(label=DEFAULT_LABEL){
   3:uiMsg('err.capture.openFirst',{app:label}),
   4:uiMsg('err.capture.minimized',{app:label}),
   5:uiMsg('err.capture.saveFail'),
+  6:uiMsg('err.capture.renderFail',{app:label}),
  };
 }
 const EXIT_MESSAGES=exitMessages();
@@ -60,8 +61,8 @@ function assertProcessName(name){
 }
 
 /* O script: DPI-aware (o retângulo bate com os pixels físicos), acha a
-   primeira janela do processo, copia os pixels do retângulo (PrintWindow se a
-   cópia de tela falhar) e grava o PNG no caminho embutido. O título da janela
+   janela do processo, renderiza só seu HWND e grava o PNG no caminho embutido.
+   O título da janela
    sai no stdout (uma linha) — mesmo formato do listing do macOS. */
 function buildScript(outFile,processName=PROCESS_NAME,processId=null){
  const saida=psLiteral(outFile);
@@ -94,17 +95,18 @@ $h=$rect.Bottom-$rect.Top
 if(($w -le 0) -or ($h -le 0)){ exit 4 }
 $bmp=New-Object System.Drawing.Bitmap $w,$h
 $g=[System.Drawing.Graphics]::FromImage($bmp)
-$copied=$true
-try { $g.CopyFromScreen($rect.Left,$rect.Top,0,0,$bmp.Size) } catch { $copied=$false }
-$g.Dispose()
-if(-not $copied){
-  $g2=[System.Drawing.Graphics]::FromImage($bmp)
-  $hdc=$g2.GetHdc()
-  $printed=[MesaWin]::PrintWindow($p.MainWindowHandle,$hdc,2)
-  $g2.ReleaseHdc($hdc)
-  $g2.Dispose()
-  if(-not $printed){ $bmp.Dispose(); exit 5 }
+try {
+  $hdc=$g.GetHdc()
+  try {
+    $printed=[MesaWin]::PrintWindow($p.MainWindowHandle,$hdc,2)
+  } finally { $g.ReleaseHdc($hdc) }
+} catch {
+  $bmp.Dispose()
+  throw
+} finally {
+  $g.Dispose()
 }
+if(-not $printed){ $bmp.Dispose(); exit 6 }
 try { $bmp.Save('${saida}',[System.Drawing.Imaging.ImageFormat]::Png) } catch { $bmp.Dispose(); exit 5 }
 $bmp.Dispose()
 [Console]::Out.Write($p.MainWindowTitle)
