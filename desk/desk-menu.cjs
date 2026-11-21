@@ -52,12 +52,12 @@ function normalizeKeymap(raw){
 
 /**
  * Cria o menu nativo com os atalhos do usuário por cima dos padrões.
- * @param {{live: import('./main.cjs').DeskLive, Menu: typeof import('electron').Menu, captureAvailable: () => boolean, writingApp?: () => string}} options
- *   `live` traz config, estado, janela e o host de idioma do main
+ * @param {{live: import('./main.cjs').DeskLive, Menu: typeof import('electron').Menu, captureAvailable: () => boolean, writingApp?: () => string, platform?: NodeJS.Platform}} options
+ *   `live` traz config, estado, janela e o host de idioma do main; `platform` decide os itens só do macOS
  * @returns {{buildMenu:()=>void, setKeymap:(raw:unknown)=>{ok:true, menu:number}, register:(ipcMain:{handle:Function})=>void}}
  * @example const deskMenu=createDeskMenu({live,Menu,captureAvailable});deskMenu.register(ipcMain);deskMenu.buildMenu();
  */
-function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++'}){
+function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++',platform=process.platform}){
  let keymap={};
  function accelFor(id){
   return Object.prototype.hasOwnProperty.call(keymap,id)?keymap[id]:MENU_ACCEL[id];
@@ -77,12 +77,21 @@ function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++'})
   const study=[];
   if(live.config.desk?.conferir!==false)study.push({label:live.languageHost.t('menu.check',{app:live.state.conferirApp?.app||writingApp()}),...accelProps('check'),enabled:captureAvailable(),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-check');}});
   study.push({label:live.languageHost.t('menu.checkGeogebra'),...accelProps('ggb-check'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-geogebra');}},{label:live.languageHost.t('menu.toggleTutor'),...accelProps('chat-toggle'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-chat-toggle');}},{label:live.languageHost.t('menu.stop'),...accelProps('stop'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-stop');}});
+  /* No macOS o menu do app e o menu Janela têm itens que o sistema espera (Cmd+H, Cmd+M,
+     Zoom, a lista de janelas); os papéis do Electron os trazem prontos. Windows e Linux
+     não têm esses itens. */
+  const mac=platform==='darwin';
+  /** @type {import('electron').MenuItemConstructorOptions[]} */
+  const macAppItems=mac?[{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'}]:[];
+  /** @type {import('electron').MenuItemConstructorOptions[]} */
+  const macWindowMenu=mac?[{label:live.languageHost.t('menu.window'),role:'windowMenu'}]:[];
   Menu.setApplicationMenu(Menu.buildFromTemplate([
-   {label:'Summa',submenu:[{label:live.languageHost.t('menu.aboutApp'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}},{label:live.languageHost.t('menu.settingsItem'),...accelProps('settings'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-settings');}},{type:'separator'},{role:'quit'}]},
+   {label:'Summa',submenu:[{label:live.languageHost.t('menu.aboutApp'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}},{label:live.languageHost.t('menu.settingsItem'),...accelProps('settings'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-settings');}},{type:'separator'},...macAppItems,{role:'quit'}]},
    {label:live.languageHost.t('menu.edit'),submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
    {label:live.languageHost.t('chrome.study'),submenu:study},
    {label:live.languageHost.t('menu.view'),submenu:[{id:'command-palette',label:live.languageHost.t('menu.palette'),...accelProps('command-palette'),click:()=>{if(live.win&&!live.win.isDestroyed()){live.win.webContents.focus();
        live.win.webContents.send('menu-palette');}}},{type:'separator'},{role:'reload'},{role:'togglefullscreen'}]},
+   ...macWindowMenu,
    {label:live.languageHost.t('menu.help'),submenu:[{label:live.languageHost.t('menu.guide'),...accelProps('help'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-help');}},{label:live.languageHost.t('menu.about'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}}]}
   ]));
  }

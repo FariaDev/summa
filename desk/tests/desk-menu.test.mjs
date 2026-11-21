@@ -23,11 +23,11 @@ test('normalizeKeymap só guarda ids do menu, com accelerator válido ou null', 
   assert.deepEqual(normalizeKeymap(null), {});
 });
 
-function deskMenu({conferir = true} = {}) {
+function deskMenu({conferir = true, platform = 'linux'} = {}) {
   const live = {config: {desk: {conferir}}, state: {}, win: fakeWindow(), languageHost: {t: key => key}};
   const menu = fakeMenu();
   const ipcMain = fakeIpcMain();
-  const host = createDeskMenu({live, Menu: menu, captureAvailable: () => true});
+  const host = createDeskMenu({live, Menu: menu, captureAvailable: () => true, platform});
   host.register(ipcMain);
   return {host, menu, ipcMain, live};
 }
@@ -47,4 +47,23 @@ test('conferir:false tira o Conferir do menu Estudar', () => {
   const {host, menu} = deskMenu({conferir: false});
   host.buildMenu();
   assert.equal(studyItems(menu).some(item => item.label === 'menu.check'), false);
+});
+
+const roles = items => items.filter(item => item.role).map(item => item.role);
+
+test('no macOS o menu do app ganha Ocultar e o menu Janela entra antes da Ajuda', () => {
+  const {host, menu} = deskMenu({platform: 'darwin'});
+  host.buildMenu();
+  assert.deepEqual(roles(menu.template[0].submenu), ['hide', 'hideOthers', 'unhide', 'quit']);
+  assert.deepEqual(menu.template.map(item => item.label), ['Summa', 'menu.edit', 'chrome.study', 'menu.view', 'menu.window', 'menu.help']);
+  assert.equal(menu.template.find(item => item.label === 'menu.window').role, 'windowMenu');
+});
+
+test('Windows e Linux ficam sem os itens só do macOS', () => {
+  for (const platform of ['win32', 'linux']) {
+    const {host, menu} = deskMenu({platform});
+    host.buildMenu();
+    assert.deepEqual(roles(menu.template[0].submenu), ['quit'], platform);
+    assert.deepEqual(menu.template.map(item => item.label), ['Summa', 'menu.edit', 'chrome.study', 'menu.view', 'menu.help'], platform);
+  }
 });

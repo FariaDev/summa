@@ -1738,6 +1738,7 @@
   "menu.stop": "Parar",
   "menu.toggleTutor": "Alternar tutor",
   "menu.view": "Visualizar",
+  "menu.window": "Janela",
   "meter.tip": "Contexto do modelo: {pct}% · {used} de {window} tokens usados · /compact compacta",
   "more.collapse.hide": "Recolher o tutor (⌘\\)",
   "more.collapse.show": "Mostrar o tutor (⌘\\)",
