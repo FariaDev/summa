@@ -5,6 +5,8 @@ import {calculate} from '../calculator.mjs';
 import {ptMatches} from './pt-text.mjs';
 import {message} from '../src/i18n.mjs';
 import {text} from '../src/ui-text.mjs';
+import {tempDir} from './temp-dir.mjs';
+import {pollUntil} from './waits.mjs';
 const require2=createRequire(import.meta.url);
 
 test('calculator precedence, functions and angle units',()=>{assert.equal(calculate('2+3*4'),'14');assert.equal(calculate('(2+3)*4'),'20');assert.equal(calculate('2*(3+4*(1+1))'),'22');assert.equal(calculate('-2^2'),'-4');assert.equal(calculate('2^3^2'),'512');assert.equal(calculate('sqrt(16)+sin(pi/2)'),'5');assert.equal(calculate('sin(30)',true),'0.5');assert.equal(calculate('1,5+2'),'3.5');assert.equal(calculate('2^-2'),'0.25');assert.equal(calculate('2*pi'),'6.28318530718');assert.equal(calculate('1,5+1'),'2.5');assert.equal(calculate('log(100)'),'2');assert.equal(calculate('ln(e)'),'1');});
@@ -78,8 +80,46 @@ function loadMainWithMockElectron(runtime){
     arquivo de teste veria o módulo (e os handlers) do primeiro. */
  const mainPath=require2.resolve('../main.cjs');delete require2.cache[mainPath];
  try{require2('../main.cjs');}finally{Module._load=original;if(previousRuntime===undefined)delete process.env.LEARNING_DESK_RUNTIME;else process.env.LEARNING_DESK_RUNTIME=previousRuntime;}
- return {handlers,ggbViews,renderer:win.webContents,emitWin:emitFor(winEvents),emitRenderer:emitFor(wcEvents),quit:()=>{for(const cb of listeners.get('before-quit')||[])try{cb();}catch{}}};
+ return {handlers,ggbViews,shell:electron.shell,renderer:win.webContents,emitWin:emitFor(winEvents),emitRenderer:emitFor(wcEvents),quit:()=>{for(const cb of listeners.get('before-quit')||[])try{cb();}catch{}}};
 }
+
+test('open-xournal no Linux executa o binário configurado, sem usar o abridor de arquivos', {skip:process.platform!=='linux'}, async t=>{
+ const runtime=tempDir('desk-launch-xournal');
+ const xournalPath=path.join(runtime,'Xournal++ local.mjs');
+ const logFile=path.join(runtime,'launch.log');
+ fs.copyFileSync(new URL('./fake-xournalpp.mjs',import.meta.url),xournalPath);
+ fs.chmodSync(xournalPath,0o755);
+ fs.writeFileSync(path.join(runtime,'config.json'),JSON.stringify({xournalPath}));
+ const previousLog=process.env.FAKE_XOURNALPP_LOG;
+ process.env.FAKE_XOURNALPP_LOG=logFile;
+ t.after(()=>{
+  if(previousLog===undefined)delete process.env.FAKE_XOURNALPP_LOG;
+  else process.env.FAKE_XOURNALPP_LOG=previousLog;
+ });
+ const {handlers,shell,quit}=loadMainWithMockElectron(runtime);
+ t.after(quit);
+ const openPath=t.mock.method(shell,'openPath');
+
+ await handlers.get('open-xournal')({});
+ assert.equal(openPath.mock.callCount(),0,'o executável não é um documento para shell.openPath');
+ const logged=await pollUntil(()=>fs.existsSync(logFile)?fs.readFileSync(logFile,'utf8'):'',Boolean,{what:'a chamada do Xournal++'});
+ assert.deepEqual(JSON.parse(logged),{argv:[]});
+});
+
+test('open-xournal no Linux rejeita um caminho que não existe sem expor o caminho', {skip:process.platform!=='linux'}, async t=>{
+ const runtime=tempDir('desk-launch-xournal');
+ const xournalPath=path.join(runtime,'inexistente');
+ fs.writeFileSync(path.join(runtime,'config.json'),JSON.stringify({xournalPath}));
+ const {handlers,quit}=loadMainWithMockElectron(runtime);
+ t.after(quit);
+
+ await assert.rejects(handlers.get('open-xournal')({}),error=>{
+  const translated=text(error.message);
+  assert.match(translated,/Xournal\+\+ \(ENOENT\)/);
+  assert.equal(translated.includes(xournalPath),false);
+  return true;
+ });
+});
 
 test('desk.json round-trips through init/save-state/switch-course and ggbBase64 lives only in runtime/ggb',async()=>{
  const runtime=fs.mkdtempSync(path.join(os.tmpdir(),'desk-state-'));
