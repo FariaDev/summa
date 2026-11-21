@@ -105,6 +105,7 @@
   "types/desk-window.d.ts",
   "preload.cjs",
   "conferir-host.cjs",
+  "capture-mac.cjs",
   "geogebra-host.cjs",
   "language-host.cjs",
   "mentions-host.cjs",
