@@ -1,5 +1,5 @@
 {
- "//": "#43 fase 3: tipos sem migrar para TypeScript (JSDoc + allowJs). O checkJs cobre todo o JS de `desk/` e `desk/src/` (fora `src/generated/`), e cada arquivo começa com `// @ts-check`. `tests/typecheck-list.test.mjs` trava o piso e a marca.",
+ "//": "#43 fase 3: tipos sem migrar para TypeScript (JSDoc + allowJs). O checkJs cobre todo o JS de `desk/` e `desk/src/` (fora `src/generated/`), e cada arquivo começa com `// @ts-check` (`tests/typecheck-list.test.mjs` trava o piso e a marca). `strictNullChecks` entra por catraca: `npm run typecheck` (`scripts/typecheck-ratchet.mjs`) tolera só os erros antigos dos arquivos em `scripts/strict-null-debt.json`, que só encolhe. Próximo degrau: `strict`.",
  "compilerOptions": {
   "allowJs": true,
   "checkJs": true,
@@ -16,7 +16,8 @@
    "node"
   ],
   "skipLibCheck": true,
-  "strict": false
+  "strict": false,
+  "strictNullChecks": true
  },
  "include": [
   "types/*.d.ts",
