@@ -650,6 +650,7 @@
   "err.capture.pathMissing": "Set the path to Xournal++ in Settings.",
   "err.capture.permission": "Allow Screen Recording for Summa in System Settings > Privacy & Security > Screen Recording. Then reopen the app.",
   "err.capture.saveFail": "Could not save the capture — try again.",
+  "err.capture.renderFail": "Could not render {app}: PrintWindow returned false; expected true with PW_RENDERFULLCONTENT=2. No screen pixels were captured. Restore or reopen the window and try again.",
   "err.ambitus.noAnswer": "Ambitus did not answer. Check that it is open and try again.",
   "err.ambitus.noPage": "Ambitus has no open page to check.",
   "err.chatpdf.notFile": "Drop an image or a PDF from this computer.",

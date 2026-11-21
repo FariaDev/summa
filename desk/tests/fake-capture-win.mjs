@@ -7,6 +7,14 @@ import {promisify} from 'node:util';
 const run = promisify(execFile);
 const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(200)]);
 
+/** Simulates a PowerShell exit status.
+ * @param {number} code exit status; e.g. captureExitExec(6) rejects rendering.
+ * @returns {() => Promise<never>} runner that fails without external I/O.
+ */
+export function captureExitExec(code) {
+  return async () => { throw Object.assign(Error(`exit ${code}`), {code}); };
+}
+
 /** Confere o arquivo entregue ao PowerShell; ex.: captureScriptExec('capture.ps1'). */
 export function captureScriptExec(filename, realPowerShell = false) {
   return async (cmd, args, options) => {
