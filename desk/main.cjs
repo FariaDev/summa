@@ -494,7 +494,11 @@ ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
    criada na confirmação; o resto (gravar matéria e pasta de dados na
    configuração local) é o `save-config` de sempre. */
-ipcMain.handle('first-run-defaults',()=>({dataFolder:firstRun.suggestedDataFolder(config,os.homedir())}));
+ipcMain.handle('first-run-defaults',()=>{
+ let documents,home;
+ try{documents=app.getPath('documents');home=app.getPath('home');}catch{/* Electron can lack a Documents folder in an isolated profile. */}
+ return {dataFolder:firstRun.suggestedDataFolder(config,os.homedir(),documents,home)};
+});
 ipcMain.handle('first-run-prepare',(_e,folder)=>({path:firstRun.prepareDataFolder(folder)}));
 ipcMain.handle('first-run-resolve-drop',(_e,paths)=>firstRun.resolveDrop(paths));
 ipcMain.handle('pick-xopp',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Xournal++',extensions:['xopp']}],properties:['openFile']});
