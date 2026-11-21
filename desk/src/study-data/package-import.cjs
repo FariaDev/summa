@@ -6,7 +6,7 @@ const conversations = require('../agents/conversations.cjs');
 const attachments = require('../agents/conversation-attachments.cjs');
 const {message: uiMsg} = require('../i18n.mjs');
 const {causeArg} = require('../error-detail.mjs');
-const {PackageError, isPlainObject, newId, posix, writeInside} = require('./package-common.cjs');
+const {PackageError, isPlainObject, newId, writeInside} = require('./package-common.cjs');
 const {importNoteStore} = require('./package-source.cjs');
 const {openPackage} = require('./package-read.cjs');
 const {piSessionMessages} = require('./package-transcript.cjs');
@@ -27,16 +27,12 @@ function remapValue(value, {oldBase, newBase, oldId, newId, mappings = []} = {})
     let out = value;
     for (const map of table) {
       if (!map || !map.from || !map.to) continue;
-      const from = path.resolve(map.from);
-      const fromPosix = posix(from);
-      if (out === from || out.startsWith(from + path.sep)) {
-        out = path.join(map.to, ...posix(out.slice(from.length)).split('/').filter(Boolean));
-        break;
-      }
-      if (out === fromPosix || out.startsWith(`${fromPosix}/`)) {
-        out = path.join(map.to, ...out.slice(fromPosix.length).split('/').filter(Boolean));
-        break;
-      }
+      const sourcePath = /^(?:[a-z]:[\\/]|\\\\|\/\/)/i.test(map.from) ? path.win32 : path.posix;
+      if (!sourcePath.isAbsolute(out)) continue;
+      const relative = sourcePath.relative(sourcePath.resolve(map.from), out);
+      if (relative === '..' || relative.startsWith(`..${sourcePath.sep}`) || sourcePath.isAbsolute(relative)) continue;
+      out = path.join(map.to, ...relative.split(sourcePath.sep).filter(Boolean));
+      break;
     }
     if (oldId && newId && out === oldId) out = newId;
     return out;
