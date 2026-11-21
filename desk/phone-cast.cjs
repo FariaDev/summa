@@ -11,8 +11,8 @@
    destino das faíscas), então eles viram `data-style` e o script da página,
    que tem o nonce, os aplica pelo CSSOM. */
 
-const {mascoteMarkup} = require('./src/mascote.mjs');
-const {AMBAR} = require('./src/trio-art.mjs');
+const {mascoteMarkup} = require('./src/mascote/mascote.mjs');
+const {AMBAR} = require('./src/mascote/trio-art.mjs');
 
 /** @typedef {'start'|'sending'|'offline'} PhoneState */
 
@@ -64,7 +64,7 @@ function reducedMotionRule(motionCss) {
 /**
  * O CSS fixo da página: tokens de movimento, o âmbar, o trio e o layout.
  * @param {{styleCss: string, motionCss: string, trioCss: string, pageCss: string}} sheets o texto de
- *   `style.css`, `src/motion.css`, `src/trio.css` e `src/phone-page.css`
+ *   `style.css`, `src/motion.css`, `src/mascote/trio.css` e `src/phone/phone-page.css`
  * @returns {string}
  * @example phoneCastCss({styleCss, motionCss, trioCss, pageCss}).includes('--t-loop') // true
  */

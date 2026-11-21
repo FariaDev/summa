@@ -16,7 +16,7 @@ import {createRequire} from 'node:module';
 import {mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {historyTurns} from '../src/worklog.mjs';
+import {historyTurns} from '../src/worklog/worklog.mjs';
 import * as fx from './claude-fixtures.mjs';
 import {createFakeOpencodeServe} from './fake-opencode.mjs';
 

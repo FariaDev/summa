@@ -27,8 +27,8 @@ const LEGACY_CAPS = {
 /** Arquivos que tinham entre 501 e 800 linhas na fase 2 da #43. Só encolhe. */
 const MEDIUM_FILES = new Set([
   'src/state.mjs',
-  'src/sidechat.mjs',
-  'src/chat.mjs',
+  'src/sidechat/sidechat.mjs',
+  'src/chat/chat.mjs',
   'src/main.mjs',
   'sidechat.cjs',
   'main.cjs',
@@ -39,12 +39,12 @@ const MEDIUM_FILES = new Set([
   'src/backup-panel.mjs',
   'src/keys.mjs',
   'src/layout-presets.mjs',
-  'src/pdf-notes.mjs',
-  'src/pdf.mjs',
+  'src/pdf/pdf-notes.mjs',
+  'src/pdf/pdf.mjs',
   'src/study-data/backup-services.cjs',
   'src/study-data/git-backup.cjs',
   'src/study-data/statistics.cjs',
-  'src/study-search.mjs',
+  'src/study/study-search.mjs',
 ]);
 
 /**

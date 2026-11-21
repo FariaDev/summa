@@ -16,7 +16,7 @@ import {trackTempDir} from './temp-dir.mjs';
 const require=createRequire(import.meta.url);
 const {runCommand,PINNED_VERSION,OpenCodeInstallError,openCodeTarget,openCodeInstallSupported,installOpenCode,placeBinary}=require('../src/agents/opencode-install.cjs');
 const testedVersions=require('../src/tested-versions.json');
-const {loginBinary}=await import('../src/setup-view.mjs');
+const {loginBinary}=await import('../src/setup/setup-view.mjs');
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
 

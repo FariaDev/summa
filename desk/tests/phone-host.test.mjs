@@ -90,7 +90,7 @@ test('com o token a página abre, no idioma da Mesa, sem nada de fora', async ()
    leva atributo style (o navegador o recusaria). */
 test('com as fontes embutidas, a CSP continua sem unsafe-inline e todo estilo e script levam o nonce', async () => {
   const deskFile = (name) => fs.readFileSync(new URL(`../${name}`, import.meta.url), 'utf8');
-  const castCss = phoneCastCss({styleCss: deskFile('style.css'), motionCss: deskFile('src/motion.css'), trioCss: deskFile('src/trio.css'), pageCss: deskFile('src/phone-page.css')});
+  const castCss = phoneCastCss({styleCss: deskFile('style.css'), motionCss: deskFile('src/motion.css'), trioCss: deskFile('src/mascote/trio.css'), pageCss: deskFile('src/phone/phone-page.css')});
   const {host} = harness({castCss: () => castCss});
   const {url} = await host.start();
   try {

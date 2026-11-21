@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import core from '../src/generated/worklogview.core.js';
-import {VIEW_KIND_CORE,VIEW_STATUS_CORE} from '../src/worklog-tags.mjs';
+import {VIEW_KIND_CORE,VIEW_STATUS_CORE} from '../src/worklog/worklog-tags.mjs';
 import {build,childrenOf} from '../src/view-host.mjs';
 
 const Nil={$:'Nil'};

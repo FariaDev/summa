@@ -11,8 +11,8 @@ import {svgSafeConfig} from './figures/svg-guard.mjs';
 import {svgFence} from './figures/svg-fence.mjs';
 import {dropBlankSvg,svgFallbackHtml} from './figures/svg-blank.mjs';
 import {createMathCache} from './math-cache.mjs';
-import {cachedMarkup,setMarkupPipeline} from './history-render-cache.mjs';
-import {mathPattern,openMathRange,codeRanges} from './stream-blocks.mjs';
+import {cachedMarkup,setMarkupPipeline} from './history/history-render-cache.mjs';
+import {mathPattern,openMathRange,codeRanges} from './chat/stream-blocks.mjs';
 import {modelAttrsPresent,stripModelAttrs} from './model-attrs.mjs';
 export {modelAttrsPresent,stripModelAttrs} from './model-attrs.mjs';
 

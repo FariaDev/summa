@@ -1,6 +1,6 @@
 // @ts-check
 import paletteCore from './generated/mesaqolpalette.core.js';
-import {foldSearch} from './pdf.mjs';
+import {foldSearch} from './pdf/pdf.mjs';
 import {icon} from '../icons.mjs';
 import {build, htmlNode, preserveScroll, renderChildren} from './view-host.mjs';
 import {t} from './ui-text.mjs';

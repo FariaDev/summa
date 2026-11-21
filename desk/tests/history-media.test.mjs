@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import {installDom} from './dom-shim.mjs';
 
 installDom();
-const {createHistoryMediaLoader, historyMediaMarker, historyMediaId} = await import('../src/history-media.mjs');
-const {markupKey} = await import('../src/history-render-cache.mjs');
+const {createHistoryMediaLoader, historyMediaMarker, historyMediaId} = await import('../src/history/history-media.mjs');
+const {markupKey} = await import('../src/history/history-render-cache.mjs');
 
 const ID = `hm-${'a'.repeat(32)}`;
 const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));

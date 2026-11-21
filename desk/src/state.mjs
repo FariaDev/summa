@@ -1,11 +1,11 @@
 // @ts-check
 import {icon} from '../icons.mjs';
-import {noteOwnScroll} from './chat-scroll-view.mjs';
-export {distanceFromEnd,revealInChat,applyChatScroll} from './chat-scroll-view.mjs';
-import {showHistory,historyIdentityShown,resetAttachments,restoreAttachments} from './chat.mjs';
-import {adopt as adoptQueue} from './queue.mjs';
+import {noteOwnScroll} from './chat/chat-scroll-view.mjs';
+export {distanceFromEnd,revealInChat,applyChatScroll} from './chat/chat-scroll-view.mjs';
+import {showHistory,historyIdentityShown,resetAttachments,restoreAttachments} from './chat/chat.mjs';
+import {adopt as adoptQueue} from './queue/queue.mjs';
 import {setResumeRecord} from './resume.mjs';
-import {PdfPanel,makePdfDivider,setPdfSplitPct,pdfSplitValue,pdfRotationsSnapshot,restorePdfRotations} from './pdf.mjs';
+import {PdfPanel,makePdfDivider,setPdfSplitPct,pdfSplitValue,pdfRotationsSnapshot,restorePdfRotations} from './pdf/pdf.mjs';
 import {deactivateGeogebra} from './ggb.mjs';
 import {initCalculator} from './calc.mjs';
 import {beginCourse as beginSupport,attachPanels as attachSupport} from './support.mjs';
@@ -19,9 +19,9 @@ import {build} from './view-host.mjs';
 import {applyHelpFlags} from './dialogs.mjs';
 import deliveryCore from './generated/agentdelivery.core.js';
 import {captureViewLayout} from './layout-presets.mjs';
-import {translatedPanelLabel,translatedPanelToggle} from './layout-settings.mjs';
+import {translatedPanelLabel,translatedPanelToggle} from './settings/layout-settings.mjs';
 import {t,text as translate,formatDate,currentLanguage} from './ui-text.mjs';
-import {displayFreeTitle} from './free-names.mjs';
+import {displayFreeTitle} from './study/free-names.mjs';
 import {updateContextDock,contextDockOpen} from './context-dock.mjs';
 import {message,parseMessage} from './i18n.mjs';
 import {applyAttrs,applyAttrsOn,applyView} from './live-view.mjs';
@@ -30,11 +30,11 @@ export {refreshMeter};
 import {applyEngineVisibility,setLegacySession} from './visible-engines-ui.mjs';
 import {loadReleaseNotesSeen,releaseNotesSeen} from './release-notes.mjs';import {loadMaterialFolders,materialFoldersSnapshot} from './material-picker-ui.mjs';import {shortModelName} from './model-picker.mjs';import {renderModelPicker,setModelPickerDisabled,loadModelRecents,modelRecentsSnapshot,loadModelFavorites,modelFavoritesSnapshot,loadModelDefault,modelDefaultSnapshot,loadModelLast,modelLastSnapshot} from './model-picker-ui.mjs';import {renderEffortStrip,setEffortStripDisabled,effortLevelText} from './effort-strip.mjs';import {knownEngine,sessionEngine,isNativeEngine,defaultEffort,defaultCapability} from './engine-facts.mjs';
 import {detachConnectFlight,createConnectRunner} from './connect-flight.mjs';
-import {applyDisplayState} from './display-preferences.mjs';
-import {normalizeComposerPins} from './composer-pins.mjs';
-import {loadStudyPlan,studyPlanSnapshot} from './study-plan.mjs';
-import {applyComposerHeight} from './composer-resize.mjs';
-import {tutorNotebookCount} from './tutor-notebooks.mjs';
+import {applyDisplayState} from './settings/display-preferences.mjs';
+import {normalizeComposerPins} from './composer/composer-pins.mjs';
+import {loadStudyPlan,studyPlanSnapshot} from './study/study-plan.mjs';
+import {applyComposerHeight} from './composer/composer-resize.mjs';
+import {tutorNotebookCount} from './tutor/tutor-notebooks.mjs';
 
 /* Quem chama sabe o tipo do elemento (input, select, dialog...), por isso `any`. */
 /** @param {string} s @returns {any} */

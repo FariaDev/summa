@@ -2,7 +2,7 @@
    retalhos e o Quote levava texto embaralhado. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {formulaLike, cropRect} from '../src/pdf-quote.mjs';
+import {formulaLike, cropRect} from '../src/pdf/pdf-quote.mjs';
 
 test('o retalho do teste manual (limite fundamental) é fórmula', () => {
   assert.equal(formulaLike('f\n(\nx\n)\n]\n= 1\nf\n(\nx\n)\n→0'), true);

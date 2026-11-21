@@ -2,7 +2,7 @@
    segue o fim se o aluno já estava lá. Subir para ler desliga; voltar liga. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {CHAT_SCROLL_THRESHOLD, chatFollowDecision, createGestureWindow} from '../src/chat-scroll.mjs';
+import {CHAT_SCROLL_THRESHOLD, chatFollowDecision, createGestureWindow} from '../src/chat/chat-scroll.mjs';
 
 test('enviar rola até a mensagem enviada e passa a seguir o fim', () => {
   assert.deepEqual(

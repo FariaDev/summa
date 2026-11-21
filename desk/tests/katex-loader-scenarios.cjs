@@ -112,7 +112,7 @@ async function lateMarkerHydrated() {
 async function cachedSkipsPendingMarker() {
   return inWindow(`
     const {markupCached, ensureMath} = await import(markdownUrl);
-    const {historyRenderCacheStats} = await import(${JSON.stringify(url('src/history-render-cache.mjs'))});
+    const {historyRenderCacheStats} = await import(${JSON.stringify(url('src/history/history-render-cache.mjs'))});
     const text = 'Guardado $z^3$ fim';
     const pending = markupCached(text, true, []);
     const sizeBefore = historyRenderCacheStats().html.entries;

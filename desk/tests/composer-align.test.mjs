@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {tutorComposerFootprint} from '../src/composer-align.mjs';
+import {tutorComposerFootprint} from '../src/composer/composer-align.mjs';
 
 /* O lateral soma a faixa da calculadora só quando ela está recolhida. */
 const facts={composerTop:500,composerBottom:640,columnBottom:680,calculatorCollapsed:true};

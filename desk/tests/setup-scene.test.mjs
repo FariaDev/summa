@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialSetup, goToStep} from '../src/setup-flow.mjs';
+import {initialSetup, goToStep} from '../src/setup/setup-flow.mjs';
 import fs from 'node:fs';
-import {SCENE_MODES, SCENE_TONES, SCENE_SVG, SCENE_BOX, sceneOf, sceneTabOf, scenePdfLabel, ringFor} from '../src/setup-scene.mjs';
+import {SCENE_MODES, SCENE_TONES, SCENE_SVG, SCENE_BOX, sceneOf, sceneTabOf, scenePdfLabel, ringFor} from '../src/setup/setup-scene.mjs';
 
 /* #101: a cena da opção I (docs/design/marca/movimento.html). A integral se
    desenha e encolhe; a Mesa em miniatura acende uma região por vez; o tutor
@@ -54,7 +54,7 @@ test('o contorno fica dois pixels fora da região', () => {
 });
 
 test('a cena e o CSS cobrem todos os estados, sem luminária', () => {
-  const css = fs.readFileSync(new URL('../src/first-run.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../src/setup/first-run.css', import.meta.url), 'utf8');
   for (const mode of SCENE_MODES) assert.ok(css.includes(`[data-scene="${mode}"]`), `${mode}: estado da cena no CSS`);
   for (const tone of SCENE_TONES.filter((tone) => tone !== 'idle' && tone !== 'waiting' && tone !== 'found' && tone !== 'online')) {
     assert.ok(css.includes(`[data-tone="${tone}"]`), `${tone}: contorno no CSS`);
@@ -69,7 +69,7 @@ test('a cena e o CSS cobrem todos os estados, sem luminária', () => {
 });
 
 test('movimento reduzido mostra o estado final, sem desenho nem piscada', () => {
-  const css = fs.readFileSync(new URL('../src/first-run.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../src/setup/first-run.css', import.meta.url), 'utf8');
   const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion:reduce)'));
   assert.match(reduced, /\.setup-scene \.brand-spine\{animation:none!important/);
   assert.match(reduced, /\.setup-scene \.caret\{animation:none!important/);

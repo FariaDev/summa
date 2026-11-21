@@ -8,7 +8,7 @@
    bloco e decide se ele vai. Puro: sem DOM, IPC ou relógio; o `previousKey`
    entra como argumento e o main guarda. */
 const core = require('./src/generated/studycontext.core.js').default;
-const {pdfAttachmentsBlock} = require('./src/chat-pdf.mjs');
+const {pdfAttachmentsBlock} = require('./src/chat/chat-pdf.mjs');
 const {createI18n, MESSAGE_MARK, isLanguage, FALLBACK_LANGUAGE} = require('./src/i18n.mjs');
 const ptBR = require('./src/locales/pt-BR.json');
 const en = require('./src/locales/en.json');

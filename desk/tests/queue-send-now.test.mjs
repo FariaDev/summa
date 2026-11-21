@@ -4,7 +4,7 @@
    se prova o estado da ação: à vista, bloqueada e sem esconder a fila. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {sendNowState} from '../src/queue-send-now.mjs';
+import {sendNowState} from '../src/queue/queue-send-now.mjs';
 
 test('fila segurada sem incerteza oferece o "Enviar agora"', () => {
   assert.deepEqual(sendNowState({held: true, count: 2, uncertain: false}), {visible: true, blocked: false});

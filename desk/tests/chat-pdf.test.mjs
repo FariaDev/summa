@@ -5,9 +5,9 @@ import assert from 'node:assert/strict';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
 import {createI18n} from '../src/i18n.mjs';
-import {pdfAttachmentsBlock, attachedPdfs, normalizePdfFacts, PDF_HEADERS} from '../src/chat-pdf.mjs';
+import {pdfAttachmentsBlock, attachedPdfs, normalizePdfFacts, PDF_HEADERS} from '../src/chat/chat-pdf.mjs';
 import {displayUserText} from '../text.mjs';
-import {historyTurns} from '../src/worklog.mjs';
+import {historyTurns} from '../src/worklog/worklog.mjs';
 
 const translate = (language) => createI18n({catalogs: {'pt-BR': ptBR, en}, language}).t;
 

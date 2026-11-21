@@ -38,7 +38,7 @@
 import {t, formatDate, LANGUAGE_EVENT} from './ui-text.mjs';
 import {ensureStyles} from './backup-panel-style.mjs';
 export {ensureStyles};
-import {displayCourseName} from './free-names.mjs';
+import {displayCourseName} from './study/free-names.mjs';
 
 const DIALOG_ID = 'mesa-backup-panel';
 

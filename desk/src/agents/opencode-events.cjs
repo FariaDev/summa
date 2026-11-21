@@ -13,7 +13,7 @@
  * o servidor emite hoje. Nome desconhecido é ignorado. */
 
 const {message, MESSAGE_MARK, MESSAGE_SEP} = require('../i18n.mjs');
-const {imageBlocksOf} = require('../marked-pages.mjs');
+const {imageBlocksOf} = require('../pdf/marked-pages.mjs');
 
 /* Teto do resultado guardado no descritor local (#146): o detalhe do diário
    mostra no máximo 6000 caracteres e o descritor já é limitado por mensagem. */

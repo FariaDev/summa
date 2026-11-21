@@ -10,7 +10,7 @@
 const turnPolicy = require('./claude-turn-policy.cjs');
 const {MAX_COMPLETED_KEYS, ASSISTANT_ERROR_CODES} = require('./claude-adapter-contract.cjs');
 const {normalizeAssistantBlocks, capToolDetails, assistantFrameKey, summarizeToolResult, normalizeUsage, resultText} = require('./claude-adapter-history.cjs');
-const {imageBlocksOf} = require('../marked-pages.mjs');
+const {imageBlocksOf} = require('../pdf/marked-pages.mjs');
 
 /* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
    protótipo do ClaudeAdapter (`installPrototypeMethods`). */

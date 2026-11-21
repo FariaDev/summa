@@ -21,7 +21,7 @@ await withArtifacts('chat-model-4paths',async ctx=>{
   await statusOnline(page);
   const facts=await page.evaluate(async ()=>{
     const {markupInline}=await import(new URL('src/markdown.mjs',location.href).href);
-    const {sidechatMessageCard}=await import(new URL('src/sidechat-message-view.mjs',location.href).href);
+    const {sidechatMessageCard}=await import(new URL('src/sidechat/sidechat-message-view.mjs',location.href).href);
     const {cardElement}=await import(new URL('src/cards-view.mjs',location.href).href);
     const {renderPiDialog}=await import(new URL('src/dialogs.mjs',location.href).href);
     const evil='<label for="dialog-ok">CLIQUE-OK</label> <label for="send">CLIQUE-SEND</label>';

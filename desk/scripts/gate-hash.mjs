@@ -8,7 +8,7 @@
    - o runner de paridade (`tests/parity.mjs`), cada verificador
      (`tests/*-parity.mjs` — a MESMA varredura que o runner faz) e tudo o que
      eles importam por caminho relativo: é aí que ficam os hosts comparados
-     contra o núcleo (`rpc.cjs`, `state-adapter.cjs`, `src/worklog.mjs`…), e
+     contra o núcleo (`rpc.cjs`, `state-adapter.cjs`, `src/worklog/worklog.mjs`…), e
      mexer num deles muda o veredito da paridade sem tocar em `core/**`;
    - o `package.json`, que define os três passos.
 

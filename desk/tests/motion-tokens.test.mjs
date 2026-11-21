@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {fileURLToPath} from 'node:url';
+import {rendererSources} from './renderer-sources.mjs';
 import {findMotionViolations,formatMotionViolations,nearestDurationToken} from './motion-lint.mjs';
 
 /* #63: duração e curva só pelos tokens (docs/design/movimento.md). */
 const desk=new URL('../',import.meta.url);
 const sheets=[
  'style.css',
- ...fs.readdirSync(new URL('src/',desk)).filter(name=>name.endsWith('.css')).map(name=>`src/${name}`),
+ ...rendererSources(fileURLToPath(desk),name=>name.endsWith('.css')).map(name=>`src/${name}`),
 ];
 
 test('as folhas da Mesa só usam os tokens de movimento', () => {

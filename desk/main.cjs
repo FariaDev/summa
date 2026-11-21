@@ -683,7 +683,7 @@ const phonePalette=()=>phonePaletteCache??=readPalette(fs.readFileSync(path.join
 /* O trio da página do celular (#66): tokens de movimento, trio.css e o layout, lidos uma vez. */
 let phoneCastCache=null;
 const readDeskText=(name)=>fs.readFileSync(path.join(__dirname,name),'utf8');
-const phoneCast=()=>phoneCastCache??=phoneCastCss({styleCss:readDeskText('style.css'),motionCss:readDeskText('src/motion.css'),trioCss:readDeskText('src/trio.css'),pageCss:readDeskText('src/phone-page.css')});
+const phoneCast=()=>phoneCastCache??=phoneCastCss({styleCss:readDeskText('style.css'),motionCss:readDeskText('src/motion.css'),trioCss:readDeskText('src/mascote/trio.css'),pageCss:readDeskText('src/phone/phone-page.css')});
 const phoneHost=createPhoneHost({
  ipcMain,
  t:(key,args)=>languageHost.t(key,args),

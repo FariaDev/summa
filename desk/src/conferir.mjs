@@ -1,7 +1,7 @@
 // @ts-check
 import {$,S,toast,conferirAppName,updateCheckButton} from './state.mjs';
 import {build} from './view-host.mjs';
-import {closeTutorPops} from './tutor-header.mjs';
+import {closeTutorPops} from './tutor/tutor-header.mjs';
 import conferirCore from './generated/conferir.core.js';
 import {LANGUAGE_EVENT} from './ui-text.mjs';
 import {message as uiMessage} from './i18n.mjs';

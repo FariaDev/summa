@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {inkReasonKey, initInkSettings, mountInkSettings} from '../src/settings-ink.mjs';
+import {inkReasonKey, initInkSettings, mountInkSettings} from '../src/settings/settings-ink.mjs';
 
 /* Interruptor da escrita à mão nas Configurações (ponte com o Ambitus): vale na
    hora, e a recusa do main (modelo sem visão, gratuito, motor Claude) volta a

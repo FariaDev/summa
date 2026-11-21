@@ -7,7 +7,7 @@ const {boundMessages}=require('./conversations.cjs');
 const {appendPendingMessage}=require('./conversation-turn.cjs');
 const {parseSlashCommand}=require('./opencode-commands.cjs');
 const {message: uiMsg}=require('../i18n.mjs');
-const {markedImagesOf, markedImageMessage, markOf}=require('../marked-pages.mjs');
+const {markedImagesOf, markedImageMessage, markOf}=require('../pdf/marked-pages.mjs');
 const capsCore=require('../generated/agentcaps.core.js').default;
 const deliveryCore=require('../generated/agentdelivery.core.js').default;
 /* Teto do que uma queda dura perde de um turno longo (#116): sem isto, o processo

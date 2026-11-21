@@ -419,7 +419,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  /* Sem nenhum motor: a tela oferece a instalação do OpenCode, não oferece
     conexão morta e não fala do Pi. */
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedPi:'',config:{}},{});
  });
  await walkTo(page,'name');
@@ -464,7 +464,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
  /* OpenCode 1.x: a tela mostra a versão incompatível, manda atualizar para a
     2.2.7 e não conta o motor como pronto. */
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedOpenCode:'',detectedOpenCodeOldVersion:'1.19.5',config:{}},{});
  });
  await walkTo(page,'name');
@@ -485,7 +485,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
     modelos grátis (#93). O par [connect, settings] é o certo para quem tem
     motor, e o teste registra a decisão do dono. */
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedPi:'',detectedOpenCode:'/fake/opencode',config:{}},{});
  });
  await walkTo(page,'name');
@@ -506,7 +506,7 @@ await withArtifacts('primeira-abertura-estado',async ctx=>{
 
  /* Motor achado e "Chamar o tutor": o passo diz que está ligado e o botão vira Continuar. */
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedOpenCode:'/fake/opencode',config:{}},{});
  });
  await walkTo(page,'name');

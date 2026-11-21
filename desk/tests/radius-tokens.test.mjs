@@ -24,7 +24,7 @@ const FORBIDDEN=['--r-pill','--r-card','--r-2xl','--r-3xl'];
    fechada acompanha o token e continua conferida: exceção que deixou de existir
    no CSS quebra o teste. */
 const EXCEPTIONS=[
- {file:'src/tutor-chat.css',selector:'#ctx-meter .bar',token:'--r-sm',reason:'barra de progresso: trilho por natureza'},
+ {file:'src/tutor/tutor-chat.css',selector:'#ctx-meter .bar',token:'--r-sm',reason:'barra de progresso: trilho por natureza'},
  {file:'src/conversations-dividers.css',selector:'#review-tab #review-count',token:'--r-sm',reason:'contador numérico pequeno: cápsula por natureza'},
 ];
 

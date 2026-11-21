@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {createChatSearchSource,fold,foldText,searchEntries,stepHit} from '../src/chat-search.mjs';
+import {createChatSearchSource,fold,foldText,searchEntries,stepHit} from '../src/chat/chat-search.mjs';
 
 /* Busca na conversa (#122), parte pura: a fonte é o texto dos turnos, sem DOM;
    acento e caixa não diferenciam, cada mensagem conta TODAS as ocorrências e a

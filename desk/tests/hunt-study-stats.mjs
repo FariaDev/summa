@@ -1,7 +1,7 @@
 /* Caça a bugs do painel de Estatísticas na janela real: o botão aparece, o
    `<dialog>` abre, o resumo vem do host (IPC), a sessão liga o batimento do
    `main` e o tempo ativo cresce, e o reset consciente limpa. O painel é um
-   módulo independente (`src/study-stats.mjs`); o hunt o importa na página, que
+   módulo independente (`src/study/study-stats.mjs`); o hunt o importa na página, que
    é o mesmo que o `main.mjs` fará com `initStudyStats`.
    Uso: node tests/hunt-study-stats.mjs [filtro]
 

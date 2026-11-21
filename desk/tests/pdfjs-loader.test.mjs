@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPdfjsLoader} from '../src/pdfjs-loader.mjs';
+import {createPdfjsLoader} from '../src/pdf/pdfjs-loader.mjs';
 
 test('loadPdfjs avalia o módulo uma vez, mesmo com dois PDFs abrindo juntos', async () => {
   let calls = 0;
@@ -31,7 +31,7 @@ test('falha no import libera a próxima tentativa', async () => {
 });
 
 test('o carregador padrão devolve o mesmo pdf.js em chamadas repetidas', async () => {
-  const {loadPdfjs} = await import('../src/pdfjs-loader.mjs');
+  const {loadPdfjs} = await import('../src/pdf/pdfjs-loader.mjs');
   const first = await loadPdfjs();
   assert.equal(await loadPdfjs(), first);
   assert.match(first.GlobalWorkerOptions.workerSrc, /pdf\.worker\.mjs$/);

@@ -1,6 +1,6 @@
 // @ts-check
 import {t} from './ui-text.mjs';
-import {bendList} from './chat-assets.mjs';
+import {bendList} from './chat/chat-assets.mjs';
 
 /**
  * Os fatos das imagens da bandeja para `core/attachview.bend`: a mesma lista

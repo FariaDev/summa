@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {headlineElapsed, headBase, shouldStartOpen} from '../src/worklog-head.mjs';
+import {headlineElapsed, headBase, shouldStartOpen} from '../src/worklog/worklog-head.mjs';
 
 /* E3 (auditoria rodada 3): turno interrompido com motivo e sem resposta mostra
    o motivo sem clique — o diário começa aberto. Puro (sem DOM): a janela pinta

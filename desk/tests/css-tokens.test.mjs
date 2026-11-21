@@ -24,7 +24,7 @@ const PX=/(?:^|[^\w.-])[0-9]*\.?[0-9]+px\b/;
    continua reprovando. */
 const EXCEPTIONS=[
  {
-  file:'src/phone-page.css',kind:'font-size',
+  file:'src/phone/phone-page.css',kind:'font-size',
   values:['30px','17px','18px','16px','15px','14px','22px'],
   reason:'página do celular não carrega style.css: só os tokens de movimento entram pelo phone-cast.cjs, então tamanho/raio literais são o contrato dela'
  },
@@ -44,17 +44,17 @@ const EXCEPTIONS=[
   reason:'monograma de 16px do provedor no indicador de modelo: glifo de desenho, não texto'
  },
  {
-  file:'src/trio.css',kind:'font-size',
+  file:'src/mascote/trio.css',kind:'font-size',
   values:['26px','18px'],
   reason:'glifo do mascote: tamanho do desenho, não tamanho de texto'
  },
  {
-  file:'src/first-run.css',kind:'color',
+  file:'src/setup/first-run.css',kind:'color',
   values:['rgba(255,255,255,.22)','#fff','#cfcfcf'],
   reason:'miniatura ilustrativa: a folha da miniatura é fixa nos dois temas, como a arte da primeira abertura'
  },
  {
-  file:'src/first-run.css',kind:'box-shadow',
+  file:'src/setup/first-run.css',kind:'box-shadow',
   values:['0 0 0 3px var(--ring-shadow,transparent)'],
   reason:'bug existente: o valor aninhado de --ring-shadow é inválido e a declaração é descartada; corrigir mudaria o foco do campo nesta etapa'
  }

@@ -2,8 +2,8 @@
 import {$,S,save,toast,updateContextSummary} from './state.mjs';
 import {icon} from '../icons.mjs';
 import {t} from './ui-text.mjs';
-import {loadSidechat,mountSidechat,setSidechatVisible,sidechatElement} from './sidechat-loader.mjs';
-import {isDetachedSidechat,focusDetachedSidechat,attachSidechat,paintDetachButton,setDetachedWindowState,reopenDetachedSidechat} from './sidechat-detach.mjs';
+import {loadSidechat,mountSidechat,setSidechatVisible,sidechatElement} from './sidechat/sidechat-loader.mjs';
+import {isDetachedSidechat,focusDetachedSidechat,attachSidechat,paintDetachButton,setDetachedWindowState,reopenDetachedSidechat} from './sidechat/sidechat-detach.mjs';
 
 /* ---------------------------------------------------------------------------
    Área de apoio: o segundo leitor (Formulário) e o chat lateral dividem o

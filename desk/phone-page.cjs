@@ -17,7 +17,7 @@
    pincel e "Summa" em STIX no topo, sem sobretítulo, IBM Plex Sans no texto e
    os mesmos três estados em `main[data-state]`: start (o convite), sending (a
    barra e as enviadas) e offline (sem conexão, com "Tentar de novo"). O layout
-   mora em `src/phone-page.css`; a marca não é o trio. */
+   mora em `src/phone/phone-page.css`; a marca não é o trio. */
 
 const fs = require('node:fs');
 const path = require('node:path');

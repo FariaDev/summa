@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {steerQueuedOutcome, restoreQueuedAt} from '../src/queue-steer.mjs';
+import {steerQueuedOutcome, restoreQueuedAt} from '../src/queue/queue-steer.mjs';
 
 /* Destino de um item da fila enviado como steer: aceite sai de vez; recusa
    provada volta à posição; entrega incerta NÃO volta (reenviar duplicaria a

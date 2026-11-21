@@ -1,6 +1,6 @@
 // @ts-check
 import attachments from './src/generated/attachments.core.js';
-import {PDF_HEADERS} from './src/chat-pdf.mjs';
+import {PDF_HEADERS} from './src/chat/chat-pdf.mjs';
 import {withoutTutorPrompt} from './src/agents/tutor-prompt-text.mjs';
 import {t as uiT} from './src/ui-text.mjs';
 import {isImageOnlyPrompt} from './src/image-only-send.mjs';

@@ -144,7 +144,7 @@ const savedPayload=(locale='pt-BR',{uncertain=true}={})=>{
   cards:[]};
 };
 const injectSaved=async(page,locale,target=page,{uncertain=true}={})=>{
- await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat.mjs');sidechat.openSavedSidechat(payload);},savedPayload(locale,{uncertain}));
+ await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat/sidechat.mjs');sidechat.openSavedSidechat(payload);},savedPayload(locale,{uncertain}));
  if(uncertain)await target.waitForSelector('#sidechat-messages .sidechat-warn',{timeout:10000});
  else await target.waitForFunction(()=>!document.querySelector('#sidechat-messages .sidechat-warn'),undefined,{timeout:10000});
  await target.evaluate(()=>document.activeElement?.blur?.());

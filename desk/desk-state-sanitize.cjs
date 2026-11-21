@@ -11,8 +11,8 @@ const pdfPageCore=require('./src/generated/pdfpageview.core.js').default;
 const {toNat}=require('./src/bend-nat.mjs');
 const {normalizeRecents,normalizeFavorites}=require('./src/model-picker.mjs');
 const {normalizeModelDefault}=require('./src/model-default.mjs');
-const {sanitizeStudyPlan}=require('./src/study-plan.mjs');
-const {normalizeComposerPins,savedComposerPins}=require('./src/composer-pins.mjs');
+const {sanitizeStudyPlan}=require('./src/study/study-plan.mjs');
+const {normalizeComposerPins,savedComposerPins}=require('./src/composer/composer-pins.mjs');
 const {normalizeMaterialFolders}=require('./src/material-picker.mjs');
 
 /* Sanitização do desk.json (#43 fase 2: saiu do main.cjs sem mudar regra). */

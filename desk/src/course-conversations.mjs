@@ -1,11 +1,11 @@
 // @ts-check
-import * as queue from './queue.mjs';
+import * as queue from './queue/queue.mjs';
 import {$,S,toast,toastFailure,connectionState,layoutSnapshot,fillSessions,sessionNameParts,applyStudy,connect,invalidateConnect,loadCourse} from './state.mjs';
 import {setLegacySession,visibleEngines} from './visible-engines-ui.mjs';
-import {resetAttachments,restoreAttachments,showHistory} from './chat.mjs';
+import {resetAttachments,restoreAttachments,showHistory} from './chat/chat.mjs';
 import {setResumeRecord} from './resume.mjs';
 import {t,formatDate} from './ui-text.mjs';
-import {closeTutorPops} from './tutor-header.mjs';
+import {closeTutorPops} from './tutor/tutor-header.mjs';
 import {sessionEngine} from './engine-facts.mjs';
 import {createSessionSwitch,leftBehind} from './session-switch.mjs';
 import {displayUserText} from '../text.mjs';

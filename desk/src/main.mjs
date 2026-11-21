@@ -3,32 +3,32 @@ import {bindPointerDrag} from './pointer-drag.mjs';
 import {icon} from '../icons.mjs';
 import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,applyCaptureAvailability,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
 import {visibleEngines,setLegacySession,legacyContinueEngine,relabelLegacySession} from './visible-engines-ui.mjs';
-import {conferir,conferirGeogebra,send,hideQuoteButton,doCompact,openChatSearch,closeChatSearch} from './chat.mjs';
+import {conferir,conferirGeogebra,send,hideQuoteButton,doCompact,openChatSearch,closeChatSearch} from './chat/chat.mjs';
 import {toggleReferencePanel,selectTab as selectSupportTab,supportState,setOpen as setSupportOpen} from './support.mjs';
-import {openStudyDestination} from './study-result-destination.mjs';
-import {studyToolHandlers} from './study-tools.mjs';
-import {mountStudySearchBoot,openStudySearch,closeStudySearch} from './study-search-loader.mjs';
-import {mountPdfNotesBoot,openPdfNotes} from './pdf-notes-loader.mjs';
+import {openStudyDestination} from './study/study-result-destination.mjs';
+import {studyToolHandlers} from './study/study-tools.mjs';
+import {mountStudySearchBoot,openStudySearch,closeStudySearch} from './study/study-search-loader.mjs';
+import {mountPdfNotesBoot,openPdfNotes} from './pdf/pdf-notes-loader.mjs';
 import {mountBackupPanelBoot} from './backup-panel-loader.mjs';
-import {mountFreeStudyBoot,openTutorPdfDialog} from './free-study-loader.mjs';
+import {mountFreeStudyBoot,openTutorPdfDialog} from './study/free-study-loader.mjs';
 import {mountActivityBoot} from './activity-loader.mjs';
 import {mountConversationLibraryBoot} from './conversation-library-loader.mjs';
 import {setResumeRecord} from './resume.mjs';
 import {confirmOpenLink} from './link-confirm.mjs';
-import {initTutorState,showTutorState} from './tutor-state.mjs';import {engineReady} from './engine-facts.mjs';
+import {initTutorState,showTutorState} from './tutor/tutor-state.mjs';import {engineReady} from './engine-facts.mjs';
 import {initConferir,closeConferirNote,paintConferirField,openConferirSettings} from './conferir.mjs';
-import {initFreeLimitNote} from './free-limit-notice.mjs';
-import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './free-models-loader.mjs';import {initOpenCodeProviders} from './opencode-providers-loader.mjs';import {mountReviewBoot} from './review-loader.mjs';
+import {initFreeLimitNote} from './study/free-limit-notice.mjs';
+import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './study/free-models-loader.mjs';import {initOpenCodeProviders} from './opencode-providers-loader.mjs';import {mountReviewBoot} from './review-loader.mjs';
 import {mountTriageBoot,openTriage} from './triage-loader.mjs';
 import {initModelPicker,noteModelPicked,noteModelUsed} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
 import conferirCore from './generated/conferir.core.js';
-import {createFirstRunBoot} from './first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings-appearance.mjs';import {mountReadingSettings} from './settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';
+import {createFirstRunBoot} from './setup/first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup/setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings/settings-appearance.mjs';import {mountReadingSettings} from './settings/settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings/settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';
 import resumeCore from './generated/resume.core.js';
 
 import {sendGgbRect,freezeGgbView,thawGgbView} from './ggb.mjs';
 import {initCalculator,getCalculatorCollapsed,setCalculatorCollapsed,fitCalculator,relabelCalculator} from './calc.mjs';
-import {pdfSplitValue,setPdfSplitPct} from './pdf.mjs';
-import {handlePdfZoomKey} from './pdf-zoom.mjs';
+import {pdfSplitValue,setPdfSplitPct} from './pdf/pdf.mjs';
+import {handlePdfZoomKey} from './pdf/pdf-zoom.mjs';
 import {decideEscape,collectEscapeFacts} from './escape-policy.mjs';
 import {relabelGuide} from './guide-loader.mjs';
 import {createPaletteLoader,mountPalette} from './palette-boot.mjs';
@@ -36,34 +36,34 @@ import {registerLayoutSurface,applyViewLayout,initLayoutPresetsUI,applyLayout,bu
 import {retranslateTree} from './view-host.mjs';
 import {createLazyModule} from './lazy-module.mjs';
 import {t,text,setUiLanguage,currentLanguage,LANGUAGE_EVENT,uiTextReady} from './ui-text.mjs';
-import {localizeFreeCourse} from './free-names.mjs';
-import {initTutorHeader,closeTutorPops,syncTutorMenus} from './tutor-header.mjs';
-import {initPhonePhoto,closePhonePop} from './phone-photo.mjs';
-import {initChatFull,setChatFull} from './chat-full.mjs';import {initMiniMode,isMiniMode,toggleMiniMode} from './mini-mode.mjs';import {attachTutorNotebook,setTutorNotebookThumb} from './tutor-notebooks.mjs';
+import {localizeFreeCourse} from './study/free-names.mjs';
+import {initTutorHeader,closeTutorPops,syncTutorMenus} from './tutor/tutor-header.mjs';
+import {initPhonePhoto,closePhonePop} from './phone/phone-photo.mjs';
+import {initChatFull,setChatFull} from './chat/chat-full.mjs';import {initMiniMode,isMiniMode,toggleMiniMode} from './mini-mode.mjs';import {attachTutorNotebook,setTutorNotebookThumb} from './tutor/tutor-notebooks.mjs';
 import {appendCourseRow,relabelCourseRows,clearEndDay,renderAboutLead,renderCourseRows,renderEndDay,renderHelpVersion} from './dialogs.mjs';
 import {initToolNotices,noticesOpened} from './tool-notices.mjs';
-import * as slash from './slash.mjs';
-import * as mentions from './mentions.mjs';
-import * as queue from './queue.mjs';
-import {toggleDensity} from './density.mjs';
+import * as slash from './composer/slash.mjs';
+import * as mentions from './composer/mentions.mjs';
+import * as queue from './queue/queue.mjs';
+import {toggleDensity} from './settings/density.mjs';
 import {openEditor as openShortcuts} from './keys.mjs';
 import {closeMenus,initNavMenus} from './nav-menus.mjs';
 import {menuHandlers,renderTabsView,renderMenus,selectTab,openReviewToday,moveTabFocus,numberedTabs,cycleToTab,getTabsCourses,setTabsCourses,refreshTabsOnReviewCount,initHeaderTabs} from './header-tabs.mjs';
 import {aboutHandlers,openAbout,openHelp,paintUpdateNotice,refreshAbout,syncUpdateNotice} from './about-update.mjs';
-import {installComposerAlign} from './composer-align.mjs';
-import {initComposerResize} from './composer-resize.mjs';
+import {installComposerAlign} from './composer/composer-align.mjs';
+import {initComposerResize} from './composer/composer-resize.mjs';
 import {newSession,continueSession,openConversation,renderConversations} from './course-conversations.mjs';
 /* "Pedir PDF ao tutor" é da aba Livre (#desempenho); a falha de carga vira toast. */
 function openTutorPdf(seed){return openTutorPdfDialog(seed).catch(error=>toast(error.message));}
 /* Configurações (#desempenho): o núcleo `settingsview.core.js` (133 KiB) e o
    aplicador só são necessários quando o diálogo abre. O init (ouvintes da
    lateral e do idioma) roda uma vez, ali; a partida não espera por eles. */
-const settingsModule=createLazyModule({importModule:()=>import('./settings.mjs'),prepare:module=>module.initSettings()}),studyStatsModule=createLazyModule({importModule:()=>import('./study-stats.mjs'),prepare:module=>module.initStudyStats({state:S})});
+const settingsModule=createLazyModule({importModule:()=>import('./settings/settings.mjs'),prepare:module=>module.initSettings()}),studyStatsModule=createLazyModule({importModule:()=>import('./study/study-stats.mjs'),prepare:module=>module.initStudyStats({state:S})});
 function setSettingsFooter(facts){settingsModule.current()?.setSettingsFooter(facts);}
 function showSaveError(message){settingsModule.current()?.showSaveError(message);}
 /* Primeira abertura (#desempenho): o `firstrun.core.js` (125 KiB) e a tela só
    entram quando os dados dizem que ela vale; o markup do #setup fica no index. */
-const firstRunBoot=createFirstRunBoot({importModule:()=>import('./first-run.mjs')});
+const firstRunBoot=createFirstRunBoot({importModule:()=>import('./setup/first-run.mjs')});
 const syncFirstRun=(data,hooks)=>firstRunBoot.sync(data,hooks);
 const isFirstRun=()=>firstRunBoot.isActive();
 /* Idioma (#41): o texto estático e o <html lang> seguem antes do primeiro desenho; o catálogo ativo entra sob demanda (#desempenho) e é esperado aqui, antes de montar/pintar texto, para não haver chave crua nem idioma de fallback. O markup do #setup entra antes do primeiro `setUiLanguage` para ser traduzido junto. */
@@ -374,13 +374,13 @@ aboutHandlers.OpenAboutFromNotice=()=>openAbout().catch(err=>toast(err.message))
 $('#update-notice').onclick=()=>openAbout();
 window.desk.onUpdateAvailable?.(data=>syncUpdateNotice({status:'update',version:data?.version}));
 const DESK_SETTINGS=['endDay','studyContext','calculator','xournal','conferir','refsToggle'];
-/* Layout (pedido 9): o módulo é do outro agente (`src/layout-settings.mjs`).
+/* Layout (pedido 9): o módulo é do outro agente (`src/settings/layout-settings.mjs`).
    Import dinâmico: o resto das Configurações funciona mesmo antes do módulo
    existir, e nada do `desk` é sobrescrito sem o ler/editar dele. */
 let layoutSettings=null;
 const layoutSettingsReady=(async()=>{
  try{
-  const module=await import('./layout-settings.mjs');
+  const module=await import('./settings/layout-settings.mjs');
   module.mountLayoutSettings?.($('#cfg-layout'), {onPrinted:i=>{const panel=S.panels?.[i];if(!panel)return;const open=!!panel.printedOpen;panel.togglePrinted();toast(t(open?'settings.layout.printedClosed':'settings.layout.printedOpen',{n:i+1}));}});
   layoutSettings=module;
   return module;

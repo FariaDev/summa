@@ -29,7 +29,7 @@ const out=screenshotDirectory('phone-photo');
 
 const post=(url,body,type)=>fetch(`${url}/photo`,{method:'POST',body,headers:{'Content-Type':type}});
 const trayCount=page=>page.evaluate(()=>document.querySelectorAll('#attachments .attachment').length);
-const clearTray=page=>page.evaluate(async()=>{(await import('./src/chat-attachments.mjs')).clearAttachments();});
+const clearTray=page=>page.evaluate(async()=>{(await import('./src/chat/chat-attachments.mjs')).clearAttachments();});
 
 async function openPop(page){
  await page.locator('#attach').click();

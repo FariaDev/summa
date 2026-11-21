@@ -64,7 +64,7 @@ const ROLES = {
 };
 
 const {isPlainObject} = require('../../plain-object.cjs');
-const {markOf} = require('../marked-pages.mjs');
+const {markOf} = require('../pdf/marked-pages.mjs');
 const {isImageOnlyPrompt} = require('../image-only-send.mjs');
 const str = (value) => typeof value === 'string' ? value : (typeof value === 'number' && Number.isFinite(value) ? String(value) : '');
 const clip = (value, max) => value.length > max ? value.slice(0, max) : value;

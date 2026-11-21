@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="node_modules/katex/dist/katex.min.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="src/desk-areas.css">
-  <link rel="stylesheet" href="src/study-tools.css">
-  <link rel="stylesheet" href="src/pdf-reader-qol.css">
+  <link rel="stylesheet" href="src/study/study-tools.css">
+  <link rel="stylesheet" href="src/pdf/pdf-reader-qol.css">
   <link rel="stylesheet" href="src/mesa-qol.css">
   <link rel="stylesheet" href="src/undo-notice.css">
   <link rel="stylesheet" href="src/materials/pdf-template.css" vite-ignore data-material-template="1">
@@ -23,14 +23,14 @@
   <link rel="stylesheet" href="src/release-notes.css">
   <link rel="stylesheet" href="src/opencode-providers.css">
   <link rel="stylesheet" href="src/mini-mode.css">
-  <link rel="stylesheet" href="src/study-plan.css">
+  <link rel="stylesheet" href="src/study/study-plan.css">
 </head>
 <body>
 <!-- Primeira abertura em tela cheia (#64, docs/design/setup-guia-r1/Setup-passos.dc.html):
      um passo por vez, a cena da marca à esquerda e o cartão com a trilha à
-     direita. Só aparece com `body[data-first-run]` (src/first-run.mjs); o
-     resto da Mesa fica `inert` atrás. Marcação: src/setup-markup.mjs (o teto de
-     linhas deste arquivo só cai); passos e textos: src/setup-flow.mjs. -->
+     direita. Só aparece com `body[data-first-run]` (src/setup/first-run.mjs); o
+     resto da Mesa fica `inert` atrás. Marcação: src/setup/setup-markup.mjs (o teto de
+     linhas deste arquivo só cai); passos e textos: src/setup/setup-flow.mjs. -->
 <section id="setup" class="setup" aria-label="Primeira abertura" data-i18n-attr="aria-label=setup.aria"></section>
 <header>
   <div class="header-nav">
@@ -68,7 +68,7 @@
     </div>
     <div id="review-bar" hidden></div>
     <div id="review-view" hidden></div>
-    <!-- Sessão livre (aba Livre, src/free-study.mjs): cabeçalho da sessão e o
+    <!-- Sessão livre (aba Livre, src/study/free-study.mjs): cabeçalho da sessão e o
          vazio orientado. O módulo mostra a barra e a área só com o workspace
          `mesa-free`; na matéria normal tudo isto fica oculto. -->
     <div id="free-bar" hidden>
@@ -114,7 +114,7 @@
            abrem o chat lateral, o menu de sessão nova e o de mais opções. O
            indicador de modelo e esforço mora na fileira da caixa de mensagem,
            à esquerda do Enviar. Menus e texto do indicador são do Bend
-           (core/tutorheader.bend → src/tutor-header.mjs); #ctx-meter é nó vivo
+           (core/tutorheader.bend → src/tutor/tutor-header.mjs); #ctx-meter é nó vivo
            do estado e entra no pé do painel Contexto.
            #auto-compact é o botão vivo da compactação automática. -->
       <div class="chat-top">
@@ -762,7 +762,7 @@
 <dialog id="free-models-dialog" class="study-dialog" aria-labelledby="free-models-title">
   <!-- Modelos grátis do OpenCode Zen (#44): cartão de aviso → chave → pronto; o mesmo
        diálogo também faz a pergunta única do modelo pago. A lógica é do
-       `src/free-models.mjs`; as frases, dos catálogos (`freeModels.*`). -->
+       `src/study/free-models.mjs`; as frases, dos catálogos (`freeModels.*`). -->
   <form method="dialog" id="free-models-form">
     <h2 id="free-models-title" data-i18n="freeModels.card.title">Usar modelos grátis</h2>
     <section data-step="card">
