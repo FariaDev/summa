@@ -478,7 +478,7 @@ test('about: linha em dia traz só a descrição e nenhuma coluna de ações', (
 });
 
 /* C3: painel aberto nasce com as linhas "Verificando…" (nada de vão vazio). */
-test('about: abertura do painel já pinta as 4 linhas em Verificando…', () => {
+test('about: abertura do painel já pinta as linhas em Verificando…', () => {
   renderComponentChecking();
   const rows = componentRows.children;
   assert.deepEqual(rows.map((r) => r.attrs.get('data-id')), ['claude', 'node', 'xournal'], 'as 3 linhas nascem logo');
@@ -493,6 +493,11 @@ test('about: abertura do painel já pinta as 4 linhas em Verificando…', () => 
     {id: 'xournal', label: 'Xournal++', version: '1.2.5', state: 'outdated', latest: '1.2.7'},
   ]);
   assert.equal(componentRows.children[2].children[0].children[0].children[3].textContent, '→ v1.2.7 disponível');
+});
+
+test('about: instalador (#148) abre o painel sem a linha do Node', () => {
+  renderComponentChecking({systemNode: false});
+  assert.deepEqual(componentRows.children.map((r) => r.attrs.get('data-id')), ['claude', 'xournal']);
 });
 
 test('pi-dialog: título/mensagem passam pelo host e os campos vão para #dialog-fields', () => {
