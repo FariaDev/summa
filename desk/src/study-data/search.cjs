@@ -43,7 +43,6 @@ const {clearIndex, invalidate, loadIndex, pruneIndex, writeIndex} = require('./s
 const {defaultPdfText, extractCandidate} = require('./search-extract.cjs');
 
 /* ---------- consulta ---------- */
-
 function sourceAllowed(candidate, {selectedCourses, sources, hasPdf, hasAnyCourses}) {
   if (!sources.has(candidate.source)) return false;
   const tag = SRC_TAG[candidate.source];
@@ -259,9 +258,9 @@ async function search(runtime, options = {}) {
       continue;
     }
     const key = candidate.kind === 'material' ? `material:${candidate.courseId}` : keyOf(candidate.file);
-    /* Metadado de matéria não tem arquivo: a assinatura é o nome da matéria e a lista de PDFs (renomear a matéria invalida o cache); no lateral, `sourceSig` cobre o arquivo das mensagens (#136). */
+    /* Metadado de matéria não tem arquivo: nome da matéria e caminhos absolutos/relativos dos PDFs invalidam o cache ao renomear ou mover (#172, #173); no lateral, `sourceSig` cobre o arquivo das mensagens (#136). */
     const labelSig = candidate.chat ? sha1(`${candidate.chat.id}\u0000${candidate.chat.title}\u0000${candidate.chat.topic}\u0000${candidate.chat.favorite}`).slice(0, 12) : '';
-    const sig = candidate.kind === 'material' ? sha1(JSON.stringify([candidate.title, (candidate.names || []).map((pdf) => pdf.name)])).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
+    const sig = candidate.kind === 'material' ? sha1(JSON.stringify([candidate.title, (candidate.names || []).map((pdf) => [pdf.path, pdf.relativePath])])).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
     const cached = index.files[key];
     if (cached && cached.sig === sig && cached.kind === candidate.kind) {
       cached.at = clock();
@@ -428,11 +427,11 @@ function resolve(runtime, id, options = {}) {
       if (materialKey(candidate.courseId, candidate.title) === parsed.key) {
         return {ok: true, kind: 'material', courseId: candidate.courseId, courseName: candidate.courseName, name: candidate.title, path: ''};
       }
-      for (const pdf of candidate.names || []) {
-        if (materialKey(candidate.courseId, pdf.name) === parsed.key) {
-          return {ok: true, kind: 'material', courseId: candidate.courseId, courseName: candidate.courseName, name: pdf.name, path: pdf.path};
-        }
-      }
+      const names = candidate.names || [];
+      const pdf = names.find((pdf) => materialKey(candidate.courseId, pdf.relativePath) === parsed.key);
+      const legacy = names.filter((pdf) => materialKey(candidate.courseId, pdf.name) === parsed.key);
+      const target = pdf || (legacy.length === 1 ? legacy[0] : null);
+      if (target) return {ok: true, kind: 'material', courseId: candidate.courseId, courseName: candidate.courseName, name: target.name, path: target.path};
       continue;
     }
     if (keyOf(candidate.file) !== parsed.key) continue;
@@ -470,8 +469,7 @@ function catalog(runtime, options = {}) {
 
 module.exports = {
   KNOWN_SOURCES,
-  INDEX_DIR,
-  INDEX_FILE,
+  INDEX_DIR, INDEX_FILE,
   MAX_INDEX_BYTES,
   FREE_COURSE_ID,
   fold,

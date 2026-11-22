@@ -140,7 +140,7 @@ function extractMaterial(candidate) {
       partial = true;
       break;
     }
-    docs.push({i: docs.length, role: '', text: clip(pdf.name), title: clip(pdf.name), when: 0, materialName: pdf.name, materialPath: pdf.path, materialId: materialKey(candidate.courseId, pdf.name)});
+    docs.push({i: docs.length, role: '', text: clip(pdf.name), title: clip(pdf.name), when: 0, materialName: pdf.name, materialPath: pdf.path, materialId: materialKey(candidate.courseId, pdf.relativePath)});
   }
   return {title: candidate.title, docs, partial};
 }
