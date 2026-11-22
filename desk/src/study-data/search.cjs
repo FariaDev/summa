@@ -43,7 +43,6 @@ const {clearIndex, invalidate, loadIndex, pruneIndex, writeIndex} = require('./s
 const {defaultPdfText, extractCandidate} = require('./search-extract.cjs');
 
 /* ---------- consulta ---------- */
-
 function sourceAllowed(candidate, {selectedCourses, sources, hasPdf, hasAnyCourses}) {
   if (!sources.has(candidate.source)) return false;
   const tag = SRC_TAG[candidate.source];
@@ -259,9 +258,9 @@ async function search(runtime, options = {}) {
       continue;
     }
     const key = candidate.kind === 'material' ? `material:${candidate.courseId}` : keyOf(candidate.file);
-    /* Metadado de matéria não tem arquivo: a assinatura é a lista de caminhos; no lateral, `sourceSig` cobre o arquivo das mensagens (#136). */
+    /* Nome da matéria e caminhos absolutos/relativos invalidam renomes e mudanças de PDFs (#172, #173); no lateral, `sourceSig` cobre as mensagens (#136). */
     const labelSig = candidate.chat ? sha1(`${candidate.chat.id}\u0000${candidate.chat.title}\u0000${candidate.chat.topic}\u0000${candidate.chat.favorite}`).slice(0, 12) : '';
-    const sig = candidate.kind === 'material' ? sha1((candidate.names || []).map((pdf) => `${pdf.path}\u0000${pdf.relativePath}`).join('\n')).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
+    const sig = candidate.kind === 'material' ? sha1(JSON.stringify([candidate.title, (candidate.names || []).map((pdf) => [pdf.path, pdf.relativePath])])).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
     const cached = index.files[key];
     if (cached && cached.sig === sig && cached.kind === candidate.kind) {
       cached.at = clock();
