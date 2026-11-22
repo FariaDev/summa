@@ -310,6 +310,7 @@ function onPopInput(event) {
  * @returns {void}
  */
 function onPopKey(event) {
+  if (event.isComposing) return;
   const field = /** @type {HTMLElement} */ (event.target);
   if (field?.dataset.action !== 'text') return;
   const id = field.dataset.id || '';
