@@ -60,7 +60,13 @@ Para personalizar rótulos dos PDFs, PDF que abre primeiro ou um só leitor, edi
 
 PDFs, calculadora e o chat com o tutor funcionam. **Conferir Xournal++** captura a janela do Xournal++ (botão, Ctrl+Shift+C ou menu Estudar) com o PowerShell do próprio sistema — nada instalado. Prints colados com Ctrl+V também viram anexo. Precisa do Xournal++ aberto e com a janela restaurada.
 
-### Passos
+### Instalar
+
+Baixe `Summa-Setup-X.Y.Z.exe` na [página de versões](https://github.com/FariaDev/summa/releases/latest) e abra o arquivo. Não precisa de administrador, Node nem terminal. Como o instalador ainda não tem certificado de assinatura, o Windows pode avisar na primeira vez: clique em **Mais informações** e **Executar assim mesmo**. Depois disso, o botão **Atualizar** da Summa cuida das versões novas.
+
+Quem já instalou pelo clone pode abrir o `.exe` por cima. As sessões continuam em `desk\.runtime`, então **não apague a pasta do clone**.
+
+### A partir do código (para quem desenvolve)
 
 1. Microsoft Visual C++ Redistributable x64 — o Electron não baixa sem ele; se faltar, o `npm run setup` avisa com o link ([vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe)).
 2. Node **22** ou mais novo para o setup a partir do código; o app e o MCP rodam no Node do Electron.

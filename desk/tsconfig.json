@@ -248,6 +248,7 @@
   "src/tutor-notebooks.mjs",
   "mini-mode-host.cjs",
   "notebook-note.cjs",
+  "windows-installer-update.cjs",
   "src/settings-ink.mjs",
   "src/settings-reading.mjs",
   "src/settings-search.mjs",

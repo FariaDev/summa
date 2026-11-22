@@ -10,7 +10,7 @@ enableDeskCompileCache({dir:path.join(process.env.LEARNING_DESK_RUNTIME||default
 const {placeWindow}=require('./lib.cjs');
 const {keepWindowOnDisplays}=require('./window-display-host.cjs');
 const {mergeCourses}=require('./courses.cjs');
-const {readConfig,needsSetup,normalize,installRoot}=require('./config.cjs');
+const {readConfig,needsSetup,normalize,installRoot,hasSourceTree}=require('./config.cjs');
 const firstRun=require('./first-run.cjs');
 const {createStudyServices}=require('./src/study-data/services.cjs');
 const {createNoteTurnCap}=require('./src/study-data/note-turn-cap.cjs');
@@ -178,7 +178,7 @@ if(!TEST_MODE){if(!app.requestSingleInstanceLock())app.quit();app.on('second-ins
 let session=state.session||'';
 const ggb=createGeogebraHost({WebContentsView,openExternal:openExternalLink,confirmExternal:confirmExternalLink,win:()=>win,deskState:()=>state,courseKey:()=>courseId===FREE_ID?`free-${freeSessionId}`:courseId,persist:(...args)=>persist(...args)/* persist vem do host de estado, criado depois */,runtime,appendLog,tutorT:(key,args)=>languageHost.tutorT(key,args),ggbPage:TEST_MODE&&process.env.LEARNING_DESK_GGB_PAGE||undefined,
  /* Teste: só o pacote que o teste aponta (um `setup` de verdade na máquina de quem testa não pode mudar o resultado). */
- ggbPackDir:TEST_MODE?process.env.LEARNING_DESK_GGB_PACK||'':packDirFor(installRoot())});
+ ggbPackDir:TEST_MODE?process.env.LEARNING_DESK_GGB_PACK||'':hasSourceTree()?packDirFor(installRoot()):path.join(runtime,'geogebra')});
 let freeSessionId='';
 /* Chave do último bloco de contexto enviado nesta sessão: contexto igual não é
    reenviado (o histórico já carrega a versão anterior). Zera quando a conversa

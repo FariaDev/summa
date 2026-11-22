@@ -28,6 +28,7 @@
     "triage": "node scripts/triage.mjs",
     "test:claude-ui": "node tests/run-claude-ui.mjs",
     "install-app": "node scripts/install-app.mjs",
+    "installer:windows": "node scripts/build-windows-installer.mjs",
     "update": "node scripts/update-cli.mjs",
     "update:keygen": "node scripts/update-release.mjs keygen",
     "update:sign": "node scripts/update-release.mjs sign",
