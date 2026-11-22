@@ -139,7 +139,7 @@
  "src/materials/template.mjs": 1,
  "src/composer/mentions.mjs": 38,
  "src/chat/message-links.mjs": 1,
- "src/nav.mjs": 14,
+ "src/nav.mjs": 5,
  "src/note-card-view.mjs": 2,
  "src/notify.mjs": 6,
  "src/offline-state.mjs": 8,

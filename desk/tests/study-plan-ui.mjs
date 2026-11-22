@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,tinyPdf,statusOnline,freezeMotion,enterFree} from './helpers.mjs';
+import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,tinyPdfPages,statusOnline,freezeMotion,enterFree,openMore} from './helpers.mjs';
 import {pollUntil} from './waits.mjs';
 
 /* Plano de estudo na barra de cima (#110): o botão "Plano" mostra o "agora", a
@@ -31,7 +31,7 @@ async function relaunch(ctx,runtime){
 
 await withArtifacts('plano-estudo',async ctx=>{
  const runtime=ctx.runtime=newRuntime('plano-estudo'),course=seedCourse(runtime,'Test');
- fs.writeFileSync(path.join(course,'Lista.pdf'),tinyPdf(['Lista de derivadas','4. velocidade zero em t = 2'],4));
+ fs.writeFileSync(path.join(course,'Lista.pdf'),tinyPdfPages(3,'Lista de derivadas'));
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Test',name:'Cálculo I',path:course}],desk:{pinnedExtensions:false}});
  ctx.app=await launchDesk({runtime});
  let page=await ctx.app.firstWindow();
@@ -111,10 +111,23 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.equal(await page.locator('#study-plan-notes').inputValue(),'Prova sexta. Regra da cadeia.','as Anotações voltaram');
  assert.equal(await page.locator('#study-plan-pop .study-plan-count').textContent(),'1 de 2','a contagem reflete a marca');
 
- /* ---------- 6. abrir leva o leitor à página e fecha a lista ---------- */
+ /* ---------- 6. abrir restaura o leitor, volta à página e fecha a lista ---------- */
+ await page.keyboard.press('Escape');
+ const reader=page.locator('.pdf-panel').first();
+ const pageNumber=reader.locator('.page-number');
+ await reader.locator('.pager').click();
+ await pageNumber.fill('3');
+ await pageNumber.press('Enter');
+ await pollUntil(()=>pageNumber.inputValue(),value=>value==='3',{timeout:5000,what:'o leitor na página 3'});
+ await (await openMore(reader)).locator('.collapse').click();
+ const restore=reader.locator('.pdf-restore');
+ await restore.waitFor({state:'visible'});
+ await openPlan(page);
  await page.locator('#study-plan-pop .study-plan-row').nth(0).locator('.study-plan-ref').click();
  await page.locator('#study-plan-pop').waitFor({state:'hidden'});
- assert.equal(await page.locator('.pdf-panel canvas').count()>0,true,'o leitor segue aberto');
+ await pollUntil(()=>restore.isVisible(),visible=>!visible,{timeout:5000,what:'o leitor restaurado pelo link no Plano'});
+ await pollUntil(()=>pageNumber.inputValue(),value=>value==='1',{timeout:5000,what:'o leitor na página ligada à tarefa'});
+ await reader.locator('.pdf-page[data-page="1"] canvas').waitFor({state:'visible'});
 
  /* ---------- 7. no Livre o Plano some; de volta na matéria, reaparece ---------- */
  /* Na janela estreita (Windows) a barra compacta esconde a aba; o clique vai pelo DOM (#110). */
