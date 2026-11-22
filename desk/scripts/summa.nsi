@@ -135,13 +135,21 @@ Function ${prefix}MoveCurrentAside
   ${EndIf}
   StrCpy $R0 0
   retry:
+    ; #119: quem abriu o instalador pode responder logo, sem esperar o app fechar sozinho.
+    !define INTERACTIVE_SWAP_ATTEMPTS 7
+    StrCpy $R1 ${INTERACTIVE_SWAP_ATTEMPTS}
+    ${If} ${Silent}
+    ${OrIf} $IsUpdate == "1"
+      StrCpy $R1 ${SWAP_ATTEMPTS}
+    ${EndIf}
+    !undef INTERACTIVE_SWAP_ATTEMPTS
     ClearErrors
     Rename "$INSTDIR" "$INSTDIR.${suffix}"
     ${IfNot} ${Errors}
       Return
     ${EndIf}
     IntOp $R0 $R0 + 1
-    ${If} $R0 < ${SWAP_ATTEMPTS}
+    ${If} $R0 < $R1
       Sleep 500
       Goto retry
     ${EndIf}
