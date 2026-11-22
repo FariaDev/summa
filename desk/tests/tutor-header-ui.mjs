@@ -263,7 +263,7 @@ await withArtifacts('tutor-header',async ctx=>{
  await page.keyboard.press('ControlOrMeta+\\');
  await page.waitForFunction(()=>!document.body.classList.contains('chat-collapsed'));
  await openTutorMore(page);
- assert.equal(await page.locator('#chat-collapse').getAttribute('title'),'Recolher o tutor (⌘\\)','o item volta a oferecer recolher');
+ assert.equal(await page.locator('#chat-collapse').getAttribute('title'),process.platform==='darwin'?'Recolher o tutor (⌘\\)':'Recolher o tutor (Ctrl+\\)','o item volta a oferecer recolher');
  await page.keyboard.press('Escape');
 
  /* ---------- chat lateral: o mesmo estado nos dois cabeçalhos ---------- */

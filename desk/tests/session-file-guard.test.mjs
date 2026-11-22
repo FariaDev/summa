@@ -70,6 +70,23 @@ test('symlink resolvido quando existe: elo dentro, alvo fora, nega', () => {
   }
 });
 
+test('só resolve raízes estáticas até achar a válida; dado do aluno ainda tem precedência', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-fileguard-roots-'));
+  t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+  const src = path.join(dir, 'src');
+  fs.mkdirSync(src);
+  const lateRoot = path.join(dir, 'late');
+  const {mock} = t;
+  const exists = mock.method(fs, 'existsSync');
+  const file = path.join(src, 'x.mjs');
+  fs.writeFileSync(file, '');
+  const request = {url: pathToFileURL(file).href, resourceType: 'script', appRoot: dir,
+    staticEntries: {dirs: [src, lateRoot], files: []}};
+  assert.deepEqual(fileSubresourceBlocked(request), {cancel: false, reason: 'sob-estatico'});
+  assert(!exists.mock.calls.some(({arguments: args}) => args[0] === lateRoot));
+  assert.deepEqual(fileSubresourceBlocked({...request, dataRoots: [src]}), {cancel: true, reason: 'dados'});
+});
+
 test('sem prefixo solto: /app-evil não é /app', () => {
   assert.equal(isPathUnderRoot('/app-evil/x.png', '/app'), false);
   assert.equal(isPathUnderRoot('/app/x.png', '/app'), true);

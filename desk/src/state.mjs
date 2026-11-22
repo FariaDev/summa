@@ -39,7 +39,7 @@ import {tutorNotebookCount} from './tutor/tutor-notebooks.mjs';
 /* Quem chama sabe o tipo do elemento (input, select, dialog...), por isso `any`. */
 /** @param {string} s @returns {any} */
 export function $(s){return document.querySelector(s);}
-export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,windowCaptureOk:false,ambitusLink:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
+export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,windowCaptureOk:false,ambitusLink:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',usesSystemNode:true,engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
 /* Fatos do indicador de modelo e esforço (ticket #14): o estado de conexão
    (`state` + rótulo que o host já usa no ponto) e a escolha em uso. Quem mostra
    é o `tutor-header.mjs`; o evento `desk-tutor-link` evita o ciclo de imports.
@@ -627,6 +627,7 @@ export async function loadCourse(data,{publishWorkspace=true}={}){
  resetAttachments();
  S.visibleEngines=Array.isArray(data.visibleEngines)?data.visibleEngines:null;S.captureOk=!!data.captureAvailable;S.windowCaptureOk=data.windowCaptureAvailable===undefined?S.captureOk:!!data.windowCaptureAvailable;S.ambitusLink=!!data.ambitusLinked;S.conferirApp=data.state?.conferirApp||null;S.appConfig={...(data.config||S.appConfig),platform:data.platform||S.appConfig.platform};
  S.deskVersion=data.deskVersion||S.deskVersion;
+ if(typeof data.usesSystemNode==='boolean')S.usesSystemNode=data.usesSystemNode;
  const desk=applyDesk(S.appConfig.desk);
  fillSessions(data);
  /* Matéria diferente com a MESMA sessão (promoção Livre→matéria transfere a

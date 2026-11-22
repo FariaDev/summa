@@ -74,6 +74,14 @@ test('collect: Node do SISTEMA é medido de verdade; sem node cai no embutido, r
   assert.match(ptText(semNode.hint), /node do sistema/);
 });
 
+test('collect: sem Node do sistema (instalador, #148) a linha some e nada roda node', async () => {
+  const comandos = [];
+  const run = async (cmd) => { comandos.push(cmd); return {stdout: ''}; };
+  const {rows} = await components.collect({deskDir: tmp(), config: {}, cacheFile: '', version: '1.4.0', testMode: true, run, platform: 'linux', envPath: '', systemNode: false, ...NO_CLAUDE});
+  assert.deepEqual(rows.map((r) => r.id), ['claude', 'xournal']);
+  assert.equal(comandos.includes('node'), false, 'o instalador não mede um Node que não usa');
+});
+
 test('collect: Node abaixo de 22.19 avisa (o corte é do núcleo)', async () => {
   const base = {deskDir: tmp(), config: {}, cacheFile: '', version: '0.4.0', testMode: true, run: async () => ({stdout: ''}), platform: 'linux', envPath: '', ...NO_CLAUDE};
   const antigo = await components.collect({...base, nodeVersion: '22.18.0'});

@@ -7,6 +7,8 @@ import {createRequire} from 'node:module';
 import {makeSignedRelease} from './fake-update-release.mjs';
 import {fakeIpcMain,fakeShell} from './fake-electron-shell.mjs';
 import {tempDir} from './temp-dir.mjs';
+import {exitedInstaller} from './fake-installer-process.mjs';
+import {message} from '../src/i18n.mjs';
 
 /* #119: no Windows instalado, a atualização é o instalador conferido pelo
    manifesto assinado. Nenhum teste toca a rede nem abre um `.exe` de verdade. */
@@ -21,6 +23,10 @@ const INSTALLED=`${LOCAL}\\Programs\\Summa\\resources\\app`;
 const INSTALLER=Buffer.from('instalador assinado da Summa');
 const tmp=()=>tempDir('summa-installer-update-');
 const serveInstaller=bytes=>async()=>new Response(bytes);
+
+test('codigo 3 explica que outro instalador ja esta aberto',async()=>{
+ await assert.rejects(installerUpdate.waitForInstallerReady({child:exitedInstaller(3),readyFile:path.join(tmp(),'ready')}),{message:message('err.update.installerBusy')});
+});
 
 function prepare(release,{download=INSTALLER,dir=path.join(tmp(),'update-installer')}={}){
  return {dir,run:installerUpdate.prepareInstallerUpdate({version:release.version,publicKey:release.publicKey,dir,fetchBuffer:release.fetchBuffer,fetchInstaller:serveInstaller(download)})};
@@ -139,6 +145,7 @@ test('#119: a abertura seguinte diz se a versão pedida subiu',async()=>{
  await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
  const applied=await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'});
  assert.equal(applied.status,'applied');
+ assert.equal(applied.mode,'installer');
  const cache=updater.readCache(cacheFile);
  assert.equal(cache.lastResult.version,'1.4.1');
  assert.equal(Object.hasOwn(cache,'installerPending'),false);
@@ -152,7 +159,18 @@ test('#119: versão antiga de pé depois do instalador vira "recuperada" com o m
  await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.0',dir:path.join(root,'x'),failureReason:'não instalou'});
  const {lastResult}=updater.readCache(cacheFile);
  assert.equal(lastResult.status,'recovered');
+ assert.equal(lastResult.mode,'installer');
  assert.equal(lastResult.reason,'não instalou');
+});
+
+test('settle não remove caminhos ausentes, vazios ou relativos',async()=>{
+ const root=tmp(),cacheFile=path.join(root,'update.json'),sentinel=path.join(root,'estudo.json');
+ fs.writeFileSync(sentinel,'preservado');
+ for(const dir of [undefined,'',path.relative(root,path.join(root,'relativo'))]){
+  await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
+  await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'});
+  assert.equal(fs.readFileSync(sentinel,'utf8'),'preservado');
+ }
 });
 
 function installerHost({runtime,fake,quit=()=>{},version='1.4.0'}){

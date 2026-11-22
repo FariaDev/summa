@@ -35,10 +35,16 @@ test('#119: o pacote leva Electron e payload, sem clone e sem o app genérico',(
 });
 
 test('#119: o makensis recebe versão, pasta, saída e ícone, e aviso vira erro',()=>{
- const args=makensisArgs({desk:'/d',stage:'/s',outFile:'/o/Summa-Setup-1.4.0.exe',version:'1.4.0',installedKb:2048});
+ const args=makensisArgs({desk:'/d',stage:'/s',outFile:'/o/Summa-Setup-1.4.0.exe',version:'1.4.0',installedKb:2048,commit:'a'.repeat(40)});
  assert.ok(args.includes('-WX'));
- for(const value of ['-DVERSION=1.4.0','-DSTAGE_DIR=/s','-DOUT_FILE=/o/Summa-Setup-1.4.0.exe','-DINSTALLED_KB=2048'])assert.ok(args.includes(value),value);
+ for(const value of ['-DVERSION=1.4.0','-DCOMMIT='+ 'a'.repeat(40),'-DSTAGE_DIR=/s','-DOUT_FILE=/o/Summa-Setup-1.4.0.exe','-DINSTALLED_KB=2048'])assert.ok(args.includes(value),value);
  assert.equal(args.at(-1),path.join('/d','scripts','summa.nsi'));
+});
+
+test('#119: o build recusa commit ausente ou fora do formato git',()=>{
+ for(const commit of [undefined,'','abc','a'.repeat(39),'g'.repeat(40)]){
+  assert.throws(()=>makensisArgs({desk:'/d',stage:'/s',outFile:'/o',version:'1.4.0',installedKb:1,commit}),/recebido.*esperado SHA-1 git/);
+ }
 });
 
 test('#119: o instalador fica por usuário e fora dos dados do aluno',()=>{

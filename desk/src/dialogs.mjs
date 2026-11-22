@@ -209,13 +209,17 @@ function componentStateFacts(row = {}) {
   return {$: 'CompUnknown'};
 }
 
-/* C3: painel aberto ≠ carregando vazio — as 4 linhas nascem imediatamente com
-   "Verificando…" e a checagem real
-   substitui no mesmo lugar. */
-export function renderComponentChecking() {
+/**
+ * C3: painel aberto ≠ carregando vazio — as linhas nascem imediatamente com
+ * "Verificando…" e a checagem real substitui no mesmo lugar. Sem `systemNode`
+ * (instalador .exe, AppImage, DMG; #148) a linha do Node não nasce.
+ * @param {{systemNode?: boolean}} [facts]
+ * @example renderComponentChecking({systemNode: false}) // Claude Code e Xournal++
+ */
+export function renderComponentChecking({systemNode = true} = {}) {
   renderComponentRows([
     {id: 'claude', label: 'Claude Code', version: '', state: 'checking'},
-    {id: 'node', label: 'Node (sistema)', version: '', state: 'checking'},
+    ...(systemNode ? [{id: 'node', label: 'Node (sistema)', version: '', state: 'checking'}] : []),
     {id: 'xournal', label: 'Xournal++', version: '', state: 'checking'},
   ]);
 }

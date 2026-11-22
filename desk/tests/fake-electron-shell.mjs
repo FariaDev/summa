@@ -38,9 +38,32 @@ export function fakeNotificationClass({supported = true} = {}) {
 /** BrowserWindow mínima: foco, minimizado e o que o clique da notificação chama. */
 export function fakeWindow({focused = false, minimized = false} = {}) {
   const calls = [];
-  return {calls, sent: [], isDestroyed: () => false, isFocused: () => focused, isMinimized: () => minimized,
+  const overlays = [];
+  return {calls, overlays, destroyed: false, sent: [], isDestroyed() { return this.destroyed; }, isFocused: () => focused, isMinimized: () => minimized,
+    setOverlayIcon: (image, description) => overlays.push({image, description}),
     restore: () => calls.push('restore'), show: () => calls.push('show'), focus: () => calls.push('focus'),
     webContents: {send(channel) { calls.push(`send:${channel}`); }, focus() {}}};
+}
+
+/** NativeImage que guarda os pixels BGRA e o tamanho pedido pelo selo. */
+export function fakeBadgeNativeImage() {
+  const images = [];
+  return {images, createFromBitmap(pixels, size) {
+    const image = {pixels, size, resize(options) { this.resized = options; return this; }};
+    images.push(image);
+    return image;
+  }};
+}
+
+/** App do Electron que registra contagens no Dock/launcher. */
+export function fakeBadgeApp() {
+  return {badges: [], setBadgeCount(value) { this.badges.push(value); return true; }};
+}
+
+/** Tradução nomeada da descrição acessível do selo. */
+export function fakeBadgeText(key, {count}) {
+  if (key !== 'notify.unreadReplies') throw Error(`chave inesperada: ${key}`);
+  return `Respostas não lidas: ${count}`;
 }
 
 /** shell do Electron: guarda o que o host pediu para abrir. */

@@ -26,7 +26,9 @@
   "src/**/*.cjs",
   "src/**/*.mjs",
   "scripts/measure-boot.mjs",
-  "scripts/build-windows-installer.mjs"
+  "scripts/build-windows-installer.mjs",
+  "scripts/build-linux-appimage.mjs",
+  "scripts/build-macos-dmg.mjs"
  ],
  "exclude": [
   "src/generated/**",

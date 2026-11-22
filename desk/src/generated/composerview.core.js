@@ -317,9 +317,6 @@ function $queueItemTitle(_text_0, _sending_0) {
 function $queueSteerNowLabel() {
   return $msg_msg("queue.steerNow");
 }
-function $queueSteerNowTitle() {
-  return $msg_msg("queue.steerNowTitle");
-}
 function $editBannerText() {
   return $msg_msg("queue.editBanner");
 }
@@ -378,7 +375,7 @@ function $queueRemoveBtn(_id_0, _enabled_0) {
   return $view_viewEl("button", $$queueRemoveAttrs(_id_0, _enabled_0), { $: "Con", head: $$view_viewText("×"), tail: { $: "Nil" } });
 }
 function $queueSteerAttrs() {
-  return { $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-steer-now"), tail: { $: "Con", head: $$view_attrTitle($$queueSteerNowTitle()), tail: { $: "Con", head: $$view_attrAria("label", $$queueSteerNowTitle()), tail: { $: "Con", head: $$view_attrOn("click", "steerNow"), tail: { $: "Nil" } } } } } };
+  return { $: "Con", head: $$view_attrType("button"), tail: { $: "Con", head: $$view_attrClass("queue-steer-now"), tail: { $: "Con", head: $$view_attrOn("click", "steerNow"), tail: { $: "Nil" } } } };
 }
 function $queueSteerBtn() {
   return $view_viewEl("button", $$queueSteerAttrs(), { $: "Con", head: $$view_viewText($$queueSteerNowLabel()), tail: { $: "Nil" } });
@@ -677,7 +674,6 @@ var $$view_attrType = $view_attrType;
 var $$view_attrKey = $view_attrKey;
 var $$queueDisabledAttr = $queueDisabledAttr;
 var $$queueRemoveAttrs = $queueRemoveAttrs;
-var $$queueSteerNowTitle = $queueSteerNowTitle;
 var $$queueSteerAttrs = $queueSteerAttrs;
 var $$queueSteerNowLabel = $queueSteerNowLabel;
 var $$queueSteerBtn = $queueSteerBtn;
@@ -785,7 +781,6 @@ var composerview_default = {
   queueClearTitle: run_lib(() => str_out(run_loop($queueClearTitle())), 0),
   queueItemTitle: run_lib((a0, a1) => str_out(run_loop($queueItemTitle(str_in(a0), a1))), 2),
   queueSteerNowLabel: run_lib(() => str_out(run_loop($queueSteerNowLabel())), 0),
-  queueSteerNowTitle: run_lib(() => str_out(run_loop($queueSteerNowTitle())), 0),
   editBannerText: run_lib(() => str_out(run_loop($editBannerText())), 0),
   queueStripClass: run_lib((a0) => run_loop($queueStripClass(a0)), 1),
   queueItemClass: run_lib((a0) => run_loop($queueItemClass(a0)), 1),

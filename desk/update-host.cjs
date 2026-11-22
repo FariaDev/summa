@@ -11,10 +11,13 @@ const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 const {isAppBundle}=require('./legacy-bundle.cjs');
 const windowsInstallerUpdate=require('./windows-installer-update.cjs');
+const linuxAppImageUpdate=require('./linux-appimage-update.cjs');
+const macosDmgUpdate=require('./macos-dmg-update.cjs');
+const {isMacosRelease}=require('./macos-release.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
-function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate}){
+function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate,appImageUpdate=linuxAppImageUpdate,dmgUpdate=macosDmgUpdate}){
  const TEST_MODE=testMode;
  /* ---------- updater por clique + painel de componentes ----------
     Somente GETs públicos (releases do GitHub + registry npm); zero telemetria.
@@ -43,7 +46,13 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  /* #109: o Sobre mostra a MESMA origem que o updater vai usar. O fato vem do
     `install-source.json` (ou da raiz com `.git`); a classificação não adivinha
     pasta pessoal nem log — o caminho só existe aqui e no Sobre. */
+ const linuxAppImage=appImageUpdate.isLinuxAppImage({platform,deskDir,env});
+ /* #148: .exe, AppImage e DMG se atualizam pelo próprio app; só quem roda do
+    código (ou do bundle ligado a ele) usa o Node do sistema no worker. */
+ const usesSystemNode=!(linuxAppImage||installerUpdate.isWindowsInstalledApp({platform,deskDir,env})||isMacosRelease({deskDir,platform}));
  function originFacts(){
+  if(linuxAppImage)return {kind:'normal',path:'',worktree:false};
+  if(isMacosRelease({deskDir,platform}))return {kind:'normal',path:'',worktree:false};
   const facts=updateOrigin({packaged:!!app.isPackaged,deskDir,home:os.homedir()});
   if(facts.kind==='unavailable'&&registeredZipSource())return {kind:'normal',path:'',worktree:false};
   return facts;
@@ -72,6 +81,28 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     worker com Node do sistema, o clone e o `npm ci` ficam só para quem roda do
     código. Falha antes de abrir o instalador deixa a Summa aberta nesta versão. */
  const installerDir=path.join(runtime,'update-installer');
+ const dmgDir=path.join(runtime,'update-dmg');
+ async function applyWithDmg(target,installed){
+  const bundle=path.resolve(deskDir,'..','..','..');
+  dmgUpdate.assertWritableBundle(bundle);
+  const lock=updater.acquireLock(runtime);
+  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  let child;
+  try{
+   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
+   const {file}=await dmgUpdate.prepareDmgUpdate({version:target,publicKey,dir:dmgDir});
+   await dmgUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
+   child=await dmgUpdate.launchDmgUpdate({file,app:bundle,dir:dmgDir,version:target,lockFile:lock.file,env});
+   await dmgUpdate.waitForDmgReady({child,dir:dmgDir});
+  }catch(error){
+   if(fs.existsSync(dmgDir))fs.writeFileSync(path.join(dmgDir,'cancel'),'cancel\n');
+   await dmgUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+   if(!child||child.exitCode!==null&&child.exitCode!==undefined)updater.releaseLock(lock.file);
+   throw error;
+  }
+  setTimeout(()=>app.quit(),400);
+  return {ok:true,version:target};
+ }
  async function applyWithInstaller(target,installed){
   const lock=updater.acquireLock(runtime);
   if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
@@ -92,11 +123,43 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   setTimeout(()=>app.quit(),400);
   return {ok:true,version:target};
  }
+ async function applyWithAppImage(target,installed){
+  const appImage=String(env.APPIMAGE||'');
+  const lock=updater.acquireLock(runtime);
+  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  let partial='';
+  try{
+   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
+   const {file}=await appImageUpdate.prepareAppImageUpdate({version:target,publicKey,dir:path.dirname(appImage)});
+   partial=file;
+   await installerUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
+   appImageUpdate.swapAppImage({file,appImage});
+   partial='';
+   app.releaseSingleInstanceLock();
+   await appImageUpdate.relaunchAppImage({appImage,env});
+  }catch(error){
+   app.requestSingleInstanceLock();
+   if(partial)fs.rmSync(partial,{force:true});
+   await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+   throw error;
+  }finally{updater.releaseLock(lock.file);}
+  appendLog('update',`AppImage da v${target} conferido e reaberto`);
+  setTimeout(()=>app.quit(),400);
+  return {ok:true,version:target};
+ }
+ if(!TEST_MODE&&linuxAppImage){
+  installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
+   .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
+ }
  /* O instalador não escreve no `update.json`: a abertura seguinte compara a
     versão pedida com a que subiu e o Sobre mostra o resultado real. */
  if(!TEST_MODE&&platform==='win32'){
   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:installerDir,failureReason:uiMsg('err.update.installerFailed')})
    .catch(error=>appendLog('update',`resultado do instalador não registrado: ${causeArg(error)}`));
+ }
+ if(!TEST_MODE&&isMacosRelease({deskDir,platform})){
+  dmgUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:dmgDir,failureReason:uiMsg('err.update.installerFailed')})
+   .catch(error=>appendLog('update',`resultado do DMG não registrado: ${causeArg(error)}`));
  }
  ipcMain.handle('update-origin',()=>originFacts());
  ipcMain.handle('update-check',async(_e,opts)=>{
@@ -119,7 +182,9 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
      mais nova que a instalada. */
   const installed=app.getVersion();
   if(!updater.isNewer(target,installed))throw Error(uiMsg('err.update.notNewer',{announced:target,installed}));
+  if(linuxAppImage)return applyWithAppImage(target,installed);
   if(installerUpdate.isWindowsInstalledApp({platform,deskDir,env}))return applyWithInstaller(target,installed);
+  if(isMacosRelease({deskDir,platform}))return applyWithDmg(target,installed);
   /* #21: clone/bundle do repositório antigo não recebe a tag do Summa —
      recusa antes do lock, do worker e de qualquer git/rede; reinstalar é o
      caminho, e a pasta de dados não muda. */
@@ -164,7 +229,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  });
  const toolFixtures=fixtures;
  ipcMain.handle('components',(_e,opts)=>components.collect({deskDir,config:config(),cacheFile:updateCacheFile,version:app.getVersion(),manual:!!opts?.manual,testMode:TEST_MODE,
-  latestOverride:toolFixtures.latestOverride,claudeLauncher:toolFixtures.claudeLauncher}));
+  latestOverride:toolFixtures.latestOverride,claudeLauncher:toolFixtures.claudeLauncher,systemNode:usesSystemNode}));
  ipcMain.handle('tool-notices',()=>tools.notices());
  ipcMain.handle('tool-notices-opened',()=>tools.opened());
  ipcMain.handle('tool-notice-postpone',(_e,id)=>tools.postpone(id));
@@ -211,6 +276,6 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
    }catch{/* checagem em segundo plano é best-effort (offline é normal); o Sobre refaz sob demanda */}
   },5000);
  }
- return {scheduleUpdateCheck};
+ return {scheduleUpdateCheck,usesSystemNode};
 }
 module.exports={registerUpdateHost};

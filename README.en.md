@@ -51,6 +51,10 @@ The name is the same in both languages: **Summa**.
 
 ## Getting started
 
+**On Windows**, download `Summa-Setup-X.Y.Z.exe` from the [releases page](https://github.com/FariaDev/summa/releases/latest) and open it. No administrator, Node or terminal needed.
+
+**On macOS, or from source:**
+
 ```sh
 cd desk
 npm ci
@@ -75,7 +79,7 @@ If you cloned the old repository (`mesa-de-estudos`), reinstall once from Summa;
 
 ## Settings
 
-**Settings** (⌘ , / Ctrl+,): courses and folders, readers (one or two, their names and the starting PDF), visible features, appearance, the app that Check captures and the Ambitus handwriting reading. Changes apply when you save. To customize with an agent: [`docs/agents/customizar.md`](docs/agents/customizar.md) and [`desk/config.example.json`](desk/config.example.json).
+**Settings** (⌘ , / Ctrl+,): courses and folders, readers (one or two, their names and the starting PDF), visible features, appearance, the app that Check captures and the Ambitus handwriting reading. Changes apply when you save. To customize with an agent: [`docs/agents/customizar.md`](docs/agents/customizar.md) and [`desk/config.example.json`](desk/config.example.json). Usage and local data are covered in [`desk/README.md`](desk/README.md) (in Portuguese).
 
 ## Problems
 

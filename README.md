@@ -27,6 +27,27 @@ O nome é o mesmo nas duas línguas: **Summa**.
   </picture>
 </p>
 
+
+## Linux — AppImage (x86_64)
+
+Baixe `Summa-X.Y.Z-x86_64.AppImage` nos assets da [Release](https://github.com/FariaDev/summa/releases/latest),
+guarde em uma pasta sua (por exemplo `~/Applications`) e execute:
+
+```sh
+chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage
+```
+
+Não precisa de Node nem npm. Ao abrir, a Summa cria/atualiza a entrada do menu e o
+ícone em `~/.local/share` (respeita `XDG_DATA_HOME`). Não mova o arquivo depois
+sem abri-lo novamente para atualizar o atalho. Os estudos ficam fora do AppImage,
+na pasta de dados do usuário. O Sobre baixa e confere a atualização assinada e
+substitui o mesmo arquivo; a pasta precisa ser gravável, sem sudo.
+
+No Ubuntu 22.04+, instale `libfuse2` (ou `libfuse2t64` nas versões recentes).
+Se FUSE não estiver disponível, abra com
+`~/Applications/Summa-X.Y.Z-x86_64.AppImage --appimage-extract-and-run`.
+
 ## O que tem
 
 - **Dois leitores de PDF** independentes, com busca, favoritos, sumário e citação "Arquivo.pdf, p. N" clicável nas respostas.
@@ -53,7 +74,11 @@ O nome é o mesmo nas duas línguas: **Summa**.
 
 **No Windows**, baixe `Summa-Setup-X.Y.Z.exe` na [página de versões](https://github.com/FariaDev/summa/releases/latest) e abra o arquivo. Não precisa de administrador, Node nem terminal.
 
-**No macOS, ou a partir do código:**
+**No macOS**, baixe `Summa-X.Y.Z.dmg` na [página de versões](https://github.com/FariaDev/summa/releases/latest), abra a imagem e arraste **Summa** para **Aplicativos**. Não precisa de Node, npm nem clone.
+
+O app ainda não é notarizado pela Apple. Se a primeira abertura mostrar **“Summa Not Opened”**, clique em **Concluído** e vá a **Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim** (Open Anyway), na seção Segurança; confirme a abertura e autentique-se como administrador se solicitado. Depois, atualize por **Sobre → Atualizar e reiniciar**. Em uma instalação nova pelo DMG, os dados do app ficam em `~/Library/Application Support/Mesa de Estudos`; os PDFs ficam na pasta escolhida para a matéria. Quem migra do clone pode continuar usando o runtime antigo — não apague o clone sem fazer backup.
+
+**A partir do código:**
 
 ```sh
 cd desk

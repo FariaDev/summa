@@ -1,6 +1,5 @@
 // @ts-check
 'use strict';
-const crypto=require('node:crypto');
 const fs=require('node:fs');
 const path=require('node:path');
 const {spawn}=require('node:child_process');
@@ -14,7 +13,7 @@ const {causeArg}=require('./src/error-detail.mjs');
    `.exe`, confere com o manifesto assinado e só então o abre em silêncio. Quem
    troca os arquivos é o instalador, depois de a Summa fechar: o Windows trava o
    `electron.exe` em uso. Nada aqui depende de Node do sistema, npm ou clone. */
-const DOWNLOAD_TIMEOUT_MS=30*60*1000;
+const {downloadReleaseFile,fetchReleaseFile}=require('./update-download.cjs');
 /* A Summa fica aberta durante a extração (31 s na VM de teste) e só fecha quando
    a versão nova está pronta para a troca. O prazo folga para máquinas bem lentas. */
 const INSTALLER_READY_TIMEOUT_MS=20*60*1000;
@@ -32,32 +31,6 @@ function isWindowsInstalledApp({platform=process.platform,deskDir,env=process.en
  return path.win32.resolve(deskDir).toLowerCase()===expected.toLowerCase();
 }
 
-/* Grava em `.part`: um download cortado nunca fica com o nome do instalador. */
-async function downloadInstallerFile({response,partial,maxBytes}){
- const hash=crypto.createHash('sha256');
- const output=fs.openSync(partial,'w');
- let bytes=0;
- try{
-  const reader=response.body.getReader();
-  for(;;){
-   const {done,value}=await reader.read();
-   if(done)break;
-   bytes+=value.length;
-   if(bytes>maxBytes){
-    await reader.cancel().catch(()=>{});
-    break;
-   }
-   hash.update(value);
-   fs.writeSync(output,value);
-  }
- }finally{fs.closeSync(output);}
- return {bytes,sha256:hash.digest('hex')};
-}
-
-function defaultFetchInstaller(url){
- return fetch(url,{headers:{'user-agent':'summa'},signal:AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)});
-}
-
 /**
  * Baixa o instalador da versão e confere tamanho e SHA-256 com o manifesto
  * assinado. Qualquer divergência apaga o download e recusa a atualização.
@@ -65,7 +38,7 @@ function defaultFetchInstaller(url){
  * @returns {Promise<{file: string, manifest: object}>}
  * @example await prepareInstallerUpdate({version:'1.4.0',publicKey,dir:'C:\\dados\\update-installer'})
  */
-async function prepareInstallerUpdate({version,publicKey,dir,fetchBuffer=defaultFetchBuffer,fetchInstaller=defaultFetchInstaller}){
+async function prepareInstallerUpdate({version,publicKey,dir,fetchBuffer=defaultFetchBuffer,fetchInstaller=fetchReleaseFile}){
  const {manifest,urls}=await signature.loadSignedRelease({version,publicKey,fetchBuffer,needZip:false});
  const declared=signature.assertInstallerDeclared(manifest);
  fs.rmSync(dir,{recursive:true,force:true});
@@ -76,7 +49,7 @@ async function prepareInstallerUpdate({version,publicKey,dir,fetchBuffer=default
  try{
   const response=await fetchInstaller(urls.installer);
   if(!response.ok||!response.body)throw Error(`HTTP ${response.status}`);
-  received=await downloadInstallerFile({response,partial,maxBytes:declared.exeBytes});
+  received=await downloadReleaseFile({response,partial,maxBytes:declared.exeBytes});
  }catch(error){
   fs.rmSync(dir,{recursive:true,force:true});
   throw Error(uiMsg('err.update.installerDownload',{version:manifest.version,error:causeArg(error)}));
@@ -135,7 +108,7 @@ function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOU
    child.off('exit',onExit);
    if(error)reject(error);else resolve();
   };
-  const onExit=code=>finish(Error(`o instalador saiu com o código ${code}`));
+  const onExit=code=>finish(Error(code===3?uiMsg('err.update.installerBusy'):`o instalador saiu com o código ${code}; esperado 0 e o aviso de pronto`));
   const tick=()=>{
    if(fs.existsSync(readyFile))return finish();
    if(child.exitCode!==null&&child.exitCode!==undefined)return onExit(child.exitCode);
@@ -170,19 +143,19 @@ function clearInstallerPending({cacheFile}){
 /**
  * Na abertura seguinte, transforma o pedido pendente no resultado que o Sobre
  * mostra: a versão que subiu é a prova de que o instalador terminou.
- * @param {{cacheFile: string, current: string, dir: string, failureReason: string}} input
+ * @param {{cacheFile: string, current: string, dir?: string, mode?: string, failureReason: string}} input
  * @returns {Promise<{status: string, version: string}|null>}
  * @example await settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'})
  */
-async function settleInstallerUpdate({cacheFile,current,dir,failureReason}){
+async function settleInstallerUpdate({cacheFile,current,dir,mode='installer',failureReason}){
  const pending=readCache(cacheFile).installerPending;
  if(!pending)return null;
  const applied=semverCompare(current,pending.version)>=0;
  const result=applied
-  ?{status:'applied',mode:'installer',version:current}
-  :{status:'recovered',mode:'installer',version:pending.version,reason:failureReason};
+  ?{status:'applied',mode,version:current}
+  :{status:'recovered',mode,version:pending.version,reason:failureReason};
  await cacheWrite(cacheFile,({installerPending:_done,...cache})=>({...cache,lastResult:{...result,at:Date.now()}}));
- fs.rmSync(dir,{recursive:true,force:true});
+ if(dir&&path.isAbsolute(dir))fs.rmSync(dir,{recursive:true,force:true});
  return result;
 }
 

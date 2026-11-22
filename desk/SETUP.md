@@ -43,7 +43,7 @@ Na primeira abertura (sem configuração) a Mesa não mostra diálogo: ela já a
 
 1. Dê um nome à matéria no campo **Nome da matéria**, na barra de cima.
 2. Diga onde estão os PDFs: **Escolher a pasta…** na folha "Lista 0", ou solte PDFs (ou a pasta) em qualquer ponto do leitor. A Mesa só aponta para a pasta; não copia nem altera os arquivos.
-3. A pasta onde ficam as exportações e as instruções do tutor aparece na folha (por padrão `Documentos/Summa`); **Mudar** escolhe outra. Ela só é criada quando a matéria nasce e fica gravada no `config.json` deste computador.
+3. A pasta de dados é criada quando você clica em **Criar a matéria** e fica gravada como `vaultPath` no `config.json` deste computador. Sem um `vaultPath` configurado, usa a subpasta `Summa` da pasta Documentos do sistema (inclusive quando redirecionada pelo OneDrive no Windows ou localizada como `Documentos` no Linux); não há uma linha para escolher essa pasta no assistente.
 4. Na coluna do tutor, a Mesa mostra o motor visível (OpenCode). **Chamar o tutor** liga o motor da conversa; o login do provedor acontece no app e a conta fica no motor, não na Mesa.
 
 Com nome e pasta a matéria é criada e a Mesa vai para ela, já com a caixa de mensagem liberada. Quem preferir só estudar um assunto avulso pode abrir a aba **Livre**.
@@ -88,7 +88,17 @@ Quem já instalou pelo clone pode abrir o `.exe` por cima. As sessões continuam
 - [ ] Conferir Xournal++: botão, Ctrl+Shift+C, menu Estudar e ajuda presentes; com o Xournal++ aberto, a captura anexa a janela dele (minimizada pede para restaurar; fechada pede para abrir).
 - [ ] **Atualizar e rollback**: com rede, `npm run update` aplica a versão nova e reabre a Mesa; simule falha (corte a rede no meio do `npm ci`) e confira o rollback no `desk.log` — a versão anterior sobe de novo; sem rede, nada pendura (checagens têm prazo).
 
-## macOS (opcional)
+## macOS
+
+### Instalador DMG
+
+Baixe `Summa-X.Y.Z.dmg` na [página de versões](https://github.com/FariaDev/summa/releases/latest), abra a imagem e arraste **Summa** para **Aplicativos**. Não precisa de Node, npm nem clone.
+
+O app ainda não é notarizado pela Apple: a primeira abertura pode mostrar **“Summa Not Opened”**. Clique em **Concluído**, abra **Ajustes do Sistema → Privacidade e Segurança** e, na seção **Segurança**, clique em **Abrir Mesmo Assim** (Open Anyway). Confirme a abertura no aviso seguinte e autentique-se como administrador se solicitado.
+
+Depois disso, **Sobre → Atualizar e reiniciar** cuida das versões novas. Em uma instalação nova pelo DMG, os dados do app ficam em `~/Library/Application Support/Mesa de Estudos` e não são apagados ao mover o app para o Lixo. Os PDFs ficam na pasta escolhida para a matéria. Quem migra do clone pode continuar usando `desk/.runtime` dele: **não apague o clone sem fazer backup**.
+
+### A partir do código (opcional)
 
 ```sh
 npm run install-app
@@ -97,6 +107,11 @@ npm run install-app
 Monta `Summa.app` ao lado de `desk/`, ou atualiza o que já existe, inclusive o Electron dele. Não cria um instalador.
 
 ### Gravação de Tela
+
+Na primeira vez que você usa **Conferir**, a Summa pede a permissão pelo
+helper do macOS. Autorize em **Ajustes → Privacidade e Segurança → Gravação
+de Tela** se o sistema orientar; até autorizar, o app mostra a orientação
+em vez de capturar outra janela (#123).
 
 O macOS lembra a permissão de **Gravação de Tela** pela identidade de assinatura do app. Sem um certificado, o `install-app` assina ad-hoc e cada atualização vira "outro" app para o sistema — a permissão é pedida de novo.
 
@@ -123,3 +138,23 @@ Sem certificado a Mesa funciona igual — basta reconceder a permissão em Ajust
 - **Pelo terminal:** `npm run update` (mesma transação). `npm run update -- --versao X.Y.Z` só vale em instalação por **zip** (sem clone git); em clone, o update segue a branch de desenvolvimento.
 
 **Veio de uma versão com o app Conversa?** A Conversa (`chat/`) foi aposentada na #50 e o chat avulso agora é a aba **Livre** da Mesa. A atualização não apaga nem altera uma pasta `chat/` que já esteja no seu disco; se não a usa mais, apague-a à mão. Num clone git, o `git pull` remove os arquivos rastreados dela e deixa o que o git ignora (`chat/node_modules`, `chat/.runtime`). Sessões antigas que vieram de um bilhete da Conversa continuam abrindo, só sem o bloco `[Da Conversa]`.
+
+## Linux — AppImage (x86_64)
+
+Baixe `Summa-X.Y.Z-x86_64.AppImage` nos assets da [Release](https://github.com/FariaDev/summa/releases/latest),
+guarde em uma pasta sua (por exemplo `~/Applications`) e execute:
+
+```sh
+chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage
+```
+
+Não precisa de Node nem npm. Ao abrir, a Summa cria/atualiza a entrada do menu e o
+ícone em `~/.local/share` (respeita `XDG_DATA_HOME`). Não mova o arquivo depois
+sem abri-lo novamente para atualizar o atalho. Os estudos ficam fora do AppImage,
+na pasta de dados do usuário. O Sobre baixa e confere a atualização assinada e
+substitui o mesmo arquivo; a pasta precisa ser gravável, sem sudo.
+
+No Ubuntu 22.04+, instale `libfuse2` (ou `libfuse2t64` nas versões recentes).
+Se FUSE não estiver disponível, abra com
+`~/Applications/Summa-X.Y.Z-x86_64.AppImage --appimage-extract-and-run`.

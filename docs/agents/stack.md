@@ -6,7 +6,7 @@ espera do aluno/app, não linhas de código. O que não foi medido está no fim.
 
 A decisão está no [ADR 0004](../adr/0004-typescript-aos-poucos.md). Em uma
 linha: **Electron + TypeScript, migração por fronteiras, Bend para invariantes,
-sem framework de UI e sem bundle do renderer agora.**
+sem framework de UI, com bundle opcional do renderer desde a #125.**
 
 ## Feito (não muda)
 
@@ -20,14 +20,14 @@ sem framework de UI e sem bundle do renderer agora.**
 | Working set com dois PDFs de 1 página | 549–552 MiB | Medição de 2026-10-07; inclui processos do Electron, não o tutor. |
 | pdf.js | 35 MB em `node_modules` | `build` no renderer, `legacy` na extração de texto do main. |
 | Bend | 68 artefatos, ~1,96 MB | Continua para invariantes (ADRs 0001/0003). |
-| `tsc --noEmit` com JSDoc | 150 arquivos | Já roda no `npm test` e no pre-push. |
+| `tsc --noEmit` com JSDoc | JS da raiz de `desk/` e de `src/`, fora `src/generated/` | Desde a #125, `checkJs` e `strictNullChecks` com catraca em `scripts/strict-null-debt.json`; roda no `npm test` e no pre-push. |
 | Renderer sem build | 202 módulos, 3,88 MB | `measure-boot.mjs`, execução de 2026-11-04. |
 
-## Proposta: TypeScript (depois do próximo release)
+## TypeScript: feito e próximos passos
 
 | Ordem | Mudança | Tamanho | Ganho esperado | Portão |
 | ---: | --- | :---: | --- | --- |
-| 1 | `checkJs` no projeto todo, tipos para `src/generated/*`, baseline de erros | M (ferramenta) + G (dívida) | Contratos visíveis sem renomear nada; 1083 erros atuais viram dívida que só cai | `npm run typecheck` com baseline; ~7 s |
+| 1 | `checkJs` no projeto todo e `strictNullChecks`: feitos na #125; `src/generated/*` continua excluído | G (dívida restante) | Contratos visíveis sem renomear nada; erros antigos ficam na dívida que só cai | `npm run typecheck` com catraca por arquivo |
 | 2 | Fronteira do contrato dos motores em `.mts` | M | Eventos, entrega, capacidades e opções dos dois adaptadores tipados | `verify:ts` |
 | 3 | IPC (`preload.cjs`) em `.cts` | M (500 linhas) | `window.desk` deixa de ser inferido; o renderer ganha um contrato real | `verify:ts` + `types/desk-window.d.ts` |
 | 4 | Ferramentas do MCP em `.mts` (`tools`, `protocol`, `pdf-tool`) | M (~612 linhas) | Entrada/saída das ferramentas e o JSON-RPC tipados | `verify:ts` + testes do MCP |
@@ -37,7 +37,10 @@ sem framework de UI e sem bundle do renderer agora.**
 
 O `tsc` é o compilador: já é devDependency (7.0.2) e é o mesmo que faz o
 `checkJs`. A saída fica ao lado da fonte e é commitada; o renderer continua
-carregando `renderer.mjs` direto do `index.html`.
+carregando `renderer.mjs` direto do `index.html` no `npm start`. Desde a #125,
+`npm run dev` usa electron-vite com HMR, `npm run build` gera `out/renderer`
+e `npm run preview` abre o build. Main e preload continuam CommonJS do fonte;
+o release e o updater não exigem build.
 
 ## Proposta: plataformas e peso
 
@@ -142,9 +145,9 @@ Medir com `node tests/perf-probe.mjs --runs 3` e
 | Bun | O Electron já traz Node; Bun só valeria como ferramenta de desenvolvimento. |
 | React/Vue/Svelte | `view-host.mjs` já aplica as árvores do Bend; o framework adiciona runtime e reescrita sem tirar CPU ou peso. |
 | Reescrita total em TS | Colide com a #87 e não dá ganho ao aluno. |
-| esbuild para o renderer agora | Não há ganho de abertura medido; o corte de 220 MiB em 2026-10-07 não mudou a abertura. Só volta com A/B de ≥10% ou >100 ms. |
+| esbuild para o renderer como requisito de execução | Desde a #125 há bundle opcional com electron-vite para desenvolvimento e prévia; `npm start` e releases continuam sem exigir build. Não há ganho de abertura medido. |
 | esbuild no lugar do tsc para emitir | Não typecheck; precisaria do tsc de qualquer jeito e mudaria caminhos/imports. |
-| `strict` agora | A dívida atual (1083 erros sem strict) mostra que seria reescrita. Fica para a fatia (d). |
+| `strict` completo agora | `strictNullChecks` já entrou com catraca na #125; as demais opções ficam para a fatia (d). |
 | Declarações `.d.ts` como destino | Preservam o blame, mas não entregam implementação TS. Ficam como primeiro passo da fronteira, não como fim. |
 
 ## O que não foi medido
@@ -152,7 +155,8 @@ Medir com `node tests/perf-probe.mjs --runs 3` e
 - `perf-probe` não foi rodado nesta máquina (compartilhada; não abri janela).
   Os números de abertura/memória são de `issue-67-resultado.md` (Electron
   44.7.2, macOS arm64) e do doc de 2026-10-07, não do Electron 45.2.0.
-- Erros com `strict` não foram contados.
+- Erros com `strict` completo não foram contados; a #125 mediu 2072 erros
+  com `strictNullChecks`, registrados como dívida por arquivo.
 - A suíte de janela não foi rodada em Windows nem em Linux; os 15/81 são do
   ensaio de 2026-11-04 no runner.
 - Nenhum protótipo Tauri foi montado; a comparação é documental.

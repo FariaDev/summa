@@ -108,20 +108,26 @@ function summarize(samples) {
 }
 
 /* Cada repetição parte do mesmo baseline: o custo medido é só o da gravação. */
-function collectSamples(file, invoke, baseline) {
+function collectSamples(file, invoke, baseline, runs = RUNS) {
   for (let run = 0; run < WARMUP; run += 1) {
     fs.copyFileSync(baseline, file);
     measureCall(invoke);
   }
   const samples = [];
-  for (let run = 0; run < RUNS; run += 1) {
+  for (let run = 0; run < runs; run += 1) {
     fs.copyFileSync(baseline, file);
     samples.push(measureCall(invoke));
   }
   return samples;
 }
 
-function measureSize(size) {
+/**
+ * Mede o bloqueio síncrono da persistência com o mesmo descritor por amostra.
+ * @param {number} size quantidade de mensagens sintéticas
+ * @param {number} [runs] quantidade de amostras por cenário
+ * @example measureSize(1000, 100).turnSamples
+ */
+function measureSize(size, runs = RUNS) {
   const runtime = fs.mkdtempSync(path.join(desk, '.measure-conversation-write-'));
   try {
     const file = seedConversation(runtime, syntheticMessages(size));
@@ -141,11 +147,11 @@ function measureSize(size) {
       persistence.onTurn({user: 'Pergunta medida do turno completo.', messageId: 'msg_turno_medido'});
       persistence.onMessages([...messages, turnUser, turnAnswer], {importedPrefixLength: 0});
     };
-    const messagesSamples = collectSamples(file, writeMessages, baseline);
+    const messagesSamples = collectSamples(file, writeMessages, baseline, runs);
     const after = storedMessages(file, runtime);
     const lastText = after[after.length - 1]?.content?.[0]?.text ?? '';
     if (!lastText.includes('Fechando a resposta: confira o sinal')) throw new Error(`gravação não anexou a mensagem: ${messages.length} → ${after.length}`);
-    const turnSamples = collectSamples(file, writeTurn, baseline);
+    const turnSamples = collectSamples(file, writeTurn, baseline, runs);
     const afterTurn = storedMessages(file, runtime);
     const lastTurnText = afterTurn[afterTurn.length - 1]?.content?.[0]?.text ?? '';
     if (lastTurnText !== 'Resposta medida do turno completo.') throw new Error(`turno não gravou a resposta: ${messages.length} → ${afterTurn.length}`);
@@ -155,11 +161,14 @@ function measureSize(size) {
       bytes: fs.statSync(baseline).size,
       messages: summarize(messagesSamples),
       turn: summarize(turnSamples),
+      turnSamples,
     };
   } finally {
     fs.rmSync(runtime, {recursive: true, force: true});
   }
 }
+
+export {measureSize};
 
 function formatMs(value) {
   return value.toFixed(1).replace('.', ',');
@@ -182,7 +191,7 @@ function main() {
   console.log(`# ${WARMUP} aquecimento + ${RUNS} execuções por cenário; mediana e máximo`);
   console.log('# Tempo síncrono de nativePersistence → updateClaudeConversation');
   console.log('');
-  const rows = SIZES.map(measureSize);
+  const rows = SIZES.map((size) => measureSize(size));
   printTable(rows);
   const endLoad = os.loadavg().map((value) => value.toFixed(2).replace('.', ',')).join(' / ');
   console.log('');

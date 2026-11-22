@@ -4,6 +4,14 @@
 desta decisão entra no próximo release (o que fecha a #87); a migração começa
 depois dele.
 
+**Atualização após a #125:** `checkJs` já cobre o JS da raiz de `desk/` e
+de `desk/src/` (fora os artefatos gerados), com `strictNullChecks` e catraca
+por arquivo em `desk/scripts/strict-null-debt.json`; `strict` completo e a
+migração das fronteiras para `.mts`/`.cts` continuam pendentes. O renderer
+agora tem build opcional com electron-vite (`dev`, `build`, `preview`), mas
+`npm start` e as releases continuam abrindo o fonte sem exigir build.
+As medições e propostas abaixo registram a decisão original.
+
 ## Contexto
 
 O autor quer TypeScript para reaproveitar o T3 Code e deixar explícitos os

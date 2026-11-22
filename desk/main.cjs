@@ -57,6 +57,7 @@ const {createPhoneHost}=require('./phone-host.cjs');
 const {readPalette,phoneLookCss}=require('./phone-look.cjs');
 const {phoneCastCss}=require('./phone-cast.cjs');
 const {createLanguageHost}=require('./language-host.cjs');
+const {ensureLinuxDesktopEntry}=require('./linux-desktop.cjs');
 const {createAppIcon,systemIconTheme}=require('./app-icon-host.cjs');const {WINDOWS_APP_ID,ensureStartMenuShortcut}=require('./windows-shortcut.cjs');
 const {removeLegacyBundle}=require('./legacy-bundle.cjs');
 const {createOpencodeHost}=require('./opencode-host.cjs');const {toolTestFixtures}=require('./tool-test-fixtures.cjs');
@@ -417,6 +418,8 @@ app.whenReady().then(async()=>{
  /* #190/#27: o link `Mesa de Estudos.app` que o install-app deixou não fica para trás.
     A limpeza reconhece o bundle pelo Info.plist, não por `app.isPackaged`: o install-app mantém o executável `Electron`. */
  if(process.platform==='darwin'&&typeof app.getAppPath==='function')removeLegacyBundle({fs,bundle:path.resolve(app.getAppPath(),'..','..','..'),platform:process.platform,log:appendLog});
+ /* AppImage: integra o arquivo atual ao menu do usuário. */
+ if(!TEST_MODE){try{ensureLinuxDesktopEntry({deskDir:__dirname,assetsDir:path.join(__dirname,'assets')});}catch(error){appendLog('install',String(error));}}
  /* #178: atalho do menu Iniciar leva o ícone e o AppUserModelId da Mesa; no teste, só com um APPDATA de teste. */
  if(process.platform==='win32'&&(!TEST_MODE||process.env.LEARNING_DESK_APPDATA)&&typeof app.getAppPath==='function'&&typeof shell.writeShortcutLink==='function')ensureStartMenuShortcut({shell,platform:process.platform,env:{...process.env,APPDATA:process.env.LEARNING_DESK_APPDATA||process.env.APPDATA},execPath:process.execPath,appPath:app.getAppPath(),assetsDir:path.join(__dirname,'assets'),defaultApp:!!process.defaultApp,fs,log:appendLog});
  if(TEST_MODE&&process.platform==='darwin'){try{app.setActivationPolicy('accessory');}catch{/* só existe no macOS */}try{app.dock?.hide();}catch{/* só existe no macOS */}}
@@ -469,7 +472,7 @@ app.whenReady().then(async()=>{
 
 /* Motor e versão em paralelo; o `init` espera esta promessa em voo (#desempenho). */
 let bootReady=null;const startBootReady=()=>bootReady??=Promise.all([engineFactsPrime(),primeDeskVersion()]).then(()=>{}).catch(()=>{});
-const deskNotifier=createDeskNotifier({app,Notification,live,TEST_MODE});
+const deskNotifier=createDeskNotifier({app,Notification,live,TEST_MODE,nativeImage,t:(key,args)=>languageHost.t(key,args)});
 ipcMain.handle('init',async()=>{await startBootReady();return initialData();});
 ipcMain.handle('test-mode',()=>TEST_MODE);
 /* Contrato do tutor (#180): a MESMA resolução do prompt, sem caminho absoluto
@@ -491,7 +494,7 @@ ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
 createDeskStateHost({ipcMain,live,allowed,allowedXopp,assertNoFreeMutation,assertNoNav,persist,win:()=>win,appIcon:()=>appIcon}).register();
 const {cancelReviewDraft}=registerStudyRecordsHost({ipcMain,live,runtime,allowed,allowedXopp,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,openCodeDraft:options=>openCodeTutor.draft(options),bookmarksPayload,reviewPayload,assertNoFreeMutation,assertNoNav});
 registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,appendLog,engine,testClaudeSdkLoader});
-ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
+ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel(),usesSystemNode};});
 ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory']});return r.canceled?null:r.filePaths[0];});
 /* Primeira abertura dentro do app (ticket #21). O que a pessoa soltou na folha
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
@@ -712,7 +715,7 @@ const toolHost={
  relink:()=>{persist();stopBridge();},
  fixtures:toolTestFixtures(TEST_MODE),
 };
-const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
+const {scheduleUpdateCheck,usesSystemNode}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
 ggb.register(ipcMain);
 
 app.on('window-all-closed',()=>app.quit());

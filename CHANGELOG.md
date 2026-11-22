@@ -1,5 +1,27 @@
 # Novidades da Summa
 
+## Ainda não lançado
+
+### Novidades
+
+- **Instalador do Windows:** o `Summa-Setup-X.Y.Z.exe` instala sem administrador, Node nem terminal. A instalação pelo `.exe` também se atualiza pelo botão **Atualizar**, com o instalador conferido pela assinatura e pelo hash da release (#120).
+- **Menus do macOS:** Ocultar Summa (⌘H), Ocultar Outros (⌥⌘H), Mostrar Tudo e o menu **Janela**, com Minimizar (⌘M), Zoom e as janelas abertas (#122).
+
+### Melhorias
+
+- **Desenvolvimento:** `npm run dev` abre o renderer com HMR; `npm run build` e `npm run preview` permitem testar o bundle. `npm start` continua abrindo o fonte, sem exigir build. A checagem de tipos cobre o projeto inteiro, com `strictNullChecks` e dívida que só pode diminuir (#125).
+- **Pasta de dados:** a primeira abertura respeita a pasta Documentos do sistema, inclusive OneDrive no Windows e `Documentos` no Linux (#136).
+
+### Correções
+
+- **Atualização no Linux:** `npm run update` lê a mesma configuração e usa a mesma trava do app, inclusive com `XDG_CONFIG_HOME` e `runtimePath` personalizados (#121).
+- **Conferir no macOS:** o primeiro uso pede a permissão de Gravação de Tela; iniciar pelo código recompila o helper visual quando necessário (#123).
+- **Importação e backup entre sistemas:** favoritos, leitores e referências a materiais voltam a apontar para os arquivos locais ao trazer dados de outro sistema (#124, #132). Pacotes com arquivos que colidem por maiúsculas/minúsculas são recusados antes da gravação (#126).
+- **Conferir no Windows:** captura a instância escolhida, funciona com caminhos acentuados e renderiza só a janela escolhida, sem copiar janelas que a encobrem. Se a renderização falhar, avisa em vez de capturar a tela (#127, #129, #131).
+- **Imagens da conversa:** nomes com `#` ou `%` e URLs `file:///C:/…` no Windows voltam a abrir (#128, #130).
+- **Xournal++ no Linux:** abre o executável configurado diretamente, sem tratá-lo como um arquivo para abrir em outro programa (#133).
+- **OpenCode no Windows:** encontra instalações disponíveis só no PATH e mostra comandos de login executáveis no PowerShell, inclusive `.cmd` e caminhos com espaços (#134, #135).
+
 ## 1.3.3
 
 Melhoria na integração com o Ambitus. Quem tem a 1.3.0, a 1.3.1 ou a 1.3.2 recebe pelo **Atualizar**.

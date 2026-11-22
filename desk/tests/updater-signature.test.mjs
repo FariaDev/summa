@@ -15,6 +15,44 @@ const updater = require('../updater.cjs');
 
 const DESK = path.resolve(import.meta.dirname, '..');
 
+test('AppImage e DMG coexistem no mesmo manifesto assinado e nas URLs', async () => {
+  const appImage = Buffer.from('AppImage Linux'), dmg = Buffer.from('imagem macOS');
+  const release = makeSignedRelease({appImage, dmg});
+  const manifest = signature.verifySignedManifest({manifestBytes: release.manifestBytes, signatureBytes: release.signatureBytes, publicKey: release.publicKey});
+  assert.deepEqual(await release.fetchBuffer(release.urls.appImage), appImage);
+  assert.deepEqual(await release.fetchBuffer(release.urls.dmg), dmg);
+  assert.equal(release.urls.dmg, `https://github.com/FariaDev/summa/releases/download/v${release.version}/Summa-${release.version}.dmg`);
+  assert.equal(signature.assertAppImageDeclared(manifest).appImageBytes, appImage.length);
+  assert.equal(signature.assertDmgDeclared(manifest).dmgBytes, dmg.length);
+  signature.assertDmgMatches({bytes: dmg.length, sha256: crypto.createHash('sha256').update(dmg).digest('hex')}, signature.assertDmgDeclared(manifest));
+  for (const field of ['appImageSha256', 'appImageBytes', 'dmgSha256', 'dmgBytes']) {
+    const incomplete = {...manifest};
+    delete incomplete[field];
+    assert.throws(() => signature.parseManifest(Buffer.from(JSON.stringify(incomplete))), /inválido/);
+  }
+});
+
+test('AppImage: nome, URL, assinatura, tamanho e hash', async () => {
+  const appImage = Buffer.from('AppImage de teste');
+  const release = makeSignedRelease({appImage});
+  assert.equal(signature.appImageAssetName('v1.4.0'), 'Summa-1.4.0-x86_64.AppImage');
+  assert.throws(() => signature.appImageAssetName(''), /semver/);
+  assert.equal(release.urls.appImage, `https://github.com/FariaDev/summa/releases/download/v${release.version}/Summa-${release.version}-x86_64.AppImage`);
+  assert.deepEqual(await release.fetchBuffer(release.urls.appImage), appImage);
+  const manifest = signature.verifySignedManifest({manifestBytes: release.manifestBytes, signatureBytes: release.signatureBytes, publicKey: release.publicKey});
+  const declared = signature.assertAppImageDeclared(manifest);
+  const received = {bytes: appImage.length, sha256: crypto.createHash('sha256').update(appImage).digest('hex')};
+  signature.assertAppImageMatches(received, declared);
+  assert.throws(() => signature.assertAppImageMatches({...received, bytes: 0}, declared), /AppImage tem/);
+  assert.throws(() => signature.assertAppImageMatches({...received, sha256: '0'.repeat(64)}, declared), /SHA-256/);
+  assert.throws(() => signature.assertAppImageDeclared({version: '1.4.0'}), /não publicou/);
+  assert.throws(() => signature.assertAppImageDeclared(manifest, 1), /acima do teto/);
+  for (const fields of [{appImageBytes: 1}, {appImageSha256: 'a'.repeat(64)}, {appImageSha256: 'inválido', appImageBytes: 1}, {appImageSha256: 'a'.repeat(64), appImageBytes: -1}]) {
+    assert.throws(() => signature.parseManifest(Buffer.from(JSON.stringify({...makeSignedRelease().manifest, ...fields}))), /appImage.*inválido/);
+  }
+  assert.equal(signature.parseManifest(makeSignedRelease().manifestBytes).appImageBytes, undefined);
+});
+
 test('#80: assinatura válida confere o manifesto e o zip', () => {
   const zip = Buffer.from('conteúdo do zip');
   const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});

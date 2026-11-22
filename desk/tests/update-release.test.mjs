@@ -6,6 +6,7 @@ import path from 'node:path';
 import {spawnSync, execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {tempDir} from './temp-dir.mjs';
+import {fakePeInstaller} from './fake-pe-installer.mjs';
 
 /* Script de release assinada (#80) rodando de verdade: git local temporário,
    par Ed25519 gerado no teste e nenhuma rede. Cobre keygen, sign, verify e a
@@ -39,10 +40,22 @@ function repoFixture() {
   return root;
 }
 
-/* #119: o instalador vem do CI; aqui basta um arquivo com o nome da versão. */
-function fakeInstaller(version = '0.1.0') {
+/* #119: a identidade PE deve corresponder à tag, não apenas ao nome. */
+function fakeInstaller(version = '0.1.0', commit = 'a'.repeat(40)) {
   const file = path.join(tmp(), `Summa-Setup-${version}.exe`);
-  fs.writeFileSync(file, 'instalador de teste');
+  fs.writeFileSync(file, fakePeInstaller({version, commit}));
+  return file;
+}
+
+function fakeAppImage(version = '0.1.0') {
+  const file = path.join(tmp(), `Summa-${version}-x86_64.AppImage`);
+  fs.writeFileSync(file, 'AppImage de teste');
+  return file;
+}
+
+function fakeDmg(version = '0.1.0') {
+  const file = path.join(tmp(), `Summa-${version}.dmg`);
+  fs.writeFileSync(file, 'imagem DMG de teste');
   return file;
 }
 
@@ -52,6 +65,18 @@ function runScript(args, {cwd, expectFail = false} = {}) {
   else assert.notEqual(result.status, 0, 'o script tinha de recusar');
   return result;
 }
+
+test('sign recusa texto com nome de exe antes de gerar os assets', () => {
+  const root = repoFixture();
+  const privateFile = path.join(tmp(), 'mesa-update.pem');
+  runScript(['keygen', '--private-key', privateFile], {cwd: root});
+  const installer = path.join(tmp(), 'Summa-Setup-0.1.0.exe');
+  fs.writeFileSync(installer, 'isto nao e um PE');
+  const out = path.join(tmp(), 'assets');
+  const result = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', fakeAppImage()], {cwd: root, expectFail: true});
+  assert.match(result.stderr, /identidade.*recebido.*esperado/);
+  assert.equal(fs.existsSync(out), false);
+});
 
 test('#80 keygen: grava a privada fora do repositório e a pública no lugar do marcador', () => {
   const root = repoFixture();
@@ -99,15 +124,21 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   git(['tag', '-f', 'v0.1.0'], root);
 
   const out = path.join(tmp(), 'assets');
-  const installer = fakeInstaller();
-  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer], {cwd: root});
+  const installer = fakeInstaller('0.1.0', git(['rev-parse', 'v0.1.0^{commit}'], root));
+  const appImage = fakeAppImage();
+  const dmg = fakeDmg();
+  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root});
   const manifestFile = path.join(out, 'mesa-manifest-v0.1.0.json');
   const signatureFile = path.join(out, 'mesa-manifest-v0.1.0.sig');
   const zipFile = path.join(out, 'mesa-estudos-0.1.0.zip');
   for (const file of [manifestFile, signatureFile, zipFile]) assert.equal(fs.existsSync(file), true, path.basename(file));
 
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-  assert.deepEqual(Object.keys(manifest).sort(), ['commit', 'exeBytes', 'exeSha256', 'version', 'zipBytes', 'zipSha256']);
+  assert.deepEqual(Object.keys(manifest).sort(), ['appImageBytes', 'appImageSha256', 'commit', 'dmgBytes', 'dmgSha256', 'exeBytes', 'exeSha256', 'version', 'zipBytes', 'zipSha256']);
+  assert.equal(manifest.appImageBytes, fs.statSync(appImage).size);
+  assert.equal(manifest.appImageSha256, crypto.createHash('sha256').update(fs.readFileSync(appImage)).digest('hex'));
+  assert.equal(manifest.dmgBytes, fs.statSync(dmg).size);
+  assert.equal(manifest.dmgSha256, crypto.createHash('sha256').update(fs.readFileSync(dmg)).digest('hex'));
   assert.equal(manifest.exeBytes, fs.statSync(installer).size);
   assert.equal(manifest.exeSha256, crypto.createHash('sha256').update(fs.readFileSync(installer)).digest('hex'));
   assert.equal(fs.existsSync(path.join(out, 'Summa-Setup-0.1.0.exe')), true, 'o instalador vai para a pasta dos assets');
@@ -136,6 +167,29 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
 
   const checked = runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root});
   assert.match(checked.stdout, /release v0\.1\.0 confere/);
+  const dmgOut = path.join(out, 'Summa-0.1.0.dmg');
+  fs.appendFileSync(dmgOut, 'x');
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /tamanho do DMG/);
+  fs.copyFileSync(dmg, dmgOut);
+  fs.rmSync(dmgOut);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /asset ausente: Summa-0.1.0.dmg/);
+  fs.copyFileSync(dmg, dmgOut);
+  fs.writeFileSync(dmgOut, Buffer.alloc(fs.statSync(dmg).size));
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /SHA-256 do DMG/);
+  fs.copyFileSync(dmg, dmgOut);
+
+  const imageOut = path.join(out, path.basename(appImage));
+  fs.appendFileSync(imageOut, 'x');
+  const imageTampered = runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true});
+  assert.match(imageTampered.stderr, /AppImage tem \d+ bytes/);
+  fs.copyFileSync(appImage, imageOut);
+  fs.rmSync(imageOut);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /asset ausente: Summa-0.1.0-x86_64.AppImage/);
+  fs.copyFileSync(appImage, imageOut);
+
+  fs.writeFileSync(imageOut, Buffer.alloc(fs.statSync(appImage).size));
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /SHA-256 do AppImage/);
+  fs.copyFileSync(appImage, imageOut);
 
   /* #119: instalador trocado depois de assinar não passa na conferência. */
   fs.appendFileSync(path.join(out, 'Summa-Setup-0.1.0.exe'), 'x');
@@ -155,7 +209,22 @@ test('#119 sign: recusa sem o instalador ou com o instalador de outra versão', 
   assert.match(missing.stderr, /informe --exe <Summa-Setup-0\.1\.0\.exe>/);
   const wrong = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller('0.0.9')], {cwd: root, expectFail: true});
   assert.match(wrong.stderr, /recebido Summa-Setup-0\.0\.9\.exe; esperado Summa-Setup-0\.1\.0\.exe/);
+  const missingImage = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller()], {cwd: root, expectFail: true});
+  assert.match(missingImage.stderr, /informe --appimage/);
+  const wrongImage = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller(), '--appimage', fakeAppImage('0.0.9')], {cwd: root, expectFail: true});
+  assert.match(wrongImage.stderr, /esperado Summa-0.1.0-x86_64.AppImage/);
   assert.equal(fs.existsSync(out), false, 'recusa antes de gerar qualquer asset');
+  const installer = fakeInstaller('0.1.0', git(['rev-parse', 'v0.1.0^{commit}'], root));
+  const args = ['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', fakeAppImage()];
+  assert.match(runScript(args, {cwd: root, expectFail: true}).stderr, /informe --dmg/);
+  assert.match(runScript([...args, '--dmg', fakeDmg('0.0.9')], {cwd: root, expectFail: true}).stderr, /DMG com nome errado/);
+  const emptyDmg = fakeDmg();
+  fs.truncateSync(emptyDmg, 0);
+  assert.match(runScript([...args, '--dmg', emptyDmg], {cwd: root, expectFail: true}).stderr, /DMG não encontrado ou vazio/);
+  const emptyImage = fakeAppImage();
+  fs.truncateSync(emptyImage, 0);
+  assert.match(runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', emptyImage, '--dmg', fakeDmg()], {cwd: root, expectFail: true}).stderr, /AppImage não encontrado ou vazio/);
+  assert.equal(fs.existsSync(out), false, 'recusa imagens ausentes, inválidas ou vazias antes de gerar assets');
 });
 
 test('#80 sign: recusa privada que não corresponde à pública commitada', () => {
