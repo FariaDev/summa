@@ -19,6 +19,7 @@ import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {rehearseBeforeSigning} from './update-rehearsal.mjs';
 import {buildReleaseZip} from './update-zip.mjs';
+import {assertInstallerIdentity} from './installer-identity.mjs';
 
 const require = createRequire(import.meta.url);
 const signature = require('../updater-signature.cjs');
@@ -138,8 +139,7 @@ function sha256OfFile(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-/* #119: o instalador vem do CI e entra no manifesto assinado. O nome amarra o
-   arquivo à versão: assinar o `.exe` de outra release seria publicar código antigo. */
+/* #119: o nome e a identidade PE devem corresponder à tag antes de assinar. */
 function installerToSign(args, version) {
   const raw = flag(args, '--exe');
   const expected = signature.installerAssetName(version);
@@ -160,14 +160,16 @@ async function sign(args) {
   const outDir = path.resolve(flag(args, '--out') || '');
   if (!flag(args, '--out')) fail('informe --out <pasta dos assets>');
   const installer = installerToSign(args, version);
+  const commit = git(['rev-parse', '--verify', `v${version}^{commit}`]);
+  const installerBytes = fs.readFileSync(installer);
+  assertInstallerIdentity(installerBytes, {version, commit});
   await rehearseBeforeSigning({repoRoot: REPO_ROOT, version});
   fs.mkdirSync(outDir, {recursive: true});
-  const commit = git(['rev-parse', '--verify', `v${version}^{commit}`]);
   const zip = buildReleaseZip({repoRoot: REPO_ROOT, version, outDir});
   const installerName = path.basename(installer);
   const installerOut = path.join(outDir, installerName);
-  if (path.resolve(installerOut) !== installer) fs.copyFileSync(installer, installerOut);
-  const manifest = {version, commit, zipSha256: zip.zipSha256, zipBytes: zip.zipBytes, exeSha256: sha256OfFile(installerOut), exeBytes: fs.statSync(installerOut).size};
+  fs.writeFileSync(installerOut, installerBytes);
+  const manifest = {version, commit, zipSha256: zip.zipSha256, zipBytes: zip.zipBytes, exeSha256: crypto.createHash('sha256').update(installerBytes).digest('hex'), exeBytes: installerBytes.length};
   const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   const manifestFile = path.join(outDir, `mesa-manifest-v${version}.json`);
   const signatureFile = path.join(outDir, `mesa-manifest-v${version}.sig`);
@@ -206,6 +208,7 @@ function verify(args) {
     fail(`a tag v${version} não existe no repositório; crie/publica a tag antes de verificar`);
   }
   signature.assertTagCommitMatches(manifest, tagCommit, {tag: `v${version}`});
+  assertInstallerIdentity(fs.readFileSync(installerFile), {version, commit: tagCommit});
   console.log(`release v${version} confere: assinatura, zip (${manifest.zipBytes} bytes), instalador (${manifest.exeBytes} bytes) e commit ${tagCommit}.`);
 }
 

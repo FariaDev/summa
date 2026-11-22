@@ -45,11 +45,14 @@ LangString SwapFailed ${LANG_PORTUGUESEBR} "Não foi possível concluir a instal
 LangString SwapFailed ${LANG_ENGLISH} "Setup could not finish. The previous version of Summa is still in place."
 LangString UninstallRefused ${LANG_PORTUGUESEBR} "Este desinstalador não está na pasta da Summa. Nada foi removido."
 LangString UninstallRefused ${LANG_ENGLISH} "This uninstaller is not in the Summa folder. Nothing was removed."
+LangString SetupBusy ${LANG_PORTUGUESEBR} "Recebido: outro instalador aberto (código 3). Esperado: apenas um instalador da Summa por usuário. Feche o outro instalador e tente novamente."
+LangString SetupBusy ${LANG_ENGLISH} "Received: another installer is open (code 3). Expected: one Summa installer per user. Close the other installer and try again."
 
 VIProductVersion "${VERSION}.0"
 VIFileVersion "${VERSION}.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${APP_NAME}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "${VERSION}"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "SummaCommit" "${COMMIT}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${APP_NAME} Setup"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "${PUBLISHER}"
@@ -57,8 +60,20 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "${PUBLISHER}"
 
 Var IsUpdate
 Var Reopened
+Var InstallerMutex
 
 Function .onInit
+  UserInfo::GetName
+  Pop $R0
+  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\SummaInstaller.$R0") p .r1 ?e'
+  Pop $R2
+  StrCpy $InstallerMutex $R1
+  ${If} $R1 == 0
+  ${OrIf} $R2 == 183
+    SetErrorLevel 3
+    MessageBox MB_ICONSTOP "$(SetupBusy)" /SD IDOK
+    Quit
+  ${EndIf}
   SetShellVarContext current
   ; A pasta é contrato do app e do updater: /D= não muda o destino.
   StrCpy $INSTDIR "$LOCALAPPDATA\Programs\Summa"
@@ -178,11 +193,16 @@ FunctionEnd
 ; Quem instalou pelo clone pode ter sessões em <clone>\desk\.runtime: o app novo
 ; precisa saber onde elas estão, mesmo que a config ainda não tenha sido salva.
 Function KeepCloneOrigin
+  ClearErrors
   ${If} ${FileExists} "$INSTDIR\resources\app\install-source.json"
     CopyFiles /SILENT "$INSTDIR\resources\app\install-source.json" "$INSTDIR.new\resources\app\previous-install-source.json"
   ${ElseIf} ${FileExists} "$INSTDIR\resources\app\previous-install-source.json"
     CopyFiles /SILENT "$INSTDIR\resources\app\previous-install-source.json" "$INSTDIR.new\resources\app\previous-install-source.json"
   ${EndIf}
+  IfErrors cloneCopyFailed
+  Return
+  cloneCopyFailed:
+    Call FailInstall
 FunctionEnd
 
 Section "Summa"
