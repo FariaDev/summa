@@ -53,7 +53,7 @@ function Test-Installed {
 }
 
 function Stop-Summa {
-  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
+  Get-Process -ErrorAction SilentlyContinue | Where-Object { $path = $_.Path; $path -and $path.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 try {
@@ -139,7 +139,7 @@ try {
   $deadline = (Get-Date).AddSeconds(60)
   while ((Test-Path -LiteralPath $dir) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
   Assert-Repro (-not (Test-Path -LiteralPath $dir)) 'a instalação de prova foi removida'
-  foreach ($suffix in @('new', 'old', 'ready')) {
+  foreach ($suffix in @('new', 'old', 'ready', 'removing')) {
     if (Test-Path -LiteralPath "$dir.$suffix") { Remove-Item -LiteralPath "$dir.$suffix" -Recurse -Force }
   }
   foreach ($file in $uninstallers) { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
