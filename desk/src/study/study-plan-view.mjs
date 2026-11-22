@@ -85,11 +85,13 @@ function paintTrigger() {
  * @param {string} key chave do catálogo do rótulo
  * @param {string} iconName
  * @param {string} id
+ * @param {boolean} [disabled]
  * @returns {HTMLElement}
  */
-function toolButton(action, key, iconName, id) {
+function toolButton(action, key, iconName, id, disabled = false) {
   const label = t(key);
   const button = make('button', {type: 'button', class: `study-plan-tool ${action}`, 'data-action': action, 'data-id': id, title: label, 'aria-label': label});
+  if (disabled) button.setAttribute('disabled', '');
   button.append(iconNode(iconName));
   return button;
 }
@@ -98,9 +100,11 @@ function toolButton(action, key, iconName, id) {
  * Uma linha de tarefa: caixa, texto editável no lugar, PDF e página quando ligados, e as tools.
  * @param {plan.PlanTask} task
  * @param {string} nowId
+ * @param {number} index
+ * @param {number} total
  * @returns {HTMLElement}
  */
-function taskRow(task, nowId) {
+function taskRow(task, nowId, index, total) {
   const classes = ['study-plan-row', task.done ? 'done' : '', task.id === nowId ? 'now' : ''].filter(Boolean).join(' ');
   const meta = [];
   const actions = [];
@@ -118,8 +122,8 @@ function taskRow(task, nowId) {
       make('div', {class: 'study-plan-actions'}, [
         ...actions,
         make('div', {class: 'study-plan-tools'}, [
-          toolButton('up', 'plan.up', 'arrowUp', task.id),
-          toolButton('down', 'plan.down', 'arrowUp', task.id),
+          toolButton('up', 'plan.up', 'arrowUp', task.id, index === 0),
+          toolButton('down', 'plan.down', 'arrowUp', task.id, index === total - 1),
           toolButton('remove', 'plan.remove', 'close', task.id),
         ]),
       ]),
@@ -144,7 +148,7 @@ function renderPop() {
       make('span', {}, [t('plan.title')]),
       cur.tasks.length ? make('span', {class: 'study-plan-count'}, [t('plan.count', {done, total: cur.tasks.length})]) : null,
     ]),
-    make('div', {class: 'study-plan-list'}, cur.tasks.map((task) => taskRow(task, nowId))),
+    make('div', {class: 'study-plan-list'}, cur.tasks.map((task, index) => taskRow(task, nowId, index, cur.tasks.length))),
     make('button', {type: 'button', class: 'study-plan-add', 'data-action': 'add'}, [iconNode('plus'), t('plan.add')]),
     make('div', {class: 'study-plan-notes'}, [make('label', {class: 'study-plan-label', for: 'study-plan-notes'}, [t('plan.notes')]), notes]),
   );
@@ -160,7 +164,10 @@ function focusControl(target) {
   if (!pop || !target) return;
   const idPart = target.id ? `[data-id="${CSS.escape(target.id)}"]` : '';
   /** @type {HTMLElement | null} */
-  const node = pop.querySelector(`[data-action="${target.action}"]${idPart}`);
+  let node = pop.querySelector(`[data-action="${target.action}"]${idPart}`);
+  if (node?.hasAttribute('disabled') && (target.action === 'up' || target.action === 'down')) {
+    node = pop.querySelector(`[data-action="${target.action === 'up' ? 'down' : 'up'}"]${idPart}`);
+  }
   node?.focus();
 }
 
