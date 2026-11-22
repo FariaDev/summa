@@ -147,7 +147,8 @@ function dmgFields(parsed){
  if(parsed.dmgSha256===undefined&&parsed.dmgBytes===undefined)return {};
  const dmgSha256=String(parsed.dmgSha256||'').trim().toLowerCase();
  const dmgBytes=Number(parsed.dmgBytes);
- if(!/^[0-9a-f]{64}$/.test(dmgSha256)||!Number.isSafeInteger(dmgBytes)||dmgBytes<=0)throw invalidManifest('campos dmgSha256/dmgBytes inválidos');
+ if(!/^[0-9a-f]{64}$/.test(dmgSha256))throw invalidManifest(invalidValue('dmgSha256',parsed.dmgSha256,'SHA-256 (64 caracteres hexadecimais)'));
+ if(!Number.isSafeInteger(dmgBytes)||dmgBytes<=0)throw invalidManifest(invalidValue('dmgBytes',parsed.dmgBytes,'inteiro positivo seguro'));
  return {dmgSha256,dmgBytes};
 }
 
@@ -258,8 +259,8 @@ function assertDmgDeclared(manifest){
 
 /** Confere os bytes da imagem antes de montá-la. @param {{bytes:number,sha256:string}} received @param {{dmgBytes:number,dmgSha256:string}} declared @returns {void} @example assertDmgMatches(received,declared) */
 function assertDmgMatches(received,declared){
- if(received.bytes!==declared.dmgBytes)throw Error('tamanho do DMG difere do manifesto assinado');
- if(received.sha256!==declared.dmgSha256)throw Error('SHA-256 do DMG não confere');
+ if(received.bytes!==declared.dmgBytes)throw Error(`tamanho do DMG difere do manifesto assinado: recebido ${received.bytes} bytes; esperado ${declared.dmgBytes} bytes`);
+ if(received.sha256!==declared.dmgSha256)throw Error(`SHA-256 do DMG não confere: recebido ${received.sha256}; esperado ${declared.dmgSha256}`);
 }
 
 /**

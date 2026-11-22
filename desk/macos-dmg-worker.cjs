@@ -45,7 +45,7 @@ async function applyMacosDmg(input,deps={}){
   const payload=path.join(next,'Contents','Resources','app');
   const marker=JSON.parse(fs.readFileSync(path.join(payload,'release-install.json'),'utf8'));
   const pkg=JSON.parse(fs.readFileSync(path.join(payload,'package.json'),'utf8'));
-  if(marker.kind!=='macos-dmg'||marker.version!==version||pkg.version!==version)throw Error('versão do app no DMG difere da release assinada');
+  if(marker.kind!=='macos-dmg'||marker.version!==version||pkg.version!==version)throw Error(`versão do app no DMG difere da release assinada: recebido kind=${JSON.stringify(marker.kind)}, marker.version=${JSON.stringify(marker.version)}, package.version=${JSON.stringify(pkg.version)}; esperado kind="macos-dmg", marker.version=${JSON.stringify(version)}, package.version=${JSON.stringify(version)}`);
   if(cancelled())throw Error('atualização cancelada antes da troca');
   fs.writeFileSync(path.join(dir,'ready'),'ready\n');ready=true;
   const deadline=Date.now()+(deps.waitMs??120000);

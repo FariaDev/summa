@@ -22,7 +22,7 @@ export function fakeDmgProcess({error=false}={}){
  return {calls,child,spawn};
 }
 
-export function fakeDmgCommands({app,dir,version='1.4.1',fail='',cancel=false}){
+export function fakeDmgCommands({app,dir,version='1.4.1',markerKind='macos-dmg',markerVersion=version,packageVersion=version,fail='',cancel=false}){
  const calls=[],renames=[];
  let observedReady=false;
  function run(cmd,args){
@@ -31,8 +31,8 @@ export function fakeDmgCommands({app,dir,version='1.4.1',fail='',cancel=false}){
   if(path.basename(cmd)==='hdiutil'&&args[0]==='attach'){
    const payload=path.join(dir,'volume','Summa.app','Contents','Resources','app');
    fs.mkdirSync(payload,{recursive:true});
-   fs.writeFileSync(path.join(payload,'package.json'),JSON.stringify({version}));
-   fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:'macos-dmg',version}));
+   fs.writeFileSync(path.join(payload,'package.json'),JSON.stringify({version:packageVersion}));
+   fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:markerKind,version:markerVersion}));
   }
   if(path.basename(cmd)==='ditto'){
    if(fs.existsSync(path.join(dir,'ready')))throw Error('ready antes da cópia');
