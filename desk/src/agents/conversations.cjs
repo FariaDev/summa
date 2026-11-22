@@ -170,13 +170,11 @@ function validateMessage(message) {
 
 function validateMessages(messages, descriptorBytes = Infinity) {
   if (!Array.isArray(messages) || messages.length > MAX_MESSAGE_COUNT) return false;
-  // JSON numbers can expand (1e20 becomes 21 digits); six times the source
-  // bytes bounds canonical JSON without serializing small descriptors again.
+  // Six times the source bounds canonical JSON, including numeric expansion (1e20 → 21 digits).
   if (messages.length && descriptorBytes * 6 > MAX_MESSAGES_BYTES && bytes(messages) > MAX_MESSAGES_BYTES) return false;
   for (const message of messages) if (!validateMessage(message)) return false;
   return true;
 }
-
 /* Descritor válido (schema exato). Fora disso é null — nunca Pi silencioso. */
 function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE, descriptorBytes = Infinity) {
   if (!isPlainObject(raw)) return false;
@@ -200,9 +198,7 @@ function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE, descriptorBytes = In
   if (raw.handoff !== undefined && !validateHandoff(raw.handoff)) return false;
   return true;
 }
-
 /* ---------- leitura ---------- */
-
 /** @param {any} file @param {{runtime?: any}} [options] */ function readClaudeConversation(file, {runtime} = {}) {
   const uuid = managedUuid(file);
   if (!uuid) return null;
@@ -218,16 +214,14 @@ function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE, descriptorBytes = In
     return null;
   }
   if (!stat.isFile() || stat.size > MAX_DESCRIPTOR_BYTES) return null;
-  let raw;
-  let descriptorBytes;
+  let raw, payload;
   try {
-    const payload = fs.readFileSync(file, 'utf8');
-    descriptorBytes = Buffer.byteLength(payload);
+    payload = fs.readFileSync(file, 'utf8');
     raw = JSON.parse(payload);
   } catch {
     return null;
   }
-  if (!validDescriptor(raw, uuid, managedEngine(file), descriptorBytes)) return null;
+  if (!validDescriptor(raw, uuid, managedEngine(file), Buffer.byteLength(payload))) return null;
   /* O turno em voo manda nos campos que ele mudou; o resto continua no descritor. */
   const pendingTurn = turnMetadataPatch(file);
   return pendingTurn ? {...raw, ...pendingTurn} : raw;
