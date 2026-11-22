@@ -73,7 +73,7 @@ Para preservar os registros existentes, a mesa cria um contexto de curso em `.ru
 
 O aplicativo usa o motor do tutor localmente. Preferências de modelo e credenciais permanecem no motor. Diálogos de extensões (seleção, confirmação, entrada e editor) são apresentados na mesa. Customizações exclusivas do terminal, como cabeçalhos TUI, não são renderizadas pelo RPC.
 
-A imagem capturada é enviada ao provedor configurado no motor e pode persistir no JSONL. A captura inclui apenas a área visível da janela do Xournal++, sem páginas fora de vista. O macOS pode pedir permissão de Gravação de Tela para o processo que hospeda o aplicativo; a permissão do terminal não é automaticamente compartilhada. O macOS associa essa permissão à assinatura do app: assine o `.app` com um certificado do Keychain (o `install-app` usa um quando existe) para não reconceder a cada atualização — detalhes em [`SETUP.md`](SETUP.md). No Windows não há permissão a conceder: a captura sai do retângulo da janela pelo PowerShell do próprio sistema. Imagens anexadas ao prompt seguem o mesmo caminho: vão ao provedor e ficam na sessão. A Mesa reduz cada anexo a no máximo 1568 px por lado já no anexo (PNG mantém transparência, JPEG mantém o tipo) e depois aplica os limites de envio (8 MB por anexo, 28 MB somando os anexos; GIF não é re-codificado para não perder animação).
+A imagem capturada é enviada ao provedor configurado no motor e pode persistir no JSONL. A captura inclui apenas a área visível da janela do Xournal++, sem páginas fora de vista. O macOS pode pedir permissão de Gravação de Tela para o processo que hospeda o aplicativo; a permissão do terminal não é automaticamente compartilhada. O macOS associa essa permissão à assinatura do app: assine o `.app` com um certificado do Keychain (o `install-app` usa um quando existe) para não reconceder a cada atualização — detalhes em [`SETUP.md`](SETUP.md). No Windows não há permissão a conceder: o PowerShell do sistema renderiza apenas a janela escolhida, mesmo encoberta por outra, sem copiar pixels da tela. A instância selecionada é respeitada; se a renderização falhar, a Mesa avisa e não usa uma captura da tela como alternativa. Imagens anexadas ao prompt seguem o mesmo caminho: vão ao provedor e ficam na sessão. A Mesa reduz cada anexo a no máximo 1568 px por lado já no anexo (PNG mantém transparência, JPEG mantém o tipo) e depois aplica os limites de envio (8 MB por anexo, 28 MB somando os anexos; GIF não é re-codificado para não perder animação).
 
 Erros e diagnósticos ficam em `.runtime/desk.log` (JSON por linha, `{ts, level, area, msg, ...campos}`, com rotação para `desk.log.1` acima de 256 KB; formato em `src/log-entry.mjs`): exceções do processo principal, `stderr` do motor, encerramentos de processos e erros do renderer chegam lá, sem conteúdo de sessão, material nem credencial. O "Ver o log" do Sobre abre a versão em texto (`desk-legivel.log`, montada na hora a partir dos dois arquivos). Se a interface ficar presa em "O tutor está pensando…" sem stream ativo por mais de um minuto, o ping de saúde destrava sozinho e avisa com um toast.
 
@@ -111,6 +111,15 @@ paralelo: `npm run hunts` (2 por vez; `npm run hunts fila`, `--jobs 4`,
 Os smokes de UI (e qualquer `launchDesk`) sobem o Electron em **modo de teste** (`DESK_TEST=1`, definido em `tests/electron-env.mjs`): janela `show: false`, sem ícone na Dock do macOS e sem instância única. A suíte roda com o app aberto e o Mac em uso, sem roubo de foco nem janela piscando; fora dos testes nada muda.
 
 O código do renderer fica em `desk/src/` (`state`, `chat`, `pdf`, `ggb`, `main`); `renderer.mjs` é só o ponto de entrada que importa os módulos.
+
+Desde a #125, os módulos de área ficam em subpastas como `src/chat/`,
+`src/composer/`, `src/pdf/`, `src/settings/` e `src/tutor/`. `npm run dev`
+abre o renderer com HMR pelo electron-vite; `npm run build` gera
+`out/renderer` e `npm run preview` abre esse build. `npm start` continua
+abrindo o fonte, sem build; main e preload continuam CommonJS do fonte.
+`npm run typecheck` cobre o JS da raiz e de `src/` (fora `src/generated/`)
+com `checkJs` e `strictNullChecks`, tolerando só a dívida por arquivo de
+`scripts/strict-null-debt.json`, que só pode encolher.
 
 Variáveis de desenvolvimento: `LEARNING_VAULT`, `LEARNING_DESK_RUNTIME`, `LEARNING_DESK_OPENCODE`. As matérias vêm do vault (`Courses/*/_state.md`) e/ou da lista em Configurações (pasta de PDFs, com ou sem `_state.md`). A troca de aba troca fontes e contexto; cada matéria preserva suas páginas, rascunho e sessão.
 
