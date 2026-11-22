@@ -3,21 +3,40 @@ import os from 'node:os';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 
-function appImageOffset(file) {
-  const bytes = fs.readFileSync(file);
-  if (bytes.length < 64 || bytes.toString('hex', 0, 6) !== '7f454c460201') throw Error('ELF64 little-endian ausente');
-  const table = Number(bytes.readBigUInt64LE(40));
-  const size = bytes.readUInt16LE(58), count = bytes.readUInt16LE(60);
-  let end = table + size * count;
-  if (!count || size < 64 || !Number.isSafeInteger(end) || table < 64 || end > bytes.length) throw Error('tabela ELF inválida');
-  for (let index = 0; index < count; index++) {
-    const section = table + index * size;
-    if (bytes.readUInt32LE(section + 4) === 8) continue;
-    const sectionEnd = Number(bytes.readBigUInt64LE(section + 24)) + Number(bytes.readBigUInt64LE(section + 32));
-    if (!Number.isSafeInteger(sectionEnd) || sectionEnd > bytes.length) throw Error('seção ELF inválida');
-    end = Math.max(end, sectionEnd);
+function readElfBytes(fd, position, length) {
+  const bytes = Buffer.alloc(length);
+  let offset = 0;
+  while (offset < length) {
+    const read = fs.readSync(fd, bytes, offset, length - offset, position + offset);
+    if (!read) throw new Error('ELF truncado');
+    offset += read;
   }
-  return end;
+  return bytes;
+}
+
+function appImageOffset(file) {
+  const fd = fs.openSync(file, 'r');
+  try {
+    const length = fs.fstatSync(fd).size;
+    if (length < 64) throw new Error('ELF64 little-endian ausente');
+    const header = readElfBytes(fd, 0, 64);
+    if (header.toString('hex', 0, 6) !== '7f454c460201') throw new Error('ELF64 little-endian ausente');
+    const table = Number(header.readBigUInt64LE(40));
+    const size = header.readUInt16LE(58), count = header.readUInt16LE(60);
+    let end = table + size * count;
+    if (!count || size < 64 || !Number.isSafeInteger(end) || table < 64 || end > length) throw new Error('tabela ELF inválida');
+    const sections = readElfBytes(fd, table, size * count);
+    for (let index = 0; index < count; index++) {
+      const section = index * size;
+      if (sections.readUInt32LE(section + 4) === 8) continue;
+      const sectionEnd = Number(sections.readBigUInt64LE(section + 24)) + Number(sections.readBigUInt64LE(section + 32));
+      if (!Number.isSafeInteger(sectionEnd) || sectionEnd > length) throw new Error('seção ELF inválida');
+      end = Math.max(end, sectionEnd);
+    }
+    return end;
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function appImagePackage(file, run) {
@@ -54,10 +73,10 @@ export function assertReleaseImageIdentity(file, kind, expected, run = execFileS
   catch (error) {
     const tool = kind === 'AppImage' ? 'unsquashfs (squashfs-tools)' : 'hdiutil (macOS)';
     const reason = error.code === 'ENOENT' ? `ferramenta ${tool} ausente` : 'imagem ilegível ou package.json inválido/ausente';
-    throw Error(`identidade ${kind}: recebido ${reason}; esperado ${wanted}`);
+    throw new Error(`identidade ${kind}: recebido ${reason}; esperado ${wanted}`);
   }
   const received = identity && {name:identity.name, productName:identity.productName, version:identity.version, commit:identity.commit};
   if (identity?.name === 'summa' && (!Object.hasOwn(identity, 'productName') || identity.productName === 'Summa') && identity.version === expected.version &&
       (!Object.hasOwn(identity, 'commit') || identity.commit === expected.commit)) return;
-  throw Error(`identidade ${kind}: recebido ${JSON.stringify(received)}; esperado ${wanted}`);
+  throw new Error(`identidade ${kind}: recebido ${JSON.stringify(received)}; esperado ${wanted}`);
 }
