@@ -55,8 +55,10 @@ function entryFor(name,path){
 export function openRef(name,page,path){
  const hit=entryFor(name,path);
  if(!hit){toast(message('pdf.nav.missing',{name:name||path}));return false;}
- const panel=S.panels.find(p=>p.path===hit.path)||S.panels[0];
+ const panels=/** @type {import('./pdf/pdf.mjs').PdfPanel[]} */ (S.panels);
+ const panel=panels.find(p=>p.path===hit.path)||panels[0];
  if(!panel){toast(message('pdf.nav.noReader'));return false;}
+ if(panel.minimized)panel.toggleMinimized(false);
  const target=Math.max(1,Math.trunc(Number(page)||1));
  if(panel.path&&panel.path!==hit.path){
   const stack=stackOf(panel);
