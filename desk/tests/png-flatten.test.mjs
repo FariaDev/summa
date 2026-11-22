@@ -105,6 +105,26 @@ test('PNG RGB já opaco não muda de pixels e volta o mesmo arquivo (#105)', () 
   assert.deepEqual(pixel(flat, 1, 1), {r: 100, g: 110, b: 120, a: 255});
 });
 
+test('linhas sem filtro e filtradas mantêm exatamente os mesmos bytes achatados', () => {
+  const pixels = Buffer.from([10, 20, 30, 0, 40, 50, 60, 128, 70, 80, 90, 255,
+    100, 110, 120, 128, 130, 140, 150, 255, 160, 170, 180, 0]);
+  const plain = flattenPng(testPng(3, 2, pixels));
+  for (const filters of [[0, 1], [2, 0], [0, 3], [4, 0]]) {
+    assert.deepEqual(flattenPng(testPng(3, 2, pixels, {filters})), plain);
+  }
+});
+
+test('PNG vazio, cortado e filtro inválido voltam intactos com diagnóstico', () => {
+  const png = testPng(1, 1, Buffer.from([10, 20, 30, 128]));
+  const badFilter = Buffer.concat([png.subarray(0, 33),
+    pngChunk('IDAT', zlib.deflateSync(Buffer.from([5, 10, 20, 30, 128]))), pngChunk('IEND', Buffer.alloc(0))]);
+  for (const input of [Buffer.alloc(0), png.subarray(0, png.length - 1), badFilter]) {
+    const logs = [];
+    assert.strictEqual(flattenPng(input, line => logs.push(line)), input);
+    assert.equal(logs.length, 1);
+  }
+});
+
 test('PNG fora de 8 bits RGB/RGBA volta igual e loga uma linha (#105)', () => {
   const logs = [];
   const palette = testPng(1, 1, Buffer.from([0]), {colorType: 3, extra: [pngChunk('PLTE', Buffer.from([0, 0, 0, 255, 255, 255]))]});
