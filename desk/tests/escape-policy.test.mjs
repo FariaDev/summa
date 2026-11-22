@@ -60,7 +60,7 @@ test('só a ação tutor cancela o turno', () => {
 const SELECTORS = {
   'dialog[open]': 'dialog',
   '#command-palette:not([hidden])': 'palette',
-  '#course-menu.open, #study-menu.open, #settings-menu.open': 'menu',
+  '.nav-menu.open:not([hidden])': 'menu',
   '#attach-pop:not([hidden])': 'attachpop',
   '#attach-pin-pop:not([hidden])': 'attachpin',
   '#phone-pop:not([hidden])': 'phonepop',

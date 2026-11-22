@@ -305,7 +305,7 @@ function onPopInput(event) {
 }
 
 /**
- * Enter cria a tarefa seguinte; Backspace em texto vazio a remove; Esc fecha.
+ * Enter cria a tarefa seguinte; Backspace em texto vazio a remove.
  * @param {KeyboardEvent} event
  * @returns {void}
  */
@@ -321,8 +321,6 @@ function onPopKey(event) {
     if (!result.removed) return;
     event.preventDefault();
     commitPlan(result.plan, result.focusId ? {id: result.focusId, action: 'text'} : {id: '', action: 'add'});
-  } else if (event.key === 'Escape' && menu) {
-    setMenuOpen(menu, false, {blur: true});
   }
 }
 

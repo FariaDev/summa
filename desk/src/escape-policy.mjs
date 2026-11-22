@@ -14,7 +14,7 @@ import escapeCore from './generated/mesaqolescape.core.js';
    Fonte dos fatos (o main.mjs é quem chama no handler de keydown):
      dialog    qualquer <dialog open> (nativo fecha sozinho)
      palette   #command-palette visível
-     menu      #course-menu/#study-menu/#settings-menu com .open
+     menu      .nav-menu aberto e não oculto (inclui o Plano de estudo)
      popover   contexto de estudo (Editar), Foto do celular, Mais opções da aba Livre, sessões, modelo e esforço, sessão nova e Mais opções do tutor, Mais opções e contexto do chat lateral, navegação, Mais opções e seletor de material do leitor
      citation  #quote-btn visível (seleção de texto)
      search    busca do PDF aberta/ativa ou a busca da conversa aberta
@@ -60,7 +60,7 @@ export function collectEscapeFacts(doc = globalThis.document, state = {}) {
   return {
     dialog: !!doc.querySelector('dialog[open]'),
     palette: !!doc.querySelector('#command-palette:not([hidden])'),
-    menu: !!doc.querySelector('#course-menu.open, #study-menu.open, #settings-menu.open'),
+    menu: visible(doc, '.nav-menu.open'),
     popover: visible(doc, '#attach-pop') || visible(doc, '#attach-pin-pop') || visible(doc, '#phone-pop') || visible(doc, '#check-note') || visible(doc, '#free-more-pop') || visible(doc, '#conversations-pop') || visible(doc, '#model-pop') || visible(doc, '#new-session-pop') || visible(doc, '#chat-more-pop') || visible(doc, '#sidechat-more-pop') || visible(doc, '#sidechat-context-pop') || visible(doc, '.pdf-nav-pop') || visible(doc, '.pdf-more-pop') || visible(doc, '.material-pop'),
     citation: visible(doc, '#quote-btn'),
     search: pdfFind || visible(doc, '#chat-find'),
