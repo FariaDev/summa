@@ -1035,6 +1035,7 @@
   "err.update.appImageNotWritable": "Could not write to the AppImage folder ({error}). Move Summa to a folder you own, such as ~/Applications, and try again.",
   "err.update.appImageDownload": "Could not download and verify the AppImage for v{version} ({error}) — update refused.",
   "err.update.appImageFailed": "The new version did not start. The previous version is still open; try updating again.",
+  "err.update.appImageStart": "The new AppImage did not become ready ({error}). The previous version was restored and remains open; try updating again.",
   "err.update.appImageBytes": "The AppImage has {received} bytes but the signed manifest declares {expected} — update refused.",
   "err.update.appImageHash": "The AppImage SHA-256 does not match the signed manifest — update refused.",
   "err.update.appImageMissing": "v{version} did not publish a signed Linux AppImage — update refused.",

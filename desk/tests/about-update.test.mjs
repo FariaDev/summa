@@ -18,7 +18,8 @@ function renderedText(node){
 function renderedNodes(node){return [node,...node.children.flatMap(renderedNodes)];}
 
 test('refresh automático conserva recuperação e botão explícito permite tentar de novo', async () => {
-  const fake=fakeAboutUpdate({status:'recovered',version:'1.3.3',reason:'erro salvo',fresh:true});
+ for(const status of ['recovered','failed']){
+  const fake=fakeAboutUpdate({status,version:'1.3.3',reason:'erro salvo',fresh:true});
   Object.assign(window.desk,fake.desk);
   const box=document.querySelector('#about-update');
   box.replaceChildren=function(...children){this.children=children;};
@@ -30,6 +31,7 @@ test('refresh automático conserva recuperação e botão explícito permite ten
   assert.deepEqual(fake.checks,[{manual:true}]);
   assert.doesNotMatch(renderedText(box),/erro salvo/);
   assert.match(renderedText(box),/1.3.3/);
+ }
 });
 
 test('refresh automático com recuperação antiga, sem resultado ou com sucesso mantém a checagem normal', async () => {
@@ -57,12 +59,21 @@ test('#160: resultado recuperado continua no caso antigo', () => {
   );
 });
 
+test('falha persistida do AppImage mostra a versão recuperada e o motivo', () => {
+  assert.deepEqual(
+    resultStateOf({status: 'failed', version: '1.3.4', reason: 'startup failed'}),
+    {$: 'UpdateRecovered', version: '1.3.4', reason: 'startup failed'},
+  );
+});
+
 test('resultado recuperado traduz o motivo marcado antes de chegar à view', () => {
-  for (const key of ['err.update.dmgStillOpen', 'err.update.installerFailed', 'err.update.appImageFailed']) {
+  for (const status of ['recovered', 'failed']) {
+   for (const key of ['err.update.dmgStillOpen', 'err.update.installerFailed', 'err.update.appImageFailed']) {
     assert.deepEqual(
-      resultStateOf({status: 'recovered', version: '1.3.3', reason: message(key)}),
+      resultStateOf({status, version: '1.3.3', reason: message(key)}),
       {$: 'UpdateRecovered', version: '1.3.3', reason: t(key)},
     );
+   }
   }
   assert.equal(resultStateOf({status: 'recovered'}).reason, '');
 });

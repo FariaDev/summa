@@ -1035,6 +1035,7 @@
   "err.update.appImageNotWritable": "Não foi possível gravar na pasta do AppImage ({error}). Mova a Summa para uma pasta sua, como ~/Applications, e tente novamente.",
   "err.update.appImageDownload": "Não foi possível baixar e conferir o AppImage da v{version} ({error}) — atualização recusada.",
   "err.update.appImageFailed": "A nova versão não iniciou. A versão anterior continua aberta; tente atualizar novamente.",
+  "err.update.appImageStart": "O novo AppImage não ficou pronto ({error}). A versão anterior foi restaurada e continua aberta; tente atualizar novamente.",
   "err.update.appImageBytes": "O AppImage tem {received} bytes e o manifesto assinado declara {expected} — atualização recusada.",
   "err.update.appImageHash": "O SHA-256 do AppImage não confere com o manifesto assinado — atualização recusada.",
   "err.update.appImageMissing": "A v{version} não publicou um AppImage assinado para Linux — atualização recusada.",

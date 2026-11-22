@@ -130,21 +130,25 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   const lock=updater.acquireLock(runtime);
   if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
   let partial='';
+  let backup='';
   try{
    const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
    const {file}=await appImageUpdate.prepareAppImageUpdate({version:target,publicKey,dir:path.dirname(appImage)});
    partial=file;
    await installerUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
-   appImageUpdate.swapAppImage({file,appImage});
+   backup=appImageUpdate.swapAppImage({file,appImage});
    partial='';
    app.releaseSingleInstanceLock();
    await appImageUpdate.relaunchAppImage({appImage,env});
   }catch(error){
+   if(backup){try{fs.renameSync(backup,appImage);}catch(restoreError){appendLog('update',`rollback AppImage: ${causeArg(restoreError)}`);}}
    app.requestSingleInstanceLock();
    if(partial)fs.rmSync(partial,{force:true});
    await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+   if(backup)await updater.cacheWrite(updateCacheFile,cache=>({...cache,lastResult:{status:'failed',mode:'appimage',version:target,reason:uiMsg('err.update.appImageFailed'),at:Date.now()}}));
    throw error;
   }finally{updater.releaseLock(lock.file);}
+  if(backup){try{fs.rmSync(backup,{force:true});}catch(error){appendLog('update',`backup AppImage: ${causeArg(error)}`);}}
   appendLog('update',`AppImage da v${target} conferido e reaberto`);
   setTimeout(()=>app.quit(),400);
   return {ok:true,version:target};
@@ -153,7 +157,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     a atualização que a instância com o lock ainda está aplicando. */
  if(!TEST_MODE&&app.hasSingleInstanceLock()){
   if(linuxAppImage){
-   appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')));
+   appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')),{backups:!env.SUMMA_APPIMAGE_READY_FILE,appImage:String(env.APPIMAGE||'')});
    installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
     .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
   }

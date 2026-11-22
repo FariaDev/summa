@@ -466,6 +466,9 @@ app.whenReady().then(async()=>{
  /* O reload do renderer (⌘R) derruba a página que ligava a View nativa: sem
     isso a view fica presa por cima de uma Mesa que nem sabe que ela existe. */
  win.webContents.on('did-start-navigation',(_e,_url,_isInPlace,isMainFrame)=>{if(isMainFrame)ggb.hideView();});
+ win.on('ready-to-show',()=>{
+  if(process.platform==='linux')require('./linux-appimage-update.cjs').signalAppImageReady({app});
+ });
  win.on('close',()=>persist());loadRenderer(win,rendererEntry({env:process.env,deskDir:__dirname}));
  scheduleUpdateCheck();
 });

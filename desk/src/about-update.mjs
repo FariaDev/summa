@@ -78,7 +78,7 @@ function resultStateOf(result){
  /* #160: clone sujo recusado antes de qualquer troca — o Sobre diz que nada
     foi atualizado, com a contagem de arquivos, no lugar de "voltou". */
  if(result.status==='refused'&&result.reason==='dirty-clone')return {$:'UpdateDirtyClone',files:String(result.files||'')};
- if(result.status==='recovered')return {$:'UpdateRecovered',version:String(result.version||''),reason:text(String(result.reason||''))};
+ if(result.status==='recovered'||result.status==='failed')return {$:'UpdateRecovered',version:String(result.version||''),reason:text(String(result.reason||''))};
  if(result.status==='incomplete')return {$:'UpdateIncomplete',version:String(result.version||''),reason:String(result.reason||'')};
  return {$:'UpdateIdle'};
 }
@@ -121,7 +121,7 @@ async function refreshMesaUpdate(manual){
  try{
   if(!manual){
    const result=await window.desk.updateResult();
-   if(result?.status==='recovered'&&result.fresh){renderAboutUpdate(resultStateOf(result),aboutHandlers);return;}
+   if((result?.status==='recovered'||result?.status==='failed')&&result.fresh){renderAboutUpdate(resultStateOf(result),aboutHandlers);return;}
   }
   if(isOffline()){paintOfflineUpdate();return;}
   await readOrigin();
