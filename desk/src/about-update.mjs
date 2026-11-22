@@ -137,9 +137,9 @@ async function openAbout(options){
  const ask=typeof options?.ask==='string'?options.ask:'';
  if($('#about-dialog').open){if(ask)askUpdate(ask);return;}
  renderAboutLead(S.deskVersion);
- /* C3: as 4 linhas nascem já com "Verificando…" (Mesa com a versão local); a
+ /* C3: as linhas nascem já com "Verificando…" (Mesa com a versão local); a
     checagem chega em seguida sem abrir vão. */
- renderComponentChecking();
+ renderComponentChecking({systemNode:S.usesSystemNode});
  $('#about-dialog').showModal();
  noticesOpened();
  await readOrigin();

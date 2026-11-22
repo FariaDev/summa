@@ -47,6 +47,9 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     `install-source.json` (ou da raiz com `.git`); a classificação não adivinha
     pasta pessoal nem log — o caminho só existe aqui e no Sobre. */
  const linuxAppImage=appImageUpdate.isLinuxAppImage({platform,deskDir,env});
+ /* #148: .exe, AppImage e DMG se atualizam pelo próprio app; só quem roda do
+    código (ou do bundle ligado a ele) usa o Node do sistema no worker. */
+ const usesSystemNode=!(linuxAppImage||installerUpdate.isWindowsInstalledApp({platform,deskDir,env})||isMacosRelease({deskDir,platform}));
  function originFacts(){
   if(linuxAppImage)return {kind:'normal',path:'',worktree:false};
   if(isMacosRelease({deskDir,platform}))return {kind:'normal',path:'',worktree:false};
@@ -226,7 +229,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  });
  const toolFixtures=fixtures;
  ipcMain.handle('components',(_e,opts)=>components.collect({deskDir,config:config(),cacheFile:updateCacheFile,version:app.getVersion(),manual:!!opts?.manual,testMode:TEST_MODE,
-  latestOverride:toolFixtures.latestOverride,claudeLauncher:toolFixtures.claudeLauncher}));
+  latestOverride:toolFixtures.latestOverride,claudeLauncher:toolFixtures.claudeLauncher,systemNode:usesSystemNode}));
  ipcMain.handle('tool-notices',()=>tools.notices());
  ipcMain.handle('tool-notices-opened',()=>tools.opened());
  ipcMain.handle('tool-notice-postpone',(_e,id)=>tools.postpone(id));
@@ -273,6 +276,6 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
    }catch{/* checagem em segundo plano é best-effort (offline é normal); o Sobre refaz sob demanda */}
   },5000);
  }
- return {scheduleUpdateCheck};
+ return {scheduleUpdateCheck,usesSystemNode};
 }
 module.exports={registerUpdateHost};

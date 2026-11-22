@@ -494,7 +494,7 @@ ipcMain.handle('chat-attach-pdf',async(_e,rawPath)=>{
 createDeskStateHost({ipcMain,live,allowed,allowedXopp,assertNoFreeMutation,assertNoNav,persist,win:()=>win,appIcon:()=>appIcon}).register();
 const {cancelReviewDraft}=registerStudyRecordsHost({ipcMain,live,runtime,allowed,allowedXopp,engine,claudeBinary,claudeDetector,testClaudeSdkLoader,openCodeDraft:options=>openCodeTutor.draft(options),bookmarksPayload,reviewPayload,assertNoFreeMutation,assertNoNav});
 registerChatExportHost({ipcMain,live,runtime,envRuntime,dialog,shell,appendLog,engine,testClaudeSdkLoader});
-ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel()};});
+ipcMain.handle('get-config',async()=>{await startBootReady();return {config:normalize(config),...conversationData({messages:false}),captureAvailable:captureAvailable(),windowCaptureAvailable:windowCaptureAvailable(),ambitusLinked:ambitusLinked(),platform:process.platform,needsSetup:needsSetup(config,courses),deskVersion:deskVersionLabel(),usesSystemNode};});
 ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory']});return r.canceled?null:r.filePaths[0];});
 /* Primeira abertura dentro do app (ticket #21). O que a pessoa soltou na folha
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
@@ -715,7 +715,7 @@ const toolHost={
  relink:()=>{persist();stopBridge();},
  fixtures:toolTestFixtures(TEST_MODE),
 };
-const {scheduleUpdateCheck}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
+const {scheduleUpdateCheck,usesSystemNode}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
 ggb.register(ipcMain);
 
 app.on('window-all-closed',()=>app.quit());
