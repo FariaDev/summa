@@ -7,6 +7,11 @@ const signature=require('./updater-signature.cjs');
 const {defaultFetchBuffer}=require('./updater-check.cjs');
 const installer=require('./windows-installer-update.cjs');
 const {downloadReleaseFile,fetchReleaseFile}=require('./update-download.cjs');
+const {message:uiMsg}=require('./src/i18n.mjs');
+const {causeArg}=require('./src/error-detail.mjs');
+
+/* O helper roda de uma cópia em `dir`; o `src/i18n.mjs` vai ao lado para os erros dele chegarem traduzíveis ao Sobre. */
+const WORKER_FILES=['macos-dmg-worker.cjs','src/i18n.mjs'];
 
 /**
  * Baixa uma imagem autenticada, sem deixar arquivos parciais em uma recusa.
@@ -21,13 +26,18 @@ async function prepareDmgUpdate({version,publicKey,dir,fetchBuffer=defaultFetchB
   const declared=signature.assertDmgDeclared(manifest);
   fs.mkdirSync(dir,{recursive:true});
   const file=path.join(dir,signature.dmgAssetName(version)),partial=file+'.part';
-  const response=await fetchInstaller(urls.dmg);
-  if(!response.ok||!response.body)throw Error(`DMG: HTTP ${response.status}`);
-  const received=await downloadReleaseFile({response,partial,maxBytes:declared.dmgBytes});
-  signature.assertDmgMatches(received,declared);
+  await downloadDmg({url:urls.dmg,partial,declared,fetchInstaller,version:manifest.version});
   fs.renameSync(partial,file);
   return {file};
  }catch(error){fs.rmSync(dir,{recursive:true,force:true});throw error;}
+}
+
+async function downloadDmg({url,partial,declared,fetchInstaller,version}){
+ try{
+  const response=await fetchInstaller(url);
+  if(!response.ok||!response.body)throw Error(`HTTP ${response.status}`);
+  signature.assertDmgMatches(await downloadReleaseFile({response,partial,maxBytes:declared.dmgBytes}),declared);
+ }catch(error){throw Error(uiMsg('err.update.dmgDownload',{version,error:causeArg(error)}));}
 }
 
 /** Verifica o destino sem fechar o app. @param {string} app @returns {void} @example assertWritableBundle(app) */
@@ -37,7 +47,7 @@ function assertWritableBundle(app){
   fs.accessSync(parent,fs.constants.W_OK);
   const probe=fs.mkdtempSync(path.join(parent,'.summa-write-'));
   fs.rmdirSync(probe);
- }catch{throw Error('A pasta da Summa não permite atualização. Mova Summa.app para uma pasta gravável em Aplicativos.');}
+ }catch(error){throw Error(uiMsg('err.update.dmgNotWritable',{error:causeArg(error)}));}
 }
 
 /**
@@ -48,7 +58,10 @@ function assertWritableBundle(app){
  */
 function launchDmgUpdate({file,app,dir,version,lockFile,pid=process.pid,executable=process.execPath,env=process.env,spawnFn=spawn}){
  const worker=path.join(dir,'macos-dmg-worker.cjs'),input=path.join(dir,'input.json');
- fs.copyFileSync(path.join(__dirname,'macos-dmg-worker.cjs'),worker);
+ for(const rel of WORKER_FILES){
+  fs.mkdirSync(path.dirname(path.join(dir,rel)),{recursive:true});
+  fs.copyFileSync(path.join(__dirname,rel),path.join(dir,rel));
+ }
  fs.writeFileSync(input,JSON.stringify({file,app,dir,version,lockFile,pid}));
  return new Promise((resolve,reject)=>{
   const child=spawnFn(executable,[worker,input],{detached:true,stdio:'ignore',env:{...env,ELECTRON_RUN_AS_NODE:'1'}});
@@ -67,5 +80,5 @@ async function waitForDmgReady({child,dir,timeoutMs}){
  }
 }
 
-module.exports={prepareDmgUpdate,assertWritableBundle,launchDmgUpdate,waitForDmgReady,
+module.exports={WORKER_FILES,prepareDmgUpdate,assertWritableBundle,launchDmgUpdate,waitForDmgReady,
  markInstallerPending:installer.markInstallerPending,clearInstallerPending:installer.clearInstallerPending,settleInstallerUpdate:installer.settleInstallerUpdate};

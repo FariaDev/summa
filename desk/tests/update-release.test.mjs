@@ -169,13 +169,13 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   assert.match(checked.stdout, /release v0\.1\.0 confere/);
   const dmgOut = path.join(out, 'Summa-0.1.0.dmg');
   fs.appendFileSync(dmgOut, 'x');
-  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /tamanho do DMG/);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /O DMG tem \d+ bytes e o manifesto assinado declara \d+/);
   fs.copyFileSync(dmg, dmgOut);
   fs.rmSync(dmgOut);
   assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /asset ausente: Summa-0.1.0.dmg/);
   fs.copyFileSync(dmg, dmgOut);
   fs.writeFileSync(dmgOut, Buffer.alloc(fs.statSync(dmg).size));
-  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /SHA-256 do DMG/);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /O SHA-256 do DMG não confere/);
   fs.copyFileSync(dmg, dmgOut);
 
   const imageOut = path.join(out, path.basename(appImage));
