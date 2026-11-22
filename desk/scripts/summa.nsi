@@ -65,7 +65,7 @@ Var InstallerMutex
 Function .onInit
   UserInfo::GetName
   Pop $R0
-  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\SummaInstaller.$R0") p .r1 ?e'
+  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\SummaInstaller.$R0") p .R1 ?e'
   Pop $R2
   StrCpy $InstallerMutex $R1
   ${If} $R1 == 0

@@ -20,6 +20,11 @@ test('o mutex por usuario precede qualquer mutacao e recusa a segunda instalacao
   const nsi = script('summa.nsi');
   const init = nsi.slice(nsi.indexOf('Function .onInit'), nsi.indexOf('FunctionEnd', nsi.indexOf('Function .onInit')));
   assert.match(init, /CreateMutexW/);
+  const output = init.match(/CreateMutexW[^\n]* p \.([Rr]1) \?e/);
+  assert.ok(output, 'o retorno de CreateMutexW precisa de um registrador');
+  const register = output[1][0] === 'R' ? '$R1' : '$1';
+  assert.ok(init.includes(`StrCpy $InstallerMutex ${register}`));
+  assert.ok(init.includes(`\${If} ${register} == 0`));
   assert.match(init, /Local\\Summa/);
   assert.match(init, /SetErrorLevel 3/);
   assert.match(init, /Quit/);
