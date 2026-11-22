@@ -64,6 +64,54 @@ const UUID_A = '123e4567-e89b-42d3-a456-426614174000';
 const UUID_B = '123e4567-e89b-42d3-a456-426614174001';
 const UUID_C = '123e4567-e89b-42d3-a456-426614174002';
 
+test('same-name PDFs in different course folders have distinct material destinations', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-search-duplicate-'));
+  runtimes.push(root);
+  const course = {id: 'math', name: 'Math', path: path.join(root, 'course')};
+  const files = ['ch1', 'ch2'].map((folder) => path.join(course.path, folder, 'Exercises.pdf'));
+  for (const [index, file] of files.entries()) {
+    fs.mkdirSync(path.dirname(file), {recursive: true});
+    fs.writeFileSync(file, tinyPdf([[`Chapter ${index + 1} exercises`]]));
+  }
+  const options = {courses: [course], query: 'Exercises', scope: {sources: ['materia']}};
+  for (const fresh of [true, false]) {
+    const result = await search.search(root, {...options, fresh});
+    assert.equal(result.hits.length, 2);
+    assert.equal(new Set(result.hits.map((hit) => hit.id)).size, 2);
+    assert.deepEqual(result.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files);
+  }
+  const indexFile = path.join(root, 'study-search', 'index.json');
+  const oldIndex = JSON.parse(fs.readFileSync(indexFile, 'utf8'));
+  oldIndex.version = 2;
+  for (const record of Object.values(oldIndex.files)) {
+    if (record.kind === 'material') for (const doc of record.docs) doc.materialId = search.materialKey(course.id, 'Exercises.pdf');
+  }
+  fs.writeFileSync(indexFile, JSON.stringify(oldIndex));
+  const migrated = await search.search(root, options);
+  assert.equal(new Set(migrated.hits.map((hit) => hit.id)).size, 2, 'old index is rebuilt');
+  const pdfHits = await search.search(root, {...options, query: 'Chapter', scope: {sources: ['pdf']}});
+  assert.deepEqual(pdfHits.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files);
+  const legacyId = `mt:${search.materialKey(course.id, 'Exercises.pdf')}`;
+  assert.equal(search.resolve(root, legacyId, options).ok, false, 'ambiguous legacy IDs must not open another PDF');
+  const moved = path.join(course.path, 'ch3', 'Exercises.pdf');
+  fs.mkdirSync(path.dirname(moved));
+  fs.renameSync(files[1], moved);
+  files[1] = moved;
+  const updated = await search.search(root, options);
+  assert.deepEqual(updated.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files, 'moving a PDF invalidates material metadata');
+  const externalRoot = course.path;
+  course.path = path.join(root, 'relocated', 'course');
+  fs.mkdirSync(course.path, {recursive: true});
+  fs.writeFileSync(path.join(course.path, '_state.md'), `source_roots:\n  - ${externalRoot}\n`);
+  const relocated = await search.search(root, options);
+  assert.deepEqual(relocated.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files, 'moving the course with fixed external PDFs invalidates relative-path IDs');
+  fs.rmSync(files[0]);
+  assert.equal(search.resolve(root, legacyId, options).path, files[1], 'unambiguous legacy IDs still resolve');
+  fs.rmSync(files[1]);
+  assert.equal(search.resolve(root, legacyId, options).ok, false);
+  assert.equal((await search.search(root, options)).hits.length, 0);
+});
+
 /* Runtime sintético completo: duas matérias, conversas Pi/Claude/lateral,
  * Caderno, anotação, sessão Livre e PDFs com texto real. */
 function fixture() {
