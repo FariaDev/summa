@@ -64,7 +64,9 @@ Var IsUpdate
 Var Reopened
 Var InstallerMutex
 
-Function .onInit
+; Setup e desinstalador dividem o mutex (#140): os dois renomeiam a pasta e mexem
+; no atalho e no registro, e juntos deixavam a Summa instalada sem entrada em Apps.
+!macro TakeInstallerMutex
   UserInfo::GetName
   Pop $R0
   System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\SummaInstaller.$R0") p .R1 ?e'
@@ -76,6 +78,10 @@ Function .onInit
     MessageBox MB_ICONSTOP "$(SetupBusy)" /SD IDOK
     Quit
   ${EndIf}
+!macroend
+
+Function .onInit
+  !insertmacro TakeInstallerMutex
   SetShellVarContext current
   ; A pasta é contrato do app e do updater: /D= não muda o destino.
   StrCpy $INSTDIR "$LOCALAPPDATA\Programs\Summa"
@@ -87,6 +93,10 @@ Function .onInit
   ${IfNot} ${Errors}
     StrCpy $IsUpdate "1"
   ${EndIf}
+FunctionEnd
+
+Function un.onInit
+  !insertmacro TakeInstallerMutex
 FunctionEnd
 
 ; Numa atualização, a pessoa nunca fica sem a Summa: reabre a versão que estiver no lugar.

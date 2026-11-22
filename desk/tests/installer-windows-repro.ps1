@@ -1,7 +1,7 @@
-﻿# Regressões reais em conta descartável: mutex e cópia da origem (#119).
+﻿# Regressões reais em conta descartável: mutex, cópia da origem (#119) e desinstalador durante o Setup.
 param(
   [Parameter(Mandatory = $true)][string]$Setup,
-  [Parameter(Mandatory = $true)][ValidateSet('mutex', 'clone')][string]$Scenario
+  [Parameter(Mandatory = $true)][ValidateSet('mutex', 'clone', 'uninstall')][string]$Scenario
 )
 $ErrorActionPreference = 'Stop'
 $dir = Join-Path $env:LOCALAPPDATA 'Programs\Summa'
@@ -11,6 +11,7 @@ foreach ($entry in @($dir, $key, $shortcut)) {
   if (Test-Path -LiteralPath $entry) { throw 'Recebido: estado instalado. Esperado: conta descartável sem Summa.' }
 }
 $processes = New-Object 'System.Collections.Generic.List[System.Diagnostics.Process]'
+$uninstallers = New-Object 'System.Collections.Generic.List[string]'
 $previousRuntime = $env:LEARNING_DESK_RUNTIME
 $previousVault = $env:LEARNING_VAULT
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('summa-repro-' + [guid]::NewGuid())
@@ -38,8 +39,21 @@ function Wait-Ready([System.Diagnostics.Process]$process) {
   Assert-Repro (Test-Path -LiteralPath "$dir.ready") 'o primeiro instalador chegou ao aviso de pronto em até 180 s'
 }
 
+# Roda a cópia temporária como o lançador do desinstalador faz (_?= aponta a pasta),
+# para ler o código de saída de quem trabalha, mesmo quando ele recusa na hora.
+function Start-Uninstall {
+  $worker = Join-Path ([IO.Path]::GetTempPath()) ('summa-un-' + [guid]::NewGuid() + '.exe')
+  Copy-Item -LiteralPath (Join-Path $dir 'Uninstall Summa.exe') -Destination $worker
+  $uninstallers.Add($worker)
+  return Start-Setup $worker @('/S', "_?=$dir")
+}
+
+function Test-Installed {
+  (Test-Path -LiteralPath $exe) -and (Test-Path -LiteralPath $key) -and (Test-Path -LiteralPath $shortcut)
+}
+
 function Stop-Summa {
-  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
+  Get-Process -ErrorAction SilentlyContinue | Where-Object { $path = $_.Path; $path -and $path.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 try {
@@ -68,6 +82,27 @@ try {
     Write-Output "first exit=$firstExit"
     Assert-Repro ($firstExit -eq 0) 'o primeiro conclui com código 0 após liberar a instalação'
     Assert-Repro ((Get-FileHash -LiteralPath $package).Hash -eq $hash) 'o payload instalado continua íntegro'
+  } elseif ($Scenario -eq 'uninstall') {
+    $lock = [IO.File]::Open($exe, 'Open', 'Read', 'Read')
+    $update = Start-Setup $Setup @('/S', '/UPDATE')
+    Wait-Ready $update
+    $uninstallExit = Wait-Setup (Start-Uninstall) 15
+    Write-Output "uninstall during setup exit=$uninstallExit"
+    Assert-Repro ($uninstallExit -eq 3) 'o desinstalador recusa com código 3 enquanto o Setup roda'
+    Assert-Repro (Test-Installed) 'pasta, registro e atalho continuam no lugar'
+    $lock.Dispose(); $lock = $null
+    Assert-Repro ((Wait-Setup $update) -eq 0) 'o Setup conclui com código 0'
+    Stop-Summa
+    Assert-Repro (Test-Installed) 'a Summa atualizada continua no menu Iniciar e em Apps'
+    $lock = [IO.File]::Open($exe, 'Open', 'Read', 'Read')
+    $worker = Start-Uninstall
+    $setupExit = Wait-Setup (Start-Setup $Setup @('/S')) 15
+    Write-Output "setup during uninstall exit=$setupExit"
+    Assert-Repro ($setupExit -eq 3) 'o Setup recusa com código 3 enquanto o desinstalador roda'
+    Assert-Repro (-not (Test-Path -LiteralPath "$dir.new")) 'o Setup recusado não extrai nada'
+    $lock.Dispose(); $lock = $null
+    Assert-Repro ((Wait-Setup $worker) -eq 0) 'o desinstalador conclui com código 0'
+    Assert-Repro (-not ((Test-Path -LiteralPath $dir) -or (Test-Path -LiteralPath $key) -or (Test-Path -LiteralPath $shortcut))) 'pasta, registro e atalho foram removidos'
   } else {
     $origin = Join-Path $dir 'resources\app\install-source.json'
     Set-Content -LiteralPath $origin -Value '{"kind":"clone","path":"X:\\clone-inexistente"}'
@@ -104,9 +139,10 @@ try {
   $deadline = (Get-Date).AddSeconds(60)
   while ((Test-Path -LiteralPath $dir) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
   Assert-Repro (-not (Test-Path -LiteralPath $dir)) 'a instalação de prova foi removida'
-  foreach ($suffix in @('new', 'old', 'ready')) {
+  foreach ($suffix in @('new', 'old', 'ready', 'removing')) {
     if (Test-Path -LiteralPath "$dir.$suffix") { Remove-Item -LiteralPath "$dir.$suffix" -Recurse -Force }
   }
+  foreach ($file in $uninstallers) { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
   Remove-Item -LiteralPath $sandbox -Recurse -Force
   $env:LEARNING_DESK_RUNTIME = $previousRuntime
   $env:LEARNING_VAULT = $previousVault
