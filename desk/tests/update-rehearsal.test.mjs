@@ -8,6 +8,7 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {auditUpdatedInstall, previousReleaseTag, rehearseUpdate} from '../scripts/update-rehearsal.mjs';
 import {buildReleaseZip} from '../scripts/update-zip.mjs';
 import {releaseAssetsFetcher} from './fake-release-assets.mjs';
+import {fakePeInstaller} from './fake-pe-installer.mjs';
 
 const DESK = path.resolve(import.meta.dirname, '..');
 const KEY = 'CHAVE PUBLICA\n';
@@ -194,8 +195,11 @@ test('sign recusa assinar quando o ensaio falha e não deixa assets', {skip: win
   fs.writeFileSync(privateFile, privateKey.export({type: 'pkcs8', format: 'pem'}));
   const out = path.join(keyDir, 'assets');
   const installer = path.join(keyDir, 'Summa-Setup-0.2.0.exe');
-  fs.writeFileSync(installer, 'instalador de teste');
-  const run = (root) => spawnSync(process.execPath, [path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer], {cwd: root, encoding: 'utf8'});
+  const run = (root) => {
+    const commit = execFileSync('git', ['rev-parse', 'v0.2.0^{commit}'], {cwd: root, encoding: 'utf8'}).trim();
+    fs.writeFileSync(installer, fakePeInstaller({version: '0.2.0', commit}));
+    return spawnSync(process.execPath, [path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer], {cwd: root, encoding: 'utf8'});
+  };
   const refused = run(releaseRepo(t, {publicKey: publicPem}));
   assert.notEqual(refused.status, 0);
   assert.match(refused.stderr, /ensaio v0\.1\.0 → 0\.2\.0 falhou/);
