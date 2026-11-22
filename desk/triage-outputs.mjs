@@ -188,12 +188,13 @@ const RUN_SHELL_RULES=Object.freeze({
  'npm run doctor':'allow',
  'npm --prefix desk run doctor':'allow',
  'cd desk':'allow',
- 'gh issue list':'allow',
- 'gh issue list *':'allow',
- /* Defesa em profundidade: o `*` do allow engolia o operador e o redirecionamento
-    executava (medido no 2.2.7). A última regra que casa decide, então estes
-    deny vêm depois dos allows; o `gh issue list --search "palavras"` simples
-    não tem operador e continua liberado. */
+ [`gh issue list --repo ${ISSUE_REPO} --state all --search "*"`]:'allow',
+ /* O allow fixa repo/estado e exige uma busca entre aspas duplas. Com até duas
+    `"` ela é uma palavra só: sem expansão de chaves/til/glob nem flags depois;
+    `\"` põe aspas extras e é negado. `$` é negado porque expande variáveis
+    dentro das aspas e poderia mandar chaves no texto. `-R`, `--repo` repetido,
+    `--hostname` e `GH_HOST` negam outro host (code scan sfind-bcc8cc74, `gh -R`).
+    A última regra que casa decide; estes deny ficam depois do allow. */
  '*$(*':'deny',
  '*`*':'deny',
  '*;*':'deny',
@@ -202,6 +203,13 @@ const RUN_SHELL_RULES=Object.freeze({
  '*>*':'deny',
  '*<*':'deny',
  '*\n*':'deny',
+ '*$*':'deny',
+ '* -R*':'deny',
+ '*--repo=*':'deny',
+ '*--repo*--repo*':'deny',
+ '*--hostname*':'deny',
+ '*GH_HOST*':'deny',
+ '*"*"*"*':'deny',
 });
 
 /* A trava do `opencode run` do "Relatar um problema" (#126). O `run` do
@@ -210,7 +218,8 @@ const RUN_SHELL_RULES=Object.freeze({
    importa (a última regra que casa decide): `*: deny` fecha o que não está na
    lista, `read` só libera o sentinela inexistente, `glob`/`grep` ficam
    negados (também leem arquivos e o relatório não precisa deles) e o shell
-   nega tudo com allow apenas do doctor e do `gh issue list`. O sentinela fica
+   nega tudo com allow apenas do doctor e da busca `gh issue list` no repo fixo.
+   O sentinela fica
    porque o grátis do Zen responde 429 sem a ferramenta `read` na lista (#91,
    ver `src/agents/opencode-serve-config.cjs`), mas nenhum arquivo real é
    liberado (#161): o relatório vai no prompt e o comando roda num cwd
