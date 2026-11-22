@@ -272,7 +272,7 @@ function assertDmgDeclared(manifest){
 /** Confere os bytes da imagem antes de montá-la. @param {{bytes:number,sha256:string}} received @param {{dmgBytes:number,dmgSha256:string}} declared @returns {void} @example assertDmgMatches(received,declared) */
 function assertDmgMatches(received,declared){
  if(received.bytes!==declared.dmgBytes)throw refuse('err.update.dmgBytes',{received:received.bytes,expected:declared.dmgBytes});
- if(received.sha256!==declared.dmgSha256)throw refuse('err.update.dmgHash');
+ if(received.sha256!==declared.dmgSha256)throw refuse('err.update.dmgHash',{received:received.sha256,expected:declared.dmgSha256});
 }
 
 /**

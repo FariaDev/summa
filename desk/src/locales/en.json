@@ -1040,7 +1040,7 @@
   "err.update.dmgBytes": "The DMG has {received} bytes but the signed manifest declares {expected} — update refused.",
   "err.update.dmgCancelled": "The update was canceled before the swap. The previous version is still in place.",
   "err.update.dmgDownload": "Could not download and verify the DMG for v{version} ({error}) — update refused.",
-  "err.update.dmgHash": "The DMG SHA-256 does not match the signed manifest — update refused.",
+  "err.update.dmgHash": "The DMG SHA-256 does not match the signed manifest: received {received}; expected {expected} — update refused.",
   "err.update.dmgLeftover": "Summa.app.new or Summa.app.old already exists next to Summa.app. Keep that copy somewhere safe, remove it, and try again.",
   "err.update.dmgMissing": "v{version} did not publish a signed macOS DMG — update refused.",
   "err.update.dmgNoApp": "The DMG has no Summa.app — update refused.",

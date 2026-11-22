@@ -69,7 +69,7 @@ test('conferência do DMG informa tamanhos e hashes recebidos e esperados',()=>{
  assert.doesNotThrow(()=>signature.assertDmgMatches({bytes:4,sha256:declared.dmgSha256},declared));
  for(const bytes of [0,3,5])assert.throws(()=>signature.assertDmgMatches({bytes,sha256:declared.dmgSha256},declared),{message:`O DMG tem ${bytes} bytes e o manifesto assinado declara 4 — atualização recusada.`});
  const sha256='b'.repeat(64);
- assert.throws(()=>signature.assertDmgMatches({bytes:4,sha256},declared),{message:'O SHA-256 do DMG não confere com o manifesto assinado — atualização recusada.'});
+ assert.throws(()=>signature.assertDmgMatches({bytes:4,sha256},declared),{message:`O SHA-256 do DMG não confere com o manifesto assinado: recebido ${sha256}; esperado ${declared.dmgSha256} — atualização recusada.`});
 });
 
 test('helper usa o Electron instalado em modo Node; erro de spawn não é sucesso',async()=>{
