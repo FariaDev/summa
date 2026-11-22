@@ -72,15 +72,15 @@ test('preparação limpa parciais de outras versões e preserva nomes não exato
  for(const name of preserved)assert.equal(fs.readFileSync(path.join(dir,name),'utf8'),'preservado');
 });
 
-test('abertura AppImage limpa parcial sem pedido pendente e outras instalações preservam',()=>{
- for(const platform of ['linux','darwin']){
+test('abertura AppImage limpa parcial só com lock, sem pedido pendente; outras instalações preservam',()=>{
+ for(const [platform,hasLock] of [['linux',true],['linux',false],['darwin',true]]){
   const dir=tempDir('summa-startup-partial-'),runtime=tempDir('summa-startup-runtime-'),stale=path.join(dir,'.Summa-1.4.1-x86_64.AppImage.part');
   const preserved=['Summa.AppImage','.Summa-notes.txt','.Other.AppImage.part'];
   fs.writeFileSync(stale,'interrompido');
   for(const name of preserved)fs.writeFileSync(path.join(dir,name),'preservado');
-  const fake=fakeAppImageHost(image);
+  const fake=fakeAppImageHost(image,{hasLock});
   registerUpdateHost({...fake,appImageUpdate:image,ipcMain:fakeIpcMain(),shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,platform,env:{...env,APPIMAGE:path.join(dir,'Summa.AppImage')}});
-  assert.equal(fs.existsSync(stale),platform!=='linux');
+  assert.equal(fs.existsSync(stale),platform!=='linux'||!hasLock);
   for(const name of preserved)assert.equal(fs.readFileSync(path.join(dir,name),'utf8'),'preservado');
  }
 });
