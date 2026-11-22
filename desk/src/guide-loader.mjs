@@ -31,7 +31,3 @@ export const openGuide = (section = '') => guide.open(section);
  * @returns {void} @example relabelGuide();
  */
 export const relabelGuide = () => guide.relabel();
-/** Importa o aplicador do guia (testes e chamadas que precisam esperar).
- * @returns {Promise<typeof import('./guide.mjs')>} @example await loadGuide();
- */
-export const loadGuide = () => guide.load();
