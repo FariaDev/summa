@@ -62,7 +62,7 @@ function fakeDmg(version = '0.1.0', identity = {name:'summa', version}) {
 }
 
 function runScript(args, {cwd, expectFail = false} = {}) {
-  const result = spawnSync(process.execPath, ['--import', path.join(DESK, 'tests', 'fake-release-image-tools.mjs'), SCRIPT, ...args], {cwd, encoding: 'utf8'});
+  const result = spawnSync(process.execPath, ['--import', new URL('./fake-release-image-tools.mjs', import.meta.url).href, SCRIPT, ...args], {cwd, encoding: 'utf8'});
   if (!expectFail) assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   else assert.notEqual(result.status, 0, 'o script tinha de recusar');
   return result;

@@ -203,7 +203,7 @@ test('sign recusa assinar quando o ensaio falha e não deixa assets', {skip: win
   const run = (root) => {
     const commit = execFileSync('git', ['rev-parse', 'v0.2.0^{commit}'], {cwd: root, encoding: 'utf8'}).trim();
     fs.writeFileSync(installer, fakePeInstaller({version: '0.2.0', commit}));
-    return spawnSync(process.execPath, ['--import', path.join(DESK, 'tests', 'fake-release-image-tools.mjs'), path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root, encoding: 'utf8'});
+    return spawnSync(process.execPath, ['--import', new URL('./fake-release-image-tools.mjs', import.meta.url).href, path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root, encoding: 'utf8'});
   };
   const refused = run(releaseRepo(t, {publicKey: publicPem}));
   assert.notEqual(refused.status, 0);
