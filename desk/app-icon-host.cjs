@@ -14,6 +14,21 @@ const path=require('node:path');
 const PACKAGE_VARIANT='dark-graphite';
 const PACKAGE_APPLIED='package';
 
+/** Evita decodificar o PNG do pacote em tamanho cheio ao criar a janela no Linux.
+ * @param {string} assetsDir pasta assets/ do app
+ * @param {NodeJS.Platform} platform plataforma do Electron
+ * @param {(file: string) => boolean} [exists] presença da variante pequena
+ * @returns {string} caminho do ícone inicial da janela
+ * @example startupWindowIcon('/mesa/assets','win32') // '/mesa/assets/mesa.ico' */
+function startupWindowIcon(assetsDir,platform,exists=fs.existsSync){
+  if(platform==='win32')return path.join(assetsDir,'mesa.ico');
+  if(platform==='linux'){
+    const compact=path.join(assetsDir,'app-icon',`integral-${PACKAGE_VARIANT}-256.png`);
+    if(exists(compact))return compact;
+  }
+  return path.join(assetsDir,'mesa-1024.png');
+}
+
 /** NativeImage vazia que restaura o ícone do pacote no Dock (#3).
  * O Electron entrega a imagem vazia ao AppKit como nil, e o bundle volta a
  * valer (ui/gfx/image/image.h#AsNSImage, "nil if this image is empty").
@@ -102,4 +117,4 @@ function createAppIcon({app,platform,assetsDir,dockEnabled=true,exists,systemDar
   };
 }
 
-module.exports={appIconPaths,createAppIcon,iconVariant,systemIconTheme};
+module.exports={appIconPaths,createAppIcon,iconVariant,startupWindowIcon,systemIconTheme};
