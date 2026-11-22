@@ -13,6 +13,7 @@ function setMenuOpen(el,open,{animate=true,blur=false}={}){
   el.classList.remove('closing');
   el.classList.add('open');
   trigger?.setAttribute('aria-expanded','true');
+  el.dispatchEvent(new Event('desk-menu-open'));
   return;
  }
  const wasOpen=el.classList.contains('open');
