@@ -48,9 +48,19 @@ function installerAssetName(version){
 }
 
 /**
+ * Nome do AppImage do Linux publicado na Release (#119).
+ * @param {string} version versão estável, com ou sem `v`
+ * @returns {string}
+ * @example appImageAssetName('v1.4.0') // 'Summa-1.4.0-x86_64.AppImage'
+ */
+function appImageAssetName(version){
+ return `Summa-${normalizeVersion(version)}-x86_64.AppImage`;
+}
+
+/**
  * URLs públicas dos assets de uma Release assinada.
  * @param {string} version versão estável (`X.Y.Z`)
- * @returns {{manifest:string,signature:string,zip:string,installer:string}}
+ * @returns {{manifest:string,signature:string,zip:string,installer:string,appImage:string}}
  * @example updateAssetUrls('1.0.3').manifest // 'https://github.com/…/mesa-manifest-v1.0.3.json'
  */
 function updateAssetUrls(version){
@@ -61,6 +71,7 @@ function updateAssetUrls(version){
   signature:`${base}/mesa-manifest-v${v}.sig`,
   zip:`${base}/mesa-estudos-${v}.zip`,
   installer:`${base}/${installerAssetName(v)}`,
+  appImage:`${base}/${appImageAssetName(v)}`,
  };
 }
 
@@ -139,10 +150,19 @@ function installerFields(parsed){
  return {exeSha256,exeBytes};
 }
 
+function appImageFields(parsed){
+ if(parsed.appImageSha256===undefined&&parsed.appImageBytes===undefined)return {};
+ const appImageSha256=String(parsed.appImageSha256||'').trim().toLowerCase();
+ if(!/^[0-9a-f]{64}$/.test(appImageSha256))throw invalidManifest('campo appImageSha256 ausente ou fora do formato SHA-256');
+ const appImageBytes=Number(parsed.appImageBytes);
+ if(!Number.isSafeInteger(appImageBytes)||appImageBytes<=0)throw invalidManifest('campo appImageBytes ausente ou não inteiro positivo');
+ return {appImageSha256,appImageBytes};
+}
+
 /**
  * Os campos do manifesto, já validados (sem confiar na assinatura ainda).
  * @param {Buffer} bytes conteúdo exato do `mesa-manifest-vX.Y.Z.json`
- * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number}}
+ * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number,appImageSha256?:string,appImageBytes?:number}}
  * @example parseManifest(Buffer.from('{"version":"1.0.3",…}'))
  */
 function parseManifest(bytes){
@@ -158,6 +178,7 @@ function parseManifest(bytes){
   zipSha256:zipHashText(parsed.zipSha256),
   zipBytes:zipBytesNumber(parsed.zipBytes),
   ...installerFields(parsed),
+  ...appImageFields(parsed),
  };
 }
 
@@ -234,6 +255,31 @@ function assertInstallerDeclared(manifest,maxBytes=INSTALLER_MAX_BYTES){
 function assertInstallerMatches(received,declared){
  if(received.bytes!==declared.exeBytes)throw refuse('err.update.installerBytes',{received:received.bytes,expected:declared.exeBytes});
  if(received.sha256!==declared.exeSha256)throw refuse('err.update.installerHash');
+}
+
+/**
+ * O manifesto assinado declara um AppImage que cabe no teto do download.
+ * @param {{version:string,appImageSha256?:string,appImageBytes?:number}} manifest
+ * @param {number} [maxBytes]
+ * @returns {{appImageSha256:string,appImageBytes:number}}
+ * @example assertAppImageDeclared({version:'1.4.0',appImageSha256:'ab…',appImageBytes:1024})
+ */
+function assertAppImageDeclared(manifest,maxBytes=INSTALLER_MAX_BYTES){
+ if(!manifest.appImageSha256||!manifest.appImageBytes)throw refuse('err.update.appImageMissing',{version:manifest.version});
+ if(manifest.appImageBytes>maxBytes)throw refuse('err.update.appImageTooLarge',{bytes:manifest.appImageBytes,max:maxBytes});
+ return {appImageSha256:manifest.appImageSha256,appImageBytes:manifest.appImageBytes};
+}
+
+/**
+ * O AppImage baixado é exatamente o que o manifesto assinado declara.
+ * @param {{bytes:number,sha256:string}} received tamanho e SHA-256 do arquivo
+ * @param {{appImageSha256:string,appImageBytes:number}} declared
+ * @returns {void}
+ * @example assertAppImageMatches({bytes:1024,sha256:'ab…'},{appImageBytes:1024,appImageSha256:'ab…'})
+ */
+function assertAppImageMatches(received,declared){
+ if(received.bytes!==declared.appImageBytes)throw refuse('err.update.appImageBytes',{received:received.bytes,expected:declared.appImageBytes});
+ if(received.sha256!==declared.appImageSha256)throw refuse('err.update.appImageHash');
 }
 
 /**
@@ -314,7 +360,7 @@ async function fetchReleaseAsset({fetchBuffer,url,maxBytes,version,failureKey}){
  * precisa) o zip com tamanho e SHA-256 do manifesto. Nada é aplicado aqui.
  * @param {{version:string,publicKey:string,fetchBuffer:Function,needZip:boolean,
  *   manifestMaxBytes?:number,signatureMaxBytes?:number,zipMaxBytes?:number}} input
- * @returns {Promise<{manifest:{version:string,commit:string,zipSha256:string,zipBytes:number},zip:Buffer|null,urls:{manifest:string,signature:string,zip:string,installer:string}}>}
+ * @returns {Promise<{manifest:{version:string,commit:string,zipSha256:string,zipBytes:number},zip:Buffer|null,urls:{manifest:string,signature:string,zip:string,installer:string,appImage:string}}>}
  * @example const release=await loadSignedRelease({version:'1.0.3', publicKey, fetchBuffer, needZip:true})
  */
 async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES}){
@@ -333,6 +379,7 @@ async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifest
 
 module.exports={
  EMBEDDED_UPDATE_PUBLIC_KEY,PLACEHOLDER_MARK,MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,INSTALLER_MAX_BYTES,
+ appImageAssetName,assertAppImageDeclared,assertAppImageMatches,
  installerAssetName,assertInstallerDeclared,assertInstallerMatches,
  updateAssetUrls,normalizeVersion,readUpdatePublicKey,isPlaceholderKey,publicKeyOf,
  parseManifest,verifySignedManifest,assertZipMatchesManifest,assertTagCommitMatches,assertAppliedCommitMatches,assertZipWithinLimit,tagMissingError,

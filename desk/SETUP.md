@@ -128,3 +128,23 @@ Sem certificado a Mesa funciona igual — basta reconceder a permissão em Ajust
 - **Pelo terminal:** `npm run update` (mesma transação). `npm run update -- --versao X.Y.Z` só vale em instalação por **zip** (sem clone git); em clone, o update segue a branch de desenvolvimento.
 
 **Veio de uma versão com o app Conversa?** A Conversa (`chat/`) foi aposentada na #50 e o chat avulso agora é a aba **Livre** da Mesa. A atualização não apaga nem altera uma pasta `chat/` que já esteja no seu disco; se não a usa mais, apague-a à mão. Num clone git, o `git pull` remove os arquivos rastreados dela e deixa o que o git ignora (`chat/node_modules`, `chat/.runtime`). Sessões antigas que vieram de um bilhete da Conversa continuam abrindo, só sem o bloco `[Da Conversa]`.
+
+## Linux — AppImage (x86_64)
+
+Baixe `Summa-X.Y.Z-x86_64.AppImage` nos assets da [Release](https://github.com/FariaDev/summa/releases/latest),
+guarde em uma pasta sua (por exemplo `~/Applications`) e execute:
+
+```sh
+chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage
+```
+
+Não precisa de Node nem npm. Ao abrir, a Summa cria/atualiza a entrada do menu e o
+ícone em `~/.local/share` (respeita `XDG_DATA_HOME`). Não mova o arquivo depois
+sem abri-lo novamente para atualizar o atalho. Os estudos ficam fora do AppImage,
+na pasta de dados do usuário. O Sobre baixa e confere a atualização assinada e
+substitui o mesmo arquivo; a pasta precisa ser gravável, sem sudo.
+
+No Ubuntu 22.04+, instale `libfuse2` (ou `libfuse2t64` nas versões recentes).
+Se FUSE não estiver disponível, abra com
+`~/Applications/Summa-X.Y.Z-x86_64.AppImage --appimage-extract-and-run`.
