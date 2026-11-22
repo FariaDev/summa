@@ -25,17 +25,17 @@ function isLinuxAppImage({platform=process.platform,env=process.env,deskDir}){
 /**
  * Remove parciais de releases interrompidas sem seguir links nem impedir a abertura.
  * @param {string} dir pasta do AppImage instalado
- * @param {{backups?:boolean}} [options] remove backups apenas fora de uma troca em voo
+ * @param {{backups?:boolean,appImage?:string}} [options] remove backup do arquivo instalado apenas fora de uma troca em voo
  * @returns {void}
  * @example cleanupAppImagePartials('/home/ana/Applications')
  */
-function cleanupAppImagePartials(dir,{backups=false}={}){
+function cleanupAppImagePartials(dir,{backups=false,appImage=''}={}){
  let names;
  try{names=fs.readdirSync(dir);}catch{return;}
  for(const name of names){
   const version=name.match(/\d+\.\d+\.\d+/)?.[0];
   try{
-   if((version&&name===`.${signature.appImageAssetName(version)}.part`)||(backups&&/^\.Summa(?:-\d+\.\d+\.\d+-x86_64)?\.AppImage\.old$/.test(name)))fs.rmSync(path.join(dir,name),{force:true});
+   if((version&&name===`.${signature.appImageAssetName(version)}.part`)||(backups&&appImage&&name===`.${path.basename(appImage)}.old`))fs.rmSync(path.join(dir,name),{force:true});
   }catch{}
  }
 }
@@ -79,6 +79,7 @@ function swapAppImage({file,appImage,linkFn=fs.linkSync}){
  const backup=path.join(path.dirname(appImage),`.${path.basename(appImage)}.old`);
  let linked=false;
  try{
+  fs.rmSync(backup,{force:true});
   try{linkFn(appImage,backup);}catch{fs.copyFileSync(appImage,backup,fs.constants.COPYFILE_EXCL);}
   linked=true;
   fs.renameSync(file,appImage);
