@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createRequire} from 'node:module';
 import {displayUserText} from '../text.mjs';
-import {STEP, headLine, historyTurns} from '../src/worklog.mjs';
+import {STEP, headLine, historyTurns} from '../src/worklog/worklog.mjs';
 
 const require = createRequire(import.meta.url);
 const {openCodePrompt} = require('../src/agents/desk-prompts.cjs');

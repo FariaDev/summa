@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Rascunhos da prévia do quadro (auditoria das ferramentas do tutor, A3).
@@ -69,7 +70,7 @@ function textsOf(spec) {
 function createActivityPreviewDrafts({ttlMs = DRAFT_TTL_MS, max = MAX_DRAFTS, now = Date.now} = {}) {
   if (!Number.isFinite(ttlMs) || ttlMs <= 0) throw new Error(invalidValue('ttlMs', ttlMs, 'número positivo'));
   if (!Number.isInteger(max) || max < 1) throw new Error(invalidValue('max', max, 'inteiro positivo'));
-  /** @type {Map<string, {conversationId: string, content: object, texts: object, at: number}>} */
+  /** @type {Map<string, {conversationId: string, content: Record<string, any>, texts: Record<string, any>, at: number}>} */
   const drafts = new Map();
   const prune = () => {
     const at = now();

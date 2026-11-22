@@ -3,7 +3,7 @@ import test from 'node:test';
 import {
  STEP,addError,closeThinking,countsLabel,createLog,findToolStep,finishLog,finishTool,formatDuration,
  headLine,historyTurns,isPdfRead,liveLabel,replaceThinking,runningStep,startTool,stepDetail,stepDuration,stepLabel,stepPreview,thinkingDelta,toolDisplayName,toolKind,toolTarget,
-} from '../src/worklog.mjs';
+} from '../src/worklog/worklog.mjs';
 
 test('toolKind separa busca, material, referência e leitura', () => {
  assert.equal(toolKind('web_search'), STEP.SEARCH);

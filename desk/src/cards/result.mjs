@@ -1,3 +1,4 @@
+// @ts-check
 /* Forma pública e texto de resultado dos cartões (#92/#139). O estado de
    domínio vem do núcleo: resposta/acerto/envio do `core/quizcard.bend` e o
    estado da nota sugerida do `core/notesuggestion.bend`; aqui só se monta o
@@ -22,8 +23,8 @@ const askLines = (card) => (card.questions || []).map((question, index) => {
 /**
  * O cartão como o renderer pode ver agora. A resposta certa e a explicação só
  * entram depois de `answered`.
- * @param {object} card cartão guardado no host
- * @returns {object}
+ * @param {Record<string, any>} card cartão guardado no host
+ * @returns {Record<string, any>}
  */
 export function publicCard(card) {
   if (card.kind === 'note') {
@@ -87,7 +88,7 @@ export function publicCard(card) {
   };
 }
 
-/** @param {object} card @returns {number[]} índices 1-based das opções certas */
+/** @param {Record<string, any>} card @returns {number[]} índices 1-based das opções certas */
 export function correctIndicesOf(card) {
   const wanted = new Set(card.correctValues || []);
   const out = [];
@@ -101,7 +102,7 @@ export function correctIndicesOf(card) {
  * Texto que vai ao tutor numa mensagem nova quando o aluno clica em Concluir.
  * A primeira linha é o marcador que a conversa esconde (`text.mjs`); o resto
  * diz a que cartão o resultado pertence.
- * @param {object} card
+ * @param {Record<string, any>} card
  * @returns {string}
  * @example quizResultText(card) // '[Resultado do cartão: card-…]\nQuiz: …'
  */

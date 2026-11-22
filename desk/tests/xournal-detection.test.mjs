@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {tempDir} from './temp-dir.mjs';
-import {xournalMenuAvailable} from '../src/xournal-menu.mjs';
+import {xournalMenuAvailable} from '../src/study/xournal-menu.mjs';
 import tabsCore from '../src/generated/tabsview.core.js';
 
 const require=createRequire(import.meta.url);

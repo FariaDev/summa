@@ -1,3 +1,4 @@
+// @ts-check
 /* Catálogo do idioma sob demanda (#desempenho). A partida importa só o idioma
    resolvido pelo preload; o outro catálogo fica fora do grafo estático e entra
    no primeiro uso (troca de idioma ou texto do tutor em outro idioma). Cada

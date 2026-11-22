@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
@@ -46,8 +47,8 @@ function resolvePackFile(contentDir,relative){
 
 /**
  * Atende `mesa-ggb:`. `contentDir` e `pageFile` entram por parâmetro.
- * @param {{contentDir:string,pageFile:string}} options
  * @returns {(request:{url:string})=>Promise<Response>}
+ * @param {{contentDir?: any, pageFile?: any}} options
  */
 function createGgbProtocolHandler({contentDir,pageFile}){
  return async request=>{
@@ -63,7 +64,7 @@ function createGgbProtocolHandler({contentDir,pageFile}){
 
 /**
  * Recusa pedidos de rede da sessão; só o esquema local, `data:` e `blob:` passam.
- * @param {{webRequest:{onBeforeRequest:Function}}} session
+ * @param {{webRequest:Record<string, any>}} session
  * @param {(url:string)=>void} [onBlocked]
  */
 function blockNetwork(session,onBlocked=()=>{}){
@@ -77,8 +78,7 @@ function blockNetwork(session,onBlocked=()=>{}){
 
 /**
  * Liga o GeoGebra offline na sessão da view: protocolo próprio e rede fechada.
- * @param {{protocol:{handle:Function},webRequest:object}} session
- * @param {{contentDir:string,pageFile:string,onBlocked?:(url:string)=>void}} options
+ * @param {{protocol:{handle:Function},webRequest:Record<string, any>}} session
  */
 function installOfflineSession(session,{contentDir,pageFile,onBlocked}){
  session.protocol.handle(GGB_SCHEME,createGgbProtocolHandler({contentDir,pageFile}));

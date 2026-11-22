@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -40,6 +41,7 @@ function assertManagedPdf(runtime, sessionId, file) {
   if (stats.size > MAX_MATERIAL_BYTES) fail('TOO_BIG', 'material acima do teto');
   return {realFile, realDir, bytes: stats.size};
 }
+/** @param {any} runtime @param {any} sessionId @param {any} file @param {any} kind @param {{bytes?: any, sha256?: any}} [options] */
 function materialEntry(runtime, sessionId, file, kind, {bytes, sha256} = {}) {
   const checked = assertManagedPdf(runtime, sessionId, file);
   const size = checked.bytes;
@@ -66,6 +68,7 @@ function registerMaterial(runtime, sessionId, file, kind, extra = {}) {
   writeRecord(storeFile, next);
   return {material: entry, workspace: next};
 }
+/** @param {any} runtime @param {any} sessionId @param {{sourcePath?: any, name?: any}} [options] */
 function importPdf(runtime, sessionId, {sourcePath, name} = {}) {
   const id = normalizeSessionId(sessionId);
   const {record} = mustLoad(runtime, id);
@@ -143,6 +146,7 @@ function importPdf(runtime, sessionId, {sourcePath, name} = {}) {
 /* Renderiza o PDF pelo serviço e registra o material. A composição vive aqui
    para que uma falha de metadata desfaça o arquivo criado por esta operação.
    `pdf` só existe para o teste isolado (default: material-pdf.cjs). */
+/** @param {any} runtime @param {any} sessionId @param {{title?: any, markdown?: any, model?: any, options?: any, context?: any, signal?: any, timeoutMs?: any, pdf?: any}} [options] */
 async function saveMaterial(runtime, sessionId, {title, markdown, model, options, context, signal, timeoutMs, pdf} = {}) {
   const id = normalizeSessionId(sessionId);
   const {record} = mustLoad(runtime, id);

@@ -3,6 +3,7 @@ Mesa de Estudos.app/
 # e eles continuam ignorados para não aparecerem como arquivo novo no git.
 Conversa.app/
 desk/node_modules/
+desk/out/
 desk/.runtime/
 desk/.pi-local/
 desk/.update-manifest.json

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const http=require('node:http');
 const crypto=require('node:crypto');
@@ -18,6 +19,7 @@ const NOTE_FIELDS=[
  ['titulo',value=>isText(value,MAX_NOTE_TITLE),`string(1..${MAX_NOTE_TITLE})`],
  ['conteudo',value=>isText(value,MAX_NOTE_CONTENT),`string(1..${MAX_NOTE_CONTENT})`],
 ];
+/** @type {Array<[string, (value: any) => boolean, string]>} */
 const PDF_FIELDS=[
  ['title',value=>isText(value,120),'string(1..120)'],
  ['markdown',value=>isText(value,262144),'string(1..262144)'],
@@ -49,7 +51,7 @@ function pdfRequestProblem(payload){
    escopo capturado no grant, sem caminhos fornecidos pelo modelo. A resposta
    vai ao modelo: `tutorText` põe a mensagem marcada na língua dele (#43 fase 3). */
 /**
- * @param {{createMaterial?: (scope: object, request: object) => Promise<unknown>,
+ * @param {{createMaterial?: (scope: Record<string, any>, request: Record<string, any>) => Promise<unknown>,
  *   suggestNote?: (scope: object, request: {titulo: string, conteudo: string}) => object,
  *   tutorText?: (raw: string) => string}} [options]
  */
@@ -91,7 +93,7 @@ function createTutorMaterialBridge({createMaterial,suggestNote=null,tutorText=ra
  });
  server.requestTimeout=65000;server.headersTimeout=10000;
  return {
-  start(){if(closed)return Promise.reject(Error('Ponte de material encerrada: close() já rodou.'));if(!startPromise)startPromise=new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',()=>{server.removeListener('error',reject);port=server.address().port;resolve();});});return startPromise;},
+  start(){if(closed)return Promise.reject(Error('Ponte de material encerrada: close() já rodou.'));if(!startPromise)startPromise=new Promise(/** @param {(value?: unknown) => void} resolve */ (resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',()=>{server.removeListener('error',reject);port=/** @type {import('node:net').AddressInfo} */ (server.address()).port;resolve();});});return startPromise;},
   grant(scope){if(!port||closed)throw Error(`Ponte de material ainda indisponível (porta ${port}, ${closed?'encerrada':'sem start()'}).`);const token=crypto.randomBytes(32).toString('hex');grants.set(token,{scope:{...scope},jobs:new Set()});return {url:`http://127.0.0.1:${port}/pdf`,token};},
   revoke(token){const grant=grants.get(token);grants.delete(token);for(const job of grant?.jobs||[])job.abort();},
   async close(){closed=true;for(const job of jobs)job.abort();grants.clear();await startPromise?.catch(()=>{});if(server.listening)await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});port=0;},

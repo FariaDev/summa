@@ -1,7 +1,7 @@
 // @ts-check
 import {icon} from '../icons.mjs';
 import {t, LANGUAGE_EVENT} from './ui-text.mjs';
-import {isChatFull, setChatFull} from './chat-full.mjs';
+import {isChatFull, setChatFull} from './chat/chat-full.mjs';
 
 /* Modo mini (passo 9, protótipo r7): a mesma janela da Mesa encolhe para só o
    chat do tutor, sempre por cima, e deixa o Ambitus (ou qualquer programa de

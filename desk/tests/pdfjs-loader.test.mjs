@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPdfjsLoader} from '../src/pdfjs-loader.mjs';
+import {createPdfjsLoader,pdfjsDataUrls} from '../src/pdf/pdfjs-loader.mjs';
+
+test('pdfjsDataUrls resolve as pastas com barra final na base do documento', () => {
+  for (const base of ['file:///x/desk/index.html', 'http://localhost:5173/']) {
+    const urls = pdfjsDataUrls(base);
+    for (const url of Object.values(urls)) {
+      assert.ok(url.endsWith('/'), `${base}: ${url}`);
+      assert.ok(new URL(url).pathname.includes('/node_modules/pdfjs-dist/'), `${base}: ${url}`);
+    }
+  }
+});
 
 test('loadPdfjs avalia o módulo uma vez, mesmo com dois PDFs abrindo juntos', async () => {
   let calls = 0;
@@ -31,7 +41,7 @@ test('falha no import libera a próxima tentativa', async () => {
 });
 
 test('o carregador padrão devolve o mesmo pdf.js em chamadas repetidas', async () => {
-  const {loadPdfjs} = await import('../src/pdfjs-loader.mjs');
+  const {loadPdfjs} = await import('../src/pdf/pdfjs-loader.mjs');
   const first = await loadPdfjs();
   assert.equal(await loadPdfjs(), first);
   assert.match(first.GlobalWorkerOptions.workerSrc, /pdf\.worker\.mjs$/);

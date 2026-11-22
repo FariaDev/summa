@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Prepara o PDF no diálogo da Mesa pela ponte de material da sessão.
  * @param {{url: string, token: string}} bridge

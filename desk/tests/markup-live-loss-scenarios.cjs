@@ -28,7 +28,7 @@ app.whenReady().then(async () => {
   await win.loadFile(path.join(DESK, 'tests', 'figures-page.html'));
   const data = await win.webContents.executeJavaScript(`(async () => {
     const {markupLive, markup} = await import(${JSON.stringify(url('src/markdown.mjs'))});
-    const {openMathRange} = await import(${JSON.stringify(url('src/stream-blocks.mjs'))});
+    const {openMathRange} = await import(${JSON.stringify(url('src/chat/stream-blocks.mjs'))});
     const textOf = (html) => {
       const root = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html').body;
       return {text: root.textContent || '', pending: root.querySelector('.math-pending') !== null};

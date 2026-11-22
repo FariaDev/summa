@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Caderno de revisão (Mesa): `runtime/review.json`.
@@ -134,6 +135,7 @@ function writeItems(runtime, courseId, items) {
    chave do `edit`/`remove` é o registro que o usuário clicou — sem ela, a mira é
    o próprio `item` — e o núcleo acha o item por identidade (mesma questão no
    mesmo material), onde ele estiver. */
+/** @param {any} runtime @param {{courseId?: any, mode?: any, item?: any, key?: any}} [options] */
 function reviewSave(runtime, {courseId, mode, item, key} = {}) {
   const current = readItems(runtime, courseId);
   const source = normalizeOne(item);

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* "Propor revisão" no caminho Claude: o MESMO guia da extensão do Pi
@@ -8,7 +9,7 @@ const REVIEW_TOOL_NAME = 'mcp__mesa__propor_revisao';
 const {toolErrorText} = require('./tool-error-text.cjs');
 
 /**
- * @param {(args: object, options?: {signal?: AbortSignal}) => Promise<object>} proposeReview
+ * @param {(args: Record<string, any>, options?: {signal?: AbortSignal}) => Promise<Record<string, any>>} proposeReview
  * @param {{language?: string}} [options]
  */
 async function createReviewTool(proposeReview, {language} = {}) {
@@ -20,7 +21,7 @@ async function createReviewTool(proposeReview, {language} = {}) {
   ]);
   return tool('propor_revisao', guide.REVIEW_DESCRIPTION, fields.zodShape(z, guide.REVIEW_FIELDS), async (args, extra) => {
     try {
-      const result = await proposeReview({question: args.question, attempt: args.attempt, difficulty: args.difficulty}, {signal: extra?.signal});
+      const result = await proposeReview({question: args.question, attempt: args.attempt, difficulty: args.difficulty}, {signal: /** @type {any} */ (extra)?.signal});
       return {content: [{type: 'text', text: guide.proposalText(result)}]};
     } catch (error) {
       return {isError: true, content: [{type: 'text', text: toolErrorText(error, language, 'err.operation.failed')}]};

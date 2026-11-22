@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setUiLanguage} from '../src/ui-text.mjs';
-import {STEP, formatDuration, liveLabel, stepLabel, countsLabel, headLine} from '../src/worklog.mjs';
+import {STEP, formatDuration, liveLabel, stepLabel, countsLabel, headLine} from '../src/worklog/worklog.mjs';
 
 globalThis.document = {documentElement: {}, querySelectorAll: () => []};
 globalThis.window = Object.assign(new EventTarget(), {desk: undefined});

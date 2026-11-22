@@ -1,3 +1,4 @@
+// @ts-check
 /* Linha de contexto do cabeçalho do tutor (r2, "Cabeçalho e Contexto"): o PDF
    que vai com a mensagem e a página, mais a questão ativa. A matéria e a
    contagem de referências saíram — a aba já diz a matéria e o nome do PDF já

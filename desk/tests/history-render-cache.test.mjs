@@ -11,7 +11,7 @@ import {
   markupKey,
   stableJson,
   unsafeHtml,
-} from '../src/history-render-cache.mjs';
+} from '../src/history/history-render-cache.mjs';
 
 const messages = (text = 'Pergunta', image = '') => {
   const user = [{type: 'text', text}];

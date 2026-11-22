@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createFreeModelsLoader, mountFreeModelsBoot} from '../src/free-models-loader.mjs';
+import {createFreeModelsLoader, mountFreeModelsBoot} from '../src/study/free-models-loader.mjs';
 
 const tick = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms));
 

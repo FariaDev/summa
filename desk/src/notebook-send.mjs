@@ -11,7 +11,7 @@ import {MAX_NOTEBOOKS, notebookRecorte} from './notebook-facts.mjs';
    página renderizada é cortada por ele. Se o corte falhar, a reduzida é o que
    sobra, e ela já é o trecho; a página inteira nunca vai no lugar dele. */
 
-/* O mesmo DPI do `ler_caderno` (`NOTEBOOK_DPI` em src/extensions/mesa-mcp/notebook-tool.mjs):
+/* O mesmo DPI do `ler_caderno` (`NOTEBOOK_DPI` em src/extensions/summa-mcp/notebook-tool.mjs):
    o recorte vem em pontos e a página renderizada tem pixels = pontos × 120/72. */
 const RENDER_DPI = 120;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -101,7 +101,7 @@ async function cropSafely(dataUrl, recorte, crop) {
  * A imagem de uma página que veio do disco (sem a cheia da bandeja): a página
  * renderizada de novo; se o cartão é um trecho, cortada por ele, e se nada disso
  * der, a miniatura reduzida (que já é o trecho, quando há recorte).
- * @param {{caminho: string, pagina: number, recorte?: object}} item
+ * @param {{caminho: string, pagina: number, recorte?: Record<string, any>}} item
  * @param {{thumb?: string} | null} card
  * @param {{readPage: ((item: {caminho: string, pagina: number}) => Promise<string>) | null, crop: typeof cropPagePng}} deps
  * @returns {Promise<string>}
@@ -123,7 +123,7 @@ async function reloadedPageImage(item, card, {readPage, crop}) {
  * houver a miniatura reduzida (`full: false`, o que vem do disco após
  * recarregar), re-renderiza com `readPage` e cai na reduzida se falhar. Com
  * `recorte` no cartão, a renderização é cortada por ele (`crop`).
- * @param {Array<{caminho: string, pagina: number, nome: string, recorte?: object}>} notebooks
+ * @param {Array<{caminho: string, pagina: number, nome: string, recorte?: Record<string, any>}>} notebooks
  * @param {{find?: (item: {caminho: string, pagina: number}) => {thumb?: string, full?: boolean} | null,
  *   readPage?: ((item: {caminho: string, pagina: number}) => Promise<string>) | null,
  *   crop?: (dataUrl: string, recorte: {x: number, y: number, largura: number, altura: number}) => Promise<string>}} [deps]

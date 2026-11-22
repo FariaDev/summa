@@ -16,7 +16,7 @@ import {message, parseMessage} from '../src/i18n.mjs';
 import {describeReceived} from '../src/error-detail.mjs';
 import {SEARCH_DESCRIPTION, SEARCH_FIELDS, searchText} from '../src/extensions/mesa-search/guide.mjs';
 import {searchArgs, courseOf, tutorSearch} from '../src/study-data/material-search.cjs';
-import {mesaTools, searchTool} from '../src/extensions/mesa-mcp/tools.mjs';
+import {mesaTools, searchTool} from '../src/extensions/summa-mcp/tools.mjs';
 import {createSearchTool, SEARCH_TOOL_NAME} from '../src/agents/search-tool.cjs';
 import {createStudyToolsServer} from '../src/agents/study-tools.cjs';
 import {canonical, canonicalFields} from '../src/extensions/tool-fields.mjs';

@@ -6,8 +6,8 @@
 // Rodar em desk/: node --test tests/pdf-labels.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {offsetFacts,offsetFromRecord,labelsList,readDocLabels,normalizeOffset,MAX_PAGE_OFFSET} from '../src/pdf-labels.mjs';
-import {bindPdfDrop,draggedLooksPdf,isPdfFile} from '../src/pdf-drop.mjs';
+import {offsetFacts,offsetFromRecord,labelsList,readDocLabels,normalizeOffset,MAX_PAGE_OFFSET} from '../src/pdf/pdf-labels.mjs';
+import {bindPdfDrop,draggedLooksPdf,isPdfFile} from '../src/pdf/pdf-drop.mjs';
 import pdfPage from '../src/generated/pdfpageview.core.js';
 import {build} from '../src/view-host.mjs';
 import {ptText} from './pt-text.mjs';

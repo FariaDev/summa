@@ -7,7 +7,7 @@ import {installDom} from './dom-shim.mjs';
 
 installDom();
 globalThis.document.createTextNode = (text) => ({nodeType: 3, nodeValue: String(text)});
-const {messageQuote} = await import('../src/chat-quote.mjs');
+const {messageQuote} = await import('../src/chat/chat-quote.mjs');
 
 function pendingMarker(tex) {
   return {

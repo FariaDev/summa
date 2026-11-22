@@ -1,3 +1,4 @@
+// @ts-check
 /* Miolo do `#review-dialog` (caderno de revisão). Saiu do `dialogs.mjs` na
    #desempenho: só o caderno o usa e o `review.core.js` (85 KiB) deixou de
    entrar na partida junto com os diálogos do boot. */

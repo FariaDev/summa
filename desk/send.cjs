@@ -1,3 +1,4 @@
+// @ts-check
 const {message: uiMsg} = require('./src/i18n.mjs');
 const {causeArg} = require('./src/error-detail.mjs');
 /* Erros do `spawn` que provam que o processo não chegou a ler o stdin. */
@@ -35,7 +36,7 @@ const SPAWN_FAILURE_CODES = new Set(['ENOENT', 'EACCES', 'ENOEXEC', 'EISDIR', 'E
  * @param {() => {request: Function} | Promise<{request: Function}>} options.connect monta o bridge; pode lançar
  * @param {() => void} [options.onAccepted] aceite confirmado: atualiza o contexto do turno
  * @param {(aviso: string) => void} [options.onWarning] envio feito, mas algo acessório falhou (estado não lido)
- * @returns {Promise<{streaming: boolean}>}
+ * @returns {Promise<{streaming: boolean|undefined, warning?: string}>}
  * @example
  * await deliverPrompt({request: {message: 'oi', streamingBehavior: 'followUp'}, connect: () => bridge});
  */
@@ -46,9 +47,9 @@ async function deliverPrompt({
   connect,
   onAccepted,
   onWarning,
-} = {}) {
+} = /** @type {any} */ ({})) {
   const anexos = typeof validateImages === 'function' ? validateImages(images) : null;
-  const pedido = {...request};
+  const pedido = /** @type {Record<string, any>} */ ({...request});
   if (anexos && anexos.length) pedido.images = anexos;
   /* `connect()` pode lançar sem nada ter sido escrito: falha definida, o
      contexto não conta como enviado. A marca `notSent` é o que permite repetir
@@ -57,7 +58,7 @@ async function deliverPrompt({
   try {
     bridge = await connect();
   } catch (error) {
-    const refused = Error(uiMsg('err.send.refused', {reason: causeArg(error)}));
+    const refused = /** @type {Error & {code?: string, [field: string]: any}} */ (Error(uiMsg('err.send.refused', {reason: causeArg(error)})));
     refused.notSent = true;
     throw refused;
   }
@@ -87,7 +88,7 @@ async function deliverPrompt({
        escrita, e as três pedem coisas diferentes do usuário. */
     throw Error(uiMsg('err.send.ambiguous', {reason: motivoDoEnvio}));
   } else {
-    const refused=Error(uiMsg('err.send.refused', {reason: motivoDoEnvio}));
+    const refused=/** @type {Error & {code?: string, [field: string]: any}} */ (Error(uiMsg('err.send.refused', {reason: motivoDoEnvio})));
     refused.notSent=true;
     if (SPAWN_FAILURE_CODES.has(failureCode)) refused.code = failureCode;
     throw refused;

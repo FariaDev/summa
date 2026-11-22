@@ -1,3 +1,4 @@
+// @ts-check
 /* Captura de janela no Windows — paridade com o `screencapture -l` do macOS
    (host do Conferir, `conferir-host.cjs`): acha o processo (por padrão o
    `xournalpp`; o Conferir com outros programas passa o do app escolhido),

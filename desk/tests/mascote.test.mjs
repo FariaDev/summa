@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {mascoteHumor,mascoteLook,mascoteTilt,lookAtPointer,sparkTargets,poke,EYE_REACH} from '../src/mascote-humor.mjs';
-import {personagemOf,mascoteNameKey,mascoteView,mascoteMarkup} from '../src/mascote.mjs';
+import {mascoteHumor,mascoteLook,mascoteTilt,lookAtPointer,sparkTargets,poke,EYE_REACH} from '../src/mascote/mascote-humor.mjs';
+import {personagemOf,mascoteNameKey,mascoteView,mascoteMarkup} from '../src/mascote/mascote.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
 
@@ -104,13 +104,13 @@ test('oito faíscas em roda, alternando acento e âmbar', () => {
 });
 
 test('o movimento do trio usa os tokens e para com movimento reduzido', () => {
-  const css = fs.readFileSync(new URL('../src/trio.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../src/mascote/trio.css', import.meta.url), 'utf8');
   const timings = [...css.matchAll(/animation:tr-[a-z]+ ([^;}]+)/g)].map((m) => m[1]);
   assert.ok(timings.length >= 15, `esperava os laços e as animações de uma vez, achei ${timings.length}`);
   for (const timing of timings) assert.match(timing, /^calc\(var\(--t-(loop|slow)\)/, `duração fora dos tokens que o reduzir zera: ${timing}`);
   assert.doesNotMatch(css, /button\.mascote/, 'a mascote não é botão: a reação ao mouse vale para .mascote-interativa');
   const areas = fs.readFileSync(new URL('../src/desk-areas.css', import.meta.url), 'utf8');
-  assert.match(areas, /@import url\('trio\.css'\);/);
+  assert.match(areas, /@import url\('mascote\/trio\.css'\);/);
   assert.doesNotMatch(areas, /folhinha/);
 });
 

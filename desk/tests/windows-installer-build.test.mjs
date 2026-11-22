@@ -28,7 +28,9 @@ test('#119: o pacote leva Electron e payload, sem clone e sem o app genérico',(
  assert.equal(fs.existsSync(path.join(stage,'electron.exe')),true);
  assert.equal(fs.existsSync(path.join(stage,'resources','default_app.asar')),false);
  assert.equal(fs.existsSync(path.join(payload,'install-source.json')),false,'sem origem o app não procura um clone');
- for(const file of ['main.cjs','update-signing-key.pub','windows-installer-update.cjs','assets/mesa.ico','node_modules/marked/package.json'])assert.equal(fs.existsSync(path.join(payload,file)),true,file);
+ for(const file of ['main.cjs','renderer-entry.cjs','update-signing-key.pub','windows-installer-update.cjs','assets/mesa.ico','node_modules/marked/package.json'])assert.equal(fs.existsSync(path.join(payload,file)),true,file);
+ const {rendererEntry}=require(path.join(payload,'renderer-entry.cjs'));
+ assert.deepEqual(rendererEntry({env:{},deskDir:payload}),{kind:'file',file:path.join(payload,'index.html')});
  assert.equal(JSON.parse(fs.readFileSync(path.join(payload,'.update-manifest.json'),'utf8')).version,'9.9.9');
 });
 

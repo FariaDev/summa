@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Estado do turno em voo (#119): a fase da entrega, o portão de retomada e a
@@ -32,7 +33,7 @@ const MAX_TURN_METADATA_BYTES = 3 * 1024 * 1024;
 const boundedString = (value, max) => typeof value === 'string' && value.length <= max;
 
 function patchError(message) {
-  const error = new Error(message);
+  const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(message));
   error.code = PATCH_ERROR_CODE;
   return error;
 }
@@ -153,8 +154,8 @@ function fitPendingMessages(next) {
  * desde a última gravação completa para uma queda no meio do turno não
  * perder a pergunta.
  * @param {string} file caminho do descritor
- * @param {{delivery?: {id: string, status: string}|null, nativeEstablished?: boolean, nativeTurns?: Array<{user: string, messageId: string}>|null, pendingMessages?: Array<{role: string, content: object[]}>|null}} patch
- * @returns {{delivery?: {id: string, status: string}, nativeEstablished?: boolean, nativeTurns?: Array<{user: string, messageId: string}>, pendingMessages?: Array<{role: string, content: object[]}>}|null}
+ * @param {{delivery?: {id: string, status: string}|null, nativeEstablished?: boolean, nativeTurns?: Array<{user: string, messageId: string}>|null, pendingMessages?: Array<{role: string, content: Record<string, any>[]}>|null}} patch
+ * @returns {{delivery?: {id: string, status: string}, nativeEstablished?: boolean, nativeTurns?: Array<{user: string, messageId: string}>, pendingMessages?: Array<{role: string, content: Record<string, any>[]}>}|null}
  * @example writeTurnMetadata(file, {delivery: {id: 'd1', status: 'accepted'}, nativeEstablished: true});
  */
 function writeTurnMetadata(file, patch) {
@@ -189,7 +190,7 @@ function writeTurnMetadata(file, patch) {
  * completa do `turn_end` leva tudo para o descritor e apaga o arquivo, então
  * ele guarda só o que ainda não está no descritor.
  * @param {string} file caminho do descritor
- * @param {{role: string, content: object[], uuid?: string}} message fala aceita
+ * @param {{role: string, content: Record<string, any>[], uuid?: string}} message fala aceita
  * @returns {void}
  * @example appendPendingMessage(file, {role: 'user', content: [{type: 'text', text: 'pergunta'}]});
  */
@@ -209,7 +210,7 @@ function appendPendingMessage(file, message) {
 /**
  * Falas aceitas que ainda não estão no descritor (#119), já normalizadas.
  * @param {string} file caminho do descritor
- * @returns {Array<{role: string, content: object[]}>|null}
+ * @returns {Array<{role: string, content: Record<string, any>[]}>|null}
  * @example const pending = pendingMessagesOf(file); // null sem fala pendente
  */
 function pendingMessagesOf(file) {
@@ -226,8 +227,8 @@ const shown = (message) => JSON.stringify({role: message?.role, content: message
  * `null` quando não há fala pendente ou quando ela já é o fim do descritor
  * (o app morreu depois da gravação completa e antes de apagar o arquivo).
  * @param {string} file caminho do descritor
- * @param {Array<{role: string, content: object[]}>|undefined} messages mensagens já gravadas
- * @returns {Array<{role: string, content: object[]}>|null}
+ * @param {Array<{role: string, content: Record<string, any>[]}>|undefined} messages mensagens já gravadas
+ * @returns {Array<{role: string, content: Record<string, any>[]}>|null}
  * @example const messages = pendingMessagesForRecovery(file, record.messages);
  */
 function pendingMessagesForRecovery(file, messages) {

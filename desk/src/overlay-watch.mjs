@@ -1,3 +1,4 @@
+// @ts-check
 /* Quando a contagem de sobreposições muda, a view do GeoGebra precisa saber
    (ggb.mjs). Antes da #67 o observador contava as sobreposições a cada mudança
    de classe no documento, com ou sem GeoGebra aberto: numa sessão de 1000

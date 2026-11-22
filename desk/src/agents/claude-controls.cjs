@@ -1,3 +1,4 @@
+// @ts-check
 /* Seleção de modelo e esforço do Claude Code — normalização portátil (Mesa).
  *
  * Módulo PURO: não importa o SDK, não faz I/O, não cria timer, não abre rede e
@@ -139,6 +140,7 @@ function sanitizeModel(raw) {
   });
 }
 
+/** @param {any} reason @param {{account?: any, detail?: any, dropped?: number}} [options] */
 function emptyCatalog(reason, {account = null, detail = null, dropped = 0} = {}) {
   return Object.freeze({
     ok: false,
@@ -155,6 +157,7 @@ function emptyCatalog(reason, {account = null, detail = null, dropped = 0} = {})
 
 /* Aceita o array de `supportedModels()` OU a resposta de
    `initializationResult()` (`{models}`). Qualquer outra forma é inválida. */
+/** @param {any} source @param {{account?: any}} [options] */
 function sanitizeCatalog(source, {account = null} = {}) {
   let rawModels = null;
   let reason = null;
@@ -243,6 +246,7 @@ function normalizeEffort(entry, requested) {
   return Object.freeze({ok: true, effort: wanted, levels: support.levels, reason: null});
 }
 
+/** @param {string} reason @param {unknown} [detail] @param {readonly unknown[]} [levels] */
 function compileFailure(reason, detail = null, levels = []) {
   return Object.freeze({
     ok: false,
@@ -266,6 +270,7 @@ function compileFailure(reason, detail = null, levels = []) {
  * conhecida, recusa id com cara de roteador e exige presença no catálogo.
  * `allowUnlistedModel` só tem efeito com `firstPartyOnly:false` (experimento
  * de gateway/custom) e NUNCA libera esforço sem metadado verificado. */
+/** @param {any} selection @param {any} catalog @param {{account?: any, firstPartyOnly?: boolean, allowUnlistedModel?: boolean}} [options] */
 function compileSelection(selection, catalog, {account = null, firstPartyOnly = true, allowUnlistedModel = false} = {}) {
   const raw = selection === null || selection === undefined ? {} : selection;
   if (!isPlainObject(raw)) return compileFailure(REASONS.SELECTION_INVALID);
@@ -343,6 +348,7 @@ function canSwitchSelection(facts = {}) {
 
 /* Modelos no formato do seletor que a Mesa já usa no Pi
    (`{provider, id, name}`); provider 'anthropic' é o rótulo exibido. */
+/** @param {any} catalog @param {{firstPartyOnly?: boolean}} [options] */
 function modelsForSelector(catalog, {firstPartyOnly = true} = {}) {
   if (!catalog || catalog.ok !== true) return [];
   const models = (firstPartyOnly === false
@@ -362,6 +368,7 @@ function modelsForSelector(catalog, {firstPartyOnly = true} = {}) {
 
 /* Fatos para a UI: seletor e esforço só aparecem com catálogo nativo válido e
    metadado presente. `defaultModel:null` = "default do Claude Code". */
+/** @param {any} catalog @param {{firstPartyOnly?: boolean, account?: any}} [options] */
 function selectionView(catalog, {firstPartyOnly = true, account = null} = {}) {
   const models = catalog && catalog.ok === true ? modelsForSelector(catalog, {firstPartyOnly}) : [];
   const effort = catalog && catalog.ok === true && (firstPartyOnly === false ? catalog.models : catalog.models.filter((model) => !model.routerSuspected))
@@ -386,6 +393,7 @@ function effortLevelsFor(catalog, modelValue) {
    Prefere `supportedModels()`; cai para `initializationResult().models` só
    quando o método preferido não existe. Falha vira catálogo indisponível —
    sem retry, sem inventar modelos. */
+/** @param {any} query @param {{account?: any}} [options] */
 async function readCatalogFromQuery(query, {account = null} = {}) {
   if (!query || typeof query !== 'object') return sanitizeCatalog(null, {account});
   if (typeof query.supportedModels !== 'function' && typeof query.initializationResult !== 'function') {

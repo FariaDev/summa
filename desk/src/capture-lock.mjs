@@ -1,3 +1,4 @@
+// @ts-check
 /* Trava do Conferir Xournal++ (B6): puro, sem DOM — o chat.mjs usa e o teste
    unitário exercita o contrato do clique duplo/mudança de matéria.
 

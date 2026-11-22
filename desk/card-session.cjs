@@ -18,11 +18,11 @@ const {message} = require('./src/i18n.mjs');
 
 /**
  * Cria o serviço de cartões de UMA conversa.
- * @param {{runtime: string, conversation: () => string, sendText: (text: string, target?: string) => Promise<object>,
+ * @param {{runtime: string, conversation: () => string, sendText: (text: string, target?: string) => Promise<Record<string, any>>,
  *   writeNote?: (note: {titulo: string, conteudo: string}) => object,
  *   noteTurns?: ReturnType<typeof createNoteTurnCap>,
  *   emit?: (payload: object) => void, appendLog?: (area: string, line: string) => void}} options
- * @returns {{show: (raw: object, target?: string) => {id: string, card: object},
+ * @returns {{show: (raw: Record<string, any>, target?: string) => {id: string, card: Record<string, any>},
  *   suggestNote: (raw: object, target?: string) => {suggested: boolean, id: string, title: string, card: object},
  *   list: (target?: string) => object[], answer: (payload: object) => object,
  *   draft: (payload: object) => object, dismiss: (payload: object) => object,

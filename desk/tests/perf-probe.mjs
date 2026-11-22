@@ -95,7 +95,7 @@ async function rendererStats(page){
  return page.evaluate(async()=>{
   const markdown=await import('./src/markdown.mjs');
   let paint=null;
-  try{const stream=await import('./src/chat-stream-view.mjs');paint=stream.streamPaintStats?.()||null;}catch{/* base sem o aplicador incremental */}
+  try{const stream=await import('./src/chat/chat-stream-view.mjs');paint=stream.streamPaintStats?.()||null;}catch{/* base sem o aplicador incremental */}
   return {paint,markup:markdown.markupStats?.()||null};
  });
 }
@@ -103,7 +103,7 @@ async function resetRendererStats(page){
  await page.evaluate(async()=>{
   const markdown=await import('./src/markdown.mjs');
   markdown.resetMarkupStats?.();
-  try{const stream=await import('./src/chat-stream-view.mjs');stream.resetStreamPaintStats?.();}catch{/* base sem o aplicador incremental */}
+  try{const stream=await import('./src/chat/chat-stream-view.mjs');stream.resetStreamPaintStats?.();}catch{/* base sem o aplicador incremental */}
  });
 }
 

@@ -91,7 +91,7 @@ function createSessionHandoffHost({runtime, live, engine, engineFacts, visibleEn
     return stringOf(live.courses.find((course) => course.id === live.courseId)?.name) || stringOf(live.courseId) || path.basename(file);
   }
 
-  /** @param {object[]} messages @param {{skipped?: number}} [stats] */
+  /** @param {Record<string, any>[]} messages @param {{skipped?: number}} [stats] */
   function turnsOf(messages, stats) {
     const out = [];
     for (const entry of messages) {
@@ -109,7 +109,7 @@ function createSessionHandoffHost({runtime, live, engine, engineFacts, visibleEn
     return out.slice(-MAX_TURNS);
   }
 
-  /** @param {object[]} messages */
+  /** @param {Record<string, any>[]} messages */
   function pointOf(messages) {
     for (let index = messages.length - 1; index >= 0; index--) {
       const entry = /** @type {{role?: string}} */ (messages[index]);

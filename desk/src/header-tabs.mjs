@@ -1,3 +1,4 @@
+// @ts-check
 import {icon} from '../icons.mjs';
 import {$,S,toast,markCourseTab,switchCourse} from './state.mjs';
 import {activateGeogebra,deactivateGeogebra} from './ggb.mjs';
@@ -5,17 +6,19 @@ import {activateReview,deactivateReview} from './review-loader.mjs';
 import tabsCore from './generated/tabsview.core.js';
 import {renderChildren} from './view-host.mjs';
 import {t} from './ui-text.mjs';
-import {renderTutorMenus} from './tutor-header.mjs';
-import {initStudyPlanView} from './study-plan-view.mjs';
-import {xournalMenuAvailable} from './xournal-menu.mjs';
+import {renderTutorMenus} from './tutor/tutor-header.mjs';
+import {initStudyPlanView} from './study/study-plan-view.mjs';
+import {xournalMenuAvailable} from './study/xournal-menu.mjs';
 
 /* Abas de matéria e menus Estudar/Ajustes (#43 fase 2: saiu do main.mjs). As
    ações dos itens moram no main e entram por `initHeaderTabs`. */
+/** @type {{openSettings: Function, syncPaletteField: Function}} */
 const headerActions={openSettings:()=>{},syncPaletteField:()=>{}};
 
 /* Abas e menus vêm do Bend (`core/tabsview.bend`): este arquivo só aplica a
    árvore (view-host) e injeta os ícones do host (icons.mjs). Fatos: matérias
    resolvidas pelo main, flags do `desk` normalizado e o tema corrente. */
+/** @type {Array<{id?:string,name?:string,kind?:string}>} */
 let tabsCourses=[];
 function toCoreCourses(courses){
  let out={$:'Nil'};
@@ -65,7 +68,7 @@ function renderTabsView(){
  renderedReviewCount=reviewCount();
  /* A trava re-renderiza as abas (#42): a aba que tinha o foco (setas do
     tablist) continua com ele, se ainda puder recebê-lo. */
- const focused=box.contains(document.activeElement)?document.activeElement?.dataset?.id||'':'';
+ const focused=box.contains(document.activeElement)?/** @type {HTMLElement|null} */ (document.activeElement)?.dataset?.id||'':'';
  renderChildren(box,tabsCore.courseTabsAt(toCoreCourses(tabsCourses),activeTabId(),String(S.currentCourseId||''),!!S.ggbActive,busy,String(renderedReviewCount)),tabsHandlers);
  iconize(box);
  if(focused){const again=box.querySelector(`button[data-id="${CSS.escape(focused)}"]`);if(again&&!again.disabled&&document.activeElement!==again)again.focus();}
@@ -148,7 +151,7 @@ function focusTabWhenReady(id){
  let tries=0;
  const tick=()=>{
   if(gen!==tabFocusGen)return;
-  const el=document.querySelector(`#course-tabs button[data-id="${CSS.escape(id)}"]`);
+  const el=/** @type {HTMLButtonElement|null} */ (document.querySelector(`#course-tabs button[data-id="${CSS.escape(id)}"]`));
   if(el&&!el.disabled&&el.classList.contains('active')){el.focus();return;}
   if(tries++<120){setTimeout(tick,100);return;}
   if(el&&!el.disabled)document.querySelector('#course-tabs button.active')?.focus();
@@ -162,7 +165,7 @@ async function selectCourse(id){
  if(tabFocusId){
   const want=tabFocusId;
   tabFocusId='';
-  const el=document.querySelector(`#course-tabs button[data-id="${CSS.escape(want)}"]`);
+  const el=/** @type {HTMLButtonElement|null} */ (document.querySelector(`#course-tabs button[data-id="${CSS.escape(want)}"]`));
   if(el&&!el.disabled&&el.classList.contains('active'))el.focus();
   else if(S.currentCourseId===want&&!S.ggbActive)focusTabWhenReady(want);
   else document.querySelector('#course-tabs button.active')?.focus();
@@ -173,7 +176,7 @@ async function selectCourse(id){
 function moveTabFocus(dir){
  const tabs=[...document.querySelectorAll('#course-tabs button[role="tab"]:not([disabled])')];
  if(!tabs.length)return;
- const i=Math.max(0,tabs.indexOf(document.activeElement));
+ const i=Math.max(0,tabs.indexOf(/** @type {HTMLElement} */ (document.activeElement)));
  const next=tabs[(i+dir+tabs.length)%tabs.length];
  const id=next.dataset.id||'';
  next.focus();
@@ -194,7 +197,7 @@ function cycleToTab(dir){
 
 /** Matérias que as abas mostram (o main as troca quando a lista muda). */
 function getTabsCourses(){return tabsCourses;}
-/** @param {Array<{id:string,name:string}>} courses */
+/** @param {Array<{id?:string,name?:string,kind?:string}>} courses */
 function setTabsCourses(courses){tabsCourses=courses;}
 /* O Caderno é aba da árvore (`core/tabsview.bend`): re-renderiza só quando a
    contagem mudou, para não recriar os botões a cada mutação do caderno. */

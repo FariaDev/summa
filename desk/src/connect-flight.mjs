@@ -1,3 +1,4 @@
+// @ts-check
 /* Voo de connect do renderer com identidade própria (#r5-D): cada `connect()`
    abre um voo com geração só dele. Só o voo corrente escreve em `S.*`
    (connecting, connected, link, engine, mensagens, modelos) no sucesso, no erro
@@ -50,7 +51,7 @@ export function invalidateConnectFlight() {
  * Invalida o voo corrente e solta a referência pendente de `S`, sem escrever
  * estado (nem `connected`, nem `link`, nem `connectingSession`). O resultado
  * tardio do voo antigo é ignorado pela comparação de geração.
- * @param {{connecting: Promise<unknown>|null, connectingSession: string|null}} S o estado vivo do renderer
+ * @param {{connecting: Promise<unknown>|null, connectingSession?: string|null}} S o estado vivo do renderer
  * @returns {void}
  * @example detachConnectFlight(S);
  */
@@ -67,15 +68,15 @@ export function detachConnectFlight(S) {
  * Dependências do `connect()` para o voo escrever sem importar `state.mjs` de
  * volta (o módulo de estado injeta; a lógica de voo não se repete nos
  * chamadores de `connect()`).
- * @typedef {object} ConnectFlightDeps
- * @property {{connected: boolean, connecting: Promise<unknown>|null, connectingSession: string|null, connectCancelled: boolean, currentSession: string, busy: boolean, switching: boolean, healthFails: number, modelCatalog: Array<object>, captureOk: boolean}} S o estado vivo do renderer
+ * @typedef {Record<string, any>} ConnectFlightDeps
+ * @property {{connected: boolean, connecting: Promise<unknown>|null, connectingSession: string|null, connectCancelled: boolean, currentSession: string, busy: boolean, switching: boolean, healthFails: number, modelCatalog: Array<Record<string, any>>, captureOk: boolean}} S o estado vivo do renderer
  * @property {(value: boolean) => void} setTabsDisabled trava as abas de matéria
  * @property {(state: string, label?: string, reason?: string) => void} connectionState pinta o ponto do tutor
  * @property {(data: unknown) => boolean} applyEngineData adota o motor do resultado
- * @property {(result: object) => void} updateSettings aplica modelos e controles
- * @property {(data: object) => void} fillSessions adota sessões e sessão corrente
+ * @property {(result: Record<string, any>) => void} updateSettings aplica modelos e controles
+ * @property {(data: Record<string, any>) => void} fillSessions adota sessões e sessão corrente
  * @property {() => void} updateWindowTitle repinta o título com a sessão nova
- * @property {(messages: Array<object>, cards: Array<object>, identity: unknown) => void} showHistory desenha o histórico
+ * @property {(messages: Array<Record<string, any>>, cards: Array<Record<string, any>>, identity: unknown) => void} showHistory desenha o histórico
  * @property {() => unknown} historyIdentityShown identidade do histórico visível
  * @property {(key: string) => string} message texto do catálogo
  * @property {(text: string) => void} toast aviso flutuante
@@ -159,7 +160,7 @@ export function createConnectRunner(deps) {
           /* Cancelar é decisão da pessoa: volta a desligado, sem erro nem aviso. */
           S.connected = false;
           deps.connectionState('');
-          const stop = Error(deps.message('tutor.error.cancelled'));
+          const stop = /** @type {Error & {cancelled?: boolean, connectFailure?: boolean}} */ (Error(deps.message('tutor.error.cancelled')));
           stop.cancelled = true;
           stop.connectFailure = true;
           throw stop;

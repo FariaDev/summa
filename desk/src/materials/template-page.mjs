@@ -1,3 +1,4 @@
+// @ts-check
 import {autoColumns, columnsLabel, fitNext, fitDone, FIT_START} from './model.mjs';
 import {message as uiMsg} from '../i18n.mjs';
 
@@ -11,6 +12,7 @@ const clip = (value) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0,
 /* Textos de cabeçalho/rodapé de cada modelo. Na tela entram como linhas no
    fluxo (`.pdf-run`); na impressão o mesmo texto vai para as caixas de margem
    da página nomeada (`modelPageCss`), repetido em todas as folhas. */
+/** @param {any} model @param {{title?: string, context?: string, options?: Record<string, any>}} [options] */
 function runningTexts(model, {title = '', context = '', options = {}} = {}) {
   const name = clip(title);
   const course = clip(context);
@@ -62,6 +64,7 @@ function modelPageCss(model, running) {
    (`minFontPt`, 9 pt por padrão), registrando TODO ajuste — expressão e fator —
    como diagnóstico. Se ainda estourar (ou a fórmula for mais alta que a
    página), o diagnóstico `error` bloqueia o PDF; o rascunho não é tocado. */
+/** @param {any} root @param {{availableWidthPx?: any, availableHeightPx?: any, minFontPt?: any, useLocalWidth?: boolean}} [options] */
 function measureMaterialMath(root, {availableWidthPx, availableHeightPx, minFontPt = MIN_MATH_FONT_PT, useLocalWidth = false} = {}) {
   const adjustments = [];
   const overflows = [];
@@ -158,6 +161,7 @@ function naturalItemWidth(host, item) {
    está em `core/materialmodel.bend`) e, no Formulário com "caber numa folha",
    desce a escala em passos do núcleo até o conteúdo caber numa página.
    Devolve `null` para o Livre. */
+/** @param {any} root @param {{availableHeightPx?: any}} [options] */
 function measureMaterialModel(root, {availableHeightPx} = {}) {
   const wrapper = root && root.querySelector ? root.querySelector('.pdf-model') : null;
   if (!wrapper) return null;

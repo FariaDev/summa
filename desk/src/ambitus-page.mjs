@@ -33,8 +33,8 @@ export function notebookCardOf(raw) {
 /**
  * O que o envio leva de um cartão: caminho, página e nome, e o `recorte` só
  * quando o cartão é um trecho (sem ele, a chave não aparece).
- * @param {{caminho: string, pagina: number, nome: string, recorte?: object}} card
- * @returns {{caminho: string, pagina: number, nome: string, recorte?: object}}
+ * @param {{caminho: string, pagina: number, nome: string, recorte?: Record<string, any>}} card
+ * @returns {{caminho: string, pagina: number, nome: string, recorte?: Record<string, any>}}
  * @example notebookSendFacts({caminho: '/c/a.xopp', pagina: 2, nome: 'a', thumb: 'x'}) // {caminho: '/c/a.xopp', pagina: 2, nome: 'a'}
  */
 export function notebookSendFacts({caminho, pagina, nome, recorte}) {

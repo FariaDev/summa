@@ -1,3 +1,4 @@
+// @ts-check
 import {build} from './view-host.mjs';
 import aux from './generated/auxview.core.js';
 
@@ -55,7 +56,7 @@ function targetOf(node){
  let el=node;
  while(el){
   if(el.matches(SKIP))return null;
-  const text=(el.getAttribute?.('title')||el.dataset?.tip||'').trim();
+  const text=(el.getAttribute?.('title')||/** @type {HTMLElement} */ (el).dataset?.tip||'').trim();
   if(text)return el;
   el=el.parentElement;
  }
@@ -136,7 +137,7 @@ function arm(el,instant){
   el.removeAttribute('title');
  }
  if(instant)show();
- else timer=setTimeout(show,DELAY);
+ else timer=/** @type {any} */ (setTimeout(show,DELAY));
 }
 
 function switchTo(el){

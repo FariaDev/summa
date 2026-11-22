@@ -1,3 +1,4 @@
+// @ts-check
 /* Ícones do Lucide (https://lucide.dev, licença ISC, aviso em assets/licenses/lucide.txt),
    exceto a faísca. */
 const svg=(d)=>`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;

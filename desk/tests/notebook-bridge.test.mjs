@@ -12,8 +12,8 @@ import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
-import {readNotebookPage} from '../src/extensions/mesa-mcp/notebook-tool.mjs';
-import {mesaTools} from '../src/extensions/mesa-mcp/tools.mjs';
+import {readNotebookPage} from '../src/extensions/summa-mcp/notebook-tool.mjs';
+import {mesaTools} from '../src/extensions/summa-mcp/tools.mjs';
 import {spawnFakeXournalpp} from './fake-xournalpp-spawn.mjs';
 import {authorizedXopp} from './xopp-authorized.mjs';
 
@@ -141,7 +141,7 @@ test('chamada sem a autorização da ponte é recusada como em /pdf-page', async
     const grant = bridge.grant({conversationId: 'opencode-notebook-token', generation: 1}, {engine: 'opencode'});
     const tool = mesaTools({LEARNING_DESK_ACTIVITY_BRIDGE: JSON.stringify(grant)}).find((entry) => entry.name === 'ler_caderno');
     assert.ok(tool);
-    const {notebookBridgeTool} = await import('../src/extensions/mesa-mcp/notebook-tool.mjs');
+    const {notebookBridgeTool} = await import('../src/extensions/summa-mcp/notebook-tool.mjs');
     const wrongToken = await notebookBridgeTool({grant: {...grant, token: 'outro'}}).call({caminho: file, pagina: 1});
     assert.equal(wrongToken.isError, true, 'sem o token da conversa, nada é lido');
     assert.match(wrongToken.content[0].text, /HTTP 403/);

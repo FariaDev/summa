@@ -10,7 +10,7 @@ import {join} from 'node:path';
 import {createRequire} from 'node:module';
 import {ptMatches} from './pt-text.mjs';
 import {createNoteTool} from '../src/agents/note-tool.cjs';
-import {noteTool} from '../src/extensions/mesa-mcp/tools.mjs';
+import {noteTool} from '../src/extensions/summa-mcp/tools.mjs';
 import {noteText} from '../src/extensions/mesa-notes/guide.mjs';
 
 const require = createRequire(import.meta.url);

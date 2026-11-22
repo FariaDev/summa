@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Diário externo da promoção Livre → matéria.
@@ -220,6 +221,7 @@ function restoreFile(entry) {
   }
 }
 
+/** @param {any} runtime @param {any} journal @param {{store?: any, log?: any}} [options] */
 function rollbackJournal(runtime, journal, {store, log = () => {}} = {}) {
   let storeError = null;
   for (const entry of Object.values(journal.files || {})) restoreFile(entry);
@@ -254,6 +256,7 @@ function ensureConfigCourse(journal) {
   return true;
 }
 
+/** @param {any} journal @param {{patchDescriptor?: any}} [options] */
 function ensureDescriptor(journal, {patchDescriptor} = {}) {
   if (!journal.descriptorFile || typeof patchDescriptor !== 'function') return false;
   const stats = fs.lstatSync(journal.descriptorFile, {throwIfNoEntry: false});
@@ -290,6 +293,7 @@ function ensureDeskState(journal) {
 
 /* Varredura de boot. Devolve uma lista de ações para o log do host; nunca
    lança por diário individual (um diário ilegível fica onde está). */
+/** @param {any} runtime @param {{store?: any, patchDescriptor?: any, log?: any}} [options] */
 function recover(runtime, {store, patchDescriptor, log = () => {}} = {}) {
   const out = [];
   for (const token of listTokens(runtime)) {

@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente de `calcular`: o avaliador da calculadora da janela, no processo.
    Não usa ponte, rede nem disco. */
 

@@ -7,7 +7,7 @@ import {
   composerHeightForLines,
   composerHeightLimits,
   stepComposerHeight,
-} from '../src/composer-height.mjs';
+} from '../src/composer/composer-height.mjs';
 
 /* Altura do campo do tutor (r2): padrão de três linhas, piso de duas e teto de
    meia coluna. As contas são puras para o ponteiro e o teclado do

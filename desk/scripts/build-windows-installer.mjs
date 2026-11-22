@@ -1,3 +1,4 @@
+// @ts-check
 /* Monta o `Summa-Setup-X.Y.Z.exe` (#119, ADR 0006): o Electron do Windows, o
    mesmo payload do `.app` e o script NSIS de `desk/scripts/summa.nsi`. O
    payload sai sem `install-source.json`: quem instala pelo `.exe` não tem clone.

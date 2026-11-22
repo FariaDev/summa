@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Aba Livre (Mesa): o workspace de sessão avulsa. Cada conversa livre tem o seu

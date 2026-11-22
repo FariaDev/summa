@@ -1,3 +1,4 @@
+// @ts-check
 import {createLazyModule} from './lazy-module.mjs';
 
 /**

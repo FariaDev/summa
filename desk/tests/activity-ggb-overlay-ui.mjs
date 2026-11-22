@@ -114,7 +114,7 @@ await withArtifacts('activity-ggb-overlay',async ctx=>{
  await cover('imagem-ampliada',async()=>{
   await page.evaluate(async()=>{
    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220"><rect width="320" height="220" fill="#2b6cb0"/></svg>';
-   (await import('./src/chat-assets.mjs')).openImageDialog('','data:image/svg+xml;utf8,'+encodeURIComponent(svg),'Figura');
+   (await import('./src/chat/chat-assets.mjs')).openImageDialog('','data:image/svg+xml;utf8,'+encodeURIComponent(svg),'Figura');
   });
   await page.waitForSelector('#image-dialog[open]');
  },async()=>{
@@ -133,7 +133,7 @@ await withArtifacts('activity-ggb-overlay',async ctx=>{
  /* Duas sobreposições ao mesmo tempo: só volta quando a última fecha. */
  await page.keyboard.press('ControlOrMeta+,');
  await page.waitForSelector('#settings-dialog[open]');
- await page.evaluate(async()=>{(await import('./src/chat-assets.mjs')).openImageDialog('','data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"/>'),'Figura');});
+ await page.evaluate(async()=>{(await import('./src/chat/chat-assets.mjs')).openImageDialog('','data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"/>'),'Figura');});
  await page.waitForSelector('#image-dialog[open]');
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>!document.querySelector('#image-dialog').open);

@@ -1,3 +1,4 @@
+// @ts-check
 /* Linha do tempo do turno: blocos de trabalho, falas e artefatos na ordem em
    que acontecem. Módulo puro (sem DOM, sem relógio próprio) — a visão e a
    fiação dos eventos ficam em `chat.mjs`; o histórico projeta os mesmos

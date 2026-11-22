@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Estatísticas locais de estudo (Mesa): `runtime/study-stats.json`.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {orientationSize, orientationMatrix} from '../src/phone-orientation.mjs';
+import {orientationSize, orientationMatrix} from '../src/phone/phone-orientation.mjs';
 
 /* Foto do celular (#36): as peças puras do host — o QR code sem dependência,
    a escolha da interface de rede e o artefato do núcleo — e a conta de

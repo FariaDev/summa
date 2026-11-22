@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
    formato `Con/Nil` que o view-host aplica. As leis do módulo ficam em
    core/proofs/slashview.bend; este teste cobre o que o app recebe pronto do
    artefato — casca, linhas, `key`, ARIA, handlers e o slot do check (o SVG é
-   asset do host, trocado por cima do slot em `src/slash.mjs`). */
+   asset do host, trocado por cima do slot em `src/composer/slash.mjs`). */
 
 const sv = (await import('../src/generated/slashview.core.js')).default;
 

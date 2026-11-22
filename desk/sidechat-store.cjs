@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -221,6 +222,7 @@ function appendMessage(descriptor, message) {
 }
 /* Mapeia a lista que o main já monta (`courseSessions`) para o contrato da UI:
    nada de I/O, nada de agente — só o que já foi lido. */
+/** @param {any} sessions @param {{max?: number}} [options] */
 function conversationList(sessions, {max = 100} = {}) {
   return (Array.isArray(sessions) ? sessions : [])
     .slice(0, Math.max(0, max))

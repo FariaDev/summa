@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente de `salvar_nota`: a ponte de material da sessão principal
    (`LEARNING_DESK_MATERIAL_BRIDGE`), rota `/notes`. Desde a #139 a rota só
    SUGERE a nota; quem grava é o clique "Guardar" no main. O chat lateral não

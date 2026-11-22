@@ -12,9 +12,9 @@ const path = require('node:path');
 const {message} = require('./src/i18n.mjs');
 const {installOpenCode, openCodeInstallSupported} = require('./src/agents/opencode-install.cjs');
 
-/** @typedef {{ok: true, binary: string, version: string, detected?: object}|{ok: false, code: string, message: string}} InstallResult */
+/** @typedef {{ok: true, binary: string, version: string, detected?: Record<string, any>}|{ok: false, code: string, message: string}} InstallResult */
 
-/** @param {string} file @returns {null|((options: object) => Promise<object>)} */
+/** @param {string} file @returns {null|((options: Record<string, any>) => Promise<Record<string, any>>)} */
 function fixtureInstaller(file) {
   if (!file) return null;
   try {
@@ -37,7 +37,7 @@ function fixtureInstaller(file) {
  */
 function createOpenCodeInstallHost({ipcMain, win, runtime, env = process.env, testMode = false, log = () => {}, install, supported, detect = () => ({})}) {
   const fixture = testMode ? fixtureInstaller(env.LEARNING_DESK_OPENCODE_INSTALL_FIXTURE) : null;
-  const runInstall = /** @type {(options: object) => Promise<{ok: true, binary: string, version: string}>} */ (install || fixture || installOpenCode);
+  const runInstall = /** @type {(options: Record<string, any>) => Promise<{ok: true, binary: string, version: string}>} */ (install || fixture || installOpenCode);
   const isSupported = supported || (() => openCodeInstallSupported({platform: process.platform, arch: process.arch}));
   let current = null;
 

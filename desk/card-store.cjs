@@ -168,7 +168,7 @@ function trim(cards) {
  * resposta, a resposta certa e a explicação não saem daqui.
  * @param {string} runtime
  * @param {string} session caminho da conversa (Pi JSONL ou descritor nativo/sidechat)
- * @returns {object[]}
+ * @returns {Record<string, any>[]}
  * @example listCards(runtime, '/r/pi-1.jsonl')
  */
 function listCards(runtime, session) {
@@ -214,7 +214,7 @@ function createCard(runtime, session, normalized) {
  * @param {string} runtime
  * @param {string} session
  * @param {{title: string, content: string}} note
- * @returns {object} cartão público
+ * @returns {Record<string, any>} cartão público
  * @example createNoteCard(runtime, session, {title: 'Limites', content: '# a'})
  */
 function createNoteCard(runtime, session, note) {
@@ -244,8 +244,8 @@ function replace(runtime, session, card) {
 
 /**
  * Guarda o rascunho (respostas parciais) sem marcar o cartão como respondido.
- * @param {string} runtime @param {string} session @param {string} id @param {object} draft
- * @returns {object|null} cartão público
+ * @param {string} runtime @param {string} session @param {string} id @param {Record<string, any>} draft
+ * @returns {Record<string, any>|null} cartão público
  */
 function saveDraft(runtime, session, id, draft) {
   const card = findCard(runtime, session, id);
@@ -271,8 +271,8 @@ function answerOf(card, raw) {
 
 /**
  * Responde o cartão uma vez. Cartão já respondido não muda (a correção fica).
- * @param {string} runtime @param {string} session @param {string} id @param {object} raw
- * @returns {object|null} cartão público
+ * @param {string} runtime @param {string} session @param {string} id @param {Record<string, any>} raw
+ * @returns {Record<string, any>|null} cartão público
  */
 function answerCard(runtime, session, id, raw) {
   const card = findCard(runtime, session, id);
@@ -340,7 +340,7 @@ function dismissCard(runtime, session, id) {
  * nota já guardada devolve `already` (nunca grava duas vezes) e uma descartada
  * devolve `dismissed`; só `Write` chega ao funil de `Notas/`.
  * @param {string} runtime @param {string} session @param {string} id
- * @returns {{ok: boolean, code?: string, card?: object}}
+ * @returns {{ok: boolean, code?: string, card?: Record<string, any>}}
  * @example beginNoteSave(runtime, session, cardId) // {ok: true, card}
  */
 function beginNoteSave(runtime, session, id) {
@@ -357,7 +357,7 @@ function beginNoteSave(runtime, session, id) {
  * Confirma a nota gravada: `Pending → Saved` e guarda o nome real do arquivo.
  * @param {string} runtime @param {string} session @param {string} id
  * @param {{title?: string, rel?: string, path?: string}} saved resultado de `course-notes`
- * @returns {object|null} cartão público
+ * @returns {Record<string, any>|null} cartão público
  */
 function confirmNoteSave(runtime, session, id, saved) {
   const card = findCard(runtime, session, id);

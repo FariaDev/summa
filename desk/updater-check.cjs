@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const {CLAUDE_REGISTRY_URL,RELEASES_URL,TAGS_URL,XOURNAL_RELEASES_URL,cacheWrite,fresh,isNewer,readCache,semverCompare,semverParse}=require('./updater-core.cjs');
@@ -10,6 +11,7 @@ const {invalidValue}=require('./src/error-detail.mjs');
    (`WORKER_FILES`). */
 
 /* Prazo nos fetches: rede presa não segura o Sobre (o sinal aborta o request). */
+/** @param {any} url @param {{timeout?: number, headers?: any}} [options] */
 function timedFetch(url,{timeout=15000,headers}={}){
  return fetch(url,{headers,signal:AbortSignal.timeout(timeout)});
 }
@@ -20,7 +22,7 @@ async function defaultFetchJson(url){
   let res;
   try{
    res=await timedFetch(url,{timeout:10000,headers:{'user-agent':'summa',accept:'application/json'}});
-   if(!res.ok){const error=Error('HTTP '+res.status);error.status=res.status;throw error;}
+   if(!res.ok){const error=/** @type {Error & {status?: number}} */ (Error('HTTP '+res.status));error.status=res.status;throw error;}
    return await res.json();
   }catch(error){
    const transient=error instanceof TypeError||['TimeoutError','AbortError'].includes(error.name)||[408,429,502,503,504].includes(error.status);
@@ -38,6 +40,7 @@ async function defaultFetchJson(url){
 /* #80: todo download do updater tem teto. `content-length` maior que o teto
    aborta antes de ler; sem ele, o stream é lido em pedaços e cancelado assim
    que passa do limite (um corpo mentiroso não enche a memória). */
+/** @param {any} url @param {{timeout?: number, maxBytes?: number}} [options] */
 async function defaultFetchBuffer(url,{timeout=120000,maxBytes=0}={}){
  const res=await timedFetch(url,{timeout,headers:{'user-agent':'summa'}});
  if(!res.ok)throw Error('HTTP '+res.status);
@@ -117,6 +120,7 @@ function releaseFromTags(json){
 }
 /* Checagem da Mesa. Cache 24 h vale para a checagem automática; o botão manual
    força a rede. Erro de rede nunca é exceção para o chamador. */
+/** @param {{current?: string, manual?: boolean, cacheFile?: string, fetchJson?: any, now?: any}} [options] */
 async function checkForUpdates({current='',manual=false,cacheFile='',fetchJson=defaultFetchJson,now=Date.now()}={}){
  const cache=cacheFile?readCache(cacheFile):{};
  const cached=cache.release;
@@ -135,6 +139,7 @@ async function checkForUpdates({current='',manual=false,cacheFile='',fetchJson=d
  if(cacheFile)await cacheWrite(cacheFile,prev=>({...prev,release:{at:now,version:release.version,notes:release.notes,url:release.url}}));
  return {status:isNewer(release.version,current)?'update':'current',version:release.version,notes:release.notes,url:release.url,current,cached:false,checkedAt:now};
 }
+/** @param {any} key @param {any} url @param {{cacheFile?: string, fetchJson?: any, now?: any, manual?: boolean, cacheOnly?: boolean}} [options] */
 async function registryLatest(key,url,{cacheFile='',fetchJson=defaultFetchJson,now=Date.now(),manual=false,cacheOnly=false}={}){
  const cache=cacheFile?readCache(cacheFile):{};
  if(!manual&&fresh(cache[key],now))return {version:String(cache[key].version||''),known:!!cache[key].version};
@@ -153,6 +158,7 @@ async function registryLatest(key,url,{cacheFile='',fetchJson=defaultFetchJson,n
    diária. Só lê a versão; sem resposta = desconhecido. */
 function claudeLatest(options={}){return registryLatest('claude',CLAUDE_REGISTRY_URL,options);}
 /* Xournal++ é só informativo (o app não o atualiza): o painel pede sob demanda. */
+/** @param {{cacheFile?: string, fetchJson?: any, now?: any, manual?: boolean}} [options] */
 async function xournalLatest({cacheFile='',fetchJson=defaultFetchJson,now=Date.now(),manual=false}={}){
  const cache=cacheFile?readCache(cacheFile):{};
  if(!manual&&fresh(cache.xournal,now))return {version:String(cache.xournal.version||''),known:!!cache.xournal.version};

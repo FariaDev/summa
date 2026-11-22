@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente da ferramenta "ver o que desenhei" (#60): a mesma ponte local e o
    mesmo token do quadro (`mesa-activity/client.mjs`), rota `/figure`. Nada é
    publicado nem gravado; a Mesa devolve o print e o resumo. O limite do `plot`

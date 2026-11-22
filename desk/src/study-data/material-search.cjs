@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Busca do tutor no material (`buscar_material`): o mesmo índice offline da
@@ -24,7 +25,7 @@ const DEFAULT_HITS = 5;
  * @example searchArgs({consulta: ' exercício 7b '}) // {query: 'exercício 7b', limit: 5}
  */
 function searchArgs(raw) {
-  const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const input = /** @type {Record<string, any>} */ (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {});
   const consulta = input.consulta;
   if (typeof consulta !== 'string') {
     throw Error(message('err.searchTool.queryType', {
@@ -69,7 +70,7 @@ function courseOf(courses, courseId) {
  *   indexing: boolean, hits: Array<{path: string, name: string, page: number, snippet: string}>}>}
  * @example await tutorSearch(runtime, {courses, courseId: 'calculo', raw: {consulta: 'derivada'}})
  */
-async function tutorSearch(runtime, {courses, courseId, freeSessionId = '', raw, nowMs, pdfText} = {}) {
+async function tutorSearch(runtime, {courses, courseId, freeSessionId = '', raw, nowMs, pdfText} = /** @type {any} */ ({})) {
   const {query, limit} = searchArgs(raw);
   const course = courseOf(courses, courseId);
   const result = await search.search(runtime, {

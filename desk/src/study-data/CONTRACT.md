@@ -15,7 +15,7 @@ Os módulos abaixo já estão implementados e testados. O que o pai JÁ ligou:
 | `desk/src/study-data/statistics.cjs` | Store `runtime/study-stats.json`: batimento, pergunta aceita, tokens, ciclo de vida, timer de sessão, resumo 7/30/tudo, reset. |
 | `desk/src/study-data/review-schedule.cjs` | Store `runtime/review-schedule.json`: migração do caderno, id estável, agendamento, histórico, estado da referência. |
 | `desk/src/study-data/services.cjs` (do integrador) | Adapter: resolve runtime/matéria/biblioteca e fixa o escopo. Não amplia acesso pelo payload. |
-| `desk/src/study-stats.mjs` | Painel independente: `initStudyStats({state, host})` cria botão + `<dialog>` acessível; não toca no shell. |
+| `desk/src/study/study-stats.mjs` | Painel independente: `initStudyStats({state, host})` cria botão + `<dialog>` acessível; não toca no shell. |
 | `desk/src/review.mjs` | Aba Caderno ganha o painel "Revisar hoje" dentro de `#review-view`, usando `studyReviewToday`/`studyReviewGrade`. |
 | `desk/review.cjs` | `annotateVisibility(items, allowed, exists)` — troca o filtro por anotação. |
 

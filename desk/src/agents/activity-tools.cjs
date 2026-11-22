@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Ferramenta de atividade no caminho Claude.
@@ -37,12 +38,13 @@ const {assertActivityArgsFit} = require('../../activity-bridge.cjs');
 const ACTIVITY_TOOL_DESCRIPTION = guide.CREATE_DESCRIPTION;
 const PREVIEW_TOOL_DESCRIPTION = guide.PREVIEW_DESCRIPTION;
 
+/** @param {any} createActivity @param {{language?: any}} [options] */
 async function createActivityTool(createActivity, {language} = {}) {
   const [{tool}, {z}] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),
     import('zod'),
   ]);
-  return tool('criar_atividade', ACTIVITY_TOOL_DESCRIPTION, z.object(zodShape(z, guide.CREATE_FIELDS)).passthrough(), async (args) => {
+  return tool('criar_atividade', ACTIVITY_TOOL_DESCRIPTION, /** @type {any} */ (z.object(zodShape(z, guide.CREATE_FIELDS)).passthrough()), async (args) => {
     try {
       assertActivityArgsFit(args);
       const result = await createActivity({...args});
@@ -55,6 +57,7 @@ async function createActivityTool(createActivity, {language} = {}) {
 
 /* Prévia (#42): print, altura e console, nada gravado — só leitura no sentido
    do MCP. O resultado leva a imagem e o resumo em texto (o mesmo do Pi). */
+/** @param {any} previewActivity @param {{language?: any}} [options] */
 async function createPreviewTool(previewActivity, {language} = {}) {
   const [{tool}, {z}] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),

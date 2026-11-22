@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setUiLanguage} from '../src/ui-text.mjs';
-import {displayFreeTitle, displayCourseName, localizeFreeCourse, STORED_DEFAULT_FREE_TITLE, FREE_COURSE_ID} from '../src/free-names.mjs';
+import {displayFreeTitle, displayCourseName, localizeFreeCourse, STORED_DEFAULT_FREE_TITLE, FREE_COURSE_ID} from '../src/study/free-names.mjs';
 
 globalThis.document = {documentElement: {}, querySelectorAll: () => []};
 globalThis.window = Object.assign(new EventTarget(), {desk: undefined});

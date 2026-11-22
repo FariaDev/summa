@@ -1,3 +1,4 @@
+// @ts-check
 import {isEscaped,normalizeLineEndings,protectedScan} from './template-protect.mjs';
 
 /* Material — tokenizador de matemática: separa texto e fórmulas fora das

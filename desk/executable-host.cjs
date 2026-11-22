@@ -1,3 +1,4 @@
+// @ts-check
 /* Executáveis das Configurações (#83): o caminho do Claude Code, do Xournal++ e
    do OpenCode (#102) muda só por um diálogo aberto pelo main (`pick-executable`).
    O `save-config` chega do renderer, então nesses campos ele aceita só: o valor

@@ -6,7 +6,7 @@ import {ptText} from './pt-text.mjs';
 /* Contrato do artefato `settingsview.core.js` (gerado de core/settingsview.bend):
    as cinco seções das Configurações (ticket #20), a árvore da navegação lateral
    e a validação das matérias. As leis fixam a forma; aqui se confere o que o
-   aplicador (`src/settings.mjs`) recebe. */
+   aplicador (`src/settings/settings.mjs`) recebe. */
 
 const nodes=(l)=>{const out=[];for(let c=l;c&&c.$==='Con';c=c.tail)out.push(c.head);return out;};
 const attrs=(node)=>{const out={};for(let a=node.attrs;a&&a.$==='Con';a=a.tail)if(!(a.head.name in out))out[a.head.name]=a.head.value;return out;};

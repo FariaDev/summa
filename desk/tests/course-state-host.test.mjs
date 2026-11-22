@@ -119,7 +119,7 @@ test('initialData monta o payload da matéria com sessão, versão e matérias',
 
 test('resumePayload guarda o canônico do .xopp atrás de symlink', async () => {
   const {gzipSync} = await import('node:zlib');
-  const {readNotebookPage} = await import('../src/extensions/mesa-mcp/notebook-tool.mjs');
+  const {readNotebookPage} = await import('../src/extensions/summa-mcp/notebook-tool.mjs');
   const {fileURLToPath} = await import('node:url');
   const FAKE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fake-xournalpp.mjs');
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-sym-'));

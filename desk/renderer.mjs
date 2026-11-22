@@ -1,9 +1,10 @@
-import './src/chat.mjs';
-import './src/pdf.mjs';
+// @ts-check
+import './src/chat/chat.mjs';
+import './src/pdf/pdf.mjs';
 import './src/ggb.mjs';
 import './src/state.mjs';
 import './src/notify.mjs';
 import './src/keys.mjs';
-import './src/density.mjs';
+import './src/settings/density.mjs';
 import './src/tooltip.mjs';
 import './src/main.mjs';
