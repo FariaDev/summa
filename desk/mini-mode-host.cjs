@@ -3,6 +3,7 @@
 
 const sanitize=require('./desk-state-sanitize.cjs');
 const {titleBarVisible}=require('./lib.cjs');
+const {rescueBounds}=require('./window-display-host.cjs');
 
 /* Modo mini (passo 9, protótipo r7): a MESMA janela principal encolhe para só o
    chat do tutor, no canto de baixo à direita da área de trabalho da tela onde
@@ -180,15 +181,16 @@ function registerMiniModeHost({win,screen,ipcMain,trusted=()=>true,loadState=()=
  function leave({closing=false}={}){
   if(!on||!before)return state();
   const snapshot=before;
+  const bounds=rescueBounds({bounds:snapshot.bounds,displays:displays(),primary:primary()})??snapshot.bounds;
   if(saveTimer){clearTimeout(saveTimer);saveTimer=null;}
   remember();
   on=false;
   before=null;
-  if(closing)closingBounds=snapshot.bounds;
+  if(closing)closingBounds=bounds;
   if(alive()){
    win.setAlwaysOnTop(snapshot.onTop);
    win.setMenuBarVisibility?.(snapshot.menuBar);
-   win.setBounds(snapshot.bounds);
+   win.setBounds(bounds);
    win.setMinimumSize(snapshot.min[0],snapshot.min[1]);
    if(snapshot.maximized)win.maximize();
    if(snapshot.fullScreen)win.setFullScreen(true);

@@ -180,8 +180,8 @@ test('mover o mini guarda o lugar com debounce', async () => {
   assert.deepEqual(saves.filter((patch) => patch.miniBounds).map((patch) => patch.miniBounds), [{x: 110, y: 130, width: 380, height: 500}], 'um save só, com o último lugar');
 });
 
-test('monitor desconectado: o mini que ficou fora de toda tela volta ao canto da primária', async () => {
-  const {win, screen, call} = setup({displays: [PRIMARY, EXTERNAL], win: new FakeMainWindow({bounds: {x: 2000, y: 150, width: 1200, height: 800}})});
+test('monitor desconectado: o mini volta ao canto e a Mesa reabre na primária', async () => {
+  const {win, screen, call} = setup({displays: [PRIMARY, EXTERNAL], win: new FakeMainWindow({bounds: {x: 2200, y: 150, width: 1200, height: 800}})});
   await call({on: true});
   assert.deepEqual(win.getBounds(), host.cornerBounds(EXTERNAL.workArea));
   screen.replaceDisplays([PRIMARY]);
@@ -189,6 +189,25 @@ test('monitor desconectado: o mini que ficou fora de toda tela volta ao canto da
   const stay = win.getBounds();
   screen.replaceDisplays([PRIMARY], 'display-metrics-changed');
   assert.deepEqual(win.getBounds(), stay, 'mini já à vista: nada a resgatar');
+  await call({on: false});
+  assert.deepEqual(win.getBounds(), {x: 20, y: 20, width: 1200, height: 800}, 'a Mesa não volta ao monitor desconectado');
+});
+
+test('fechar o mini já à vista após desconectar o monitor da Mesa grava limites resgatados', async () => {
+  const miniBounds = {x: 100, y: 120, width: 360, height: 480};
+  const {win, screen, mini, call, store} = setup({
+    displays: [PRIMARY, EXTERNAL],
+    win: new FakeMainWindow({bounds: {x: 2200, y: 150, width: 2000, height: 1200}}),
+    state: {miniBounds},
+  });
+  await call({on: true});
+  screen.replaceDisplays([PRIMARY]);
+  assert.deepEqual(win.getBounds(), miniBounds, 'mini já estava na primária');
+  win.emit('close');
+  const restored = {x: 20, y: 20, width: 1600, height: 1000};
+  assert.deepEqual(win.getBounds(), restored, 'a janela normal cabe na primária');
+  assert.deepEqual(mini.windowBounds(), restored, 'o persist lê os limites resgatados');
+  assert.deepEqual(store.miniBounds, miniBounds);
 });
 
 test('o resgate da Mesa (900×650 no mínimo) pula a janela enquanto o mini está ligado', async () => {
