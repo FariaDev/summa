@@ -16,9 +16,11 @@ test('o aviso de instalador aberto usa texto simples igual ao catalogo', () => {
   }
 });
 
+const functionBody = (nsi, name) => nsi.slice(nsi.indexOf(`Function ${name}`), nsi.indexOf('FunctionEnd', nsi.indexOf(`Function ${name}`)));
+
 test('o mutex por usuario precede qualquer mutacao e recusa a segunda instalacao', () => {
   const nsi = script('summa.nsi');
-  const init = nsi.slice(nsi.indexOf('Function .onInit'), nsi.indexOf('FunctionEnd', nsi.indexOf('Function .onInit')));
+  const init = nsi.slice(nsi.indexOf('!macro TakeInstallerMutex'), nsi.indexOf('!macroend', nsi.indexOf('!macro TakeInstallerMutex')));
   assert.match(init, /CreateMutexW/);
   const output = init.match(/CreateMutexW[^\n]* p \.([Rr]1) \?e/);
   assert.ok(output, 'o retorno de CreateMutexW precisa de um registrador');
@@ -29,6 +31,15 @@ test('o mutex por usuario precede qualquer mutacao e recusa a segunda instalacao
   assert.match(init, /SetErrorLevel 3/);
   assert.match(init, /Quit/);
   assert.doesNotMatch(init.slice(0, init.indexOf('CreateMutexW')), /RecoverInterruptedSwap|RMDir|Delete|File \/r/);
+});
+
+test('setup e desinstalador tomam o mesmo mutex antes de mexer na pasta, no atalho ou no registro', () => {
+  const nsi = script('summa.nsi');
+  for (const name of ['.onInit', 'un.onInit']) {
+    const body = functionBody(nsi, name).split(/\r?\n/).slice(1).map(line => line.trim()).filter(Boolean);
+    assert.equal(body[0], '!insertmacro TakeInstallerMutex', `${name} toma o mutex primeiro`);
+  }
+  assert.equal((nsi.match(/CreateMutexW/g) || []).length, 1);
 });
 
 test('a origem do clone so e preservada quando a copia termina sem erro', () => {

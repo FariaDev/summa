@@ -94,7 +94,7 @@ test('the uninstaller shares the bounded Retry/Cancel rename loop',()=>{
  const uninstall=NSI.slice(NSI.indexOf('Section "Uninstall"'));
  assert.match(uninstall,/Call un.MoveCurrentAside/);
  assert.match(NSI,/!insertmacro MoveCurrentAside "un\." "removing" "un\.FailUninstall"/);
- const retry=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
+ const retry=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend',NSI.indexOf('!macro MoveCurrentAside')));
  assert.match(retry,/Rename "\$INSTDIR" "\$INSTDIR\.\$\{suffix\}"/);
  assert.match(retry,/\$R0 < \$R1[\s\S]*Sleep 500[\s\S]*Goto retry/);
  assert.match(retry,/\$\{IfNot\} \$\{Silent\}[\s\S]*MB_RETRYCANCEL\|MB_ICONEXCLAMATION[\s\S]*IDCANCEL giveUp\s+StrCpy \$R0 0\s+Goto retry/);
@@ -103,7 +103,7 @@ test('the uninstaller shares the bounded Retry/Cancel rename loop',()=>{
 });
 
 test('#119: a troca interativa pergunta logo e reserva a espera longa ao silêncio ou atualização',()=>{
- const move=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
+ const move=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend',NSI.indexOf('!macro MoveCurrentAside')));
  assert.match(NSI,/!define INTERACTIVE_SWAP_ATTEMPTS 7/);
  assert.match(NSI,/!define SWAP_ATTEMPTS 240/);
  assert.match(move,/StrCpy \$R1 \$\{INTERACTIVE_SWAP_ATTEMPTS\}\s+\$\{If\} \$\{Silent\}\s+\$\{OrIf\} \$IsUpdate == "1"\s+StrCpy \$R1 \$\{SWAP_ATTEMPTS\}\s+\$\{EndIf\}\s+retry:/);
