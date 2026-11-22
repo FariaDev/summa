@@ -35,7 +35,7 @@ function loadMainWithMockElectron(runtime){
  const app={
   setName(){},setPath(){},getVersion:()=>'0.4.0',setAboutPanelOptions(){},setAppUserModelId(){},
   dock:{setIcon(){}},getPath:()=>path.join(runtime,'electron'),
-  whenReady:()=>Promise.resolve(),requestSingleInstanceLock:()=>true,quit(){},
+  whenReady:()=>Promise.resolve(),requestSingleInstanceLock:()=>true,hasSingleInstanceLock:()=>true,quit(){},
   on(name,cb){if(!listeners.has(name))listeners.set(name,[]);listeners.get(name).push(cb);}
  };
  // WebContentsView de mentira: eventos de webContents e scripts executados ficam

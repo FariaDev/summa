@@ -152,20 +152,24 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   setTimeout(()=>app.quit(),400);
   return {ok:true,version:target};
  }
- if(!TEST_MODE&&linuxAppImage){
-  if(app.hasSingleInstanceLock())appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')),{backups:!env.SUMMA_APPIMAGE_READY_FILE,appImage:String(env.APPIMAGE||'')});
-  installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
-   .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
- }
- /* O instalador não escreve no `update.json`: a abertura seguinte compara a
-    versão pedida com a que subiu e o Sobre mostra o resultado real. */
- if(!TEST_MODE&&platform==='win32'){
-  installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:installerDir,failureReason:uiMsg('err.update.installerFailed')})
-   .catch(error=>appendLog('update',`resultado do instalador não registrado: ${causeArg(error)}`));
- }
- if(!TEST_MODE&&isMacosRelease({deskDir,platform})){
-  dmgUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:dmgDir,failureReason:uiMsg('err.update.installerFailed')})
-   .catch(error=>appendLog('update',`resultado do DMG não registrado: ${causeArg(error)}`));
+ /* Uma segunda abertura continua após app.quit(); não pode encerrar nem apagar
+    a atualização que a instância com o lock ainda está aplicando. */
+ if(!TEST_MODE&&app.hasSingleInstanceLock()){
+  if(linuxAppImage){
+   appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')),{backups:!env.SUMMA_APPIMAGE_READY_FILE,appImage:String(env.APPIMAGE||'')});
+   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
+    .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
+  }
+  /* O instalador não escreve no `update.json`: a abertura seguinte compara a
+     versão pedida com a que subiu e o Sobre mostra o resultado real. */
+  if(platform==='win32'){
+   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:installerDir,failureReason:uiMsg('err.update.installerFailed')})
+    .catch(error=>appendLog('update',`resultado do instalador não registrado: ${causeArg(error)}`));
+  }
+  if(isMacosRelease({deskDir,platform})){
+   dmgUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:dmgDir,failureReason:uiMsg('err.update.installerFailed')})
+    .catch(error=>appendLog('update',`resultado do DMG não registrado: ${causeArg(error)}`));
+  }
  }
  ipcMain.handle('update-origin',()=>originFacts());
  ipcMain.handle('update-check',async(_e,opts)=>{

@@ -1,5 +1,5 @@
 // @ts-check
-import {t,currentLanguage} from '../ui-text.mjs';
+import {t,text,currentLanguage} from '../ui-text.mjs';
 import {TOUR,stepId,setupBlocked,primaryKey,hintKey,setupTrail,speechOf,pdfSummary} from './setup-flow.mjs';
 import {sceneOf,sceneTabOf,scenePdfLabel,ringFor} from './setup-scene.mjs';
 
@@ -135,13 +135,13 @@ export function installPhaseText(phase){
  return t(`firstrun.install.phase.${phase||'prepare'}`);
 }
 
-/* O erro da instalação chega como código; a tela mostra título curto e frase
-   humana, e a causa técnica fica no log do host. Código desconhecido cai no
-   texto genérico, nunca em texto cru. */
+/* Extração inclui a saída do tar; os demais erros usam uma frase humana.
+   Código desconhecido cai no texto genérico, nunca em texto cru. */
 const INSTALL_ERROR_KIND={network:'network',integrity:'integrity',unsupported:'unsupported',busy:'busy',permission:'permission',space:'space',symlink:'symlink',version:'version',verify:'version'};
-/** @param {string} code @returns {{title:string, body:string}} */
-export function installErrorText(code){
+/** @param {string} code @param {string} [detail] @returns {{title:string, body:string}} */
+export function installErrorText(code,detail=''){
  const kind=INSTALL_ERROR_KIND[code]||'generic';
+ if(code==='extract'&&detail)return {title:t('firstrun.install.error.generic.title'),body:text(detail)};
  return {title:t(`firstrun.install.error.${kind}.title`),body:t(`firstrun.install.error.${kind}.body`)};
 }
 
@@ -199,7 +199,7 @@ function paintTutor(state,facts,actions,install){
  if(anyFound&&install.state!=='error')parts.push(connect);
  if(install.state==='done')parts.push(make('p',{class:'setup-install-done',id:'setup-install-done'},t('firstrun.install.done',{version:install.version||''})));
  if(install.state==='error'){
-  const copy=installErrorText(install.errorCode||'');
+  const copy=installErrorText(install.errorCode||'',install.error||'');
   const error=make('div',{class:'setup-install-error',id:'setup-install-error',role:'alert'});
   error.append(make('strong',{},copy.title),make('p',{},copy.body));
   parts.push(error);
@@ -347,4 +347,3 @@ export function paintSetup(state,facts,actions,install={state:'idle'}){
 export function focusTarget(state){
  return stepId(state)==='name'?$('#first-run-name'):$('#setup-next');
 }
-
