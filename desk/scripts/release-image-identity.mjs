@@ -72,7 +72,8 @@ export function assertReleaseImageIdentity(file, kind, expected, run = execFileS
   try { identity = JSON.parse(kind === 'AppImage' ? appImagePackage(file, run) : dmgPackage(file, run)); }
   catch (error) {
     const tool = kind === 'AppImage' ? 'unsquashfs (squashfs-tools)' : 'hdiutil (macOS)';
-    const reason = error.code === 'ENOENT' ? `ferramenta ${tool} ausente` : 'imagem ilegível ou package.json inválido/ausente';
+    const toolMissing = error.code === 'ENOENT' && String(error.syscall).startsWith('spawn');
+    const reason = toolMissing ? `ferramenta ${tool} ausente` : 'imagem ilegível ou package.json inválido/ausente';
     throw new Error(`identidade ${kind}: recebido ${reason}; esperado ${wanted}`);
   }
   const received = identity && {name:identity.name, productName:identity.productName, version:identity.version, commit:identity.commit};
