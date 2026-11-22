@@ -123,7 +123,6 @@ function docCourseAllowed(courseId, {selectedCourses, explicit, authorizedCourse
   if (!explicit) return true;
   return selectedCourses.has(scope);
 }
-
 /* Varre um registro e devolve os hits candidatos (título/assunto + docs, no
  * teto por arquivo). O host calcula os fatos; o núcleo decide a prioridade. */
 function scanRecord(record, needle, {limit, selection}) {
@@ -134,7 +133,8 @@ function scanRecord(record, needle, {limit, selection}) {
   const titleFields = [...new Set([record.title, ...(Array.isArray(record.aliases) ? record.aliases : [])].filter(Boolean))];
   const titleHit = allowedScope(record.courseId) ? titleFields.map((field) => ({field, at: fold(field).indexOf(needle)})).find((hit) => hit.at >= 0) : null;
   const topicHit = allowedScope(record.courseId) && !!record.topic && fold(record.topic).includes(needle);
-  if (titleHit || topicHit) {
+  /* 1af88a8: o doc de material já tem o rótulo e seu ID estável; não o duplique. */
+  if (record.kind !== 'material' && (titleHit || topicHit)) {
     const field = titleHit ? titleHit.field : record.topic;
     const at = titleHit ? titleHit.at : fold(field).indexOf(needle);
     out.push(matchOf(record, {i: -1, role: '', text: field, title: record.title || field, when: record.when}, {
