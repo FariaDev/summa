@@ -7,6 +7,7 @@ import {renderChildren} from './view-host.mjs';
 import {t} from './ui-text.mjs';
 import {renderTutorMenus} from './tutor-header.mjs';
 import {initStudyPlanView} from './study-plan-view.mjs';
+import {xournalMenuAvailable} from './xournal-menu.mjs';
 
 /* Abas de matéria e menus Estudar/Ajustes (#43 fase 2: saiu do main.mjs). As
    ações dos itens moram no main e entram por `initHeaderTabs`. */
@@ -27,7 +28,7 @@ function toCoreCourses(courses){
 function menuFactsOf(){
  const desk=S.appConfig.desk||{};
  const panels=Array.isArray(desk.panels)?desk.panels:[];
- return {$:'MenuFacts',twoPanels:panels.length>1,toggle:String(panels[1]?.toggle||''),refVisible:!!S.refVisible,xournal:desk.xournal!==false,win32:S.appConfig.platform==='win32',hasXournalPath:!!S.appConfig.xournalPath};
+ return {$:'MenuFacts',twoPanels:panels.length>1,toggle:String(panels[1]?.toggle||''),refVisible:!!S.refVisible,xournal:xournalMenuAvailable(S.appConfig),win32:S.appConfig.platform==='win32',hasXournalPath:!!S.appConfig.xournalPath};
 }
 const tabsHandlers={SelectCourse:e=>selectTab(e.currentTarget.dataset.id),OpenGeoGebra:()=>selectTab('geogebra'),OpenReview:()=>selectTab('review'),NewCourse:()=>headerActions.openSettings()};
 /* As ferramentas de estudo (Buscar estudos, Anotações…) entram aqui quando os
