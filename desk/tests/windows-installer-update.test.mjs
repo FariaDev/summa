@@ -9,6 +9,7 @@ import {fakeIpcMain,fakeShell} from './fake-electron-shell.mjs';
 import {tempDir} from './temp-dir.mjs';
 import {exitedInstaller} from './fake-installer-process.mjs';
 import {message} from '../src/i18n.mjs';
+import {enText,ptText} from './pt-text.mjs';
 
 /* #119: no Windows instalado, a atualização é o instalador conferido pelo
    manifesto assinado. Nenhum teste toca a rede nem abre um `.exe` de verdade. */
@@ -125,12 +126,22 @@ test('#119: instalador que sai antes de ficar pronto mantém a Summa aberta',asy
  const child=new EventEmitter();child.exitCode=null;
  const waiting=installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),pollMs:5});
  child.emit('exit',2);
- await assert.rejects(waiting,/saiu com o código 2/);
+ await assert.rejects(waiting,error=>{
+  assert.equal(error.message,message('err.update.installerExited',{code:2}));
+  assert.equal(enText(error.message),'The installer exited with code 2; expected 0 and the ready signal.');
+  assert.equal(ptText(error.message),'O instalador saiu com o código 2; esperado 0 e o aviso de pronto.');
+  return true;
+ });
 });
 
 test('#119: instalador que não fica pronto no prazo mantém a Summa aberta',async()=>{
  const child=new EventEmitter();child.exitCode=null;
- await assert.rejects(installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),timeoutMs:10,pollMs:2}),/não ficou pronto/);
+ await assert.rejects(installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),timeoutMs:0}),error=>{
+  assert.equal(error.message,message('err.update.installerReadyTimeout',{minutes:0}));
+  assert.equal(enText(error.message),'The installer was not ready within 0 min.');
+  assert.equal(ptText(error.message),'O instalador não ficou pronto em 0 min.');
+  return true;
+ });
 });
 
 test('#119: erro ao abrir o instalador chega a quem pediu',async()=>{
@@ -260,6 +271,27 @@ test('#119: instalador que falha na extração desfaz a marca e não fecha o app
  assert.deepEqual(calls.at(-1),['clear']);
  await new Promise(resolve=>setTimeout(resolve,450));
  assert.equal(quits,0);
+});
+
+test('update-apply preserves translated installer exit errors',async()=>{
+ for(const [code,english] of [
+  [2,'The installer exited with code 2; expected 0 and the ready signal.'],
+  [3,'Another Summa installer is already open. Close it and try again.'],
+ ]){
+  const runtime=tmp();
+  updater.writeCache(path.join(runtime,'update.json'),{release:{at:Date.now(),version:'1.4.1'}});
+  const {calls,fake}=fakeInstallerUpdate({
+   launchInstaller:async()=>exitedInstaller(code),
+   waitForInstallerReady:installerUpdate.waitForInstallerReady,
+  });
+  const ipcMain=installerHost({runtime,fake});
+  await assert.rejects(ipcMain.invoke('update-apply'),error=>{
+   assert.equal(enText(error.message),english);
+   return true;
+  });
+  assert.deepEqual(calls.at(-1),['clear']);
+  assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
+ }
 });
 
 test('#119: instalador que não abre desfaz a marca e mantém o app aberto',async()=>{

@@ -6,7 +6,8 @@ import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
 import {performance} from 'node:perf_hooks';
 import {tempDir} from './temp-dir.mjs';
-import {enText} from './pt-text.mjs';
+import {enText,ptText,ptMatches} from './pt-text.mjs';
+import {message} from '../src/i18n.mjs';
 import {makeSignedRelease} from './fake-update-release.mjs';
 import {exitedInstaller} from './fake-installer-process.mjs';
 import {fakeDmgDownload,fakeDmgProcess,fakeDmgCommands,fakeDmgHost} from './fake-macos-dmg-update.mjs';
@@ -17,6 +18,22 @@ const signature=require('../updater-signature.cjs');
 const updater=require('../updater.cjs');
 const DMG=Buffer.from('imagem da Summa autenticada');
 const tmp=()=>tempDir('summa-dmg-update-');
+
+test('DMG readiness failures carry keys and render in both languages',async()=>{
+ for(const [child,timeoutMs,key,args,english,portuguese] of [
+  [exitedInstaller(2),1200000,'err.update.installerExited',{code:2},'The installer exited with code 2; expected 0 and the ready signal.','O instalador saiu com o código 2; esperado 0 e o aviso de pronto.'],
+  [fakeDmgProcess().child,0,'err.update.installerReadyTimeout',{minutes:0},'The installer was not ready within 0 min.','O instalador não ficou pronto em 0 min.'],
+ ]){
+  const dir=tmp();
+  await assert.rejects(update.waitForDmgReady({child,dir,timeoutMs}),error=>{
+   assert.equal(error.message,message(key,args));
+   assert.equal(enText(error.message),english);
+   assert.equal(ptText(error.message),portuguese);
+   return true;
+  });
+  assert.equal(fs.readFileSync(path.join(dir,'cancel'),'utf8'),'cancel\n');
+ }
+});
 
 function download(release,{bytes=DMG,fail=false,status=200}={}){
  const dir=path.join(tmp(),'download'),server=fakeDmgDownload(bytes,{fail,status});
@@ -94,7 +111,7 @@ test('readiness aguarda extração; saída antecipada ou timeout cancela sem qui
  fs.rmSync(path.join(dir,'ready'));
  await assert.rejects(update.waitForDmgReady({child:exitedInstaller(2),dir,timeoutMs:1}));
  assert.ok(fs.existsSync(path.join(dir,'cancel')));
- await assert.rejects(update.waitForDmgReady({child:fake.child,dir,timeoutMs:1}),/não ficou pronto/);
+ await assert.rejects(update.waitForDmgReady({child:fake.child,dir,timeoutMs:1}),ptMatches(/não ficou pronto/));
  fs.writeFileSync(path.join(dir,'error'),'falha na cópia');
  await assert.rejects(update.waitForDmgReady({child:exitedInstaller(2),dir}),/falha na cópia/);
 });

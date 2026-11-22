@@ -1,7 +1,7 @@
 // @ts-check
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {performance}=require('node:perf_hooks');
-const {message: uiMsg}=require('./src/i18n.mjs');
+const {message: uiMsg,parseMessage}=require('./src/i18n.mjs');
 const {causeArg}=require('./src/error-detail.mjs');
 const {writeReadableLog}=require('./desk-log.cjs');
 const updater=require('./updater.cjs');
@@ -117,6 +117,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     await installerUpdate.waitForInstallerReady({child,readyFile});
    }catch(error){
     await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+    if(parseMessage(error?.message))throw error;
     throw Error(uiMsg('err.update.installerStart',{error:causeArg(error)}));
    }
   }finally{updater.releaseLock(lock.file);}

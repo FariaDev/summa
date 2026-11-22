@@ -108,11 +108,11 @@ function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOU
    child.off('exit',onExit);
    if(error)reject(error);else resolve();
   };
-  const onExit=code=>finish(Error(code===3?uiMsg('err.update.installerBusy'):`o instalador saiu com o código ${code}; esperado 0 e o aviso de pronto`));
+  const onExit=code=>finish(Error(code===3?uiMsg('err.update.installerBusy'):uiMsg('err.update.installerExited',{code})));
   const tick=()=>{
    if(fs.existsSync(readyFile))return finish();
    if(child.exitCode!==null&&child.exitCode!==undefined)return onExit(child.exitCode);
-   if(Date.now()>=deadline)return finish(Error(`o instalador não ficou pronto em ${Math.round(timeoutMs/60000)} min`));
+   if(Date.now()>=deadline)return finish(Error(uiMsg('err.update.installerReadyTimeout',{minutes:Math.round(timeoutMs/60000)})));
    timer=setTimeout(tick,pollMs);
   };
   child.once('exit',onExit);
