@@ -264,15 +264,15 @@ function assertInstallerMatches(received,declared){
 
 /** Declaração obrigatória para atualizar pelo DMG. @param {{version:string,dmgBytes?:number,dmgSha256?:string}} manifest @returns {{dmgBytes:number,dmgSha256:string}} @example assertDmgDeclared(manifest) */
 function assertDmgDeclared(manifest){
- if(!manifest.dmgBytes||!manifest.dmgSha256)throw Error(`release ${manifest.version}: DMG ausente no manifesto assinado`);
- if(manifest.dmgBytes>INSTALLER_MAX_BYTES)throw Error(`DMG excede o teto de ${INSTALLER_MAX_BYTES} bytes`);
+ if(!manifest.dmgBytes||!manifest.dmgSha256)throw refuse('err.update.dmgMissing',{version:manifest.version});
+ if(manifest.dmgBytes>INSTALLER_MAX_BYTES)throw refuse('err.update.dmgTooLarge',{bytes:manifest.dmgBytes,max:INSTALLER_MAX_BYTES});
  return {dmgBytes:manifest.dmgBytes,dmgSha256:manifest.dmgSha256};
 }
 
 /** Confere os bytes da imagem antes de montá-la. @param {{bytes:number,sha256:string}} received @param {{dmgBytes:number,dmgSha256:string}} declared @returns {void} @example assertDmgMatches(received,declared) */
 function assertDmgMatches(received,declared){
- if(received.bytes!==declared.dmgBytes)throw Error(`tamanho do DMG difere do manifesto assinado: recebido ${received.bytes} bytes; esperado ${declared.dmgBytes} bytes`);
- if(received.sha256!==declared.dmgSha256)throw Error(`SHA-256 do DMG não confere: recebido ${received.sha256}; esperado ${declared.dmgSha256}`);
+ if(received.bytes!==declared.dmgBytes)throw refuse('err.update.dmgBytes',{received:received.bytes,expected:declared.dmgBytes});
+ if(received.sha256!==declared.dmgSha256)throw refuse('err.update.dmgHash');
 }
 
 /**

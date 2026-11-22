@@ -3,6 +3,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
+const {message:uiMsg}=require('./src/i18n.mjs');
 
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function run(cmd,args){
@@ -32,12 +33,12 @@ async function applyMacosDmg(input,deps={}){
  let mounted=false,staged=false,moved=false,committed=false,ready=false;
  const cancelled=()=>fs.existsSync(path.join(dir,'cancel'));
  try{
-  if(fs.existsSync(next)||fs.existsSync(old))throw Error('Summa.app.new ou Summa.app.old já existe; preserve a cópia antes de tentar novamente');
+  if(fs.existsSync(next)||fs.existsSync(old))throw Error(uiMsg('err.update.dmgLeftover'));
   fs.mkdirSync(mount);
   mounted=true;
   execute('/usr/bin/hdiutil',['attach','-nobrowse','-readonly','-mountpoint',mount,file]);
   const source=path.join(mount,'Summa.app');
-  if(!fs.lstatSync(source).isDirectory())throw Error('DMG sem Summa.app');
+  if(!fs.lstatSync(source).isDirectory())throw Error(uiMsg('err.update.dmgNoApp'));
   fs.mkdirSync(next);staged=true;
   execute('/usr/bin/ditto',[source,next]);
   execute('/usr/bin/xattr',['-dr','com.apple.quarantine',next]);
@@ -45,21 +46,21 @@ async function applyMacosDmg(input,deps={}){
   const payload=path.join(next,'Contents','Resources','app');
   const marker=JSON.parse(fs.readFileSync(path.join(payload,'release-install.json'),'utf8'));
   const pkg=JSON.parse(fs.readFileSync(path.join(payload,'package.json'),'utf8'));
-  if(marker.kind!=='macos-dmg'||marker.version!==version||pkg.version!==version)throw Error(`versão do app no DMG difere da release assinada: recebido kind=${JSON.stringify(marker.kind)}, marker.version=${JSON.stringify(marker.version)}, package.version=${JSON.stringify(pkg.version)}; esperado kind="macos-dmg", marker.version=${JSON.stringify(version)}, package.version=${JSON.stringify(version)}`);
-  if(cancelled())throw Error('atualização cancelada antes da troca');
+  if(marker.kind!=='macos-dmg'||marker.version!==version||pkg.version!==version)throw Error(uiMsg('err.update.dmgVersion',{kind:JSON.stringify(marker.kind),markerVersion:JSON.stringify(marker.version),packageVersion:JSON.stringify(pkg.version),version:JSON.stringify(version)}));
+  if(cancelled())throw Error(uiMsg('err.update.dmgCancelled'));
   fs.writeFileSync(path.join(dir,'ready'),'ready\n');ready=true;
   const deadline=Date.now()+(deps.waitMs??120000);
   while(alive(pid)){
-   if(cancelled()||Date.now()>=deadline)throw Error('Summa não fechou; versão anterior preservada');
+   if(cancelled()||Date.now()>=deadline)throw Error(uiMsg('err.update.dmgStillOpen'));
    await pause(250);
   }
-  if(cancelled())throw Error('atualização cancelada antes da troca');
+  if(cancelled())throw Error(uiMsg('err.update.dmgCancelled'));
   rename(app,old);moved=true;
   rename(next,app);committed=true;
  }catch(error){
   if(moved&&!committed){
    try{rename(old,app);}
-   catch{fs.writeFileSync(path.join(dir,'error'),'Recuperação incompleta: a versão anterior está em Summa.app.old');throw error;}
+   catch{fs.writeFileSync(path.join(dir,'error'),uiMsg('err.update.dmgRecoveryIncomplete'));throw error;}
   }
   fs.writeFileSync(path.join(dir,'error'),String(error?.message||error));
   throw error;

@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
+import {spawnSync} from 'node:child_process';
 import {tempDir} from './temp-dir.mjs';
+import {enText} from './pt-text.mjs';
 import {makeSignedRelease} from './fake-update-release.mjs';
 import {exitedInstaller} from './fake-installer-process.mjs';
 import {fakeDmgDownload,fakeDmgProcess,fakeDmgCommands,fakeDmgHost} from './fake-macos-dmg-update.mjs';
@@ -34,7 +36,7 @@ test('adulteração, tamanho excessivo, vazio e rede limpam os arquivos',async()
  const altered=Buffer.from(DMG);altered[0]^=1;
  for(const options of [{bytes:altered},{bytes:Buffer.concat([DMG,DMG])},{bytes:Buffer.alloc(0)},{fail:true},{status:503}]){
   const item=download(release,options);
-  await assert.rejects(item.run,/SHA-256|tamanho|rede|HTTP/);
+  await assert.rejects(item.run,error=>enText(error.message).startsWith('Could not download and verify the DMG for v1.4.1 ('));
   assert.equal(fs.existsSync(item.dir),false);
  }
 });
@@ -65,9 +67,9 @@ test('assinatura ou declaração inválida recusa antes do download',async()=>{
 test('conferência do DMG informa tamanhos e hashes recebidos e esperados',()=>{
  const declared={dmgBytes:4,dmgSha256:'a'.repeat(64)};
  assert.doesNotThrow(()=>signature.assertDmgMatches({bytes:4,sha256:declared.dmgSha256},declared));
- for(const bytes of [0,3,5])assert.throws(()=>signature.assertDmgMatches({bytes,sha256:declared.dmgSha256},declared),{message:`tamanho do DMG difere do manifesto assinado: recebido ${bytes} bytes; esperado 4 bytes`});
+ for(const bytes of [0,3,5])assert.throws(()=>signature.assertDmgMatches({bytes,sha256:declared.dmgSha256},declared),{message:`O DMG tem ${bytes} bytes e o manifesto assinado declara 4 — atualização recusada.`});
  const sha256='b'.repeat(64);
- assert.throws(()=>signature.assertDmgMatches({bytes:4,sha256},declared),{message:`SHA-256 do DMG não confere: recebido ${sha256}; esperado ${declared.dmgSha256}`});
+ assert.throws(()=>signature.assertDmgMatches({bytes:4,sha256},declared),{message:'O SHA-256 do DMG não confere com o manifesto assinado — atualização recusada.'});
 });
 
 test('helper usa o Electron instalado em modo Node; erro de spawn não é sucesso',async()=>{
@@ -79,6 +81,8 @@ test('helper usa o Electron instalado em modo Node; erro de spawn não é sucess
  assert.equal(fake.calls[0].options.detached,true);
  assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'input.json'),'utf8')).pid,process.pid);
  assert.ok(fs.existsSync(path.join(dir,'macos-dmg-worker.cjs')));
+ const load=spawnSync(process.execPath,['-e',`require(${JSON.stringify(path.join(dir,'macos-dmg-worker.cjs'))})`],{encoding:'utf8'});
+ assert.equal(load.status,0,`a cópia do helper carrega sozinha: ${load.stderr}`);
  await assert.rejects(update.launchDmgUpdate({file:'/x',app:'/a',dir,version:'1.4.1',lockFile:'',spawnFn:fakeDmgProcess({error:true}).spawn}),/EACCES/);
 });
 
@@ -127,12 +131,26 @@ test('falhas de montagem/cópia/assinatura/troca, app preso e cancelamento prese
  }
 });
 
+test('recusas do helper chegam ao Sobre em inglês, sem texto fixo em português',async()=>{
+ for(const [options,english] of [
+  [{cancel:true},'The update was canceled before the swap. The previous version is still in place.'],
+  [{fail:'pid'},'Summa did not close. The previous version is still in place.'],
+ ]){
+  const input=installation();
+  await assert.rejects(applyMacosDmg(input,fakeDmgCommands({...input,...options})),error=>enText(error.message)===english);
+  assert.equal(enText(fs.readFileSync(path.join(input.dir,'error'),'utf8')),english);
+  const dir=tmp();
+  fs.writeFileSync(path.join(dir,'error'),fs.readFileSync(path.join(input.dir,'error'),'utf8'));
+  await assert.rejects(update.waitForDmgReady({child:exitedInstaller(1),dir}),error=>enText(error.message)===english);
+ }
+});
+
 test('identidade do app no DMG informa kind e versões recebidos e esperados',async()=>{
  for(const fields of [{markerKind:'source'},{markerVersion:'9.9.9'},{packageVersion:'9.9.9'},{markerVersion:''},{packageVersion:''}]){
   const input=installation(),received={markerKind:'macos-dmg',markerVersion:input.version,packageVersion:input.version,...fields};
-  const message=`versão do app no DMG difere da release assinada: recebido kind=${JSON.stringify(received.markerKind)}, marker.version=${JSON.stringify(received.markerVersion)}, package.version=${JSON.stringify(received.packageVersion)}; esperado kind="macos-dmg", marker.version="1.4.1", package.version="1.4.1"`;
-  await assert.rejects(applyMacosDmg(input,fakeDmgCommands({...input,...fields})),{message});
-  assert.equal(fs.readFileSync(path.join(input.dir,'error'),'utf8'),message);
+  const english=`The app in the DMG does not match the signed release: received kind=${JSON.stringify(received.markerKind)}, marker.version=${JSON.stringify(received.markerVersion)}, package.version=${JSON.stringify(received.packageVersion)}; expected kind="macos-dmg", marker.version="1.4.1", package.version="1.4.1" — update refused.`;
+  await assert.rejects(applyMacosDmg(input,fakeDmgCommands({...input,...fields})),error=>enText(error.message)===english);
+  assert.equal(enText(fs.readFileSync(path.join(input.dir,'error'),'utf8')),english);
   assert.equal(fs.existsSync(path.join(input.dir,'ready')),false);
   assert.equal(fs.readFileSync(path.join(input.app,'old'),'utf8'),'versão antiga');
  }
@@ -142,9 +160,9 @@ test('não apaga uma recuperação anterior; pasta sem escrita recusa antes de p
  const input=installation();
  fs.mkdirSync(input.app+'.old');
  fs.writeFileSync(path.join(input.app+'.old','backup'),'backup');
- await assert.rejects(applyMacosDmg(input,fakeDmgCommands(input)),/já existe/);
+ await assert.rejects(applyMacosDmg(input,fakeDmgCommands(input)),error=>enText(error.message).startsWith('Summa.app.new or Summa.app.old already exists'));
  assert.equal(fs.readFileSync(path.join(input.app+'.old','backup'),'utf8'),'backup');
- assert.throws(()=>update.assertWritableBundle(path.join(tmp(),'missing','Summa.app')),/não permite atualização/);
+ assert.throws(()=>update.assertWritableBundle(path.join(tmp(),'missing','Summa.app')),error=>/^Could not write to the Summa\.app folder \(.+\)\. Move Summa\.app to a folder you can write to/.test(enText(error.message)));
 });
 
 function hostFixture({marker=true,fail=''}={}){
