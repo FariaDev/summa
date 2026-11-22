@@ -96,10 +96,19 @@ test('the uninstaller shares the bounded Retry/Cancel rename loop',()=>{
  assert.match(NSI,/!insertmacro MoveCurrentAside "un\." "removing" "un\.FailUninstall"/);
  const retry=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
  assert.match(retry,/Rename "\$INSTDIR" "\$INSTDIR\.\$\{suffix\}"/);
- assert.match(retry,/\$R0 < \$\{SWAP_ATTEMPTS\}[\s\S]*Sleep 500[\s\S]*Goto retry/);
+ assert.match(retry,/\$R0 < \$R1[\s\S]*Sleep 500[\s\S]*Goto retry/);
  assert.match(retry,/\$\{IfNot\} \$\{Silent\}[\s\S]*MB_RETRYCANCEL\|MB_ICONEXCLAMATION[\s\S]*IDCANCEL giveUp\s+StrCpy \$R0 0\s+Goto retry/);
  assert.match(retry,/giveUp:\s+Call \$\{failure\}/);
  assert.match(NSI,/Function un.FailUninstall\s+SetErrorLevel 2\s+Quit\s+FunctionEnd/);
+});
+
+test('#119: a troca interativa pergunta logo e reserva a espera longa ao silêncio ou atualização',()=>{
+ const move=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
+ assert.match(NSI,/!define INTERACTIVE_SWAP_ATTEMPTS 7/);
+ assert.match(NSI,/!define SWAP_ATTEMPTS 240/);
+ assert.match(move,/StrCpy \$R1 \$\{INTERACTIVE_SWAP_ATTEMPTS\}\s+\$\{If\} \$\{Silent\}\s+\$\{OrIf\} \$IsUpdate == "1"\s+StrCpy \$R1 \$\{SWAP_ATTEMPTS\}\s+\$\{EndIf\}\s+retry:/);
+ assert.match(move,/\$\{If\} \$R0 < \$R1\s+Sleep 500\s+Goto retry/);
+ assert.match(move,/MessageBox MB_RETRYCANCEL\|MB_ICONEXCLAMATION "\$\(AppOpen\)" IDCANCEL giveUp\s+StrCpy \$R0 0\s+Goto retry/);
 });
 
 function installedPayload(){

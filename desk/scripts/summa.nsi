@@ -22,6 +22,8 @@ ShowUninstDetails nevershow
 !define PUBLISHER "Lucas Faria"
 ; 240 tentativas de 500 ms: o tutor e o MCP podem levar um tempo para soltar os arquivos.
 !define SWAP_ATTEMPTS 240
+; #119: quem abriu o instalador pode responder logo, sem esperar o app fechar sozinho.
+!define INTERACTIVE_SWAP_ATTEMPTS 7
 
 Name "${APP_NAME}"
 OutFile "${OUT_FILE}"
@@ -134,6 +136,11 @@ Function ${prefix}MoveCurrentAside
     Return
   ${EndIf}
   StrCpy $R0 0
+  StrCpy $R1 ${INTERACTIVE_SWAP_ATTEMPTS}
+  ${If} ${Silent}
+  ${OrIf} $IsUpdate == "1"
+    StrCpy $R1 ${SWAP_ATTEMPTS}
+  ${EndIf}
   retry:
     ClearErrors
     Rename "$INSTDIR" "$INSTDIR.${suffix}"
@@ -141,7 +148,7 @@ Function ${prefix}MoveCurrentAside
       Return
     ${EndIf}
     IntOp $R0 $R0 + 1
-    ${If} $R0 < ${SWAP_ATTEMPTS}
+    ${If} $R0 < $R1
       Sleep 500
       Goto retry
     ${EndIf}
