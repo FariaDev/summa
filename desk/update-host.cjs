@@ -1,5 +1,6 @@
 // @ts-check
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
+const {performance}=require('node:perf_hooks');
 const {message: uiMsg}=require('./src/i18n.mjs');
 const {causeArg}=require('./src/error-detail.mjs');
 const {writeReadableLog}=require('./desk-log.cjs');
@@ -241,7 +242,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
  ipcMain.handle('update-result',()=>{
   if(TEST_MODE)return null;
   const r=updater.readCache(updateCacheFile)?.lastResult;
-  return r&&typeof r==='object'?r:null;
+  return r&&typeof r==='object'?{...r,fresh:Number(r.at)>=performance.timeOrigin}:null;
  });
  /* Acesso ao desk.log (C1): o resultado de rollback se explica no log. O
     desk.log é JSON por linha, para máquina; o Sobre abre a versão em texto (#43 fase 3). */
