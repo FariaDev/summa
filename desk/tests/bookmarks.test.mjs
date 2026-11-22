@@ -44,6 +44,20 @@ test('sem arquivo não há favoritos e nada é criado na leitura', () => {
   });
 });
 
+test('constructor é uma matéria normal, mesmo sem favorito salvo', () => {
+  withRuntime((runtime) => {
+    assert.deepEqual(bookmarks.readBookmarks(runtime, 'constructor'), []);
+    const item = {name: 'Revisão', path: '/p/Limites.pdf', page: 3};
+    bookmarks.addBookmark(runtime, 'A', item);
+    assert.deepEqual(bookmarks.readBookmarks(runtime, 'constructor'), []);
+    assert.deepEqual(bookmarks.addBookmark(runtime, 'constructor', item), [item]);
+    assert.deepEqual(bookmarks.readBookmarks(runtime, 'constructor'), [item]);
+    assert.deepEqual(bookmarks.removeBookmark(runtime, 'constructor', item), []);
+    assert.deepEqual(bookmarks.readBookmarks(runtime, 'constructor'), []);
+    assert.deepEqual(bookmarks.readBookmarks(runtime, 'A'), [item]);
+  });
+});
+
 test('guardar apara o nome, corta o path e levanta a página para 1', () => {
   withRuntime((runtime) => {
     const saved = bookmarks.addBookmark(runtime, 'A', {name: '  Revisão  ', path: ' /p/Limites.pdf ', page: 0});
