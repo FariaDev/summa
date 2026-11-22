@@ -1,0 +1,50 @@
+name: Instalador do Linux
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - desk/**
+      - .github/workflows/instalador-linux.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  appimage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+          cache-dependency-path: desk/package-lock.json
+      - name: A tag é a versão do package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+      - name: Dependências
+        run: |
+          npm ci --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y libfuse2t64 xvfb x11-utils libgtk-3-0 libnss3 libasound2t64
+          curl -fL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o "$RUNNER_TEMP/appimagetool"
+          chmod +x "$RUNNER_TEMP/appimagetool"
+      - name: Gerar AppImage
+        run: APPIMAGETOOL="$RUNNER_TEMP/appimagetool" npm run appimage:linux -- --out "$RUNNER_TEMP/appimage"
+      - name: Abrir janela e conferir integração desktop
+        run: xvfb-run -a bash scripts/appimage-smoke.sh "$RUNNER_TEMP"/appimage/Summa-*.AppImage
+      - name: SHA-256
+        run: sha256sum "$RUNNER_TEMP"/appimage/Summa-*.AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage-linux
+          path: ${{ runner.temp }}/appimage/Summa-*.AppImage
+          if-no-files-found: error
+          retention-days: 30

@@ -47,6 +47,12 @@ function fakeInstaller(version = '0.1.0', commit = 'a'.repeat(40)) {
   return file;
 }
 
+function fakeAppImage(version = '0.1.0') {
+  const file = path.join(tmp(), `Summa-${version}-x86_64.AppImage`);
+  fs.writeFileSync(file, 'AppImage de teste');
+  return file;
+}
+
 function fakeDmg(version = '0.1.0') {
   const file = path.join(tmp(), `Summa-${version}.dmg`);
   fs.writeFileSync(file, 'imagem DMG de teste');
@@ -67,7 +73,7 @@ test('sign recusa texto com nome de exe antes de gerar os assets', () => {
   const installer = path.join(tmp(), 'Summa-Setup-0.1.0.exe');
   fs.writeFileSync(installer, 'isto nao e um PE');
   const out = path.join(tmp(), 'assets');
-  const result = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer], {cwd: root, expectFail: true});
+  const result = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', fakeAppImage()], {cwd: root, expectFail: true});
   assert.match(result.stderr, /identidade.*recebido.*esperado/);
   assert.equal(fs.existsSync(out), false);
 });
@@ -119,15 +125,18 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
 
   const out = path.join(tmp(), 'assets');
   const installer = fakeInstaller('0.1.0', git(['rev-parse', 'v0.1.0^{commit}'], root));
+  const appImage = fakeAppImage();
   const dmg = fakeDmg();
-  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--dmg', dmg], {cwd: root});
+  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root});
   const manifestFile = path.join(out, 'mesa-manifest-v0.1.0.json');
   const signatureFile = path.join(out, 'mesa-manifest-v0.1.0.sig');
   const zipFile = path.join(out, 'mesa-estudos-0.1.0.zip');
   for (const file of [manifestFile, signatureFile, zipFile]) assert.equal(fs.existsSync(file), true, path.basename(file));
 
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-  assert.deepEqual(Object.keys(manifest).sort(), ['commit', 'dmgBytes', 'dmgSha256', 'exeBytes', 'exeSha256', 'version', 'zipBytes', 'zipSha256']);
+  assert.deepEqual(Object.keys(manifest).sort(), ['appImageBytes', 'appImageSha256', 'commit', 'dmgBytes', 'dmgSha256', 'exeBytes', 'exeSha256', 'version', 'zipBytes', 'zipSha256']);
+  assert.equal(manifest.appImageBytes, fs.statSync(appImage).size);
+  assert.equal(manifest.appImageSha256, crypto.createHash('sha256').update(fs.readFileSync(appImage)).digest('hex'));
   assert.equal(manifest.dmgBytes, fs.statSync(dmg).size);
   assert.equal(manifest.dmgSha256, crypto.createHash('sha256').update(fs.readFileSync(dmg)).digest('hex'));
   assert.equal(manifest.exeBytes, fs.statSync(installer).size);
@@ -162,6 +171,25 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   fs.appendFileSync(dmgOut, 'x');
   assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /tamanho do DMG/);
   fs.copyFileSync(dmg, dmgOut);
+  fs.rmSync(dmgOut);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /asset ausente: Summa-0.1.0.dmg/);
+  fs.copyFileSync(dmg, dmgOut);
+  fs.writeFileSync(dmgOut, Buffer.alloc(fs.statSync(dmg).size));
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /SHA-256 do DMG/);
+  fs.copyFileSync(dmg, dmgOut);
+
+  const imageOut = path.join(out, path.basename(appImage));
+  fs.appendFileSync(imageOut, 'x');
+  const imageTampered = runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true});
+  assert.match(imageTampered.stderr, /AppImage tem \d+ bytes/);
+  fs.copyFileSync(appImage, imageOut);
+  fs.rmSync(imageOut);
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /asset ausente: Summa-0.1.0-x86_64.AppImage/);
+  fs.copyFileSync(appImage, imageOut);
+
+  fs.writeFileSync(imageOut, Buffer.alloc(fs.statSync(appImage).size));
+  assert.match(runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true}).stderr, /SHA-256 do AppImage/);
+  fs.copyFileSync(appImage, imageOut);
 
   /* #119: instalador trocado depois de assinar não passa na conferência. */
   fs.appendFileSync(path.join(out, 'Summa-Setup-0.1.0.exe'), 'x');
@@ -181,11 +209,22 @@ test('#119 sign: recusa sem o instalador ou com o instalador de outra versão', 
   assert.match(missing.stderr, /informe --exe <Summa-Setup-0\.1\.0\.exe>/);
   const wrong = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller('0.0.9')], {cwd: root, expectFail: true});
   assert.match(wrong.stderr, /recebido Summa-Setup-0\.0\.9\.exe; esperado Summa-Setup-0\.1\.0\.exe/);
+  const missingImage = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller()], {cwd: root, expectFail: true});
+  assert.match(missingImage.stderr, /informe --appimage/);
+  const wrongImage = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller(), '--appimage', fakeAppImage('0.0.9')], {cwd: root, expectFail: true});
+  assert.match(wrongImage.stderr, /esperado Summa-0.1.0-x86_64.AppImage/);
   assert.equal(fs.existsSync(out), false, 'recusa antes de gerar qualquer asset');
   const installer = fakeInstaller('0.1.0', git(['rev-parse', 'v0.1.0^{commit}'], root));
-  const args = ['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer];
+  const args = ['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', fakeAppImage()];
   assert.match(runScript(args, {cwd: root, expectFail: true}).stderr, /informe --dmg/);
   assert.match(runScript([...args, '--dmg', fakeDmg('0.0.9')], {cwd: root, expectFail: true}).stderr, /DMG com nome errado/);
+  const emptyDmg = fakeDmg();
+  fs.truncateSync(emptyDmg, 0);
+  assert.match(runScript([...args, '--dmg', emptyDmg], {cwd: root, expectFail: true}).stderr, /DMG não encontrado ou vazio/);
+  const emptyImage = fakeAppImage();
+  fs.truncateSync(emptyImage, 0);
+  assert.match(runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', emptyImage, '--dmg', fakeDmg()], {cwd: root, expectFail: true}).stderr, /AppImage não encontrado ou vazio/);
+  assert.equal(fs.existsSync(out), false, 'recusa imagens ausentes, inválidas ou vazias antes de gerar assets');
 });
 
 test('#80 sign: recusa privada que não corresponde à pública commitada', () => {

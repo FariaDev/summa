@@ -1,14 +1,12 @@
 // @ts-check
 'use strict';
-const crypto=require('node:crypto');
 const fs=require('node:fs');
 const path=require('node:path');
 const {spawn}=require('node:child_process');
 const signature=require('./updater-signature.cjs');
 const {defaultFetchBuffer}=require('./updater-check.cjs');
 const installer=require('./windows-installer-update.cjs');
-
-function fetchDmg(url){return fetch(url,{signal:AbortSignal.timeout(30*60*1000)});}
+const {downloadReleaseFile,fetchReleaseFile}=require('./update-download.cjs');
 
 /**
  * Baixa uma imagem autenticada, sem deixar arquivos parciais em uma recusa.
@@ -16,7 +14,7 @@ function fetchDmg(url){return fetch(url,{signal:AbortSignal.timeout(30*60*1000)}
  * @returns {Promise<{file:string}>}
  * @example await prepareDmgUpdate({version:'1.4.1',publicKey,dir})
  */
-async function prepareDmgUpdate({version,publicKey,dir,fetchBuffer=defaultFetchBuffer,fetchInstaller=fetchDmg}){
+async function prepareDmgUpdate({version,publicKey,dir,fetchBuffer=defaultFetchBuffer,fetchInstaller=fetchReleaseFile}){
  fs.rmSync(dir,{recursive:true,force:true});
  try{
   const {manifest,urls}=await signature.loadSignedRelease({version,publicKey,fetchBuffer,needZip:false});
@@ -25,19 +23,8 @@ async function prepareDmgUpdate({version,publicKey,dir,fetchBuffer=defaultFetchB
   const file=path.join(dir,signature.dmgAssetName(version)),partial=file+'.part';
   const response=await fetchInstaller(urls.dmg);
   if(!response.ok||!response.body)throw Error(`DMG: HTTP ${response.status}`);
-  const hash=crypto.createHash('sha256');
-  let bytes=0;
-  const fd=fs.openSync(partial,'w'),reader=response.body.getReader();
-  try{
-   for(;;){
-    const item=await reader.read();
-    if(item.done)break;
-    bytes+=item.value.length;
-    if(bytes>declared.dmgBytes){await reader.cancel();break;}
-    hash.update(item.value);fs.writeSync(fd,item.value);
-   }
-  }finally{fs.closeSync(fd);}
-  signature.assertDmgMatches({bytes,sha256:hash.digest('hex')},declared);
+  const received=await downloadReleaseFile({response,partial,maxBytes:declared.dmgBytes});
+  signature.assertDmgMatches(received,declared);
   fs.renameSync(partial,file);
   return {file};
  }catch(error){fs.rmSync(dir,{recursive:true,force:true});throw error;}

@@ -145,6 +145,7 @@ test('#119: a abertura seguinte diz se a versão pedida subiu',async()=>{
  await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
  const applied=await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'});
  assert.equal(applied.status,'applied');
+ assert.equal(applied.mode,'installer');
  const cache=updater.readCache(cacheFile);
  assert.equal(cache.lastResult.version,'1.4.1');
  assert.equal(Object.hasOwn(cache,'installerPending'),false);
@@ -158,7 +159,18 @@ test('#119: versão antiga de pé depois do instalador vira "recuperada" com o m
  await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.0',dir:path.join(root,'x'),failureReason:'não instalou'});
  const {lastResult}=updater.readCache(cacheFile);
  assert.equal(lastResult.status,'recovered');
+ assert.equal(lastResult.mode,'installer');
  assert.equal(lastResult.reason,'não instalou');
+});
+
+test('settle não remove caminhos ausentes, vazios ou relativos',async()=>{
+ const root=tmp(),cacheFile=path.join(root,'update.json'),sentinel=path.join(root,'estudo.json');
+ fs.writeFileSync(sentinel,'preservado');
+ for(const dir of [undefined,'',path.relative(root,path.join(root,'relativo'))]){
+  await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
+  await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'});
+  assert.equal(fs.readFileSync(sentinel,'utf8'),'preservado');
+ }
 });
 
 function installerHost({runtime,fake,quit=()=>{},version='1.4.0'}){

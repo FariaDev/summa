@@ -51,9 +51,19 @@ function installerAssetName(version){
 function dmgAssetName(version){return `Summa-${normalizeVersion(version)}.dmg`;}
 
 /**
+ * Nome do AppImage do Linux publicado na Release (#119).
+ * @param {string} version versão estável, com ou sem `v`
+ * @returns {string}
+ * @example appImageAssetName('v1.4.0') // 'Summa-1.4.0-x86_64.AppImage'
+ */
+function appImageAssetName(version){
+ return `Summa-${normalizeVersion(version)}-x86_64.AppImage`;
+}
+
+/**
  * URLs públicas dos assets de uma Release assinada.
  * @param {string} version versão estável (`X.Y.Z`)
- * @returns {{manifest:string,signature:string,zip:string,installer:string,dmg:string}}
+ * @returns {{manifest:string,signature:string,zip:string,installer:string,appImage:string,dmg:string}}
  * @example updateAssetUrls('1.0.3').manifest // 'https://github.com/…/mesa-manifest-v1.0.3.json'
  */
 function updateAssetUrls(version){
@@ -64,6 +74,7 @@ function updateAssetUrls(version){
   signature:`${base}/mesa-manifest-v${v}.sig`,
   zip:`${base}/mesa-estudos-${v}.zip`,
   installer:`${base}/${installerAssetName(v)}`,
+  appImage:`${base}/${appImageAssetName(v)}`,
   dmg:`${base}/${dmgAssetName(v)}`,
  };
 }
@@ -143,19 +154,19 @@ function installerFields(parsed){
  return {exeSha256,exeBytes};
 }
 
-function dmgFields(parsed){
- if(parsed.dmgSha256===undefined&&parsed.dmgBytes===undefined)return {};
- const dmgSha256=String(parsed.dmgSha256||'').trim().toLowerCase();
- const dmgBytes=Number(parsed.dmgBytes);
- if(!/^[0-9a-f]{64}$/.test(dmgSha256))throw invalidManifest(invalidValue('dmgSha256',parsed.dmgSha256,'SHA-256 (64 caracteres hexadecimais)'));
- if(!Number.isSafeInteger(dmgBytes)||dmgBytes<=0)throw invalidManifest(invalidValue('dmgBytes',parsed.dmgBytes,'inteiro positivo seguro'));
- return {dmgSha256,dmgBytes};
+function releaseImageFields(parsed,prefix){
+ const hashKey=`${prefix}Sha256`,bytesKey=`${prefix}Bytes`;
+ if(parsed[hashKey]===undefined&&parsed[bytesKey]===undefined)return {};
+ const hash=String(parsed[hashKey]||'').trim().toLowerCase(),bytes=Number(parsed[bytesKey]);
+ if(!/^[0-9a-f]{64}$/.test(hash))throw invalidManifest(invalidValue(hashKey,parsed[hashKey],'SHA-256 (64 caracteres hexadecimais)'));
+ if(!Number.isSafeInteger(bytes)||bytes<=0)throw invalidManifest(invalidValue(bytesKey,parsed[bytesKey],'inteiro positivo seguro'));
+ return {[hashKey]:hash,[bytesKey]:bytes};
 }
 
 /**
  * Os campos do manifesto, já validados (sem confiar na assinatura ainda).
  * @param {Buffer} bytes conteúdo exato do `mesa-manifest-vX.Y.Z.json`
- * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number,dmgSha256?:string,dmgBytes?:number}}
+ * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number,appImageSha256?:string,appImageBytes?:number,dmgSha256?:string,dmgBytes?:number}}
  * @example parseManifest(Buffer.from('{"version":"1.0.3",…}'))
  */
 function parseManifest(bytes){
@@ -171,7 +182,8 @@ function parseManifest(bytes){
   zipSha256:zipHashText(parsed.zipSha256),
   zipBytes:zipBytesNumber(parsed.zipBytes),
   ...installerFields(parsed),
-  ...dmgFields(parsed),
+  ...releaseImageFields(parsed,'appImage'),
+  ...releaseImageFields(parsed,'dmg'),
  };
 }
 
@@ -261,6 +273,31 @@ function assertDmgDeclared(manifest){
 function assertDmgMatches(received,declared){
  if(received.bytes!==declared.dmgBytes)throw Error(`tamanho do DMG difere do manifesto assinado: recebido ${received.bytes} bytes; esperado ${declared.dmgBytes} bytes`);
  if(received.sha256!==declared.dmgSha256)throw Error(`SHA-256 do DMG não confere: recebido ${received.sha256}; esperado ${declared.dmgSha256}`);
+}
+
+/**
+ * O manifesto assinado declara um AppImage que cabe no teto do download.
+ * @param {{version:string,appImageSha256?:string,appImageBytes?:number}} manifest
+ * @param {number} [maxBytes]
+ * @returns {{appImageSha256:string,appImageBytes:number}}
+ * @example assertAppImageDeclared({version:'1.4.0',appImageSha256:'ab…',appImageBytes:1024})
+ */
+function assertAppImageDeclared(manifest,maxBytes=INSTALLER_MAX_BYTES){
+ if(!manifest.appImageSha256||!manifest.appImageBytes)throw refuse('err.update.appImageMissing',{version:manifest.version});
+ if(manifest.appImageBytes>maxBytes)throw refuse('err.update.appImageTooLarge',{bytes:manifest.appImageBytes,max:maxBytes});
+ return {appImageSha256:manifest.appImageSha256,appImageBytes:manifest.appImageBytes};
+}
+
+/**
+ * O AppImage baixado é exatamente o que o manifesto assinado declara.
+ * @param {{bytes:number,sha256:string}} received tamanho e SHA-256 do arquivo
+ * @param {{appImageSha256:string,appImageBytes:number}} declared
+ * @returns {void}
+ * @example assertAppImageMatches({bytes:1024,sha256:'ab…'},{appImageBytes:1024,appImageSha256:'ab…'})
+ */
+function assertAppImageMatches(received,declared){
+ if(received.bytes!==declared.appImageBytes)throw refuse('err.update.appImageBytes',{received:received.bytes,expected:declared.appImageBytes});
+ if(received.sha256!==declared.appImageSha256)throw refuse('err.update.appImageHash');
 }
 
 /**
@@ -360,6 +397,7 @@ async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifest
 
 module.exports={
  EMBEDDED_UPDATE_PUBLIC_KEY,PLACEHOLDER_MARK,MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,INSTALLER_MAX_BYTES,
+ appImageAssetName,assertAppImageDeclared,assertAppImageMatches,
  installerAssetName,assertInstallerDeclared,assertInstallerMatches,
  dmgAssetName,assertDmgDeclared,assertDmgMatches,
  updateAssetUrls,normalizeVersion,readUpdatePublicKey,isPlaceholderKey,publicKeyOf,

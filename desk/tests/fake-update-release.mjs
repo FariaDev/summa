@@ -22,13 +22,13 @@ export function generateSigningPair() {
 
 /**
  * Manifesto assinado + fetchBuffer com os três assets, pronto para `applyUpdate`.
- * @param {{version?: string, commit?: string, zip?: Buffer,
+ * @param {{version?: string, commit?: string, zip?: Buffer, installer?: Buffer, appImage?: Buffer, dmg?: Buffer,
  *   pair?: {publicKey: string, privateKey: import('node:crypto').KeyObject},
  *   publicKey?: string, signingKey?: import('node:crypto').KeyObject,
  *   manifest?: object, signatureBytes?: Buffer|null, zipDownload?: Buffer}} [options]
  * @returns {{version: string, publicKey: string, privateKey: import('node:crypto').KeyObject,
  *   manifest: object, manifestBytes: Buffer, signatureBytes: Buffer|null,
- *   urls: {manifest: string, signature: string, zip: string},
+ *   urls: {manifest: string, signature: string, zip: string, installer: string, appImage: string, dmg: string},
  *   fetchBuffer: (url: string) => Promise<Buffer>, zip: Buffer}}
  * @example const release = makeSignedRelease({version: '0.4.1', commit: TEST_COMMIT, zip});
  */
@@ -44,6 +44,7 @@ export function makeSignedRelease(options = {}) {
     signatureBytes,
     zipDownload,
     installer = null,
+    appImage = null,
     dmg = null,
   } = options;
   const manifest = manifestOverride || {
@@ -51,6 +52,7 @@ export function makeSignedRelease(options = {}) {
     commit,
     zipSha256: crypto.createHash('sha256').update(zip).digest('hex'),
     zipBytes: zip.length,
+    ...(appImage ? {appImageSha256: crypto.createHash('sha256').update(appImage).digest('hex'), appImageBytes: appImage.length} : {}),
     ...(installer ? {exeSha256: crypto.createHash('sha256').update(installer).digest('hex'), exeBytes: installer.length} : {}),
     ...(dmg ? {dmgSha256: crypto.createHash('sha256').update(dmg).digest('hex'), dmgBytes: dmg.length} : {}),
   };
@@ -62,6 +64,7 @@ export function makeSignedRelease(options = {}) {
   const fetchBuffer = async (url) => {
     if (url === urls.manifest) return manifestBytes;
     if (url === urls.signature) return signature;
+    if (url === urls.appImage && appImage) return appImage;
     if (url === urls.zip) return zipDownload || zip;
     if (url === urls.dmg && dmg) return dmg;
     throw Error(`HTTP 404 ${url}`);
