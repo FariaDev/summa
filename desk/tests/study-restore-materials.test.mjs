@@ -153,6 +153,57 @@ test('restauração: origem ausente remapeia automaticamente (outra máquina)', 
   }
 });
 
+for (const [flavor, sourcePath, sourceHome] of [
+  ['Windows', path.win32, 'Z:\\Student\\Summa'],
+  ['POSIX', path.posix, '/Volumes/Student/Summa'],
+]) {
+  test(`restauração: backup ${flavor} recupera caminhos dos leitores e do material`, async () => {
+    const root = tempDir('mesa-backup-portable');
+    const source = path.join(root, 'source');
+    const materials = path.join(root, 'materials');
+    const dest = path.join(root, 'backup');
+    const runtime = path.join(root, 'restored');
+    const oldRuntime = sourcePath.join(sourceHome, 'runtime');
+    const oldMaterials = sourcePath.join(sourceHome, 'materials');
+    const session = sourcePath.join(oldRuntime, 'session.jsonl');
+    const reader = sourcePath.join(oldMaterials, 'chapter', 'aula.pdf');
+    const runtimePdf = sourcePath.join(oldRuntime, 'downloads', 'reference.pdf');
+    const unrelated = sourcePath.join(`${oldMaterials}-other`, 'outside.pdf');
+    try {
+      write(source, 'session.jsonl', '{}\n');
+      write(source, 'downloads/reference.pdf', PDF_BYTES);
+      write(materials, 'chapter/aula.pdf', PDF_BYTES);
+      const pdfs = [{path: reader, page: 2}, {path: unrelated, page: 1}];
+      write(source, 'desk.json', JSON.stringify({session, sessionLayouts: {[session]: {pdfs}}}));
+      write(source, 'pdf-notes.json', JSON.stringify({[COURSE.id]: [{ref: {path: runtimePdf}}]}));
+      const config = write(root, 'config.json', JSON.stringify({courses: [{path: sourcePath.dirname(runtimePdf)}]}));
+      const version = await backup.backupNow({runtime: source, root: dest, materials: [{...COURSE, path: materials}],
+        external: [{path: config, ref: 'mesa-config.json'}]});
+      const manifest = backup.readManifest(version.path);
+      manifest.runtime.path = oldRuntime;
+      Object.assign(manifest.materials[0], {sourceDir: oldMaterials, sourceReal: oldMaterials});
+      fs.writeFileSync(backup.manifestPath(version.path), JSON.stringify(manifest));
+
+      const plan = await backup.prepareRestore({runtime, root: dest, snapshotId: version.snapshotId});
+      assert.equal(plan.relocation.from, oldRuntime);
+      assert.ok(plan.materialsChanges.includes('desk.json'));
+      assert.ok(plan.relocation.stale.includes(unrelated));
+      await backup.applyRestore({runtime, planId: plan.planId});
+
+      const restored = JSON.parse(read(runtime, 'desk.json'));
+      const restoredSession = path.join(runtime, 'session.jsonl');
+      const restoredPdf = path.join(plan.materials[0].to, 'chapter', 'aula.pdf');
+      assert.equal(restored.session, restoredSession);
+      assert.deepEqual(restored.sessionLayouts, {[restoredSession]: {pdfs: [{path: restoredPdf, page: 2}, pdfs[1]]}});
+      assert.deepEqual(fs.readFileSync(restoredPdf), PDF_BYTES);
+      assert.equal(JSON.parse(read(runtime, 'pdf-notes.json'))[COURSE.id][0].ref.path, path.join(runtime, 'downloads', 'reference.pdf'));
+      assert.equal(JSON.parse(read(runtime, 'external/mesa-config.json')).courses[0].path, path.join(runtime, 'downloads'));
+    } finally {
+      cleanup(root);
+    }
+  });
+}
+
 test('restauração: remap não volta com rollback (diário devolve o estado anterior)', async () => {
   const fixture = seedRuntime();
   const dest = tempDir('mesa-dest');
