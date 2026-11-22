@@ -538,9 +538,3 @@ export function initLayoutPresetsUI({api, onApplied, document: docArg} = {}) {
   if (globalThis.window) globalThis.window.mesaLayoutPresets = {...api_refs, surface: () => surface, summaryOf, normalizeLayout, normalizeStore, builtinPresets};
   return api_refs;
 }
-
-/* Testes de UI: reseta o singleton (a criação é por documento e o teste sobe
-   um app por vez). */
-export function resetLayoutPresetsUI() {
-  ui = null;
-}

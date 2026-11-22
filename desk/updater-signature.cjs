@@ -47,6 +47,9 @@ function installerAssetName(version){
  return `Summa-Setup-${normalizeVersion(version)}.exe`;
 }
 
+/** Nome da imagem macOS da release. @param {string} version @returns {string} @example dmgAssetName('1.4.0') */
+function dmgAssetName(version){return `Summa-${normalizeVersion(version)}.dmg`;}
+
 /**
  * Nome do AppImage do Linux publicado na Release (#119).
  * @param {string} version versão estável, com ou sem `v`
@@ -60,7 +63,7 @@ function appImageAssetName(version){
 /**
  * URLs públicas dos assets de uma Release assinada.
  * @param {string} version versão estável (`X.Y.Z`)
- * @returns {{manifest:string,signature:string,zip:string,installer:string,appImage:string}}
+ * @returns {{manifest:string,signature:string,zip:string,installer:string,appImage:string,dmg:string}}
  * @example updateAssetUrls('1.0.3').manifest // 'https://github.com/…/mesa-manifest-v1.0.3.json'
  */
 function updateAssetUrls(version){
@@ -72,6 +75,7 @@ function updateAssetUrls(version){
   zip:`${base}/mesa-estudos-${v}.zip`,
   installer:`${base}/${installerAssetName(v)}`,
   appImage:`${base}/${appImageAssetName(v)}`,
+  dmg:`${base}/${dmgAssetName(v)}`,
  };
 }
 
@@ -150,19 +154,19 @@ function installerFields(parsed){
  return {exeSha256,exeBytes};
 }
 
-function appImageFields(parsed){
- if(parsed.appImageSha256===undefined&&parsed.appImageBytes===undefined)return {};
- const appImageSha256=String(parsed.appImageSha256||'').trim().toLowerCase();
- if(!/^[0-9a-f]{64}$/.test(appImageSha256))throw invalidManifest('campo appImageSha256 ausente ou fora do formato SHA-256');
- const appImageBytes=Number(parsed.appImageBytes);
- if(!Number.isSafeInteger(appImageBytes)||appImageBytes<=0)throw invalidManifest('campo appImageBytes ausente ou não inteiro positivo');
- return {appImageSha256,appImageBytes};
+function releaseImageFields(parsed,prefix){
+ const hashKey=`${prefix}Sha256`,bytesKey=`${prefix}Bytes`;
+ if(parsed[hashKey]===undefined&&parsed[bytesKey]===undefined)return {};
+ const hash=String(parsed[hashKey]||'').trim().toLowerCase(),bytes=Number(parsed[bytesKey]);
+ if(!/^[0-9a-f]{64}$/.test(hash))throw invalidManifest(invalidValue(hashKey,parsed[hashKey],'SHA-256 (64 caracteres hexadecimais)'));
+ if(!Number.isSafeInteger(bytes)||bytes<=0)throw invalidManifest(invalidValue(bytesKey,parsed[bytesKey],'inteiro positivo seguro'));
+ return {[hashKey]:hash,[bytesKey]:bytes};
 }
 
 /**
  * Os campos do manifesto, já validados (sem confiar na assinatura ainda).
  * @param {Buffer} bytes conteúdo exato do `mesa-manifest-vX.Y.Z.json`
- * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number,appImageSha256?:string,appImageBytes?:number}}
+ * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number,appImageSha256?:string,appImageBytes?:number,dmgSha256?:string,dmgBytes?:number}}
  * @example parseManifest(Buffer.from('{"version":"1.0.3",…}'))
  */
 function parseManifest(bytes){
@@ -178,7 +182,8 @@ function parseManifest(bytes){
   zipSha256:zipHashText(parsed.zipSha256),
   zipBytes:zipBytesNumber(parsed.zipBytes),
   ...installerFields(parsed),
-  ...appImageFields(parsed),
+  ...releaseImageFields(parsed,'appImage'),
+  ...releaseImageFields(parsed,'dmg'),
  };
 }
 
@@ -255,6 +260,19 @@ function assertInstallerDeclared(manifest,maxBytes=INSTALLER_MAX_BYTES){
 function assertInstallerMatches(received,declared){
  if(received.bytes!==declared.exeBytes)throw refuse('err.update.installerBytes',{received:received.bytes,expected:declared.exeBytes});
  if(received.sha256!==declared.exeSha256)throw refuse('err.update.installerHash');
+}
+
+/** Declaração obrigatória para atualizar pelo DMG. @param {{version:string,dmgBytes?:number,dmgSha256?:string}} manifest @returns {{dmgBytes:number,dmgSha256:string}} @example assertDmgDeclared(manifest) */
+function assertDmgDeclared(manifest){
+ if(!manifest.dmgBytes||!manifest.dmgSha256)throw Error(`release ${manifest.version}: DMG ausente no manifesto assinado`);
+ if(manifest.dmgBytes>INSTALLER_MAX_BYTES)throw Error(`DMG excede o teto de ${INSTALLER_MAX_BYTES} bytes`);
+ return {dmgBytes:manifest.dmgBytes,dmgSha256:manifest.dmgSha256};
+}
+
+/** Confere os bytes da imagem antes de montá-la. @param {{bytes:number,sha256:string}} received @param {{dmgBytes:number,dmgSha256:string}} declared @returns {void} @example assertDmgMatches(received,declared) */
+function assertDmgMatches(received,declared){
+ if(received.bytes!==declared.dmgBytes)throw Error(`tamanho do DMG difere do manifesto assinado: recebido ${received.bytes} bytes; esperado ${declared.dmgBytes} bytes`);
+ if(received.sha256!==declared.dmgSha256)throw Error(`SHA-256 do DMG não confere: recebido ${received.sha256}; esperado ${declared.dmgSha256}`);
 }
 
 /**
@@ -360,7 +378,7 @@ async function fetchReleaseAsset({fetchBuffer,url,maxBytes,version,failureKey}){
  * precisa) o zip com tamanho e SHA-256 do manifesto. Nada é aplicado aqui.
  * @param {{version:string,publicKey:string,fetchBuffer:Function,needZip:boolean,
  *   manifestMaxBytes?:number,signatureMaxBytes?:number,zipMaxBytes?:number}} input
- * @returns {Promise<{manifest:{version:string,commit:string,zipSha256:string,zipBytes:number},zip:Buffer|null,urls:{manifest:string,signature:string,zip:string,installer:string,appImage:string}}>}
+ * @returns {Promise<{manifest:ReturnType<typeof parseManifest>,zip:Buffer|null,urls:ReturnType<typeof updateAssetUrls>}>}
  * @example const release=await loadSignedRelease({version:'1.0.3', publicKey, fetchBuffer, needZip:true})
  */
 async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES}){
@@ -381,6 +399,7 @@ module.exports={
  EMBEDDED_UPDATE_PUBLIC_KEY,PLACEHOLDER_MARK,MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,INSTALLER_MAX_BYTES,
  appImageAssetName,assertAppImageDeclared,assertAppImageMatches,
  installerAssetName,assertInstallerDeclared,assertInstallerMatches,
+ dmgAssetName,assertDmgDeclared,assertDmgMatches,
  updateAssetUrls,normalizeVersion,readUpdatePublicKey,isPlaceholderKey,publicKeyOf,
  parseManifest,verifySignedManifest,assertZipMatchesManifest,assertTagCommitMatches,assertAppliedCommitMatches,assertZipWithinLimit,tagMissingError,
  fetchReleaseAsset,loadSignedRelease,

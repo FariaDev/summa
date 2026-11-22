@@ -35,7 +35,3 @@ export function mountConversationLibraryBoot(options) {
   library = createConversationLibraryLoader(options);
   return {open: () => (pendingOptions ? library.open() : Promise.resolve())};
 }
-/** Importa a biblioteca (o botão da paleta pode esperar).
- * @returns {Promise<any>} @example await loadConversationLibrary();
- */
-export const loadConversationLibrary = () => library.load();

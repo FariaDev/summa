@@ -5,7 +5,7 @@
 
    Uso:
      npm run update:keygen -- --private-key <caminho FORA do repositório>
-     npm run update:sign -- vX.Y.Z --private-key <caminho> --out <pasta> --exe <Summa-Setup-X.Y.Z.exe> --appimage <Summa-X.Y.Z-x86_64.AppImage>
+     npm run update:sign -- vX.Y.Z --private-key <caminho> --out <pasta> --exe <Summa-Setup-X.Y.Z.exe> --appimage <Summa-X.Y.Z-x86_64.AppImage> --dmg <Summa-X.Y.Z.dmg>
      npm run update:release:verify -- vX.Y.Z --dir <pasta>
 
    A chave privada nunca é impressa nem entra no repositório; a pública vai
@@ -32,7 +32,7 @@ let PUBLIC_KEY_FILE = '';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const USAGE = `uso:
   update-release.mjs keygen --private-key <caminho fora do repositório>
-  update-release.mjs sign vX.Y.Z --private-key <caminho> --out <pasta> --exe <Summa-Setup-X.Y.Z.exe> --appimage <Summa-X.Y.Z-x86_64.AppImage>
+  update-release.mjs sign vX.Y.Z --private-key <caminho> --out <pasta> --exe <Summa-Setup-X.Y.Z.exe> --appimage <Summa-X.Y.Z-x86_64.AppImage> --dmg <Summa-X.Y.Z.dmg>
   update-release.mjs verify vX.Y.Z --dir <pasta>`;
 
 function flag(args, name) {
@@ -150,13 +150,12 @@ function installerToSign(args, version) {
   return file;
 }
 
-function appImageToSign(args, version) {
-  const raw = flag(args, '--appimage');
-  const expected = signature.appImageAssetName(version);
-  if (!raw) fail(`informe --appimage <${expected}>, o AppImage gerado pelo build Linux`);
+function releaseImageToSign(args, option, kind, expected) {
+  const raw = flag(args, option);
+  if (!raw) fail(`informe ${option} <${expected}>, a imagem gerada pelo build ${kind}`);
   const file = path.resolve(raw);
-  if (path.basename(file) !== expected) fail(`AppImage com nome errado: recebido ${path.basename(file)}; esperado ${expected}`);
-  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) fail(`AppImage não encontrado: ${expected}`);
+  if (path.basename(file) !== expected) fail(`${kind} com nome errado: recebido ${path.basename(file)}; esperado ${expected}`);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile() || !fs.statSync(file).size) fail(`${kind} não encontrado ou vazio: ${expected}`);
   return file;
 }
 
@@ -170,10 +169,11 @@ async function sign(args) {
   const outDir = path.resolve(flag(args, '--out') || '');
   if (!flag(args, '--out')) fail('informe --out <pasta dos assets>');
   const installer = installerToSign(args, version);
-  const appImage = appImageToSign(args, version);
+  const appImage = releaseImageToSign(args, '--appimage', 'AppImage', signature.appImageAssetName(version));
   const commit = git(['rev-parse', '--verify', `v${version}^{commit}`]);
   const installerBytes = fs.readFileSync(installer);
   assertInstallerIdentity(installerBytes, {version, commit});
+  const dmg = releaseImageToSign(args, '--dmg', 'DMG', signature.dmgAssetName(version));
   await rehearseBeforeSigning({repoRoot: REPO_ROOT, version});
   fs.mkdirSync(outDir, {recursive: true});
   const zip = buildReleaseZip({repoRoot: REPO_ROOT, version, outDir});
@@ -183,7 +183,10 @@ async function sign(args) {
   const appImageName = path.basename(appImage);
   const appImageOut = path.join(outDir, appImageName);
   if (appImageOut !== appImage) fs.copyFileSync(appImage, appImageOut);
-  const manifest = {appImageSha256: sha256OfFile(appImageOut), appImageBytes: fs.statSync(appImageOut).size, version, commit, zipSha256: zip.zipSha256, zipBytes: zip.zipBytes, exeSha256: crypto.createHash('sha256').update(installerBytes).digest('hex'), exeBytes: installerBytes.length};
+  const dmgName = path.basename(dmg);
+  const dmgOut = path.join(outDir, dmgName);
+  if (path.resolve(dmg) !== dmgOut) fs.copyFileSync(dmg, dmgOut);
+  const manifest = {appImageSha256: sha256OfFile(appImageOut), appImageBytes: fs.statSync(appImageOut).size, version, commit, zipSha256: zip.zipSha256, zipBytes: zip.zipBytes, exeSha256: crypto.createHash('sha256').update(installerBytes).digest('hex'), exeBytes: installerBytes.length, dmgSha256: sha256OfFile(dmgOut), dmgBytes: fs.statSync(dmgOut).size};
   const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   const manifestFile = path.join(outDir, `mesa-manifest-v${version}.json`);
   const signatureFile = path.join(outDir, `mesa-manifest-v${version}.sig`);
@@ -192,9 +195,10 @@ async function sign(args) {
   console.log(`zip: ${zip.zipName} (${zip.zipBytes} bytes, sha256 ${zip.zipSha256})`);
   console.log(`instalador: ${installerName} (${manifest.exeBytes} bytes, sha256 ${manifest.exeSha256})`);
   console.log(`AppImage: ${appImageName} (${manifest.appImageBytes} bytes, sha256 ${manifest.appImageSha256})`);
+  console.log(`DMG: ${dmgName} (${manifest.dmgBytes} bytes, sha256 ${manifest.dmgSha256})`);
   console.log(`manifesto: ${path.basename(manifestFile)} (commit ${commit})`);
   console.log(`assinatura: ${path.basename(signatureFile)}`);
-  console.log(`publique com: gh release upload v${version} ${JSON.stringify(zip.zipName)} ${JSON.stringify(installerName)} ${JSON.stringify(appImageName)} ${JSON.stringify(path.basename(manifestFile))} ${JSON.stringify(path.basename(signatureFile))} --clobber`);
+  console.log(`publique com: gh release upload v${version} ${JSON.stringify(zip.zipName)} ${JSON.stringify(installerName)} ${JSON.stringify(appImageName)} ${JSON.stringify(dmgName)} ${JSON.stringify(path.basename(manifestFile))} ${JSON.stringify(path.basename(signatureFile))} --clobber`);
 }
 
 function verify(args) {
@@ -206,7 +210,8 @@ function verify(args) {
   const zipFile = path.join(dir, `mesa-estudos-${version}.zip`);
   const installerFile = path.join(dir, signature.installerAssetName(version));
   const appImageFile = path.join(dir, signature.appImageAssetName(version));
-  for (const file of [manifestFile, signatureFile, zipFile, installerFile, appImageFile]) {
+  const dmgFile = path.join(dir, signature.dmgAssetName(version));
+  for (const file of [manifestFile, signatureFile, zipFile, installerFile, appImageFile, dmgFile]) {
     if (!fs.existsSync(file)) fail(`asset ausente: ${path.basename(file)} em ${dir}`);
   }
   const manifest = signature.verifySignedManifest({
@@ -218,6 +223,7 @@ function verify(args) {
   signature.assertZipMatchesManifest(fs.readFileSync(zipFile), manifest);
   signature.assertInstallerMatches({bytes: fs.statSync(installerFile).size, sha256: sha256OfFile(installerFile)}, signature.assertInstallerDeclared(manifest));
   signature.assertAppImageMatches({bytes: fs.statSync(appImageFile).size, sha256: sha256OfFile(appImageFile)}, signature.assertAppImageDeclared(manifest));
+  signature.assertDmgMatches({bytes: fs.statSync(dmgFile).size, sha256: sha256OfFile(dmgFile)}, signature.assertDmgDeclared(manifest));
   let tagCommit = '';
   try {
     tagCommit = git(['rev-parse', '--verify', `v${version}^{commit}`]);
@@ -226,7 +232,7 @@ function verify(args) {
   }
   signature.assertTagCommitMatches(manifest, tagCommit, {tag: `v${version}`});
   assertInstallerIdentity(fs.readFileSync(installerFile), {version, commit: tagCommit});
-  console.log(`release v${version} confere: assinatura, zip (${manifest.zipBytes} bytes), instalador (${manifest.exeBytes} bytes), AppImage (${manifest.appImageBytes} bytes) e commit ${tagCommit}.`);
+  console.log(`release v${version} confere: assinatura, zip (${manifest.zipBytes} bytes), instalador (${manifest.exeBytes} bytes), AppImage (${manifest.appImageBytes} bytes), DMG (${manifest.dmgBytes} bytes) e commit ${tagCommit}.`);
 }
 
 async function main() {

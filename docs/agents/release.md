@@ -16,7 +16,7 @@ fora do repositório, nunca é commitada nem impressa. Enquanto a pública for o
 marcador `PLACEHOLDER`, o app recusa toda atualização com o motivo.
 
 O updater confere o manifesto assinado (`mesa-manifest-vX.Y.Z.json` +
-`.sig` em base64) com `{version, commit, zipSha256, zipBytes, exeSha256, exeBytes, appImageSha256, appImageBytes}`:
+`.sig` em base64) com `{version, commit, zipSha256, zipBytes, exeSha256, exeBytes, appImageSha256, appImageBytes, dmgSha256, dmgBytes}`:
 
 - **zip**: baixa o zip **publicado na Release** (`mesa-estudos-X.Y.Z.zip`, bytes
   estáveis, gerado por `git archive` com o `.update-manifest.json` da versão,
@@ -28,6 +28,14 @@ O updater confere o manifesto assinado (`mesa-manifest-vX.Y.Z.json` +
 - **git/bundle**: confere que `git rev-parse vX.Y.Z^{commit}` é o `commit` do
   manifesto e, depois do pull, exige `HEAD` nesse mesmo commit — branch à
   frente da tag tem código não assinado e é recusada;
+- **macOS pelo DMG**: o marcador `release-install.json` identifica a instalação
+  em qualquer pasta. Baixa `Summa-X.Y.Z.dmg`, confere `dmgBytes`/SHA-256 e a
+  assinatura do manifesto; usa o Electron instalado, sem Node/npm/Git do sistema.
+  O helper monta somente leitura e copia para `Summa.app.new` com o app aberto,
+  remove quarentena, confere assinatura ad-hoc/versão e só então autoriza fechar.
+  Aguarda o PID sair, troca a pasta com recuperação em `.old`, desmonta e reabre.
+  Pasta sem escrita recusa antes do download; dados/config/runtime ficam fora
+  do bundle. O resultado é conferido pela versão na próxima abertura;
 - todo download tem teto (manifesto 64 KB, assinatura 8 KB, zip 64 MB) e o
   stream é cancelado ao passar dele. Sem manifesto, assinatura inválida ou
   hash/commit diferente, nada é aplicado — o rollback normal continua valendo.
@@ -78,19 +86,21 @@ npm run update:keygen -- --private-key ~/mesa-update-signing.pem
    ```sh
    gh run download -R FariaDev/summa --name instalador-windows --dir ../instalador-vX.Y.Z <id da execução da tag>
    cd desk
+   npm run installer:macos -- --out ../instalador-vX.Y.Z
    npm run update:sign -- vX.Y.Z --private-key ~/mesa-update-signing.pem --out ../release-vX.Y.Z \
      --exe ../instalador-vX.Y.Z/Summa-Setup-X.Y.Z.exe \
-     --appimage ../appimage-vX.Y.Z/Summa-X.Y.Z-x86_64.AppImage
+     --appimage ../appimage-vX.Y.Z/Summa-X.Y.Z-x86_64.AppImage \
+     --dmg ../instalador-vX.Y.Z/Summa-X.Y.Z.dmg
    npm run update:release:verify -- vX.Y.Z --dir ../release-vX.Y.Z
    ```
 
    Baixe também o artefato `appimage-linux` do workflow **Instalador do Linux**, gerado da mesma tag e aberto sob xvfb. Build local em Linux x86_64: `APPIMAGETOOL=/caminho/appimagetool npm run appimage:linux -- --out ../appimage-vX.Y.Z`.
 
    O `sign` recusa se a pública ainda for `PLACEHOLDER` ou se a privada não
-   corresponder a ela, e também sem o `--exe` e o `--appimage` da mesma versão. Ele gera
-   `mesa-estudos-X.Y.Z.zip`, `Summa-Setup-X.Y.Z.exe`, `Summa-X.Y.Z-x86_64.AppImage`,
+   corresponder a ela, e também sem `--exe`, `--appimage` e `--dmg` da mesma versão. Ele gera
+   `mesa-estudos-X.Y.Z.zip`, `Summa-Setup-X.Y.Z.exe`, `Summa-X.Y.Z-x86_64.AppImage`, `Summa-X.Y.Z.dmg`,
    `mesa-manifest-vX.Y.Z.json` e `mesa-manifest-vX.Y.Z.sig`;
-3. crie a Release e anexe **os cinco** assets:
+3. crie a Release e anexe **os seis** assets:
 
    ```sh
    cd ..
@@ -98,6 +108,7 @@ npm run update:keygen -- --private-key ~/mesa-update-signing.pem
    gh release upload vX.Y.Z release-vX.Y.Z/mesa-estudos-X.Y.Z.zip \
      release-vX.Y.Z/Summa-Setup-X.Y.Z.exe \
      release-vX.Y.Z/Summa-X.Y.Z-x86_64.AppImage \
+     release-vX.Y.Z/Summa-X.Y.Z.dmg \
      release-vX.Y.Z/mesa-manifest-vX.Y.Z.json release-vX.Y.Z/mesa-manifest-vX.Y.Z.sig
    ```
 
