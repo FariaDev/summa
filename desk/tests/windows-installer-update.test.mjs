@@ -9,6 +9,7 @@ import {fakeIpcMain,fakeShell} from './fake-electron-shell.mjs';
 import {tempDir} from './temp-dir.mjs';
 import {exitedInstaller} from './fake-installer-process.mjs';
 import {message} from '../src/i18n.mjs';
+import {enText,ptText} from './pt-text.mjs';
 
 /* #119: no Windows instalado, a atualização é o instalador conferido pelo
    manifesto assinado. Nenhum teste toca a rede nem abre um `.exe` de verdade. */
@@ -125,12 +126,22 @@ test('#119: instalador que sai antes de ficar pronto mantém a Summa aberta',asy
  const child=new EventEmitter();child.exitCode=null;
  const waiting=installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),pollMs:5});
  child.emit('exit',2);
- await assert.rejects(waiting,/saiu com o código 2/);
+ await assert.rejects(waiting,error=>{
+  assert.equal(error.message,message('err.update.installerExited',{code:2}));
+  assert.equal(enText(error.message),'The installer exited with code 2; expected 0 and the ready signal.');
+  assert.equal(ptText(error.message),'O instalador saiu com o código 2; esperado 0 e o aviso de pronto.');
+  return true;
+ });
 });
 
 test('#119: instalador que não fica pronto no prazo mantém a Summa aberta',async()=>{
  const child=new EventEmitter();child.exitCode=null;
- await assert.rejects(installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),timeoutMs:10,pollMs:2}),/não ficou pronto/);
+ await assert.rejects(installerUpdate.waitForInstallerReady({child,readyFile:path.join(tmp(),'Summa.ready'),timeoutMs:0}),error=>{
+  assert.equal(error.message,message('err.update.installerReadyTimeout',{minutes:0}));
+  assert.equal(enText(error.message),'The installer was not ready within 0 min.');
+  assert.equal(ptText(error.message),'O instalador não ficou pronto em 0 min.');
+  return true;
+ });
 });
 
 test('#119: erro ao abrir o instalador chega a quem pediu',async()=>{

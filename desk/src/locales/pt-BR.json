@@ -1,4 +1,6 @@
 {
+ "err.update.installerExited": "O instalador saiu com o código {code}; esperado 0 e o aviso de pronto.",
+ "err.update.installerReadyTimeout": "O instalador não ficou pronto em {minutes} min.",
  "err.update.installerBusy": "Outro instalador da Summa já está aberto. Feche-o e tente de novo.",
   "about.by": "Feita por Lucas Faria",
   "about.close": "Fechar o Sobre",
