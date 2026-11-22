@@ -32,6 +32,8 @@ const {spawn, spawnSync} = require('node:child_process');
 const {versionOf} = require('./opencode-version.cjs');
 const {PINNED_VERSION, openCodeRuntimeBinary} = require('./opencode-binary.cjs');
 const {message} = require('../i18n.mjs');
+const {causeArg} = require('../error-detail.mjs');
+const {redactSecrets} = require('../log-entry.mjs');
 const REGISTRY_URL = 'https://registry.npmjs.org';
 const DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 const INSTALL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -326,6 +328,17 @@ function runCommand(file, args, {timeoutMs = INSTALL_TIMEOUT_MS, spawnProcess = 
   return runScript({file, args, input: '', timeoutMs, spawnProcess});
 }
 
+/** @param {string} output @param {string[]} args */
+function commandDetail(output, args) {
+  const locations = [os.homedir(), ...args.filter((arg) => path.isAbsolute(arg) || path.win32.isAbsolute(arg))];
+  let safe = output;
+  for (const location of locations.sort((a, b) => b.length - a.length)) {
+    const pattern = location.split(/[\\/]/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\\\/]');
+    safe = safe.replace(new RegExp(pattern, process.platform === 'win32' ? 'gi' : 'g'), '…');
+  }
+  return causeArg(redactSecrets(safe));
+}
+
 /**
  * @param {{file: string, args: string[], input: string, env?: NodeJS.ProcessEnv, timeoutMs: number,
  *   spawnProcess?: typeof spawn}} input
@@ -354,7 +367,7 @@ function runScript({file, args, input, env = process.env, timeoutMs, spawnProces
     child.on('error', (error) => { const cause = /** @type {NodeJS.ErrnoException} */ (error); finish(new OpenCodeInstallError('command', 'err.opencode.install.start', {cause: cause.code || cause.message}, error)); });
     child.on('close', (code) => {
       if (code === 0) return finish(null, {stdout, stderr});
-      const detail = String(stderr || stdout || '').trim() || `código ${code}`;
+      const detail = commandDetail(String(stderr || stdout || '').trim(), args) || `código ${code}`;
       finish(new OpenCodeInstallError('command', 'err.opencode.install.command', {code: String(code), detail: detail.slice(0, 300)}));
     });
     /* O comando pode sair sem ler stdin: o EPIPE chega como evento e, sem ouvinte,

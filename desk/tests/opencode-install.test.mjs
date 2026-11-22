@@ -55,6 +55,24 @@ test('Setup extract detail is decoded; empty and unrelated errors stay human',as
  assert.doesNotMatch(installErrorText('network',detail).body,/broken archive/);
 });
 
+test('command error detail hides home, archive, temporary directory and secrets',async()=>{
+ const home=os.homedir();
+ const directory=path.join(os.tmpdir(),'mesa-opencode-private');
+ const archive=path.join(directory,'opencode.tgz');
+ for(const slash of ['/',String.fromCharCode(92)]){
+  const personal=home.replace(/[\\/]/g,slash);
+  const output=`tar: ${process.platform==='win32'?personal.toUpperCase():personal}: ${archive}: ${directory}: Cannot open; token=private-value`;
+  const error=await runCommand(process.execPath,['-e','process.stderr.write(process.argv[1]);process.exit(2)',output,archive,directory]).catch(reason=>reason);
+  const detail=ptText(error.message);
+  assert.equal(error.code,'command');
+  assert.ok(!detail.toLowerCase().includes(personal.toLowerCase()));
+  assert.ok(!detail.includes(directory));
+  assert.ok(!detail.includes(archive));
+  assert.doesNotMatch(detail,/private-value/);
+  assert.match(detail,/Cannot open/);
+ }
+});
+
 function cpu({avx2=true,musl=false}={}){
  return {
   readFile(file){
