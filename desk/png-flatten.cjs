@@ -107,6 +107,7 @@ function unfilter(raw, width, height, channels) {
     const line = raw.subarray(at, at + stride);
     at += stride;
     const out = pixels.subarray(row * stride, (row + 1) * stride);
+    if (filter === 0) { line.copy(out); continue; }
     const up = row > 0 ? pixels.subarray((row - 1) * stride, row * stride) : null;
     for (let index = 0; index < stride; index += 1) out[index] = unfilterByte(filter, line[index], index, out, up, channels);
   }
