@@ -1574,6 +1574,7 @@
   "keys.status.cancelled": "Recording cancelled.",
   "keys.status.cleared": "“{action:key}” has no shortcut now.",
   "keys.status.needModifier": "Use ⌘, ⌥ or ⌃ together with a key.",
+  "keys.status.needModifierOther": "Use Ctrl or Alt together with a key.",
   "keys.status.now": "“{action:key}” is now {shortcut}.",
   "keys.status.press": "Press the new combination for “{action:key}”. Esc cancels.",
   "keys.status.restored": "“{action:key}” is back to its default ({shortcut}).",

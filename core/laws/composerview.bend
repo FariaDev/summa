@@ -217,9 +217,6 @@ law composer_item_steer_class:
 law composer_item_steer_click:
   {V.attrGet(V.attrsOf(kid(C.queueItemView(C.QueueRow{"a", "oi", False{}, True{}, False{}, True{}}), 1n)), "on:click") == Some{"steerNow"} : Maybe<&2, String>}
 
-law composer_item_steer_aria:
-  {V.attrGet(V.attrsOf(kid(C.queueItemView(C.QueueRow{"a", "oi", False{}, True{}, False{}, True{}}), 1n)), "aria-label") == Some{M.msg("queue.steerNowTitle")} : Maybe<&2, String>}
-
 law composer_item_steer_text:
   {kidText(kid(C.queueItemView(C.QueueRow{"a", "oi", False{}, True{}, False{}, True{}}), 1n), 0n) == M.msg("queue.steerNow") : String}
 

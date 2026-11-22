@@ -166,9 +166,6 @@ def Laws.composer_item_steer_class():
 def Laws.composer_item_steer_click():
   {==}
 
-def Laws.composer_item_steer_aria():
-  {==}
-
 def Laws.composer_item_steer_text():
   {==}
 

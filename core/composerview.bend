@@ -93,9 +93,6 @@ def queueItemTitle(text: String, sending: Bool) -> String:
 def queueSteerNowLabel() -> String:
   M.msg("queue.steerNow")
 
-def queueSteerNowTitle() -> String:
-  M.msg("queue.steerNowTitle")
-
 def editBannerText() -> String:
   M.msg("queue.editBanner")
 
@@ -182,8 +179,6 @@ def queueSteerAttrs() -> List<&2, V.ViewAttr>:
   [
     V.attrType("button"),
     V.attrClass("queue-steer-now"),
-    V.attrTitle(queueSteerNowTitle()),
-    V.attrAria("label", queueSteerNowTitle()),
     V.attrOn("click", "steerNow")
   ]
 
