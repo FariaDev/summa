@@ -43,7 +43,7 @@ Na primeira abertura (sem configuração) a Mesa não mostra diálogo: ela já a
 
 1. Dê um nome à matéria no campo **Nome da matéria**, na barra de cima.
 2. Diga onde estão os PDFs: **Escolher a pasta…** na folha "Lista 0", ou solte PDFs (ou a pasta) em qualquer ponto do leitor. A Mesa só aponta para a pasta; não copia nem altera os arquivos.
-3. A pasta onde ficam as exportações e as instruções do tutor aparece na folha (por padrão `Documentos/Summa`); **Mudar** escolhe outra. Ela só é criada quando a matéria nasce e fica gravada no `config.json` deste computador.
+3. A pasta de dados é criada quando você clica em **Criar a matéria** e fica gravada como `vaultPath` no `config.json` deste computador. Sem um `vaultPath` configurado, usa a subpasta `Summa` da pasta Documentos do sistema (inclusive quando redirecionada pelo OneDrive no Windows ou localizada como `Documentos` no Linux); não há uma linha para escolher essa pasta no assistente.
 4. Na coluna do tutor, a Mesa mostra o motor visível (OpenCode). **Chamar o tutor** liga o motor da conversa; o login do provedor acontece no app e a conta fica no motor, não na Mesa.
 
 Com nome e pasta a matéria é criada e a Mesa vai para ela, já com a caixa de mensagem liberada. Quem preferir só estudar um assunto avulso pode abrir a aba **Livre**.
@@ -97,6 +97,11 @@ npm run install-app
 Monta `Summa.app` ao lado de `desk/`, ou atualiza o que já existe, inclusive o Electron dele. Não cria um instalador.
 
 ### Gravação de Tela
+
+Na primeira vez que você usa **Conferir**, a Summa pede a permissão pelo
+helper do macOS. Autorize em **Ajustes → Privacidade e Segurança → Gravação
+de Tela** se o sistema orientar; até autorizar, o app mostra a orientação
+em vez de capturar outra janela (#123).
 
 O macOS lembra a permissão de **Gravação de Tela** pela identidade de assinatura do app. Sem um certificado, o `install-app` assina ad-hoc e cada atualização vira "outro" app para o sistema — a permissão é pedida de novo.
 
