@@ -24,10 +24,17 @@ export const SETTINGS_ROW_SELECTOR = [
   '#settings-sec-pastas #cfg-free-models',
 ].join(',');
 
+/* Títulos de grupo e botões-link ("Motores do tutor", "Adicionar matéria"):
+   a pintura já os mostrava, mas a escolha da seção não os lia, e a busca por
+   eles dava "Nenhum resultado". */
+const SETTINGS_LABEL_SELECTOR = '.set-group-label, .set-link';
+
 const fold = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const sectionsOf = (body) => [...body.querySelectorAll(':scope > [data-sec]')];
 const rowsOf = (section) => [...section.querySelectorAll(SETTINGS_ROW_SELECTOR)];
+const labelsOf = (section) => [...section.querySelectorAll(SETTINGS_LABEL_SELECTOR)].filter((label) => !label.hidden);
+const labelMatches = (section, folded) => labelsOf(section).some((label) => fold(label.textContent).includes(folded));
 
 /**
  * O texto que identifica uma seção: o rótulo da lateral, o título e a descrição.
@@ -43,17 +50,19 @@ function sectionOwnText(section) {
 }
 
 /**
- * A seção casa pelo próprio texto ou por alguma linha.
+ * A seção casa pelo próprio texto, por alguma linha ou por um título de grupo
+ * ou botão-link à vista.
  * @param {HTMLElement} section
  * @param {string} query
  * @returns {boolean}
- * @example settingsSectionMatches(section, 'mesa') // true quando o nome ou uma linha fala de mesa
+ * @example settingsSectionMatches(section, 'adicionar matéria') // true na seção Matérias
  */
 export function settingsSectionMatches(section, query) {
   const folded = fold(query);
   if (!folded) return true;
   if (fold(sectionOwnText(section)).includes(folded)) return true;
-  return rowsOf(section).some((row) => fold(row.textContent).includes(folded));
+  if (rowsOf(section).some((row) => fold(row.textContent).includes(folded))) return true;
+  return labelMatches(section, folded);
 }
 
 /**
@@ -91,7 +100,7 @@ export function filterSettingsSection(section, query) {
   for (const link of section.querySelectorAll('.set-link')) {
     link.classList.toggle('settings-filtered', !own && !fold(link.textContent).includes(folded));
   }
-  return own || rows.some((row) => !row.classList.contains('settings-filtered'));
+  return own || rows.some((row) => !row.classList.contains('settings-filtered')) || labelMatches(section, folded);
 }
 
 /**

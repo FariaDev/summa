@@ -119,6 +119,17 @@ await withArtifacts('settings-fullscreen', async (ctx) => {
   assert.equal(await page.locator('#cfg-desk-calculator').isVisible(), true, 'limpar a busca devolve as linhas');
   await page.locator('#settings-search').press('Enter');
   assert.equal(await page.locator('#settings-dialog').evaluate((el) => el.open), true, 'Enter na busca não fecha nem salva');
+  await page.locator('#settings-search').fill('Adicionar matéria');
+  await page.waitForFunction(() => document.querySelector('#settings-tabs [aria-current="page"]')?.dataset.sec === 'materias');
+  assert.equal(await page.locator('#settings-search-empty').isHidden(), true, 'um botão à vista ("Adicionar matéria") é resultado da busca');
+  assert.equal(await page.locator('#cfg-add-course').isVisible(), true, 'o botão "Adicionar matéria" fica à vista');
+  await page.locator('#settings-search').fill('Motores do tutor');
+  await page.waitForFunction(() => document.querySelector('#settings-tabs [aria-current="page"]')?.dataset.sec === 'pastas');
+  assert.equal(await page.locator('#settings-search-empty').isHidden(), true, 'um título de grupo ("Motores do tutor") é resultado da busca');
+  assert.equal(await page.locator('#cfg-free-models').isVisible(), true, 'o grupo "Motores do tutor" fica à vista');
+  assert.equal(await page.locator('#cfg-vault').isHidden(), true, 'os outros grupos da seção somem');
+  await page.locator('#settings-search').fill('');
+  await page.locator('#settings-tab-mesa').click();
 
   /* ---- 3. O interruptor muda o mesmo checkbox que o Salvar lê ---- */
   const switchBox = await page.locator('#cfg-desk-calculator').evaluate((el) => {
