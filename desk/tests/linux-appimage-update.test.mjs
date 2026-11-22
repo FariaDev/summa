@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {makeSignedRelease} from './fake-update-release.mjs';
-import {fakeAppImageDownload,fakeAppImageProcess,fakeAppImageHost} from './fake-appimage.mjs';
+import {fakeAppImageDownload,fakeAppImageProcess,fakeAppImageHost,fakeUnsupportedAppImageLink} from './fake-appimage.mjs';
 import {fakeIpcMain,fakeShell} from './fake-electron-shell.mjs';
 import {tempDir} from './temp-dir.mjs';
 
@@ -94,6 +94,24 @@ test('download conferido ganha modo executável e troca mantém nome do atalho',
  assert.equal(fs.readFileSync(backup,'utf8'),'antiga');
  fs.rmSync(backup);
  assert.deepEqual(fs.readdirSync(dir),['Summa.AppImage']);
+});
+
+test('swap copia backup quando o disco não suporta hard links',()=>{
+ for(const brokenSwap of [false,true]){
+  const dir=tempDir('summa-copy-backup-'),appImage=path.join(dir,'Summa.AppImage'),file=path.join(dir,'.new.part');
+  fs.writeFileSync(appImage,'original',{mode:0o755});
+  if(!brokenSwap)fs.writeFileSync(file,'nova');
+  if(brokenSwap){
+   assert.throws(()=>image.swapAppImage({file,appImage,linkFn:fakeUnsupportedAppImageLink}),/appImageNotWritable/);
+   assert.equal(fs.readFileSync(appImage,'utf8'),'original');
+   assert.deepEqual(fs.readdirSync(dir),['Summa.AppImage']);
+   continue;
+  }
+  const backup=image.swapAppImage({file,appImage,linkFn:fakeUnsupportedAppImageLink});
+  assert.equal(fs.readFileSync(appImage,'utf8'),'nova');
+  assert.equal(fs.readFileSync(backup,'utf8'),'original');
+  if(process.platform!=='win32')assert.equal(fs.statSync(backup).mode&0o777,0o755);
+ }
 });
 
 test('download substitui parcial antigo ou symlink sem alterar seu destino',async()=>{

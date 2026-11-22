@@ -1,6 +1,11 @@
 import {EventEmitter} from 'node:events';
 import fs from 'node:fs';
 
+/** Simula um sistema de arquivos sem suporte a hard links. */
+export function fakeUnsupportedAppImageLink(){
+ throw Object.assign(Error('hard links unsupported'),{code:'ENOTSUP'});
+}
+
 /** Simula disco com escritas curtas ou sem progresso. */
 export function fakeShortWritingFs(limit){
  return {...fs,writeSync(fd,buffer,offset,length){return fs.writeSync(fd,buffer,offset,Math.min(limit,length));}};

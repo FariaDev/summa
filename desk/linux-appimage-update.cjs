@@ -71,15 +71,15 @@ async function prepareAppImageUpdate({version,publicKey,dir,fetchBuffer=defaultF
 
 /**
  * Troca atômica preservando o caminho usado pelos atalhos.
- * @param {{file:string,appImage:string}} input
+ * @param {{file:string,appImage:string,linkFn?:typeof fs.linkSync}} input
  * @returns {string} caminho recuperável da imagem anterior
  * @example swapAppImage({file:'/apps/.Summa.part',appImage:'/apps/Summa.AppImage'})
  */
-function swapAppImage({file,appImage}){
+function swapAppImage({file,appImage,linkFn=fs.linkSync}){
  const backup=path.join(path.dirname(appImage),`.${path.basename(appImage)}.old`);
  let linked=false;
  try{
-  fs.linkSync(appImage,backup);
+  try{linkFn(appImage,backup);}catch{fs.copyFileSync(appImage,backup,fs.constants.COPYFILE_EXCL);}
   linked=true;
   fs.renameSync(file,appImage);
   return backup;
