@@ -22,6 +22,22 @@ export function fakeReleaseImage(kind, identity) {
   return Buffer.concat([header, Buffer.from(JSON.stringify(identity))]);
 }
 
+/** Executor falso: o hdiutil monta o DMG, mas o payload não tem package.json.
+ * @returns {string}
+ * @example assertReleaseImageIdentity(dmg, 'DMG', expected, fakeMountWithoutPayload)
+ */
+export function fakeMountWithoutPayload() {
+  return '';
+}
+
+/** Executor falso: o hdiutil não existe no PATH, como no Linux.
+ * @returns {never}
+ * @example assertReleaseImageIdentity(dmg, 'DMG', expected, fakeHdiutilMissing)
+ */
+export function fakeHdiutilMissing() {
+  throw Object.assign(new Error('spawnSync hdiutil ENOENT'), {code: 'ENOENT', syscall: 'spawnSync hdiutil'});
+}
+
 const originalExec = childProcess.execFileSync;
 function fakeImageTool(file, args, options) {
   if (file === 'unsquashfs') return fs.readFileSync(args[args.indexOf('-cat') + 1]).subarray(128).toString();

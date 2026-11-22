@@ -7,7 +7,7 @@ import {spawnSync, execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {tempDir} from './temp-dir.mjs';
 import {fakePeInstaller} from './fake-pe-installer.mjs';
-import {fakeReleaseImage} from './fake-release-image-tools.mjs';
+import {fakeReleaseImage, fakeMountWithoutPayload, fakeHdiutilMissing} from './fake-release-image-tools.mjs';
 import {assertReleaseImageIdentity} from '../scripts/release-image-identity.mjs';
 
 /* Script de release assinada (#80) rodando de verdade: git local temporário,
@@ -296,8 +296,6 @@ test('#80 verify: recusa enquanto a chave pública for o marcador', () => {
 
 test('identidade de imagem distingue ferramenta ausente de package.json ausente no DMG', () => {
   const expected = {version: '1.3.3', commit: 'a'.repeat(40)};
-  const mountedWithoutPayload = () => '';
-  assert.throws(() => assertReleaseImageIdentity('Summa-1.3.3.dmg', 'DMG', expected, mountedWithoutPayload), /identidade DMG: recebido imagem ilegível ou package.json inválido\/ausente/);
-  const hdiutilMissing = () => { throw Object.assign(new Error('spawnSync hdiutil ENOENT'), {code: 'ENOENT', syscall: 'spawnSync hdiutil'}); };
-  assert.throws(() => assertReleaseImageIdentity('Summa-1.3.3.dmg', 'DMG', expected, hdiutilMissing), /identidade DMG: recebido ferramenta hdiutil \(macOS\) ausente/);
+  assert.throws(() => assertReleaseImageIdentity('Summa-1.3.3.dmg', 'DMG', expected, fakeMountWithoutPayload), /identidade DMG: recebido imagem ilegível ou package.json inválido\/ausente/);
+  assert.throws(() => assertReleaseImageIdentity('Summa-1.3.3.dmg', 'DMG', expected, fakeHdiutilMissing), /identidade DMG: recebido ferramenta hdiutil \(macOS\) ausente/);
 });
