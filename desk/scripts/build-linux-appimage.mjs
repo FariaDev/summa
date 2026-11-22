@@ -27,8 +27,14 @@ export function stageLinuxRelease({desk, electronDist, stage, version}) {
   writeManifest(payload, stageBundlePayload(desk, payload), version);
   fs.copyFileSync(path.join(desk, 'assets', 'mesa-1024.png'), path.join(stage, 'summa.png'));
   fs.writeFileSync(path.join(stage, 'summa.desktop'), '[Desktop Entry]\nType=Application\nName=Summa\nExec=AppRun %U\nIcon=summa\nCategories=Education;\nTerminal=false\n');
-  // O AppImage não preserva SUID do chrome-sandbox; o Electron precisa desta opção.
-  fs.writeFileSync(path.join(stage, 'AppRun'), '#!/bin/sh\nAPPDIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"\nexec "$APPDIR/electron" --no-sandbox "$@"\n', {mode: 0o755});
+  // AppImage não preserva SUID; só desliga o sandbox inteiro se namespaces não funcionarem.
+  fs.writeFileSync(path.join(stage, 'AppRun'), `#!/bin/sh
+APPDIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+if [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" != 1 ] && unshare -Ur true 2>/dev/null; then
+  exec "$APPDIR/electron" --disable-setuid-sandbox "$@"
+fi
+exec "$APPDIR/electron" --no-sandbox "$@"
+`, {mode: 0o755});
   return {payload};
 }
 

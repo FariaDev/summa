@@ -24,7 +24,10 @@ test('AppDir leva Electron, payload, ícone e entrada executável sem origem de 
   assert.equal(JSON.parse(fs.readFileSync(path.join(payload, '.update-manifest.json'))).version, '9.9.9');
   assert.equal(fs.statSync(path.join(stage, 'AppRun')).mode & 0o111, 0o111);
   assert.equal(fs.statSync(stage).mode & 0o777, 0o755);
-  assert.match(fs.readFileSync(path.join(stage, 'AppRun'), 'utf8'), /exec "\$APPDIR\/electron" --no-sandbox "\$@"/);
+  const appRun = fs.readFileSync(path.join(stage, 'AppRun'), 'utf8');
+  assert.match(appRun, /unshare -Ur true/);
+  assert.match(appRun, /apparmor_restrict_unprivileged_userns/);
+  assert.match(appRun, /then\n  exec "\$APPDIR\/electron" --disable-setuid-sandbox "\$@"\nfi\nexec "\$APPDIR\/electron" --no-sandbox "\$@"/);
   assert.match(fs.readFileSync(path.join(stage, 'summa.desktop'), 'utf8'), /Exec=AppRun %U\nIcon=summa/);
   assert.deepEqual(fs.readFileSync(path.join(stage, 'summa.png')), fs.readFileSync(path.join(DESK, 'assets', 'mesa-1024.png')));
 });

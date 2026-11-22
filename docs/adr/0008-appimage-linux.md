@@ -10,9 +10,11 @@ npm ou clone. O aluno deve atualizar pelo Sobre sem perder estudos ou atalhos.
 ## Decisão
 
 Publicar `Summa-X.Y.Z-x86_64.AppImage`, com o mesmo payload do instalador
-Windows e sem origem de clone. O AppRun desliga o sandbox SUID do Chromium:
-AppImage não preserva esse bit. Isso reduz o isolamento do Chromium e é uma
-concessão do formato, não uma mudança no app de desenvolvimento.
+Windows e sem origem de clone. O AppRun desliga somente o sandbox SUID do
+Chromium, pois AppImage não preserva esse bit, mantendo o sandbox de namespaces.
+Se AppArmor restringe namespaces sem privilégio ou `unshare -Ur true` falha
+(inclusive quando o comando está ausente), usa `--no-sandbox` como fallback.
+Só nesse caso há redução do isolamento, sem mudar o app de desenvolvimento.
 
 Na abertura, integrar menu e ícone por usuário em `XDG_DATA_HOME` (fallback
 `~/.local/share`), somente se o conteúdo mudou. O arquivo pode ser renomeado ou
