@@ -85,6 +85,11 @@ test('editar o texto troca só essa tarefa, e o texto cabe no teto', () => {
   assert.equal(editTask(planOf(['a']), 'nao-existe', 'y').tasks[0].text, 'texto a', 'id desconhecido não muda nada');
 });
 
+test('editar texto substitui quebras de linha por espaços', () => {
+  const plan = planOf(['a']);
+  assert.equal(editTask(plan, 'a', 'Q1\nQ2').tasks[0].text, 'Q1 Q2');
+});
+
 test('Backspace em tarefa vazia remove e devolve o foco para a anterior', () => {
   const plan = editTask(planOf(['a', 'b', 'c']), 'b', '');
   const result = removeEmptyTask(plan, 'b');
