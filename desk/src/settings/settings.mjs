@@ -83,6 +83,7 @@ function paintSearch() {
     return;
   }
   for (const section of body.querySelectorAll(':scope > [data-sec]')) {
+    section.hidden = section.dataset.sec !== current;
     if (section.dataset.sec === current) filterSettingsSection(section, query);
     else clearSettingsFilter(section);
   }

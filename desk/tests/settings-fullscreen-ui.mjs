@@ -107,6 +107,13 @@ await withArtifacts('settings-fullscreen', async (ctx) => {
   assert.equal(await page.locator('#settings-tab-mesa').isVisible(), true, 'a seção com resultado fica na lateral');
   assert.equal(await page.locator('#cfg-title').isVisible(), true, 'a linha "Nome da mesa" fica à vista');
   assert.equal(await page.locator('#cfg-desk-calculator').isHidden(), true, 'as outras linhas da seção somem');
+  await page.locator('#settings-search').fill('Nome da mesax');
+  assert.equal(await page.locator('#settings-search-empty').isVisible(), true, 'a busca sem resultado mostra o aviso');
+  assert.equal(await page.locator('#settings-body > [data-sec]:visible').count(), 0, 'nenhuma seção aparece sem resultado');
+  await page.locator('#settings-search').press('Backspace');
+  assert.equal(await page.locator('#cfg-title').isVisible(), true, 'voltar ao termo anterior restaura a seção atual');
+  assert.equal(await page.locator('#settings-search-empty').isHidden(), true, 'o aviso some quando a busca volta a casar');
+  assert.equal(await page.locator('#settings-body > [data-sec]:visible').count(), 1, 'só a seção correspondente reaparece');
   await page.locator('#settings-search').fill('');
   await page.waitForFunction(() => document.querySelector('#settings-tabs [aria-current="page"]')?.dataset.sec === 'mesa');
   assert.equal(await page.locator('#cfg-desk-calculator').isVisible(), true, 'limpar a busca devolve as linhas');
