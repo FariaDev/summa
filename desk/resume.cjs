@@ -114,8 +114,11 @@ function writeStore(runtime, store) {
 
 /* O registro guardado para uma matéria (nunca escreve). */
 function readResume(runtime, courseId) {
-  const entry = readStore(runtime)[String(courseId || '')];
-  return entry ? {...entry, pages: entry.pages.map((page) => ({...page}))} : null;
+  const key = String(courseId || '');
+  const store = readStore(runtime);
+  if (!Object.hasOwn(store, key)) return null;
+  const entry = store[key];
+  return {...entry, pages: entry.pages.map((page) => ({...page}))};
 }
 
 /* Grava o registro da matéria e devolve o que foi guardado (o renderer mostra o

@@ -118,6 +118,19 @@ test('leitura tolerante: sem arquivo, JSON torto, gigante e registro sem o miolo
   });
 });
 
+test('constructor é uma matéria normal, mesmo sem registro salvo', () => {
+  withRuntime((runtime) => {
+    assert.equal(resume.readResume(runtime, 'constructor'), null);
+    const other = resume.saveResume(runtime, 'A', {stopped: 'a', next: 'b'});
+    assert.equal(resume.readResume(runtime, 'constructor'), null);
+    const saved = resume.saveResume(runtime, 'constructor', {stopped: 'c', next: 'd'});
+    assert.deepEqual(resume.readResume(runtime, 'constructor'), saved);
+    assert.equal(resume.clearResume(runtime, 'constructor'), true);
+    assert.equal(resume.readResume(runtime, 'constructor'), null);
+    assert.deepEqual(resume.readResume(runtime, 'A'), other);
+  });
+});
+
 test('limpar apaga só a matéria pedida', () => {
   withRuntime((runtime) => {
     resume.saveResume(runtime, 'A', {stopped: 'a', next: 'b'});

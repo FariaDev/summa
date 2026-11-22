@@ -106,8 +106,9 @@ function writeStore(runtime, store) {
 
 /* Os favoritos guardados de uma matéria (nunca escreve). */
 function readBookmarks(runtime, courseId) {
-  const list = readStore(runtime)[String(courseId || '')];
-  return list ? list.map((item) => ({...item})) : [];
+  const key = String(courseId || '');
+  const store = readStore(runtime);
+  return Object.hasOwn(store, key) ? store[key].map((item) => ({...item})) : [];
 }
 
 /* Grava a lista inteira da matéria (normalizada) e devolve o que ficou. */
