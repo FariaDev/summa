@@ -37,15 +37,16 @@ export function fakeAppImageProcess({error=''}={}){
 /**
  * Dependências do host: nenhuma rede, worker ou processo real.
  * @param {object} update módulo real de detecção
- * @param {{fail?:boolean}} [options]
+ * @param {{fail?:boolean,hasLock?:boolean}} [options]
  * @example const fake=fakeAppImageHost(update);
  */
-export function fakeAppImageHost(update,{fail=false}={}){
+export function fakeAppImageHost(update,{fail=false,hasLock=true}={}){
  const calls=[];
- return {calls,app:{isPackaged:true,getVersion:()=> '1.3.3',quit:()=>calls.push('quit'),releaseSingleInstanceLock:()=>calls.push('unlock'),requestSingleInstanceLock:()=>calls.push('lock')},
+ return {calls,app:{isPackaged:true,getVersion:()=> '1.3.3',hasSingleInstanceLock:()=>hasLock,quit:()=>calls.push('quit'),releaseSingleInstanceLock:()=>calls.push('unlock'),requestSingleInstanceLock:()=>calls.push('lock')},
   toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
   config:()=>({}),win:()=>null,appendLog:()=>{},
   appImageUpdate:{isLinuxAppImage:update.isLinuxAppImage,
+   cleanupAppImagePartials:update.cleanupAppImagePartials,
    prepareAppImageUpdate:async()=>{calls.push('prepare');if(fail)throw Error('hash recusado');return {file:'/apps/.new.part'};},
    swapAppImage:()=>calls.push('swap'),relaunchAppImage:async()=>{calls.push('relaunch');}},
  };
