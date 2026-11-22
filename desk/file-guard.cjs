@@ -147,9 +147,8 @@ function fileSubresourceBlocked({url, resourceType = '', appRoot = null, runtime
   const entries = staticEntries || (appRoot ? staticAppEntries(appRoot) : null);
   if (!entries) return {cancel: true, reason: 'sem-raiz'};
   const sameFile = (left, right) => isPathUnderRoot(left, right) && isPathUnderRoot(right, left);
-  const dirs = entries.dirs.map(resolveExisting);
-  if (dirs.some((dir) => isPathUnderRoot(file, dir))) return {cancel: false, reason: 'sob-estatico'};
-  if (entries.files.map(resolveExisting).some((entry) => sameFile(file, entry))) return {cancel: false, reason: 'sob-estatico'};
+  if (entries.dirs.some((dir) => isPathUnderRoot(file, resolveExisting(dir)))) return {cancel: false, reason: 'sob-estatico'};
+  if (entries.files.some((entry) => sameFile(file, resolveExisting(entry)))) return {cancel: false, reason: 'sob-estatico'};
   if (appRoot && isPathUnderRoot(file, resolveExisting(appRoot))) return {cancel: true, reason: 'fora-dos-estaticos'};
   return {cancel: true, reason: 'fora-do-app'};
 }
