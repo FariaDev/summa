@@ -198,6 +198,10 @@ async function extractPackage({archive, directory, runCommand}) {
   try {
     await runCommand('tar', ['-xzf', archive, '-C', directory]);
   } catch (error) {
+    if (error instanceof OpenCodeInstallError) {
+      error.code = 'extract';
+      throw error;
+    }
     throw new OpenCodeInstallError('extract', 'err.opencode.install.extract', {cause: String(error?.message || error)}, error);
   }
 }
@@ -312,8 +316,8 @@ async function replaceWindows({destination, temp, rename, unlink, timestamp}) {
 }
 
 /**
- * Roda um comando e devolve stdout/stderr; erro inclui o código e a última
- * linha útil, sem caminho pessoal nem segredo.
+ * Roda um comando e devolve stdout/stderr; erro inclui o código e a
+ * saída útil (limitada a 300 caracteres).
  * @param {string} file @param {string[]} args
  * @param {{timeoutMs?: number, spawnProcess?: typeof spawn}} [options]
  * @returns {Promise<{stdout: string, stderr: string}>}
@@ -350,7 +354,7 @@ function runScript({file, args, input, env = process.env, timeoutMs, spawnProces
     child.on('error', (error) => { const cause = /** @type {NodeJS.ErrnoException} */ (error); finish(new OpenCodeInstallError('command', 'err.opencode.install.start', {cause: cause.code || cause.message}, error)); });
     child.on('close', (code) => {
       if (code === 0) return finish(null, {stdout, stderr});
-      const detail = String(stderr || stdout || '').trim().split('\n').filter(Boolean).at(-1) || `código ${code}`;
+      const detail = String(stderr || stdout || '').trim() || `código ${code}`;
       finish(new OpenCodeInstallError('command', 'err.opencode.install.command', {code: String(code), detail: detail.slice(0, 300)}));
     });
     /* O comando pode sair sem ler stdin: o EPIPE chega como evento e, sem ouvinte,

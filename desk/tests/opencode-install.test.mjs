@@ -22,6 +22,39 @@ import en from '../src/locales/en.json' with {type: 'json'};
 
 const response=(body)=>({ok:true,status:200,headers:{get:()=>body.length===undefined?null:String(body.length)},json:async()=>body,text:async()=>body});
 
+test('extract failure preserves its code and real tar stderr through Setup',async()=>{
+ const {createOpenCodeInstallHost}=require('../opencode-install-host.cjs');
+ const {installErrorText}=await import('../src/setup/setup-view.mjs');
+ const bytes=Buffer.from('not a gzip archive');
+ const integrity='sha512-'+crypto.createHash('sha512').update(bytes).digest('base64');
+ const fetchImpl=async url=>url.includes('example.test')
+  ?{...response(bytes),body:(async function*(){yield bytes;})()}
+  :response({dist:{integrity,tarball:'https://example.test/corrupt.tgz'}});
+ let stderr='';
+ const spawnProcess=(file,args,options)=>{
+  const child=spawn(file,args,options);
+  child.stderr.on('data',chunk=>{stderr+=chunk;});
+  return child;
+ };
+ const host=createOpenCodeInstallHost({ipcMain:{handle(){}},win:()=>null,runtime:os.tmpdir(),
+  install:options=>installOpenCode({...options,platform:'linux',arch:'x64',...cpu(),fetchImpl,spawnProcess})});
+ const result=await host.install();
+ assert.equal(result.code,'extract');
+ const detail=stderr.trim().split('\n').filter(Boolean).at(-1).trim();
+ assert.ok(detail,'real tar emitted stderr');
+ assert.ok(ptText(result.message).includes(detail));
+ assert.ok(installErrorText(result.code,result.message).body.includes(detail));
+});
+
+test('Setup extract detail is decoded; empty and unrelated errors stay human',async()=>{
+ const {installErrorText}=await import('../src/setup/setup-view.mjs');
+ const {message}=await import('../src/i18n.mjs');
+ const detail='tar: broken archive <script>';
+ assert.ok(installErrorText('extract',message('err.opencode.install.extract',{cause:detail})).body.includes(detail));
+ assert.ok(installErrorText('extract','').body);
+ assert.doesNotMatch(installErrorText('network',detail).body,/broken archive/);
+});
+
 function cpu({avx2=true,musl=false}={}){
  return {
   readFile(file){
