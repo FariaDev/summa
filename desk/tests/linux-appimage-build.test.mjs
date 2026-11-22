@@ -22,8 +22,10 @@ test('AppDir leva Electron, payload, ícone e entrada executável sem origem de 
   assert.equal(fs.existsSync(path.join(payload, 'install-source.json')), false);
   for (const file of ['main.cjs', 'index.html', 'node_modules/marked/package.json', 'update-signing-key.pub']) assert.ok(fs.existsSync(path.join(payload, file)), file);
   assert.equal(JSON.parse(fs.readFileSync(path.join(payload, '.update-manifest.json'))).version, '9.9.9');
-  assert.equal(fs.statSync(path.join(stage, 'AppRun')).mode & 0o111, 0o111);
-  assert.equal(fs.statSync(stage).mode & 0o777, 0o755);
+  if (process.platform !== 'win32') {
+    assert.equal(fs.statSync(path.join(stage, 'AppRun')).mode & 0o111, 0o111);
+    assert.equal(fs.statSync(stage).mode & 0o777, 0o755);
+  }
   const appRun = fs.readFileSync(path.join(stage, 'AppRun'), 'utf8');
   assert.match(appRun, /unshare -Ur true/);
   assert.match(appRun, /apparmor_restrict_unprivileged_userns/);

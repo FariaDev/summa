@@ -166,7 +166,7 @@ test('#119: versão antiga de pé depois do instalador vira "recuperada" com o m
 test('settle não remove caminhos ausentes, vazios ou relativos',async()=>{
  const root=tmp(),cacheFile=path.join(root,'update.json'),sentinel=path.join(root,'estudo.json');
  fs.writeFileSync(sentinel,'preservado');
- for(const dir of [undefined,'',path.relative(process.cwd(),root)]){
+ for(const dir of [undefined,'',path.relative(root,path.join(root,'relativo'))]){
   await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
   await installerUpdate.settleInstallerUpdate({cacheFile,current:'1.4.1',dir,failureReason:'não instalou'});
   assert.equal(fs.readFileSync(sentinel,'utf8'),'preservado');

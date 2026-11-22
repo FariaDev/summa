@@ -28,7 +28,7 @@ test('detecção exige Linux, arquivo absoluto e payload dentro da montagem',()=
 test('download conferido ganha modo executável e troca mantém nome do atalho',async()=>{
  const dir=tempDir('summa-image-'),release=makeSignedRelease({appImage:bytes});
  const {file}=await image.prepareAppImageUpdate({version:release.version,publicKey:release.publicKey,dir,fetchBuffer:release.fetchBuffer,fetchAppImage:fakeAppImageDownload(bytes)});
- assert.equal(fs.statSync(file).mode&0o777,0o755);
+ if(process.platform!=='win32')assert.equal(fs.statSync(file).mode&0o777,0o755);
  const appImage=path.join(dir,'Summa.AppImage');
  fs.writeFileSync(appImage,'antiga');
  image.swapAppImage({file,appImage});

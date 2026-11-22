@@ -7,7 +7,12 @@ export LEARNING_DESK_RUNTIME="$state/runtime" LEARNING_VAULT="$state/vault"
 mkdir -p "$HOME" "$LEARNING_DESK_RUNTIME" "$LEARNING_VAULT"
 "$image" >"$state/output.log" 2>&1 &
 pid=$!
-trap 'kill "$pid" 2>/dev/null || true; rm -rf "$state"' EXIT
+cleanup() {
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  rm -rf "$state"
+}
+trap cleanup EXIT
 for ((attempt=0; attempt<60; attempt++)); do
   kill -0 "$pid" || { cat "$state/output.log"; exit 1; }
   if xwininfo -root -tree | grep -q '"Summa'; then
