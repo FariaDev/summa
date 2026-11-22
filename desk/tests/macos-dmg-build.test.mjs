@@ -58,6 +58,22 @@ test('DMG leva app independente, identidade, auxiliares e manifesto', {skip:proc
  assert.equal(fs.existsSync(path.join(isolated,'config.json')),false);
 });
 
+test('migração DMG preserva extras da config existente ao gravar runtime do clone',{skip:process.platform!=='darwin'},()=>{
+ const stage=tempDir('summa-dmg-extras-stage-');
+ const {payload}=stageMacosRelease({desk:DESK,electronApp:fakeElectronApp(),stage,version:'9.9.9'});
+ const {loadBootConfig}=require(path.join(payload,'desk-boot-config.cjs'));
+ const configDir=tempDir('summa-dmg-extras-config-'),clone=tempDir('summa-dmg-extras-clone-');
+ const runtime=path.join(clone,'desk/.runtime'),configFile=path.join(configDir,'config.json');
+ fs.mkdirSync(runtime,{recursive:true});
+ fs.writeFileSync(path.join(configDir,'previous-install-source.json'),JSON.stringify({path:clone}));
+ fs.writeFileSync(configFile,JSON.stringify({runtimePath:'',vaultPath:clone,customSetting:{keep:true},courses:[{id:'extras',name:'Extras',path:clone,customCourse:'keep'}]}));
+ assert.equal(loadBootConfig({configFile,env:{},persist:true}).runtimePath,runtime);
+ const saved=JSON.parse(fs.readFileSync(configFile,'utf8'));
+ assert.equal(saved.runtimePath,runtime);
+ assert.deepEqual(saved.customSetting,{keep:true});
+ assert.equal(saved.courses[0].customCourse,'keep');
+});
+
 test('DMG comprimido e erro de Electron ausente',()=>{
  assert.deepEqual(dmgArgs({stage:'/stage',outFile:'/out/Summa-1.4.0.dmg'}),['create','-volname','Summa','-srcfolder','/stage','-format','UDZO','-ov','/out/Summa-1.4.0.dmg']);
  assert.throws(()=>stageMacosRelease({desk:DESK,electronApp:'/missing/Electron.app',stage:tempDir('summa-missing-'),version:'1.4.0'}),/Electron ausente/);

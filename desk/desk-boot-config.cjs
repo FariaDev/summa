@@ -2,6 +2,7 @@
 'use strict';
 
 const {readConfig,writeConfig,seedConfig,normalize,legacyCloneRuntime}=require('./config.cjs');
+const {writeConfigPreservingExtras}=require('./config-write.cjs');
 const {linuxXournalPath}=require('./xournal-path.cjs');
 const {isMacosRelease,previousMacosRuntime}=require('./macos-release.cjs');
 const path=require('node:path');
@@ -45,7 +46,7 @@ function loadBootConfig({configFile,env,persist}){
  }
  if(persist&&!envRuntime&&isMacosRelease()&&!config.runtimePath){
   const previous=previousMacosRuntime({configDir:path.dirname(configFile)});
-  if(previous){config.runtimePath=previous;writeConfig(configFile,config);}
+  if(previous){config.runtimePath=previous;writeConfigPreservingExtras(configFile,config);}
  }
  return applyEnvOverrides(config,env);
 }
