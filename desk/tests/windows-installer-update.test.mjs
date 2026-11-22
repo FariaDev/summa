@@ -249,6 +249,27 @@ test('#119: instalador que falha na extração desfaz a marca e não fecha o app
  assert.equal(quits,0);
 });
 
+test('update-apply preserves translated installer exit errors',async()=>{
+ for(const [code,english] of [
+  [2,'The installer exited with code 2; expected 0 and the ready signal.'],
+  [3,'Another Summa installer is already open. Close it and try again.'],
+ ]){
+  const runtime=tmp();
+  updater.writeCache(path.join(runtime,'update.json'),{release:{at:Date.now(),version:'1.4.1'}});
+  const {calls,fake}=fakeInstallerUpdate({
+   launchInstaller:async()=>exitedInstaller(code),
+   waitForInstallerReady:installerUpdate.waitForInstallerReady,
+  });
+  const ipcMain=installerHost({runtime,fake});
+  await assert.rejects(ipcMain.invoke('update-apply'),error=>{
+   assert.equal(enText(error.message),english);
+   return true;
+  });
+  assert.deepEqual(calls.at(-1),['clear']);
+  assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
+ }
+});
+
 test('#119: instalador que não abre desfaz a marca e mantém o app aberto',async()=>{
  const runtime=tmp();
  updater.writeCache(path.join(runtime,'update.json'),{release:{at:Date.now(),version:'1.4.1',notes:'',url:''}});
