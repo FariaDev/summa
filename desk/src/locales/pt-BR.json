@@ -1,5 +1,5 @@
 {
- "err.update.installerBusy": "Recebido: outro instalador da Summa já está aberto (código 3). Esperado: apenas um instalador por usuário. Feche o outro instalador e tente novamente.",
+ "err.update.installerBusy": "Outro instalador da Summa já está aberto. Feche-o e tente de novo.",
   "about.by": "Feita por Lucas Faria",
   "about.close": "Fechar o Sobre",
   "about.componentsRefresh": "Conferir os componentes de novo",

@@ -4,6 +4,18 @@ import fs from 'node:fs';
 
 const script = name => fs.readFileSync(new URL(`../scripts/${name}`, import.meta.url), 'utf8');
 
+test('o aviso de instalador aberto usa texto simples igual ao catalogo', () => {
+  const nsi = script('summa.nsi');
+  for (const [locale, language, expected] of [
+    ['pt-BR', 'PORTUGUESEBR', 'Outro instalador da Summa já está aberto. Feche-o e tente de novo.'],
+    ['en', 'ENGLISH', 'Another Summa installer is already open. Close it and try again.'],
+  ]) {
+    const catalog = JSON.parse(fs.readFileSync(new URL(`../src/locales/${locale}.json`, import.meta.url), 'utf8'));
+    assert.equal(catalog['err.update.installerBusy'], expected);
+    assert.ok(nsi.includes(`LangString SetupBusy \${LANG_${language}} "${expected}"`));
+  }
+});
+
 test('o mutex por usuario precede qualquer mutacao e recusa a segunda instalacao', () => {
   const nsi = script('summa.nsi');
   const init = nsi.slice(nsi.indexOf('Function .onInit'), nsi.indexOf('FunctionEnd', nsi.indexOf('Function .onInit')));

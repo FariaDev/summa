@@ -45,8 +45,8 @@ LangString SwapFailed ${LANG_PORTUGUESEBR} "Não foi possível concluir a instal
 LangString SwapFailed ${LANG_ENGLISH} "Setup could not finish. The previous version of Summa is still in place."
 LangString UninstallRefused ${LANG_PORTUGUESEBR} "Este desinstalador não está na pasta da Summa. Nada foi removido."
 LangString UninstallRefused ${LANG_ENGLISH} "This uninstaller is not in the Summa folder. Nothing was removed."
-LangString SetupBusy ${LANG_PORTUGUESEBR} "Recebido: outro instalador aberto (código 3). Esperado: apenas um instalador da Summa por usuário. Feche o outro instalador e tente novamente."
-LangString SetupBusy ${LANG_ENGLISH} "Received: another installer is open (code 3). Expected: one Summa installer per user. Close the other installer and try again."
+LangString SetupBusy ${LANG_PORTUGUESEBR} "Outro instalador da Summa já está aberto. Feche-o e tente de novo."
+LangString SetupBusy ${LANG_ENGLISH} "Another Summa installer is already open. Close it and try again."
 
 VIProductVersion "${VERSION}.0"
 VIFileVersion "${VERSION}.0"
