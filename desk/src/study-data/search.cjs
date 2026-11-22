@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Busca de estudos (Mesa): busca unificada e OFFLINE no conteúdo que a mesa já

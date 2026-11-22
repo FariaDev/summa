@@ -1,3 +1,4 @@
+// @ts-check
 import * as quadro from './activity-view.mjs';
 import {ACTIVITY_SCHEME, activityHost} from './activity-host.mjs';
 

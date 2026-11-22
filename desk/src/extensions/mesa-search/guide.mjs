@@ -1,3 +1,4 @@
+// @ts-check
 /* `buscar_material` — UM texto e um formato de resultado para os três motores
    (Pi `mesa_buscar_material`, Claude e OpenCode `buscar_material`). O quando
    usar mora no prompt do tutor (`desk-prompts.cjs`); aqui fica o como e a

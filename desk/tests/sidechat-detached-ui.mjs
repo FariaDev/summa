@@ -94,15 +94,15 @@ await withArtifacts('lateral-solto',async ctx=>{
  await page.evaluate(async()=>{const state=await import('./src/state.mjs');state.applyAccent('graphite');});
 
  /* Leitura (#106): data-reading-* aparece na filha e acompanha ao vivo. */
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'larger',readingWidth:'wide'});});
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/settings/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'larger',readingWidth:'wide'});});
  await pollUntil(()=>child.evaluate(()=>({readingSize:document.documentElement.dataset.readingSize||'normal',readingWidth:document.documentElement.dataset.readingWidth||'normal'})),f=>f.readingSize==='larger'&&f.readingWidth==='wide',{timeout:10000,interval:100,what:'a leitura maior/larga chegar à filha'});
  let readingFacts=await child.evaluate(()=>({readingSize:document.documentElement.dataset.readingSize||'normal',readingWidth:document.documentElement.dataset.readingWidth||'normal'}));
  assert.deepEqual(readingFacts,{readingSize:'larger',readingWidth:'wide'},'leitura aparece na filha');
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'small',readingWidth:'narrow'});});
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/settings/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'small',readingWidth:'narrow'});});
  await pollUntil(()=>child.evaluate(()=>({readingSize:document.documentElement.dataset.readingSize||'normal',readingWidth:document.documentElement.dataset.readingWidth||'normal'})),f=>f.readingSize==='small'&&f.readingWidth==='narrow',{timeout:10000,interval:100,what:'a leitura pequena/estreita chegar à filha'});
  readingFacts=await child.evaluate(()=>({readingSize:document.documentElement.dataset.readingSize||'normal',readingWidth:document.documentElement.dataset.readingWidth||'normal'}));
  assert.deepEqual(readingFacts,{readingSize:'small',readingWidth:'narrow'},'leitura acompanha ao vivo na filha');
- await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'normal',readingWidth:'normal'});});
+ await page.evaluate(async()=>{const state=await import('./src/state.mjs');const pref=await import('./src/settings/display-preferences.mjs');pref.applyDisplayState(state.S,{readingSize:'normal',readingWidth:'normal'});});
  await pollUntil(()=>child.evaluate(()=>({readingSize:document.documentElement.dataset.readingSize||'normal',readingWidth:document.documentElement.dataset.readingWidth||'normal'})),f=>f.readingSize==='normal'&&f.readingWidth==='normal',{timeout:10000,interval:100,what:'a leitura normal voltar à filha'});
 
  /* Rascunho escrito na filha sobrevive ao fechar (repetir 3×). */

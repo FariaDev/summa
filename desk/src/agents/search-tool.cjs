@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `buscar_material` no Claude: o MESMO guia da extensão do Pi
@@ -7,7 +8,7 @@ const SEARCH_TOOL_NAME = 'mcp__mesa__buscar_material';
 const {toolErrorText} = require('./tool-error-text.cjs');
 
 /**
- * @param {(args: {consulta?: unknown, limite?: unknown}) => Promise<object>} searchMaterial
+ * @param {(args: {consulta?: unknown, limite?: unknown}) => Promise<Record<string, any>>} searchMaterial
  * @param {{language?: string}} [options]
  */
 async function createSearchTool(searchMaterial, {language} = {}) {

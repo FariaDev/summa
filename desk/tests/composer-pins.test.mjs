@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createRequire} from 'node:module';
-import {PIN_LIMIT, PIN_IDS, normalizeComposerPins, toggleComposerPin, savedComposerPins} from '../src/composer-pins.mjs';
+import {PIN_LIMIT, PIN_IDS, normalizeComposerPins, toggleComposerPin, savedComposerPins} from '../src/composer/composer-pins.mjs';
 
 /* Fixos do menu Anexar (#99): a regra dos dois vive fora do DOM, e a carga do
    `desk.json` precisa guardar exatamente os mesmos nomes. A preferência é

@@ -1,3 +1,4 @@
+// @ts-check
 /* Instrução da ferramenta de PDF do tutor — UM texto para as duas ferramentas
    (extensão do Pi `mesa_criar_pdf` e `criar_pdf` do Claude): mudam juntas.
    Descrição e campos são SEMPRE em inglês; o resultado (`resultText`) segue

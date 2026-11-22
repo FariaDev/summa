@@ -20,7 +20,7 @@ import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,tinyPdf,s
 
 async function installFakeBridge(page){
  await page.evaluate(async()=>{
-  const mod=await import('./src/sidechat.mjs');
+  const mod=await import('./src/sidechat/sidechat.mjs');
   const stateOf=async()=>(await import('./src/state.mjs')).S;
   const fake={id:'',n:0,opens:[],prompts:[],saves:[],aborts:0,contexts:[],responds:[],listeners:[],messages:[],drafts:{},sessionOf:{},pending:null};
   const payload=async()=>{
@@ -58,7 +58,7 @@ async function installFakeBridge(page){
   window.__sc.reject=(message)=>{const pending=fake.pending;fake.pending=null;pending.reject(new Error(message));};
   window.__sc.emit=(event,id)=>{for(const callback of fake.listeners)callback({id:id||fake.id,engine:'pi',event});};
   window.__sc.state=async()=>{
-   const sidechat=await import('./src/sidechat.mjs');
+   const sidechat=await import('./src/sidechat/sidechat.mjs');
    const current=sidechat.sidechatState();
    return {id:current.id,busy:current.busy,sending:current.sending,draft:current.draft,uncertain:current.uncertain,scope:current.scope,messages:current.messages.map(message=>({role:message.role,text:message.text}))};
   };

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Tetos do `messages` do descritor; o serviço usa os mesmos para manter a fronteira importado/nativo. */

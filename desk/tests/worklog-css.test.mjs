@@ -5,7 +5,7 @@ import path from 'node:path';
 
 /* #90 manteve o diário recolhido como uma linha; a etapa 4 troca o cartão por
    um bloco com fio em cima e embaixo e, aberto, uma linha por leitura. */
-const css = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'src', 'tutor-chat.css'), 'utf8');
+const css = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'src', 'tutor', 'tutor-chat.css'), 'utf8');
 
 test('o diário não é cartão: fio de 1px em cima e embaixo, sem fundo nem raio', () => {
   const work = css.match(/\.work\{([^}]*)\}/);

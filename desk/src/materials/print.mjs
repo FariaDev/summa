@@ -1,3 +1,4 @@
+// @ts-check
 import {renderMaterialHtml, measureMaterialMath, measureMaterialModel, MIN_MATH_FONT_PT} from './template.mjs';
 import {message as uiMsg} from '../i18n.mjs';
 

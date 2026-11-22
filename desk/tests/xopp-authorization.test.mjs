@@ -20,7 +20,7 @@ const {registerTutorPromptHost} = require('../tutor-prompt-host.cjs');
 const {createMesaSidechat} = require('../sidechat-host.cjs');
 const {registerStudyRecordsHost} = require('../study-records-host.cjs');
 const resume = require('../resume.cjs');
-const {readNotebookPage} = require('../src/extensions/mesa-mcp/notebook-tool.mjs');
+const {readNotebookPage} = require('../src/extensions/summa-mcp/notebook-tool.mjs');
 
 const FAKE_XOURNALPP = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fake-xournalpp.mjs');
 

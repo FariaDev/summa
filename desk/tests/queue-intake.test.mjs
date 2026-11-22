@@ -5,7 +5,7 @@
    recuperava. O envio aceito continua soltando a fila. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createQueueIntake} from '../src/queue-intake.mjs';
+import {createQueueIntake} from '../src/queue/queue-intake.mjs';
 import {fakeChatSend, UNCERTAIN, REFUSED, ACCEPTED} from './fixtures/fake-chat-send.mjs';
 import {fakeHeldQueue} from './fixtures/fake-held-queue.mjs';
 

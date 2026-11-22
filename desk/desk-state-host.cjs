@@ -4,7 +4,7 @@
 const {cleanStudy}=require('./study.cjs');
 const layoutPolicy=require('./layout-presets.cjs');
 const {saveState}=require('./state-adapter.cjs');
-const {sanitizeStudyPlan}=require('./src/study-plan.mjs');
+const {sanitizeStudyPlan}=require('./src/study/study-plan.mjs');
 const {asComposerHeight,sanitizeRotation,sanitizePdfRotations,sanitizeModelRecents,sanitizeModelFavorites,sanitizeModelDefault,sanitizeModelLast,sanitizeMaterialFolders,savedComposerPins}=require('./desk-state-sanitize.cjs');
 
 /* Estado de interface da Mesa no IPC (#194: o main.cjs estava no teto de 800

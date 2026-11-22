@@ -1,3 +1,4 @@
+// @ts-check
 /* Aviso nativo de limite de uso e avisos de atividade (retry/recusa/fallback):
    a parte pura que o renderer da Mesa interpreta antes de tocar no DOM. Sem
    DOM, timers ou rede (só `i18n.mjs`, puro): os textos saem como mensagens

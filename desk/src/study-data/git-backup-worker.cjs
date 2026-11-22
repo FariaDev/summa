@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const {parentPort, workerData} = require('node:worker_threads');
 const {api} = require('./git-backup.cjs');

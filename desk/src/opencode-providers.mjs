@@ -2,7 +2,7 @@
 import {S,connect,reconnectAfterBridgeStop,toast} from './state.mjs';
 import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {providerIcon} from './provider-icons.mjs';
-import {loginBinary} from './setup-view.mjs';
+import {loginBinary} from './setup/setup-view.mjs';
 import {CURATED,providerLoginAction,providersResult} from './opencode-providers-state.mjs';
 
 /* Entrada por provedor do OpenCode na janela (#login no app): a lista dos que

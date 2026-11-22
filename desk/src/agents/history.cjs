@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Histórico de conversa Claude → forma do renderer da Mesa (e exportação).
@@ -63,7 +64,7 @@ const ROLES = {
 };
 
 const {isPlainObject} = require('../../plain-object.cjs');
-const {markOf} = require('../marked-pages.mjs');
+const {markOf} = require('../pdf/marked-pages.mjs');
 const {isImageOnlyPrompt} = require('../image-only-send.mjs');
 const str = (value) => typeof value === 'string' ? value : (typeof value === 'number' && Number.isFinite(value) ? String(value) : '');
 const clip = (value, max) => value.length > max ? value.slice(0, max) : value;
@@ -374,7 +375,7 @@ function escapeMarkdownAlt(text) {
 }
 
 /**
- * @param {{courseName?: string, engine?: string, messages?: object[], now?: Date | number,
+ * @param {{courseName?: string, engine?: string, messages?: Record<string, any>[], now?: Date | number,
  *   labels?: {you: string, imageAttached: string, imageMarkedPage?: (page: number, file: string) => string, exportedOn: (iso: string) => string}}} [options]
  */
 function exportConversationMarkdown({courseName, engine, messages, now, labels = PT_EXPORT_LABELS} = {}) {

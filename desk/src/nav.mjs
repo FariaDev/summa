@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast} from './state.mjs';
 import {icon} from '../icons.mjs';
 import {applyIcons,build} from './view-host.mjs';
@@ -242,10 +243,10 @@ const navHandlers={
    leitor (o curso novo carrega os arquivos dele pelo mesmo select). */
 document.addEventListener('click',event=>{
  const target=event.target;
- if(target?.closest?.('.pdf-nav-pop')||target?.closest?.('.pdf-more-pop button.nav'))return;
+ if(/** @type {HTMLElement} */ (target)?.closest?.('.pdf-nav-pop')||/** @type {HTMLElement} */ (target)?.closest?.('.pdf-more-pop button.nav'))return;
  /* Clique dentro de um diálogo modal (o do favorito, que nasce do popover)
     não é clique "fora": o popover de onde ele veio continua aberto. */
- if(target?.closest?.('dialog'))return;
+ if(/** @type {HTMLElement} */ (target)?.closest?.('dialog'))return;
  closePopovers();
 });
 
@@ -254,7 +255,7 @@ document.addEventListener('keydown',event=>{
 });
 
 document.addEventListener('change',event=>{
- if(event.target?.classList?.contains('pdf-select'))clearNavStacks();
+ if(/** @type {HTMLElement} */ (event.target)?.classList?.contains('pdf-select'))clearNavStacks();
 },true);
 
 /* Os leitores nascem a cada matéria; o rótulo do livro entra junto com o chrome

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Canal de sistema do OpenCode v2: `PUT /api/experimental/session/{id}/instructions/entries/{key}`

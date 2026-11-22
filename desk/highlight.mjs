@@ -1,3 +1,4 @@
+// @ts-check
 // Realce de sintaxe para os blocos de código do chat, sem dependência nova.
 // Recebe o code (texto já escapado pelo marked) e devolve o mesmo HTML com
 // <span data-hl="..."> por tipo de token. Os tokens casam strings e comentários

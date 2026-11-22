@@ -70,9 +70,9 @@ try{
          produção (`streamPaintStats.markupMs` = marked+KaTeX+highlight+
          sanitize; o resto da parede é DOM+aplicação). */
       const breakdown=await page.evaluate(async messages=>{
-        const {historyTurns}=await import('./src/worklog.mjs');
-        const {showHistory}=await import('./src/chat.mjs');
-        const {resetStreamPaintStats,streamPaintStats}=await import('./src/chat-stream-view.mjs');
+        const {historyTurns}=await import('./src/worklog/worklog.mjs');
+        const {showHistory}=await import('./src/chat/chat.mjs');
+        const {resetStreamPaintStats,streamPaintStats}=await import('./src/chat/chat-stream-view.mjs');
         const {resetMarkupStats,markupStats}=await import('./src/markdown.mjs');
         let t0=performance.now();
         const turns=historyTurns(messages);

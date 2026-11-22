@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {createShownHistory} from '../src/history-shown.mjs';
+import {createShownHistory} from '../src/history/history-shown.mjs';
 
 const require = createRequire(import.meta.url);
 const {historyIdentity} = require('../src/history-identity.cjs');

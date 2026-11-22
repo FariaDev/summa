@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs=require('node:fs');
@@ -130,7 +131,7 @@ function writeManifest(rootDir,version,files){
  }catch{}
 }
 /* Órfão = estava no manifesto anterior e não voltou na versão nova. */
-function removeOrphans(rootDir,previous,written,log=()=>{}){
+function removeOrphans(rootDir,previous,written,log=/** @type {Function} */ (()=>{})){
  const now=new Set(written);
  let removed=0;
  for(const rel of previous||[]){
@@ -153,7 +154,8 @@ function removeOrphans(rootDir,previous,written,log=()=>{}){
    copiada, protegido nunca, alvo com link simbólico recusado ANTES da
    escrita. Devolve os arquivos escritos (`written`, vira o manifesto novo),
    os criados (o rollback apaga) e os pulados. */
-function applyZip(buffer,{rootDir,announcedVersion='',log=()=>{},created=[],written=[]}={}){
+/** @param {any} buffer @param {{rootDir?: any, announcedVersion?: string, log?: any, created?: any[], written?: any[]}} [options] */
+function applyZip(buffer,{rootDir,announcedVersion='',log=/** @type {Function} */ (()=>{}),created=[],written=[]}={}){
  const raw=readZip(buffer);
  assertSafeEntries(raw);
  const entries=stripCommonRoot(raw);

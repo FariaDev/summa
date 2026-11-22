@@ -1,3 +1,4 @@
+// @ts-check
 /* Fatos de host do Claude Code para os avisos de atualização (#45).
 
    Aqui só se LÊ o mundo e se monta o comando; quem decide o que aparece é o
@@ -23,7 +24,7 @@ function versionFromOutput(text){
 /** O comando da atualização, para a confirmação e para rodar.
  *  `mode`: 'run' = a Mesa roda depois de confirmar; 'copy' = só o comando com
  *  "Copiar"; 'none' = nada.
- *  @param {{id:'claude', claudeLauncher:string}} input
+ *  @param {{id:'claude', claudeLauncher:string, install?:Record<string, any>}} input
  *  @returns {{mode:'run'|'copy'|'local'|'none', command:string, file:string, args:string[]}} */
 function updatePlan({id,claudeLauncher}){
  if(id==='claude'){

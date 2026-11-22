@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {withArtifacts,newRuntime,writeConfigJson,tinyPdf,launchDesk,screenshotDirectory,setTheme,freezeMotion,resizeWindow} from './helpers.mjs';
 import testedVersions from '../src/tested-versions.json' with {type: 'json'};
-import {loginBinary} from '../src/setup-view.mjs';
+import {loginBinary} from '../src/setup/setup-view.mjs';
 
 const FIXTURE=path.resolve(import.meta.dirname,'fake-opencode-install.cjs');
 const FAKE_SHELL=path.resolve(import.meta.dirname,'fake-login-shell.mjs');
@@ -191,7 +191,7 @@ await withArtifacts('opencode-install-ui',async ctx=>{
  ctx.app=old.app;ctx.runtime=old.runtime;
  page=old.page;
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedOpenCode:'',detectedOpenCodeOldVersion:'1.19.5',config:{}},{});
  });
  await toTutor(page,old.app,old.pdfs);

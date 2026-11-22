@@ -1,3 +1,4 @@
+// @ts-check
 /* Envio só com imagem (#109): o aluno anexa uma imagem e manda sem escrever. O
    motor precisa de uma frase de pedido, então o texto que vai ao modelo abre com
    a marca `[Só imagem]` e a frase padrão do locale (`send.imageOnly`). A marca é

@@ -1,3 +1,4 @@
+// @ts-check
 import {icon} from '../icons.mjs';
 import {t} from './ui-text.mjs';
 
@@ -13,7 +14,7 @@ const ENGINE_MENU_LABEL = {claude: 'engine.claudeExperimental', opencode: 'engin
 /**
  * Os motores que entram no menu: visíveis neste release e prontos (instalados)
  * agora; o atual vem primeiro. Pura para o teste cobrir sem janela.
- * @param {{state: {engine?: string, detected?: {claude?: string, opencode?: string}}, visibleEngines: () => string[], engineReady: (facts: object) => boolean}} deps
+ * @param {{state: {engine?: string, detected?: {claude?: string, opencode?: string}}, visibleEngines: () => string[], engineReady: (facts: Record<string, any>) => boolean}} deps
  * @returns {{engine: string, label: string, current: boolean}[]}
  * @example sessionChoices({state: {engine: 'opencode'}, visibleEngines: () => ['claude', 'opencode'], engineReady: () => true});
  */
@@ -28,7 +29,7 @@ export function sessionChoices({state, visibleEngines, engineReady}) {
 
 /**
  * Desenha o menu de sessão nova no popover.
- * @param {{state: {engine?: string, detected?: object, currentSession?: string}, visibleEngines: () => string[], engineReady: (facts: object) => boolean, getHost: () => {newSession?: (request: object) => unknown} | null, closePops: (options?: {restoreFocus?: boolean}) => void}} deps
+ * @param {{state: {engine?: string, detected?: Record<string, any>, currentSession?: string}, visibleEngines: () => string[], engineReady: (facts: Record<string, any>) => boolean, getHost: () => {newSession?: (request: Record<string, any>) => unknown} | null, closePops: (options?: {restoreFocus?: boolean}) => void}} deps
  * @returns {{choices: () => {engine: string, label: string, current: boolean}[], render: (pop: HTMLElement | null, trigger: HTMLElement | null) => {engine: string, label: string, current: boolean}[]}}
  * @example const menu = createNewSessionMenu({state: S, visibleEngines, engineReady, getHost: () => host, closePops: closeTutorPops});
  */

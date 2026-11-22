@@ -1,3 +1,4 @@
+// @ts-check
 /* Código de recusa do "tentar de novo" (#164) → chave do catálogo. Puro, sem
    DOM e sem Electron: o botão na janela usa a mesma tabela que o teste. */
 

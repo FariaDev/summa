@@ -1,3 +1,4 @@
+// @ts-check
 // Pointer capture can end without pointerup (focus loss, native gestures,
 // cancelled input). A hover must never reuse a previous drag's state.
 // `begin` roda quando o arrasto começa de fato (o GeoGebra congela a view

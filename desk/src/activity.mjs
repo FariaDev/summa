@@ -1,3 +1,4 @@
+// @ts-check
 /* Atividades interativas no chat.
  *
  * O renderer NÃO cria o artefato nem executa o documento: ele hidrata os slots
@@ -44,6 +45,7 @@ import {watchActivityColumn} from './activity-column.mjs';
 /* API pública de sempre: os limites e a URL moram em activity-messages.mjs. */
 export {ACTIVITY_SCHEME, MAX_STATE_BYTES, MAX_ATTEMPT_BYTES, MAX_STATE_ENVELOPE_BYTES, HEIGHT_MIN, HEIGHT_MAX, HEIGHT_RESERVED, READY_TIMEOUT_MS, buildActivityUrl} from './activity-messages.mjs';
 
+/** @param {{doc?: any, api?: any, composer?: any, getScope?: any, maxMounted?: number, readyTimeoutMs?: any, now?: any}} [options] */
 export function createActivityHost({
   doc = document,
   api = null,
@@ -136,6 +138,7 @@ export function createActivityHost({
     return doc.querySelector(`.activity-slot[data-activity-call="${escaped}"]`);
   };
 
+  /** @param {{force?: boolean}} [options] */
   async function items({force = false} = {}) {
     if (typeof desk.activityList !== 'function') return [];
     if (!force && now() - listCache.at < 1500) return listCache.items;
@@ -212,6 +215,7 @@ export function createActivityHost({
   /* O evento pode chegar antes do slot (declaração/execução) ou depois; um
      `published` pendente continua sendo uma publicação ao vivo quando o slot
      aparece, mesmo que a hidratação venha do MutationObserver. */
+  /** @param {any} slot @param {{live?: boolean, item?: any}} [options] */
   async function hydrateSlot(slot, {live = false, item = null} = {}) {
     if (!slot || !slot.isConnected) return null;
     const toolCallId = slot.dataset ? slot.dataset.activityCall : '';
@@ -364,11 +368,12 @@ export function createActivityHost({
       observer = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           if (mutation.type === 'attributes') {
-            const target = mutation.target;
+            const target = /** @type {HTMLElement} */ (mutation.target);
             if (target && target.classList && target.classList.contains('activity-slot')) hydrateSlot(target);
             continue;
           }
-          for (const node of mutation.addedNodes || []) {
+          for (const added of mutation.addedNodes || []) {
+            const node = /** @type {HTMLElement} */ (added);
             if (node && node.nodeType === 1) {
               if (node.classList && node.classList.contains('activity-slot')) hydrateSlot(node);
               else if (node.querySelectorAll) for (const slot of node.querySelectorAll('.activity-slot[data-activity-call]')) hydrateSlot(slot);

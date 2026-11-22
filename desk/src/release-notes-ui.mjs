@@ -23,7 +23,7 @@ const PLANS = Object.freeze([
 
 /* A pintura da primeira abertura fica fora da partida de quem já tem matéria
    (#desempenho): só entra quando a janela vai abrir. */
-/** @type {typeof import('./setup-view.mjs')} */
+/** @type {typeof import('./setup/setup-view.mjs')} */
 let setupView;
 
 let facts = {binary: '', oldVersion: '', platform: '', supported: false};
@@ -267,7 +267,7 @@ function openReleaseDialog(notes) {
  * @returns {Promise<void>}
  */
 async function loadFacts(data) {
-  setupView = await import('./setup-view.mjs');
+  setupView = await import('./setup/setup-view.mjs');
   let supported = false;
   try { supported = !!(await window.desk.openCodeInstallSupported?.()); } catch { /* a janela só não oferece o botão */ }
   facts = {binary: String(data?.detectedOpenCode || ''), oldVersion: String(data?.detectedOpenCodeOldVersion || ''), platform: String(data?.platform || ''), supported};

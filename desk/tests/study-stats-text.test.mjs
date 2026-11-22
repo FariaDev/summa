@@ -1,11 +1,11 @@
 /* As frases da tela de Estatísticas (#34, #41 fase 3): saíram de `core/studystats.bend`
-   para `src/study-stats-text.mjs`; estas são as leis que o núcleo tinha, agora nos dois idiomas. */
+   para `src/study/study-stats-text.mjs`; estas são as leis que o núcleo tinha, agora nos dois idiomas. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createI18n} from '../src/i18n.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
-import {humanCount, usageLine, headline, supportLine, timerLine, weekdayName} from '../src/study-stats-text.mjs';
+import {humanCount, usageLine, headline, supportLine, timerLine, weekdayName} from '../src/study/study-stats-text.mjs';
 import statsCore from '../src/generated/studystats.core.js';
 
 function depsFor(language) {

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const conversations=require('./src/agents/conversations.cjs');

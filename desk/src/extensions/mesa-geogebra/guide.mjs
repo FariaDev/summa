@@ -1,3 +1,4 @@
+// @ts-check
 /* Instrução da ferramenta GeoGebra do tutor — UM texto para as duas ferramentas
    (extensão do Pi `mesa_geogebra` e `geogebra` do Claude): mudam juntas, e
    `tests/native-tool-parity.mjs` confere (#53). Campos, descrição e frases do
@@ -92,13 +93,13 @@ export function guideFor(language = 'pt-BR') {
       continuar: {type: 'boolean', optional: true, description: CONTINUAR_PARAM},
     },
     boardNote,
-    /** Texto devolvido ao tutor depois de "run". @param {{ok?: boolean, error?: string, state?: object, board?: object}} data */
+    /** Texto devolvido ao tutor depois de "run". @param {{ok?: boolean, error?: string, state?: Record<string, any>, board?: Record<string, any>}} data */
     runText(data) {
       const note = boardNote(data?.board);
       const lead = data?.ok === false ? text.refused(data.error) : text.accepted;
       return `${note ? `${note}\n\n` : ''}${lead}\n\n${text.objects}\n${objectsText(data?.state)}`;
     },
-    /** Texto devolvido ao tutor depois de "state". @param {{state?: object}} data */
+    /** Texto devolvido ao tutor depois de "state". @param {{state?: Record<string, any>}} data */
     stateText(data) {
       return `${text.stateLead}\n${objectsText(data?.state)}`;
     },

@@ -2,6 +2,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nativeImage,nativeTheme,WebContentsView,Notification,powerMonitor,protocol,safeStorage,clipboard}=require('electron');
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
+const {rendererEntry,loadRenderer}=require('./renderer-entry.cjs');
 const {promisify}=require('node:util');const {execFile,spawn}=require('node:child_process');const {once}=require('node:events');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
@@ -306,6 +307,7 @@ function previewSession(){
  return ses;
 }
 const activityPreview=createActivityPreview({runtime:activityRuntime,columnWidth:()=>activityHost.columnWidth(),
+ /** @param {{width?: any, height?: any}} options */
  createWindow:({width,height})=>{
   /* Partição própria e em memória (sem `persist:`): a prévia roda em outro
      processo — um laço no documento do tutor não trava os quadros da
@@ -346,7 +348,7 @@ function readTutorPdf(raw){
 /* #213/#224: o fundo PDF do `ler_caderno` e do índice da tinta passa pela MESMA autorização do tutor. */
 const authorizeNotebookPdf=file=>{try{return resolveTutorPdfArg(file);}catch{return '';}};
 live.readTutorPdf=readTutorPdf;
-live.readTutorNotebook=raw=>require('./src/extensions/mesa-mcp/notebook-tool.mjs').readNotebookPage({caminho:raw&&raw.caminho,pagina:raw&&raw.pagina},{allowedXopp:[...allowedXopp],xournalPath:config.xournalPath||'',pdfAuthorize:authorizeNotebookPdf});
+live.readTutorNotebook=raw=>require('./src/extensions/summa-mcp/notebook-tool.mjs').readNotebookPage({caminho:raw&&raw.caminho,pagina:raw&&raw.pagina},{allowedXopp:[...allowedXopp],xournalPath:config.xournalPath||'',pdfAuthorize:authorizeNotebookPdf});
 /* O envio pula o PDF que sumiu e segue (`onSkip`): o motivo fica no log, sem o caminho. */
 const chatPdfHost=createChatPdfHost({pageCount:file=>pdfPageReader.count(file),grant:file=>chatPdfGrants.grant(file),sources:()=>chatPdfGrants.list(),onSkip:text=>appendLog('chat-pdf',text)});
 const activityHost=createActivityHost({store:activityStore,runtime:activityRuntime,captureScope:captureActivityScope,scopeIsCurrent:activityScopeIsCurrent,mutate:activityMutate,allowSender:trustedMainSender,
@@ -371,7 +373,7 @@ const materialPreviewHost=createMaterialPreviewHost({
 });
 materialPreviewHost.register(ipcMain);
 function materialEvent(scope,payload){if(win&&!win.isDestroyed())win.webContents.send('tutor-material',{courseId:scope.courseId,conversationId:scope.session,...payload});}
-/** @param {import('./types/host-deps').MaterialScope} scope @param {{title?: string, markdown?: string, modelo?: string, opcoes?: object, signal?: AbortSignal}} [request] */
+/** @param {import('./types/host-deps').MaterialScope} scope @param {{title?: string, markdown?: string, modelo?: string, opcoes?: Record<string, any>, signal?: AbortSignal}} [request] */
 async function prepareTutorMaterial(scope,{title,markdown,modelo,opcoes,signal}={}){
  return freeMutate('tutor-pdf',async()=>{
   if(scope.courseId!==courseId||scope.session!==session||(isFree()&&scope.freeSessionId!==freeSessionId))throw Error(message('err.pdf.sessionChanged'));
@@ -461,7 +463,7 @@ app.whenReady().then(async()=>{
  /* O reload do renderer (⌘R) derruba a página que ligava a View nativa: sem
     isso a view fica presa por cima de uma Mesa que nem sabe que ela existe. */
  win.webContents.on('did-start-navigation',(_e,_url,_isInPlace,isMainFrame)=>{if(isMainFrame)ggb.hideView();});
- win.on('close',()=>persist());win.loadFile(path.join(__dirname,'index.html'));
+ win.on('close',()=>persist());loadRenderer(win,rendererEntry({env:process.env,deskDir:__dirname}));
  scheduleUpdateCheck();
 });
 
@@ -674,7 +676,7 @@ const phonePalette=()=>phonePaletteCache??=readPalette(fs.readFileSync(path.join
 /* O trio da página do celular (#66): tokens de movimento, trio.css e o layout, lidos uma vez. */
 let phoneCastCache=null;
 const readDeskText=(name)=>fs.readFileSync(path.join(__dirname,name),'utf8');
-const phoneCast=()=>phoneCastCache??=phoneCastCss({styleCss:readDeskText('style.css'),motionCss:readDeskText('src/motion.css'),trioCss:readDeskText('src/trio.css'),pageCss:readDeskText('src/phone-page.css')});
+const phoneCast=()=>phoneCastCache??=phoneCastCss({styleCss:readDeskText('style.css'),motionCss:readDeskText('src/motion.css'),trioCss:readDeskText('src/mascote/trio.css'),pageCss:readDeskText('src/phone/phone-page.css')});
 const phoneHost=createPhoneHost({
  ipcMain,
  t:(key,args)=>languageHost.t(key,args),

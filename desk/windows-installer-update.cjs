@@ -128,7 +128,8 @@ function launchInstaller({file,readyFile='',env=process.env,spawnFn=spawn}){
 function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOUT_MS,pollMs=500}){
  return new Promise((resolve,reject)=>{
   const deadline=Date.now()+timeoutMs;
-  let timer=null;
+  /** @type {NodeJS.Timeout | undefined} */
+  let timer;
   const finish=(error)=>{
    clearTimeout(timer);
    child.off('exit',onExit);

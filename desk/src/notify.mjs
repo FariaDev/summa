@@ -1,3 +1,4 @@
+// @ts-check
 import {build,preserveFocus,renderChildren} from './view-host.mjs';
 import aux from './generated/auxview.core.js';
 import {LANGUAGE_EVENT,t} from './ui-text.mjs';

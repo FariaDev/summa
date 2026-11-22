@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
 import {parseMessage, message} from '../src/i18n.mjs';
-import {freeLimitKey, freeLimitMessageKey} from '../src/free-limit-notice.mjs';
+import {freeLimitKey, freeLimitMessageKey} from '../src/study/free-limit-notice.mjs';
 import {FREE_LIMIT_429} from './fake-opencode.mjs';
 
 const require = createRequire(import.meta.url);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createRequire} from 'node:module';
-import {READING_SIZES, READING_WIDTHS, CODE_SIZES, PDF_DARK_STYLES, normalizeDisplayChoices, applyDisplayState} from '../src/display-preferences.mjs';
+import {READING_SIZES, READING_WIDTHS, CODE_SIZES, PDF_DARK_STYLES, normalizeDisplayChoices, applyDisplayState} from '../src/settings/display-preferences.mjs';
 
 /* Preferências de leitura (#106/#107/#206): nomes fechados, padrão de hoje e
    gravação no estado de interface. O adaptador do main e o aplicador do

@@ -7,7 +7,7 @@
 
    A rotação não é aplicada aqui (exigiria decodificar a imagem): ela sai como
    número (1 a 8, a tag Orientation do EXIF) e o renderer desenha a foto já
-   girada ao comprimir para a bandeja (`src/phone-photo.mjs`). Como o EXIF sai
+   girada ao comprimir para a bandeja (`src/phone/phone-photo.mjs`). Como o EXIF sai
    antes, o navegador não gira a foto uma segunda vez.
 
    O que fica de cada formato é uma lista do que é preciso para desenhar a

@@ -1,3 +1,4 @@
+// @ts-check
 import layoutCore from './generated/mesaqollayout.core.js';
 import {t, text, LANGUAGE_EVENT} from './ui-text.mjs';
 import {roundNat} from './bend-nat.mjs';
@@ -285,7 +286,7 @@ export function applyViewLayout(raw) {
 /* ---------- UI (diálogo + entrada nas Configurações) ---------- */
 
 function defaultApi() {
-  const desk = globalThis.window?.desk || {};
+  const desk = /** @type {Record<string, any>} */ (globalThis.window?.desk || {});
   return {
     get: () => (typeof desk.layoutPresetsGet === 'function' ? desk.layoutPresetsGet() : Promise.resolve({version: 1, presets: []})),
     save: (payload) => (typeof desk.layoutPresetsSave === 'function' ? desk.layoutPresetsSave(payload) : Promise.resolve({version: 1, presets: []})),
@@ -333,6 +334,7 @@ function buildDialog(doc) {
   return {dialog, select, summary, name, status, apply, save, rename, remove, close, title, selectLabel, nameLabel};
 }
 
+/** @param {{api?: any, onApplied?: any, document?: any}} [options] */
 export function initLayoutPresetsUI({api, onApplied, document: docArg} = {}) {
   if (ui) return ui;
   const deps = {...defaultApi(), ...(api || {})};

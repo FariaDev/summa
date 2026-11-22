@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {trioSvg, TRIO} from '../src/trio-art.mjs';
+import {trioSvg, TRIO} from '../src/mascote/trio-art.mjs';
 
-/* #64: o trio ∫ Σ ∇ entrega ao componente (src/mascote.mjs) os mesmos grupos
+/* #64: o trio ∫ Σ ∇ entrega ao componente (src/mascote/mascote.mjs) os mesmos grupos
    que ele move, e um grupo por pose/rosto que o trio.css liga por humor. */
 
 const ids = /** @type {Array<'integral'|'sigma'|'nabla'>} */ (Object.keys(TRIO));
@@ -68,7 +68,7 @@ test('o desenho não tem cor fixa de corpo; as cores vêm do acento', async () =
     assert.doesNotMatch(svg, /#6d4fd8|#8b74ec|#5a3fc4|#3f2a9e|#1a1033/i, `${id}: cor de corpo fixa`);
     for (const part of ['tr-body', 'tr-limb', 'tr-ink', 'tr-sign']) assert.match(svg, new RegExp(part), `${id}: ${part}`);
   }
-  const css = readFileSync(new URL('../src/trio.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/mascote/trio.css', import.meta.url), 'utf8');
   assert.match(css, /\.mascote \.tr-body-stroke\{stroke:var\(--trio-corpo\)\}/);
   assert.match(css, /\.mascote \.tr-limb\{stroke:var\(--trio-membro\)\}/);
   assert.match(css, /\.mascote \.tr-ink\{stroke:var\(--trio-tinta\)\}/);

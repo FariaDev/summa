@@ -1,3 +1,4 @@
+// @ts-check
 import {build, childrenOf, preserveFocus, preserveScroll, renderChildren} from './view-host.mjs';
 import {onStaticTextApplied, t, LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
@@ -530,7 +531,7 @@ function bindOpenButton(){
   const actions=host.querySelector('.dialog-actions');
   if(!actions)return;
   button=document.createElement('button');
-  button.type='button';
+  /** @type {HTMLButtonElement} */ (button).type='button';
   button.id='keys-customize';
   /* O texto vem do catálogo (varredura i18n, rodada 8): o fallback valia PT
      mesmo em EN, e sem "atalhos" até em PT. */
@@ -666,7 +667,7 @@ export function applyPlatformKeys(scope=[document.documentElement]){
 }
 applyPlatformKeys();
 /* A troca de idioma reescreve o HTML estático com glifos ⌘/⇧ do catálogo (#41): refaz o ajuste só no que mudou. */
-onStaticTextApplied(changed=>applyPlatformKeys(changed));
+onStaticTextApplied(changed=>applyPlatformKeys(/** @type {HTMLElement[]} */ (changed)));
 /* Os rótulos das linhas do editor são texto montado em JS: a troca de idioma os refaz. */
 window.addEventListener(LANGUAGE_EVENT,()=>refresh());
 

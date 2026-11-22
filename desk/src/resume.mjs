@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,applyStudy,save} from './state.mjs';
 import resumeCore from './generated/resume.core.js';
 import {text} from './ui-text.mjs';

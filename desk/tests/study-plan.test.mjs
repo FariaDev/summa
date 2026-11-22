@@ -18,7 +18,7 @@ import {
   setTaskDone,
   studyPlanSnapshot,
   unlinkTask,
-} from '../src/study-plan.mjs';
+} from '../src/study/study-plan.mjs';
 
 /* Plano de estudo da matéria (#110): as regras do módulo de estado. Cada
    operação devolve um plano novo; nenhuma muda o plano que recebeu. */

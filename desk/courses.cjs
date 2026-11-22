@@ -1,3 +1,4 @@
+// @ts-check
 const fs=require('node:fs');const path=require('node:path');
 const {scanFiles}=require('./file-scan.cjs');
 const core=require('./src/generated/courses.core.js').default;

@@ -1,3 +1,4 @@
+// @ts-check
 import dialogsCore from './generated/dialogsview.core.js';
 import {build, htmlNode, renderChildren, renderInto} from './view-host.mjs';
 
@@ -83,8 +84,8 @@ export function relabelCourseRows() {
   if (!rows.length) return;
   renderCourseRows(rows.map((row) => ({
     id: row.dataset.id,
-    name: row.querySelector('.cfg-name')?.value,
-    path: row.querySelector('.cfg-path')?.value,
+    name: /** @type {HTMLInputElement|null} */ (row.querySelector('.cfg-name'))?.value,
+    path: /** @type {HTMLInputElement|null} */ (row.querySelector('.cfg-path'))?.value,
   })));
 }
 
@@ -244,6 +245,7 @@ export function renderPiDialog({title = '', message = '', field = null} = {}, {i
 /* `#image-dialog`: título pelo nome do arquivo, ações e o caminho no `dataset`
    (o mesmo `#image-dialog` + `#image-preview.src` do chat). Copiar/abrir
    continuam handlers de quem chama (clipboard/Preview são do host). */
+/** @param {{file?: string, hasFile?: boolean}} [chrome] @param {Record<string, Function>} [handlers] */
 export function renderImageChrome({file = '', hasFile} = {}, handlers = {}) {
   const dialog = $('#image-dialog');
   const title = $('#image-title');

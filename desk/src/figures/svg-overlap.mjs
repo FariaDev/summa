@@ -11,7 +11,7 @@
 /** @typedef {{label?: string, box: Box, fontSize?: number|null}} TextMark */
 /** @typedef {{a: number, b: number, c: number, d: number, e: number, f: number}} Matrix */
 /** Nó de SVG só com o que a medida lê. O DOM real tem o resto.
- * @typedef {{localName?: string, textContent?: string|null, getBBox?: () => Box, getScreenCTM?: () => Matrix|null, getAttribute?: (name: string) => string|null, ownerDocument?: {defaultView?: {getComputedStyle?: (element: object) => {fontSize?: string}}}, getTotalLength?: () => number, getPointAtLength?: (distance: number) => {x: number, y: number}, points?: {length: number, getItem?: (index: number) => {x: number, y: number}}}} SvgNode */
+ * @typedef {{localName?: string, textContent?: string|null, getBBox?: () => Box, getScreenCTM?: () => Matrix|null, getAttribute?: (name: string) => string|null, ownerDocument?: {defaultView?: {getComputedStyle?: (element: Record<string, any>) => {fontSize?: string}}}, getTotalLength?: () => number, getPointAtLength?: (distance: number) => {x: number, y: number}, points?: {length: number, getItem?: (index: number) => {x: number, y: number}}}} SvgNode */
 
 const MARKS = new Set(['line', 'polyline', 'polygon', 'path', 'rect']);
 const WARN_LIMIT = 8;
@@ -234,7 +234,7 @@ export function segmentsOf(element) {
 }
 
 /** Tamanho em px: o computado, senão o atributo `font-size`. Null se não houver número.
- * @param {{ownerDocument?: {defaultView?: {getComputedStyle?: (element: object) => {fontSize?: string}}}, getAttribute?: (name: string) => string|null}} element
+ * @param {{ownerDocument?: {defaultView?: {getComputedStyle?: (element: Record<string, any>) => {fontSize?: string}}}, getAttribute?: (name: string) => string|null}} element
  * @returns {number|null}
  * @example fontPx({getAttribute: () => '12px', ownerDocument: {}}) // 12
  */

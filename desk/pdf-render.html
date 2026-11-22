@@ -2,17 +2,16 @@
 <meta charset="utf-8">
 <title>Mesa — render de página</title>
 <script type="module">
-/* O mesmo pdf.js da janela de PDF (`src/pdf.mjs`). Sem poppler e sem binário
+/* O mesmo pdf.js da janela de PDF (`src/pdf/pdf.mjs`). Sem poppler e sem binário
    do sistema: o Chromium desenha a página e devolve PNG. A janela está em
    sandbox: os bytes chegam pelo preload, que os pede ao processo principal.
    Girar, recortar, ampliar (#114) e as marcas do tutor (#113) transformam só
    o PNG desta chamada. */
 import * as pdfjs from './node_modules/pdfjs-dist/build/pdf.mjs';
+import {pdfjsDataUrls} from './src/pdf/pdfjs-loader.mjs';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./node_modules/pdfjs-dist/build/pdf.worker.mjs', import.meta.url).href;
-const standardFontDataUrl = new URL('./node_modules/pdfjs-dist/standard_fonts/', import.meta.url).href;
-const cMapUrl = new URL('./node_modules/pdfjs-dist/cmaps/', import.meta.url).href;
-const wasmUrl = new URL('./node_modules/pdfjs-dist/wasm/', import.meta.url).href;
+const {standardFontDataUrl, cMapUrl, wasmUrl} = pdfjsDataUrls(document.baseURI);
 const LONG_EDGE = 1200;
 const MIN_LONG_EDGE = 320;
 const MAX_IMAGE_CHARS = 1800000;

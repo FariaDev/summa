@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast,markCourseTab,updateContextSummary,supportsCapability} from './state.mjs';
 import {build,renderChildren} from './view-host.mjs';
 import {renderReview} from './review-dialog.mjs';
@@ -133,9 +134,9 @@ function focusKey(){
  const node=document.activeElement;
  const view=$('#review-view');
  if(!node||!view||!view.contains(node))return null;
- const id=node.dataset?.id;
+ const id=/** @type {HTMLElement} */ (node).dataset?.id;
  const cls=['review-row','review-redo','review-similar','review-grade'].find(name=>node.classList.contains(name));
- return cls&&id?{cls,id,result:node.dataset.result||''}:null;
+ return cls&&id?{cls,id,result:/** @type {HTMLElement} */ (node).dataset.result||''}:null;
 }
 
 function restoreFocus(key){
@@ -301,6 +302,7 @@ function refStateSuffix(state){
  return '';
 }
 
+/** @param {{mode?: string, item?: any, ref?: any}} [options] */
 function fillReviewDialog({mode='add',item,ref}={}){
  const dialog=dialogOf();
  if(!dialog)return null;

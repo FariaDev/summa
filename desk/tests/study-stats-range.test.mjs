@@ -4,7 +4,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bucketSeries, DAILY_BARS, dayOfIso, defaultRange, ensureRangeValues, isoOfDay, localDayOf, MONTHLY_BARS, rangeMissing, rangeNotice} from '../src/study-stats-range.mjs';
+import {bucketSeries, DAILY_BARS, dayOfIso, defaultRange, ensureRangeValues, isoOfDay, localDayOf, MONTHLY_BARS, rangeMissing, rangeNotice} from '../src/study/study-stats-range.mjs';
 
 test('data civil vira o dia do store; data inexistente é recusada', () => {
   assert.equal(dayOfIso('1970-01-01'), 0);

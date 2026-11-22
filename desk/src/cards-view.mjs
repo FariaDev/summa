@@ -1,3 +1,4 @@
+// @ts-check
 /* Cartões `quiz` e `perguntar` na conversa (#92). Mesmo DOM e mesmas classes do
    quiz que já existia (`.message.quiz .quiz-card`), agora sem esperar o motor:
    a Mesa corrige o quiz e guarda o rascunho; "Concluir" manda o resultado numa
@@ -46,10 +47,13 @@ function askTexts(card) {
   return (card.questions || []).map((_question, index) => (typeof list[index]?.text === 'string' ? list[index].text : ''));
 }
 
+/* O artigo montado guarda como se repintar (`_update`) e o cartão atual (`_card`). */
+/** @typedef {HTMLElement & {_update?: (card: Record<string, any>) => void, _card?: () => Record<string, any>}} CardElement */
+
 /**
  * A ação de "Concluir" só existe para cartão respondido, não dispensado e sem
  * envio confirmado; reserva em andamento aparece como envio pendente.
- * @param {object} card @returns {'conclude'|'sending'|'sent'|'dismissed'|''}
+ * @param {Record<string, any>} card @returns {'conclude'|'sending'|'sent'|'dismissed'|''}
  */
 function sendAction(card) {
   if (card.dismissed) return 'dismissed';
@@ -84,6 +88,7 @@ function cardHeader(card) {
   return article;
 }
 
+/** @param {any} label @param {any} className @param {any} action @param {{disabled?: boolean, key?: string}} [options] */
 function cardButton(label, className, action, {disabled = false, key = ''} = {}) {
   const element = node('button', className);
   element.type = 'button';
@@ -212,7 +217,7 @@ function askQuestionBlock(cardState, question, index, state, handlers) {
 
 /**
  * Cria o elemento de um cartão e liga as ações aos callbacks do host.
- * @param {object} card cartão público
+ * @param {Record<string, any>} card cartão público
  * @param {{answer: Function, draft: Function, dismiss: Function, conclude: Function}} api
  * @returns {HTMLElement}
  * @example const el = cardElement(publicCard, {answer, draft, dismiss, conclude});
@@ -220,7 +225,7 @@ function askQuestionBlock(cardState, question, index, state, handlers) {
 export function cardElement(card, api) {
   /* Nota sugerida (#139): texto não confiável, sem Markdown e sem innerHTML. */
   if (card?.kind === 'note') return noteCardElement(card, api);
-  const article = cardHeader(card);
+  const article = /** @type {CardElement} */ (cardHeader(card));
   const box = node('div', 'quiz-card');
   article.append(box);
   const state = {
@@ -243,7 +248,7 @@ export function cardElement(card, api) {
   const scheduleDraft = () => {
     state.draftDirty = true;
     clearTimeout(state.timer);
-    state.timer = setTimeout(() => { state.timer = 0; if (state.draftDirty) { state.draftDirty = false; saveDraft(); } }, MAX_DRAFT_DELAY);
+    state.timer = /** @type {any} */ (setTimeout(() => { state.timer = 0; if (state.draftDirty) { state.draftDirty = false; saveDraft(); } }, MAX_DRAFT_DELAY));
   };
 
   const apply = (next) => {
@@ -290,7 +295,7 @@ export function cardElement(card, api) {
   const conclude = () => run(() => api.conclude(state.card.id));
 
   function paint() {
-    const active = document.activeElement?.dataset?.cardKey || '';
+    const active = /** @type {HTMLElement|null} */ (document.activeElement)?.dataset?.cardKey || '';
     box.replaceChildren(...(state.card.kind === 'ask' ? askBody() : quizBody()));
     if (state.error) box.append(node('p', 'quiz-error', text(state.error)));
     if (active) {
@@ -343,7 +348,7 @@ export function cardElement(card, api) {
 
 /**
  * Atualiza um cartão já montado; devolve o elemento (ou cria, se não houver).
- * @param {HTMLElement|null} element @param {object} card
+ * @param {CardElement|null} element @param {Record<string, any>} card
  * @param {{answer: Function, draft: Function, dismiss: Function, conclude: Function}} api
  * @returns {HTMLElement}
  */

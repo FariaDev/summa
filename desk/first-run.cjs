@@ -1,3 +1,4 @@
+// @ts-check
 const fs=require('node:fs');const path=require('node:path');
 const {message: uiMsg}=require('./src/i18n.mjs');
 const {courseLibrary,pdfFolderOf}=require('./courses.cjs');

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Portão do ClaudeAdapter depois da #91 e do #92: o tutor não tem ferramenta
@@ -20,7 +21,11 @@ function isMesaTool(toolName) {
   return typeof toolName === 'string' && toolName.startsWith(MESA_TOOL_PREFIX);
 }
 
-class ClaudeAdapterGate {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterGate extends AdapterBase {
   /* O SDK consulta o canUseTool para ferramentas MCP. Tudo que não é
      `mcp__mesa__*` é negado — a pergunta nativa saiu no #92. */
   _canUseTool(generation, toolName, input) {

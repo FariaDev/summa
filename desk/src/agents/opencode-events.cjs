@@ -13,7 +13,7 @@
  * o servidor emite hoje. Nome desconhecido é ignorado. */
 
 const {message, MESSAGE_MARK, MESSAGE_SEP} = require('../i18n.mjs');
-const {imageBlocksOf} = require('../marked-pages.mjs');
+const {imageBlocksOf} = require('../pdf/marked-pages.mjs');
 
 /* Teto do resultado guardado no descritor local (#146): o detalhe do diário
    mostra no máximo 6000 caracteres e o descritor já é limitado por mensagem. */
@@ -28,7 +28,7 @@ const {modelFields} = require('./history.cjs');
  *          reader.handle('session.text.delta', {sessionID: 'ses_1', assistantMessageID: 'msg_a', delta: 'oi'});
  */
 class OpenCodeEventReader {
-  /** @param {{emit?: (type: string, payload?: object) => void, sessionId?: string, now?: () => number}} [options] */
+  /** @param {{emit?: (type: string, payload?: Record<string, any>) => void, sessionId?: string, now?: () => number}} [options] */
   constructor({emit, sessionId = '', now = () => Date.now()} = {}) {
     this.emit = typeof emit === 'function' ? emit : () => {};
     this.sessionId = sessionId;

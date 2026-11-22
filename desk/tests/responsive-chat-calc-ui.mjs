@@ -121,7 +121,7 @@ await withArtifacts('r3-coluna-1480x840',async ctx=>{
 
  /* --- anexos e cartão de retomada aumentam o composer --------------------- */
  await page.evaluate(async png=>{
-  const {restoreAttachments}=await import('./src/chat.mjs');
+  const {restoreAttachments}=await import('./src/chat/chat.mjs');
   restoreAttachments({attachments:[{dataUrl:`data:image/png;base64,${png}`,mimeType:'image/png',name:'anexo.png'}]});
  },PLOT_PNG);
  await page.waitForFunction(()=>document.querySelector('#attachments')?.hidden===false);
@@ -138,7 +138,7 @@ await withArtifacts('r3-coluna-1480x840',async ctx=>{
  assert.ok(stress.composer.bottom<=stress.chat.bottom+1,'composer com anexo/retomada fica dentro da coluna');
  assert.equal(await hitOK(page,'#calc-form button'),true,'botão = segue acessível com anexo e retomada');
  await shot(page,'1480-840-anexo-retomada.png');
- await page.evaluate(async()=>{const {resetAttachments}=await import('./src/chat.mjs');resetAttachments();const {setResumeRecord}=await import('./src/resume.mjs');setResumeRecord(null);});
+ await page.evaluate(async()=>{const {resetAttachments}=await import('./src/chat/chat.mjs');resetAttachments();const {setResumeRecord}=await import('./src/resume.mjs');setResumeRecord(null);});
 
  /* --- quando o conteúdo volta a caber, o modo normal volta ---------------
     calculadora 220: o #messages recupera o posto de scroller

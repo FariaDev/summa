@@ -77,7 +77,7 @@ function classifyBoundary(message) {
  * @example const request = new CompactRequest({id, item}); request.arm(onTimeout); await request.promise;
  */
 class CompactRequest {
-  /** @param {{id: string, item: object, timeoutMs?: number}} input */
+  /** @param {{id: string, item: Record<string, any>, timeoutMs?: number}} input */
   constructor({id, item, timeoutMs = COMPACT_TIMEOUT_MS}) {
     this.id = id;
     this.item = item;

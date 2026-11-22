@@ -120,7 +120,7 @@ await withArtifacts('modelos-gratis',async ctx=>{
  assert.equal(await page.locator('#setup-tutor-actions #free-models').count(),0,'sem convite aos modelos grátis na primeira abertura');
  assert.equal(await page.locator('#setup-tutor-actions #connect').getAttribute('class'),'primary','"Chamar o tutor" continua lá, como principal');
  assert.equal((await page.locator('#setup-tutor-actions #setup-settings').textContent()).trim(),'Ajustes do tutor','os Ajustes ficam ao lado');
- await page.evaluate(async()=>{const mod=await import('./src/free-models.mjs');await mod.openFreeModelsFlow();});
+ await page.evaluate(async()=>{const mod=await import('./src/study/free-models.mjs');await mod.openFreeModelsFlow();});
  await page.waitForSelector('#free-models-dialog[open]');
 
  step(2);
@@ -326,7 +326,7 @@ await withArtifacts('modelos-gratis-arquivo',async ctx=>{
  fs.writeFileSync(path.join(authDir,'auth.json'),JSON.stringify({opencode:{type:'api',key:KEY_C}}));
  const {page,runtime}=await boot(ctx,{homeDir:home,validKeys:[KEY_C],clipboard:''});
  await toTutorStep(ctx,page,runtime);
- await page.evaluate(async()=>{const mod=await import('./src/free-models.mjs');await mod.openFreeModelsFlow();});
+ await page.evaluate(async()=>{const mod=await import('./src/study/free-models.mjs');await mod.openFreeModelsFlow();});
  await page.locator('#free-models-authfile').waitFor({state:'visible'});
  const authNote=await page.locator('#free-models-authnote').textContent();
  assert.ok(authNote.includes(path.join('~','.local','share','opencode','auth.json')),`diz qual arquivo vai ler (${authNote})`);

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `salvar_nota` no Claude (#91/#139): o MESMO guia da extensão do Pi

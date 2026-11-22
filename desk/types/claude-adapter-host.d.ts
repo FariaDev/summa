@@ -11,10 +11,24 @@ export interface ClaudeAdapterTurnState {
   finalized: boolean;
   degraded: boolean;
   steerUuids: Set<string>;
+  item?: object;
+  taken?: boolean;
+  acceptResolved?: boolean;
+  foreignSeen?: boolean;
+  foreignWarned?: boolean;
+  apiRetries?: Set<string>;
+  acceptAttempted?: boolean;
+  announcedRateLimits?: Set<string>;
+  rejectedRateLimitTypes?: Set<string>;
+  lastRateLimit?: object | null;
+  latestAssistantRateLimited?: boolean;
+  authenticationFailure?: boolean;
 }
 
 export interface ClaudeQueryLike {
   supportedCommands?: () => Promise<unknown>;
+  setModel?: (model?: string) => Promise<unknown>;
+  applyFlagSettings?: (settings: object) => Promise<unknown>;
 }
 
 export interface ClaudeAdapterHost {
@@ -45,3 +59,10 @@ export interface ClaudeAdapterHost {
   connect(): Promise<unknown>;
   send(input: { id?: string; text: string; images: unknown[]; delivery?: 'steer' }): Promise<{ accepted: true; id: string }>;
 }
+
+/* O `this` dos mixins antigos (query, stream, controles, limite de uso, turnos,
+   portão): o contrato tipado acima, os métodos do EventEmitter e os campos
+   internos `_*` do adaptador montado ainda sem tipo próprio (#43 fase 3). */
+export type ClaudeAdapterMixinSelf = ClaudeAdapterHost
+  & Pick<import('node:events').EventEmitter, 'emit' | 'on' | 'off' | 'once'>
+  & {[member: `_${string}`]: any};

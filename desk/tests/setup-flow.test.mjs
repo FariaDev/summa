@@ -6,7 +6,7 @@ import {createI18n} from '../src/i18n.mjs';
 import {
   STEPS, TOUR, initialSetup, stepId, setupBlocked, nextSetup, backSetup, goToStep, primaryKey, hintKey,
   setupTrail, speechOf, pdfPreview, clearFolder, nextTourFrame, tourRuns, advanceTour, goToTourFrame, tourKeyFrame,
-} from '../src/setup-flow.mjs';
+} from '../src/setup/setup-flow.mjs';
 
 /* #64: a primeira abertura em tela cheia, um passo por vez. */
 const pt = createI18n({catalogs: {'pt-BR': ptBR, en}, language: 'pt-BR'});

@@ -10,7 +10,7 @@ const {phonePageHtml} = require('../phone-page.cjs');
 /* #66: um do trio por estado na página do celular, do mesmo desenho da Mesa. */
 const desk = new URL('../', import.meta.url);
 const read = (name) => fs.readFileSync(new URL(name, desk), 'utf8');
-const sheets = () => ({styleCss: read('style.css'), motionCss: read('src/motion.css'), trioCss: read('src/trio.css'), pageCss: read('src/phone-page.css')});
+const sheets = () => ({styleCss: read('style.css'), motionCss: read('src/motion.css'), trioCss: read('src/mascote/trio.css'), pageCss: read('src/phone/phone-page.css')});
 const castOf = (markup) => markup.match(/class="mascote mascote-(\w+)" data-humor="(\w+)"/)?.slice(1);
 
 test('cada estado tem o seu personagem e humor', () => {

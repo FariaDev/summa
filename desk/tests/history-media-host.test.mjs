@@ -14,8 +14,8 @@ const require = createRequire(import.meta.url);
 const {createHistoryMediaHost, registerHistoryMediaIpc, MIN_TOOL_OUTPUT_BYTES} = require('../history-media-host.cjs');
 const {registerTutorSessionIpc} = require('../tutor-session-ipc.cjs');
 const {createPromptImages} = require('../prompt-images.cjs');
-const {historyTurns} = await import('../src/worklog.mjs');
-const {searchEntries} = await import('../src/chat-search.mjs');
+const {historyTurns} = await import('../src/worklog/worklog.mjs');
+const {searchEntries} = await import('../src/chat/chat-search.mjs');
 
 const dirs = [];
 after(() => { for (const dir of dirs) fs.rmSync(dir, {recursive: true, force: true}); });

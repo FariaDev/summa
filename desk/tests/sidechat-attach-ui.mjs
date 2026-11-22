@@ -115,7 +115,7 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  assert.equal(await page.locator('#attachments .attachment.notebook-card').count(),0,'o tutor não recebe o que entra no lateral');
  const thumb=`data:image/png;base64,${PNG_1X1.toString('base64')}`;
  const direct=await page.evaluate(async({caminho,pagina,nome,thumb})=>{
-  const loader=await import('./src/sidechat-loader.mjs');
+  const loader=await import('./src/sidechat/sidechat-loader.mjs');
   return {added:await loader.attachSidechatNotebook({caminho,pagina,nome}),thumb:loader.setSidechatNotebookThumb({caminho,pagina,thumb})};
  },{caminho:notebook,pagina:2,nome:'',thumb});
  assert.deepEqual(direct,{added:true,thumb:true},'o loader põe o cartão e a miniatura no lateral');
@@ -137,13 +137,13 @@ await withArtifacts('sidechat-anexos',async ctx=>{
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').evaluate(el=>el.closest('.attachment').innerHTML.includes(el.ownerDocument.defaultView.location.href)),false);
  assert.equal(await page.locator('#sidechat-attachments [data-key*="xopp"], #sidechat-attachments [title*="xopp"]').count(),0,'nem escondido em atributo visível a quem passa o mouse');
  /* O mesmo cartão de novo não duplica. */
- const again=await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:2,nome:''});
+ const again=await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:2,nome:''});
  assert.equal(again,true,'o loader aceita de novo a mesma página');
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),1,'o mesmo cartão não duplica');
  await page.screenshot({path:'/tmp/claude-1000/summa-8a.png'});
 
  /* ---- 6. O × tira o cartão; a pergunta vai com o caminho escondido e a imagem ---- */
- assert.equal(await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:1,nome:'Aula 3'}),true,'o loader põe o segundo cartão');
+ assert.equal(await page.evaluate(async({caminho,pagina,nome})=>(await import('./src/sidechat/sidechat-loader.mjs')).attachSidechatNotebook({caminho,pagina,nome}),{caminho:notebook,pagina:1,nome:'Aula 3'}),true,'o loader põe o segundo cartão');
  await page.waitForFunction(()=>document.querySelectorAll('#sidechat-attachments .notebook-card').length===2,undefined,{timeout:10000});
  await page.locator('#sidechat-attachments .attachment-remove[aria-label="Remover Aula 3"]').click();
  assert.equal(await page.locator('#sidechat-attachments .notebook-card').count(),1,'o × tira só o cartão clicado');

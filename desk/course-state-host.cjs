@@ -139,7 +139,7 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
     Cancelar descarta a troca. */
  function pdfModelKey(){return live.courseId===FREE_ID?`free:${live.freeSessionId||''}`:`course:${live.courseId}`;}
  function lastPdfModel(){return live.state.pdfModels?.[pdfModelKey()]||null;}
- /** @param {{model?: string, options?: object}} [choice] */
+ /** @param {{model?: string, options?: Record<string, any>}} [choice] */
  function rememberPdfModel({model,options}={}){
   if(!materialModel.isKnownModel(model))return;
   const id=materialModel.modelId(model),key=pdfModelKey();

@@ -1,4 +1,4 @@
-/* Editor visual de `desk.panels` (`src/layout-settings.mjs`).
+/* Editor visual de `desk.panels` (`src/settings/layout-settings.mjs`).
  *
  * Testa a costura com o host sem navegador: um DOM falso mínimo (o mesmo
  * desenho do `pdfpageview.test.mjs`) sustenta `mountLayoutSettings` e os
@@ -9,7 +9,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as layout from '../src/layout-settings.mjs';
+import * as layout from '../src/settings/layout-settings.mjs';
 import {setUiLanguage} from '../src/ui-text.mjs';
 
 class FakeNode {

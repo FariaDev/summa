@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -50,6 +51,7 @@ function removeStagingGuarded(plan) {
   if (!stats.isDirectory()) fail('CONFLICT', 'staging não é pasta; nada foi apagado');
   fs.rmSync(plan.stagingPath, {recursive: true, force: false});
 }
+/** @param {any} runtime @param {any} sessionId @param {{parentDir?: any, name?: any}} [options] */
 function preparePromotion(runtime, sessionId, {parentDir, name} = {}) {
   const id = normalizeSessionId(sessionId);
   const {file, record} = mustLoad(runtime, id);
@@ -139,6 +141,7 @@ function assertCourseOwnership(runtime, sessionId, courseId) {
 /* Transação em duas fases: o journal (`committing` + matéria) é gravado ANTES
    do rename; depois do rename grava-se o recibo (`promoted`). Crash entre os
    dois deixa um estado que `recoverPromotion` conclui ou desfaz sem chute. */
+/** @param {any} runtime @param {any} sessionId @param {{token?: any, courseId?: any, courseName?: any}} [options] */
 function commitPromotion(runtime, sessionId, {token, courseId, courseName} = {}) {
   const id = normalizeSessionId(sessionId);
   const {file, record} = mustLoad(runtime, id);

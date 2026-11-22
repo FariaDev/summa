@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Transcrição de uma conversa DENTRO do pacote (#140): o JSONL do Pi e os

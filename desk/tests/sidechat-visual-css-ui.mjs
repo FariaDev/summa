@@ -137,7 +137,7 @@ const savedUncertain={
  cards:[],
 };
 async function injectUncertain(page,target){
- await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat.mjs');sidechat.openSavedSidechat(payload);},savedUncertain);
+ await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat/sidechat.mjs');sidechat.openSavedSidechat(payload);},savedUncertain);
  await target.waitForSelector('#sidechat-messages .sidechat-warn',{timeout:10000});
  await target.evaluate(()=>document.activeElement?.blur?.());
 }

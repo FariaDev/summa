@@ -27,7 +27,7 @@ const normalizeUi = (value) => core.storedUi(typeof value === 'string' ? value :
 const normalizeTutor = (value) => core.tutor(typeof value === 'string' ? value : '');
 
 /**
- * @param {{ipcMain: {handle: Function}, state: () => any, patchState: (patch: object) => void,
+ * @param {{ipcMain: {handle: Function}, state: () => any, patchState: (patch: Record<string, any>) => void,
  *   systemLocale: () => string, onChange?: (payload: object) => void,
  *   relinkTutor?: () => Promise<{relinked: boolean, busy?: boolean}>}} deps
  */

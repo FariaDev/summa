@@ -29,7 +29,7 @@ test('restoration rejects missing files and non-Xournal extensions',()=>{
 
 test('restauração atrás de symlink guarda o canônico e o ler_caderno lê',async ()=>{
  const {gzipSync}=await import('node:zlib');
- const {readNotebookPage}=await import('../src/extensions/mesa-mcp/notebook-tool.mjs');
+ const {readNotebookPage}=await import('../src/extensions/summa-mcp/notebook-tool.mjs');
  const {fileURLToPath}=await import('node:url');
  const FAKE=path.join(path.dirname(fileURLToPath(import.meta.url)),'fake-xournalpp.mjs');
  const base=fs.mkdtempSync(path.join(os.tmpdir(),'desk-study-sym-'));

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const {describeReceived, invalidValue} = require('../error-detail.mjs');
@@ -74,13 +75,13 @@ const isUuid = (value) => typeof value === 'string' && UUID_RE.test(value);
 const boundedString = (value, max) => typeof value === 'string' && value.length <= max;
 
 function patchError(message) {
-  const error = new Error(message);
+  const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(message));
   error.code = PATCH_ERROR_CODE;
   return error;
 }
 
 function corruptError(file) {
-  const error = new Error(`Descritor de sessão Claude inválido: ${path.basename(String(file))}`);
+  const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(`Descritor de sessão Claude inválido: ${path.basename(String(file))}`));
   error.code = CORRUPT_DESCRIPTOR_CODE;
   return error;
 }
@@ -200,7 +201,7 @@ function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE) {
 
 /* ---------- leitura ---------- */
 
-function readClaudeConversation(file, {runtime} = {}) {
+/** @param {any} file @param {{runtime?: any}} [options] */ function readClaudeConversation(file, {runtime} = {}) {
   const uuid = managedUuid(file);
   if (!uuid) return null;
   const base = typeof runtime === 'string' && runtime ? runtime : '';
@@ -298,7 +299,7 @@ function createClaudeConversation({runtime, courseId, model, effort, engine = EN
 /* Mescla campos permitidos; `null` remove opcionais. Qualquer outra chave
    (id, engine, schemaVersion, path, file, runtime…) é ignorada. Em falha de
    validação/escrita o descritor anterior fica intacto. */
-function updateClaudeConversation(file, patch, {runtime} = {}) {
+/** @param {any} file @param {any} patch @param {{runtime?: any}} [options] */ function updateClaudeConversation(file, patch, {runtime} = {}) {
   if (!isPlainObject(patch)) throw patchError(invalidValue('patch da sessão Claude', patch, 'object'));
   const current = readClaudeConversation(file, {runtime});
   if (!current) {
@@ -393,7 +394,7 @@ function updateClaudeConversation(file, patch, {runtime} = {}) {
 /* 'claude'/'opencode' só para descritor válido; qualquer outra coisa é 'pi'. Um arquivo
    de nome gerenciado que existe e não valida LANÇA (nunca vira Pi calado);
    ausente não é descritor e cai no fallback Pi. */
-function conversationEngine(file, {runtime} = {}) {
+/** @param {any} file @param {{runtime?: any}} [options] */ function conversationEngine(file, {runtime} = {}) {
   const uuid = managedUuid(file);
   if (!uuid) return ENGINE_PI;
   const base = typeof runtime === 'string' && runtime ? runtime : '';
@@ -412,7 +413,7 @@ function startedFromPiPath(file) {
   return Number.isFinite(value) ? value : 0;
 }
 
-function conversationMetadata(file, {runtime} = {}) {
+/** @param {any} file @param {{runtime?: any}} [options] */ function conversationMetadata(file, {runtime} = {}) {
   const engine = conversationEngine(file, {runtime});
   if (NATIVE_ENGINES.includes(engine)) {
     const descriptor = readClaudeConversation(file, {runtime});
@@ -457,7 +458,7 @@ function conversationMetadata(file, {runtime} = {}) {
    Se o app morreu antes da gravação do turno (#119), o arquivo pequeno é
    levado para o descritor nesta abertura, uma vez só: a leitura comum nunca
    o leva, só a recuperação. */
-function recoverClaudeConversation(file, {runtime} = {}) {
+/** @param {any} file @param {{runtime?: any}} [options] */ function recoverClaudeConversation(file, {runtime} = {}) {
   const current = readClaudeConversation(file, {runtime});
   if (!current) {
     if (managedUuid(file) && fs.existsSync(file)) throw corruptError(file);

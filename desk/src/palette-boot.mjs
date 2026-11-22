@@ -1,3 +1,5 @@
+// @ts-check
+import {createLazyModule} from './lazy-module.mjs';
 /**
  * Monta a fachada de boot da paleta: `window.mesaPalette` e o ⌘K existem desde
  * o começo, mas o módulo da paleta só carrega no primeiro uso. O listener do
@@ -20,4 +22,22 @@ export function mountPalette({loader, window: win, document: doc, toast}) {
   };
   win.addEventListener('keydown', onKey);
   return {open, close, unbind: () => win.removeEventListener('keydown', onKey)};
+}
+
+/**
+ * Mantém a paleta fora do boot até abrir; fechar antes disso não importa nada.
+ * @param {{importModule?: () => Promise<typeof import('./command-palette.mjs')>, options: Record<string, any>}} options
+ * @returns {{open: () => Promise<boolean>, close: () => boolean, current: () => any | null}}
+ * @example const palette = createPaletteLoader({options}); await palette.open();
+ */
+export function createPaletteLoader({importModule = () => import('./command-palette.mjs'), options}) {
+  const lazy = createLazyModule({
+    importModule,
+    prepare: (module) => module.initCommandPalette(options),
+  });
+  return {
+    open: async () => (await lazy.load()).openCommandPalette(),
+    close: () => lazy.current()?.closeCommandPalette() ?? false,
+    current: () => lazy.current(),
+  };
 }

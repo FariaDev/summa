@@ -30,7 +30,7 @@ await withArtifacts('opencode-stop',async ctx=>{
 
  /* 1. Parar no mesmo instante do Enviar: antes do connect e do prompt. */
  const immediate=await page.evaluate(async()=>{
-  const {send}=await import('./src/chat.mjs');
+  const {send}=await import('./src/chat/chat.mjs');
   const {S}=await import('./src/state.mjs');
   const run=send('fala imediata');
   window.dispatchEvent(new Event('desk-stop'));
@@ -46,7 +46,7 @@ await withArtifacts('opencode-stop',async ctx=>{
     menos de 1 s e o envio não sai quando o connect termina. */
  fs.writeFileSync(pendingFile,'1');
  const slow=page.evaluate(async()=>{
-  const {send}=await import('./src/chat.mjs');
+  const {send}=await import('./src/chat/chat.mjs');
   const {S}=await import('./src/state.mjs');
   S.connected=false;
   const sent=await send('fala durante o connect');
@@ -66,7 +66,7 @@ await withArtifacts('opencode-stop',async ctx=>{
  fs.rmSync(pendingFile,{force:true});
  await pollUntil(()=>page.evaluate(async()=>{const {S}=await import('./src/state.mjs');return !!S.connecting;}),value=>!value,{what:'a conexão cancelada terminar',timeout:15000});
  await page.evaluate(async()=>{
-  const {send}=await import('./src/chat.mjs');
+  const {send}=await import('./src/chat/chat.mjs');
   const {S}=await import('./src/state.mjs');
   S.connected=false;
   S.connectCancelled=false;

@@ -1,3 +1,4 @@
+// @ts-check
 /* `salvar_nota` — UM texto e um formato de resultado para os três motores
    (Pi `mesa_salvar_nota`, Claude e OpenCode `salvar_nota`). Desde a #139 a
    ferramenta NÃO grava: ela sugere uma nota no chat e só o clique do aluno em

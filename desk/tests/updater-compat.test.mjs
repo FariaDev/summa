@@ -29,6 +29,7 @@ const EXCECOES = new Set([
   'desk/types/desk-state.d.ts',
   'desk/types/desk-window.d.ts',
   'desk/types/host-deps.d.ts',
+  'desk/types/dom-html.d.ts',
   'desk/types/main-hosts.d.ts',
 ]);
 

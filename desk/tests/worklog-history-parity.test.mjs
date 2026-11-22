@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {
  closeThinking, countsLabel, createLog, finishLog, finishTool, headLine, historyTurns, startTool, thinkingDelta,
-} from '../src/worklog.mjs';
+} from '../src/worklog/worklog.mjs';
 
 const require = createRequire(import.meta.url);
 const {OpenCodeEventReader} = require('../src/agents/opencode-events.cjs');

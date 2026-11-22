@@ -1,7 +1,7 @@
 /* Diálogos da busca e das anotações (Mesa): teste de UI com Electron de verdade.
  *
  * O harness (main + HTML temporários) carrega os módulos REAIS
- * (`src/study-search.mjs` e `src/pdf-notes.mjs`) e injeta um host falso pela
+ * (`src/study/study-search.mjs` e `src/pdf/pdf-notes.mjs`) e injeta um host falso pela
  * mesma superfície do preload (`window.desk.studySearch`, `studySearchResolve`,
  * `studySearchCatalog`, `studyNotesRead`, `studyNotesSave`). Nenhum app,
  * config ou material real é aberto; os diálogos são criados pelos próprios
@@ -17,8 +17,8 @@ import {_electron as electron} from '@playwright/test';
 import {testEnv} from './electron-env.mjs';
 
 const DESK = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const SEARCH_URL = pathToFileURL(path.join(DESK, 'src', 'study-search.mjs')).href;
-const NOTES_URL = pathToFileURL(path.join(DESK, 'src', 'pdf-notes.mjs')).href;
+const SEARCH_URL = pathToFileURL(path.join(DESK, 'src', 'study', 'study-search.mjs')).href;
+const NOTES_URL = pathToFileURL(path.join(DESK, 'src', 'pdf', 'pdf-notes.mjs')).href;
 const UI_TEXT_URL = pathToFileURL(path.join(DESK, 'src', 'ui-text.mjs')).href;
 const temporaries = [];
 
@@ -82,7 +82,7 @@ window.__xss = 0;
 
 const HTML = `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><title>harness</title>
-<link rel="stylesheet" href="${pathToFileURL(path.join(DESK, 'src', 'study-tools.css')).href}">
+<link rel="stylesheet" href="${pathToFileURL(path.join(DESK, 'src', 'study', 'study-tools.css')).href}">
 </head><body>
 <nav id="study-tools-bar"><button id="study-search-open" type="button">Buscar estudos</button><button id="study-notes-open" type="button">Anotações</button></nav>
 <div class="pdf-panel">

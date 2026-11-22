@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {HISTORY_LAZY_FORMAT_ENABLED, HISTORY_LAZY_SHORT_LIMIT, HISTORY_LAZY_TAIL_BUBBLES, HISTORY_LAZY_MARGIN, beginLazyHistory, cancelLazyHistory, deferLazyBubble, finishLazyHistory, lazyStats, shouldDeferHistory} from '../src/history-format-lazy.mjs';
-import {anchorDrift} from '../src/history-scroll-anchor.mjs';
+import {HISTORY_LAZY_FORMAT_ENABLED, HISTORY_LAZY_SHORT_LIMIT, HISTORY_LAZY_TAIL_BUBBLES, HISTORY_LAZY_MARGIN, beginLazyHistory, cancelLazyHistory, deferLazyBubble, finishLazyHistory, lazyStats, shouldDeferHistory} from '../src/history/history-format-lazy.mjs';
+import {anchorDrift} from '../src/history/history-scroll-anchor.mjs';
 
 /* Regras puras da formatação preguiçosa (#118): decisão de adiar, âncora de
    rolagem e gerações. Sem DOM nem janela — o que toca no DOM está nos

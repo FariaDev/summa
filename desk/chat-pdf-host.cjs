@@ -13,7 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {validateDroppedPdf} = require('./pdf-drop-host.cjs');
 const {resolveTutorPdf, MAX_BYTES} = require('./pdf-read-path.cjs');
-const {normalizePdfFacts} = require('./src/chat-pdf.mjs');
+const {normalizePdfFacts} = require('./src/chat/chat-pdf.mjs');
 const {message} = require('./src/i18n.mjs');
 
 const MAX_PAGES = 100000;

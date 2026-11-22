@@ -1,3 +1,4 @@
+// @ts-check
 /* Template de material da Mesa (aba Livre e matéria): título único, estrutura
    Markdown lida por tokens (nada de regex de heading em código-fonte), matemática
    tokenizada fora de escapes/código inline/cercado/indentado (inclusive dentro
