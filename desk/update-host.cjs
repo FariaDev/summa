@@ -11,10 +11,12 @@ const {createToolUpdates}=require('./tool-updates.cjs');
 const {visibleEngines}=require('./visible-engines.cjs');
 const {isAppBundle}=require('./legacy-bundle.cjs');
 const windowsInstallerUpdate=require('./windows-installer-update.cjs');
+const macosDmgUpdate=require('./macos-dmg-update.cjs');
+const {isMacosRelease}=require('./macos-release.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
-function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate}){
+function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate,dmgUpdate=macosDmgUpdate}){
  const TEST_MODE=testMode;
  /* ---------- updater por clique + painel de componentes ----------
     Somente GETs públicos (releases do GitHub + registry npm); zero telemetria.
@@ -44,6 +46,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     `install-source.json` (ou da raiz com `.git`); a classificação não adivinha
     pasta pessoal nem log — o caminho só existe aqui e no Sobre. */
  function originFacts(){
+  if(isMacosRelease({deskDir,platform}))return {kind:'normal',path:'',worktree:false};
   const facts=updateOrigin({packaged:!!app.isPackaged,deskDir,home:os.homedir()});
   if(facts.kind==='unavailable'&&registeredZipSource())return {kind:'normal',path:'',worktree:false};
   return facts;
@@ -72,6 +75,28 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     worker com Node do sistema, o clone e o `npm ci` ficam só para quem roda do
     código. Falha antes de abrir o instalador deixa a Summa aberta nesta versão. */
  const installerDir=path.join(runtime,'update-installer');
+ const dmgDir=path.join(runtime,'update-dmg');
+ async function applyWithDmg(target,installed){
+  const bundle=path.resolve(deskDir,'..','..','..');
+  dmgUpdate.assertWritableBundle(bundle);
+  const lock=updater.acquireLock(runtime);
+  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  let child;
+  try{
+   const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
+   const {file}=await dmgUpdate.prepareDmgUpdate({version:target,publicKey,dir:dmgDir});
+   await dmgUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
+   child=await dmgUpdate.launchDmgUpdate({file,app:bundle,dir:dmgDir,version:target,lockFile:lock.file,env});
+   await dmgUpdate.waitForDmgReady({child,dir:dmgDir});
+  }catch(error){
+   if(fs.existsSync(dmgDir))fs.writeFileSync(path.join(dmgDir,'cancel'),'cancel\n');
+   await dmgUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+   if(!child||child.exitCode!==null&&child.exitCode!==undefined)updater.releaseLock(lock.file);
+   throw error;
+  }
+  setTimeout(()=>app.quit(),400);
+  return {ok:true,version:target};
+ }
  async function applyWithInstaller(target,installed){
   const lock=updater.acquireLock(runtime);
   if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
@@ -98,6 +123,10 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:installerDir,failureReason:uiMsg('err.update.installerFailed')})
    .catch(error=>appendLog('update',`resultado do instalador não registrado: ${causeArg(error)}`));
  }
+ if(!TEST_MODE&&isMacosRelease({deskDir,platform})){
+  dmgUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),dir:dmgDir,failureReason:uiMsg('err.update.installerFailed')})
+   .catch(error=>appendLog('update',`resultado do DMG não registrado: ${causeArg(error)}`));
+ }
  ipcMain.handle('update-origin',()=>originFacts());
  ipcMain.handle('update-check',async(_e,opts)=>{
   /* Origem que não recebe atualização não vira "Atualizada": o Sobre diz que
@@ -120,6 +149,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   const installed=app.getVersion();
   if(!updater.isNewer(target,installed))throw Error(uiMsg('err.update.notNewer',{announced:target,installed}));
   if(installerUpdate.isWindowsInstalledApp({platform,deskDir,env}))return applyWithInstaller(target,installed);
+  if(isMacosRelease({deskDir,platform}))return applyWithDmg(target,installed);
   /* #21: clone/bundle do repositório antigo não recebe a tag do Summa —
      recusa antes do lock, do worker e de qualquer git/rede; reinstalar é o
      caminho, e a pasta de dados não muda. */

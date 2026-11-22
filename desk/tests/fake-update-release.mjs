@@ -44,6 +44,7 @@ export function makeSignedRelease(options = {}) {
     signatureBytes,
     zipDownload,
     installer = null,
+    dmg = null,
   } = options;
   const manifest = manifestOverride || {
     version,
@@ -51,6 +52,7 @@ export function makeSignedRelease(options = {}) {
     zipSha256: crypto.createHash('sha256').update(zip).digest('hex'),
     zipBytes: zip.length,
     ...(installer ? {exeSha256: crypto.createHash('sha256').update(installer).digest('hex'), exeBytes: installer.length} : {}),
+    ...(dmg ? {dmgSha256: crypto.createHash('sha256').update(dmg).digest('hex'), dmgBytes: dmg.length} : {}),
   };
   const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
   const signature = signatureBytes !== undefined
@@ -61,6 +63,7 @@ export function makeSignedRelease(options = {}) {
     if (url === urls.manifest) return manifestBytes;
     if (url === urls.signature) return signature;
     if (url === urls.zip) return zipDownload || zip;
+    if (url === urls.dmg && dmg) return dmg;
     throw Error(`HTTP 404 ${url}`);
   };
   return {
