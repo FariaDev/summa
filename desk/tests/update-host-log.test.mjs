@@ -19,7 +19,7 @@ function hostWith(runtime) {
   const shell = fakeShell();
   registerUpdateHost({
     ipcMain, shell, runtime, deskDir: runtime, logFile: path.join(runtime, 'desk.log'), testMode: false,
-    app: {getVersion: () => '0.5.0'}, config: () => ({}), win: () => null, piBinary: () => '', appendLog: () => {}, toolHost: toolHostStub,
+    app: {hasSingleInstanceLock: () => true, getVersion: () => '0.5.0'}, config: () => ({}), win: () => null, piBinary: () => '', appendLog: () => {}, toolHost: toolHostStub,
   });
   return {ipcMain, shell};
 }

@@ -67,7 +67,7 @@ export function fakeDmgHost({runtime,deskDir,fail=''}){
  };
  const ipcMain=fakeIpcMain();
  registerUpdateHost({ipcMain,shell:fakeShell(),runtime,deskDir,platform:'darwin',env:{},logFile:path.join(runtime,'desk.log'),testMode:false,dmgUpdate,
-  app:{isPackaged:true,getVersion(){return '1.4.0';},quit(){quits++;}},config(){return {};},win(){return null;},appendLog(){},
+  app:{isPackaged:true,hasSingleInstanceLock:()=>true,getVersion(){return '1.4.0';},quit(){quits++;}},config(){return {};},win(){return null;},appendLog(){},
   toolHost:{state(){return {};},persist(){},isBusy(){return false;},hasBridge(){return false;},relink(){}},
  });
  return {ipcMain,calls,get quits(){return quits;}};
