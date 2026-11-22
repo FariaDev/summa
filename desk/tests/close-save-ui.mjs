@@ -33,7 +33,7 @@ for(const mode of ['close','quit'])await withArtifacts(`close-save-${mode}`,asyn
  assert.equal(await page.locator('.study-plan-text').first().inputValue(),'Pending title');
  assert.equal(await page.locator('#prompt').inputValue(),'Pending draft');
 });
-for(const mode of ['idle','error','unresponsive','crashed'])await withArtifacts(`close-save-${mode}`,async ctx=>{
+for(const mode of ['idle','error','unresponsive','crashed','quit-unresponsive','quit-crashed'])await withArtifacts(`close-save-${mode}`,async ctx=>{
  const runtime=ctx.runtime=newRuntime(`close-save-${mode}`),course=seedCourse(runtime,'Test');
  writeConfigJson(runtime,{vaultPath:runtime,courses:[{id:'Test',name:'Test',path:course}]});
  ctx.app=await launchDesk({runtime});
@@ -47,12 +47,13 @@ for(const mode of ['idle','error','unresponsive','crashed'])await withArtifacts(
   ipcMain.handle('save-state',()=>{files.writeFileSync(marker,'save');throw Error('Save rejected for regression test');});
  },{marker});
  if(mode==='error')await page.locator('#prompt').fill('Pending failed save');
- if(mode==='unresponsive')await page.evaluate(()=>setTimeout(()=>{while(true){ /* renderer travado */ }},0));
+ if(mode.endsWith('unresponsive'))await page.evaluate(()=>setTimeout(()=>{while(true){ /* renderer travado */ }},0));
  const window=await ctx.app.browserWindow(page);
- if(mode==='crashed')await window.evaluate(win=>win.webContents.forcefullyCrashRenderer());
+ if(mode.endsWith('crashed'))await window.evaluate(win=>win.webContents.forcefullyCrashRenderer());
  const closed=ctx.app.waitForEvent('close',{timeout:10000});
- await window.evaluate(win=>win.close());
+ if(mode.startsWith('quit-'))await ctx.app.evaluate(({app})=>{app.removeAllListeners('window-all-closed');app.quit();});
+ else await window.evaluate(win=>win.close());
  await closed;ctx.app=null;
  assert.equal(fs.existsSync(marker),mode==='error',`${mode}: only pending saves invoke save-state`);
 });
-console.log('close-save-ui: ok (close, quit, idle, rejected save, unresponsive and crashed renderer)');
+console.log('close-save-ui: ok (close, quit, idle, rejected save, unresponsive and crashed renderer, quit without window-all-closed fallback)');

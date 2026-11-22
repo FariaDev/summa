@@ -13,7 +13,7 @@ function registerRendererSaveHost({win,ipcMain,quitting,quit,timeout=1500}){
   waiting=false;ready=true;clearTimeout(timer);
   ipcMain.removeListener('renderer-save-flushed',acknowledge);
   if(win.isDestroyed())return;
-  if(expired)win.destroy();
+  if(expired){win.destroy();if(quitting())quit();}
   else if(quitting())quit();
   else win.close();
  };
