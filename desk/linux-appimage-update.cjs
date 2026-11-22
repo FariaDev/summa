@@ -79,7 +79,6 @@ function swapAppImage({file,appImage,linkFn=fs.linkSync}){
  const backup=path.join(path.dirname(appImage),`.${path.basename(appImage)}.old`);
  let linked=false;
  try{
-  fs.rmSync(backup,{force:true});
   try{linkFn(appImage,backup);}catch{fs.copyFileSync(appImage,backup,fs.constants.COPYFILE_EXCL);}
   linked=true;
   fs.renameSync(file,appImage);

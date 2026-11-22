@@ -129,7 +129,7 @@ test('swap copia backup quando o disco não suporta hard links',()=>{
  }
 });
 
-test('backup de AppImage renomeado é limpo exatamente e não bloqueia nova troca',()=>{
+test('backup de AppImage renomeado é limpo exatamente só na abertura e preservado em nova tentativa',()=>{
  const dir=tempDir('summa-renamed-backup-'),appImage=path.join(dir,'MySumma.AppImage');
  const backup=path.join(dir,'.MySumma.AppImage.old'),other=path.join(dir,'.Other.AppImage.old'),file=path.join(dir,'.new.part');
  fs.writeFileSync(appImage,'original');fs.writeFileSync(backup,'obsoleto');fs.writeFileSync(other,'preservado');
@@ -139,6 +139,12 @@ test('backup de AppImage renomeado é limpo exatamente e não bloqueia nova troc
  for(const linkFn of [undefined,fakeUnsupportedAppImageLink]){
   fs.writeFileSync(backup,'obsoleto');fs.writeFileSync(file,'nova');
   const previous=fs.readFileSync(appImage,'utf8');
+  assert.throws(()=>image.swapAppImage({file,appImage,linkFn}),/appImageNotWritable/);
+  assert.equal(fs.readFileSync(backup,'utf8'),'obsoleto');
+  assert.equal(fs.readFileSync(appImage,'utf8'),previous);
+  assert.equal(fs.existsSync(file),false);
+  image.cleanupAppImagePartials(dir,{backups:true,appImage});
+  fs.writeFileSync(file,'nova');
   assert.equal(image.swapAppImage({file,appImage,linkFn}),backup);
   assert.equal(fs.readFileSync(backup,'utf8'),previous);
   assert.equal(fs.readFileSync(appImage,'utf8'),'nova');
