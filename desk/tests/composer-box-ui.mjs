@@ -304,7 +304,7 @@ await withArtifacts('composer-box',async ctx=>{
  assert.equal(await page.locator('.queue-clear').isVisible(),false,'com uma mensagem só, sem Limpar');
  /* Foco do teclado no ×: focar e ler no MESMO evaluate. A faixa re-renderiza
     quando o turno confirma (desk-busy/engine-facts) e o preserveFocus não acha
-    o × (sem key/id, `src/queue.mjs`); entre dois roundtrips do Playwright o nó
+    o × (sem key/id, `src/queue/queue.mjs`); entre dois roundtrips do Playwright o nó
     focado podia ser trocado e o outline vinha "none" (#1). */
  const removeFocus=await page.evaluate(()=>{
   const el=document.querySelector('.queue-remove');

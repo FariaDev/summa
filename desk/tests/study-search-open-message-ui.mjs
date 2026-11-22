@@ -39,7 +39,7 @@ await withArtifacts('study-search-open-message', async (ctx) => {
   ctx.app = app;
   ctx.runtime = runtime;
 
-  const pendingOpen = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending);
+  const pendingOpen = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending);
   assert.ok(pendingOpen > 500, `a conversa longa abre em casca (${pendingOpen} pendentes)`);
 
   const before = await foundState(page);

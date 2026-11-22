@@ -1,10 +1,10 @@
-/* O motivo da coluna do tutor (src/tutor-reason.mjs): a frase de sempre (#23)
+/* O motivo da coluna do tutor (src/tutor/tutor-reason.mjs): a frase de sempre (#23)
    e o Claude Code fora da faixa, que chega como mensagem do catálogo com o
    conserto (#51). Sem DOM: a árvore sai do núcleo e a tradução do i18n. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {reasonText, reasonFacts} from '../src/tutor-reason.mjs';
+import {reasonText, reasonFacts} from '../src/tutor/tutor-reason.mjs';
 import {createI18n} from '../src/i18n.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};

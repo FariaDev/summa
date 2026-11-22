@@ -1,3 +1,4 @@
+// @ts-check
 import {markup} from '../markdown.mjs';
 import {figureMarkdown, blankLineWarning, removedNames, stackedTextWarning} from './figure-markup.mjs';
 import {overlapReport} from './svg-overlap.mjs';

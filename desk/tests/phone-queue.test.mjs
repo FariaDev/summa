@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPhoneQueue} from '../src/phone-queue.mjs';
+import {createPhoneQueue} from '../src/phone/phone-queue.mjs';
 
 /* Entrega com tempo próprio por item: a primeira foto (JPEG girada) demora, a segunda (PNG pequena) é rápida. */
 function fakeAttach(delays) {

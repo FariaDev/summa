@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const {message: uiMsg} = require('./src/i18n.mjs');
 

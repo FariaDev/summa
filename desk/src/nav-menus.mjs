@@ -1,9 +1,11 @@
+// @ts-check
 import {$} from './state.mjs';
 import {menuStep} from './menu-roving.mjs';
 
 /* Menus da barra superior (Matéria, Estudar, Ajustes): abrir um fecha os
    outros, clique fora fecha, a saída anima (#43 fase 2: saiu do main.mjs). */
 
+/** @param {any} el @param {any} open @param {{animate?: boolean, blur?: boolean}} [options] */
 function setMenuOpen(el,open,{animate=true,blur=false}={}){
  if(!el)return;
  const trigger=el.querySelector('.nav-trigger');
@@ -20,7 +22,7 @@ function setMenuOpen(el,open,{animate=true,blur=false}={}){
  /* #67: Esc com o foco num item volta o foco ao gatilho (padrão de menu do
     WAI-ARIA); antes o foco ia para o body e o Tab recomeçava do topo. */
  if(blur&&el.querySelector('.nav-pop')?.contains(document.activeElement))trigger?.focus();
- else if(blur&&el.contains(document.activeElement))document.activeElement.blur();
+ else if(blur&&el.contains(document.activeElement))/** @type {HTMLElement} */ (document.activeElement).blur();
  if(!animate)return;
  const pop=el.querySelector('.nav-pop');
  if(!pop)return;

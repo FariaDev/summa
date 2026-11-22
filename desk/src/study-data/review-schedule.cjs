@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Caderno de revisão — agenda (Mesa): `runtime/review-schedule.json`.

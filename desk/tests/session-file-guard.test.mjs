@@ -105,7 +105,7 @@ test('documento principal segue; sem raiz falha fechada', () => {
 
 test('estáticos do app: pastas e soltos da raiz', () => {
   const entries = staticAppEntries(APP);
-  assert.deepEqual(entries.dirs, [path.join(APP, 'src'), path.join(APP, 'assets'), path.join(APP, 'node_modules')]);
+  assert.deepEqual(entries.dirs, [path.join(APP, 'src'), path.join(APP, 'assets'), path.join(APP, 'node_modules'), path.join(APP, 'out', 'renderer')]);
   assert.ok(entries.files.includes(path.join(APP, 'index.html')));
   assert.ok(entries.files.includes(path.join(APP, 'preload.cjs')));
 });

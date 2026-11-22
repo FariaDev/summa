@@ -1,3 +1,4 @@
+// @ts-check
 /** Rótulos de atalhos da interface; `platformKeyText('⌘⏎', false, 'linux')` → `Ctrl+Enter`.
  * @param {string} value @param {boolean} [kbd] @param {string} [platform] */
 export function platformKeyText(value,kbd=false,platform=globalThis.navigator?.userAgent||''){

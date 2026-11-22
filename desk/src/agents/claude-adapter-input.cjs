@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Entrada do ClaudeAdapter, sem I/O de rede: ids, erros, escolha de controles,
@@ -64,6 +65,7 @@ function validateImage(image, index) {
 
 /* Normaliza e valida {text, images} (formato Pi já reduzido) para blocos do
    SDK. Nada é gravado nem transmitido nesta função. */
+/** @param {{text?: any, images?: any}} [options] */
 function prepareMessage({text, images} = {}) {
   const cleanText = typeof text === 'string' ? text : '';
   const list = Array.isArray(images) ? images : [];

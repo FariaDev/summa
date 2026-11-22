@@ -9,7 +9,7 @@
  * @param {{importModule: () => Promise<any>, prepare?: (module: any) => void}} options
  * @returns {{load: () => Promise<any>, current: () => any | null, ready: () => boolean}}
  * @example
- * const settings = createLazyModule({importModule: () => import('./settings.mjs'), prepare: (m) => m.initSettings()});
+ * const settings = createLazyModule({importModule: () => import('./settings/settings.mjs'), prepare: (m) => m.initSettings()});
  * await settings.load(); // uma vez só
  */
 export function createLazyModule({importModule, prepare = () => {}}) {

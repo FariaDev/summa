@@ -4,7 +4,7 @@
    coberto por `message-links-ui.mjs`. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {messageLinkAction} from '../src/message-links.mjs';
+import {messageLinkAction} from '../src/chat/message-links.mjs';
 
 test('https abre pelo diálogo da Mesa', () => {
   assert.equal(messageLinkAction('https://exemplo.com/guia'), 'confirm');

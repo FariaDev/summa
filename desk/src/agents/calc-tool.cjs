@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* `calcular` no Claude (#91): o mesmo guia e o mesmo avaliador da extensão do

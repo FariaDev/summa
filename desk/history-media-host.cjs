@@ -247,7 +247,7 @@ function createHistoryMediaHost({live, trimMessageImages, maxImageBytes = MAX_IM
   };
 }
 
-/** @type {WeakMap<object, ReturnType<typeof createHistoryMediaHost>>} */
+/** @type {WeakMap<Record<string, any>, ReturnType<typeof createHistoryMediaHost>>} */
 const hosts = new WeakMap();
 
 /**

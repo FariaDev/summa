@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Controles nativos do ClaudeAdapter (modelo e esforço): catálogo, modelo
@@ -13,7 +14,11 @@ const capsCore = require('../generated/agentcaps.core.js').default;
 const {MAX_CONTROLS_TIMEOUT_MS, MODEL_INFO, ClaudeAdapterError} = require('./claude-adapter-contract.cjs');
 const {errorText, asAdapterError, normalizeSelectionInput} = require('./claude-adapter-input.cjs');
 
-class ClaudeAdapterControls {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterControls extends AdapterBase {
   /* Modelo OBSERVADO quando o CLI já disse qual usou; senão, o rótulo neutro
      do contrato ("Claude Code"). O id 'default' NÃO é um modelo escolhido. */
 
@@ -49,6 +54,7 @@ class ClaudeAdapterControls {
     return caps;
   }
 
+  /** @param {{timeoutMs?: any}} [options] */
   async initializeControls({timeoutMs} = {}) {
     if (this._deliveryUncertain) {
       throw new ClaudeAdapterError('CLAUDE_DELIVERY_UNCERTAIN', uiMsg('err.claude.deliveryUncertainControls'), null, true);
@@ -143,6 +149,7 @@ class ClaudeAdapterControls {
      apenas DEPOIS do sucesso nativo; qualquer falha restaura o estado anterior
      e falha de restauração bloqueia novos envios até um adaptador novo. */
 
+  /** @param {any} selection @param {{persistSelection?: any}} [options] */
   async setControls(selection, {persistSelection} = {}) {
     if (this._closed) {
       throw new ClaudeAdapterError('CLAUDE_CLOSED', uiMsg('err.claude.closedControls'), null, true);
@@ -348,6 +355,7 @@ class ClaudeAdapterControls {
      depois do sucesso; persistência vem por último e, se falhar, o nativo
      volta. Sem rollback possível, `_controlsFailed` é terminal. */
 
+  /** @param {any} query @param {any} target @param {{bound?: any, persist?: any, guard?: any}} [options] */
   async _commitNative(query, target, {bound, persist = null, guard = null} = {}) {
     const previous = {...this._nativeSelection};
     const steps = [];

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Modelos de PDF do tutor para os hosts CJS: o mesmo módulo que o renderer e a

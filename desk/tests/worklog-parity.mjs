@@ -1,5 +1,5 @@
 /* Paridade do adaptador do worklog: roda um roteiro determinístico de eventos
-   contra desk/src/worklog.mjs e imprime o JSON. Serve para comparar com o
+   contra desk/src/worklog/worklog.mjs e imprime o JSON. Serve para comparar com o
    snapshot da implementação antiga (mesmo roteiro, mesma projeção), gerado na
    migração para o núcleo em `$TMPDIR/worklog-snapshot-old.json`:
      node tests/worklog-parity.mjs
@@ -222,7 +222,7 @@ export function runScenario(w){
 }
 
 async function main(){
- const worklog=await import('../src/worklog.mjs');
+ const worklog=await import('../src/worklog/worklog.mjs');
  process.stdout.write(JSON.stringify(runScenario(worklog),null,2)+'\n');
 }
 

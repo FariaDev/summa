@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 /**
  * Avisos de atualização do Claude Code (#45). Os fixtures só existem no modo de
@@ -7,7 +8,7 @@
  *
  * @param {boolean} testMode se o app roda em modo de teste
  * @param {NodeJS.ProcessEnv} [env] ambiente de onde ler os fixtures
- * @returns {{latestOverride?: object, searchDirs?: string[], allowRunInTest?: boolean, claudeLauncher?: string}}
+ * @returns {{latestOverride?: Record<string, any>, searchDirs?: string[], allowRunInTest?: boolean, claudeLauncher?: string}}
  * @example toolTestFixtures(false) // {}
  */
 function toolTestFixtures(testMode, env = process.env) {

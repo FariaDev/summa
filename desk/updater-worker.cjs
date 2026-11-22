@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs=require('node:fs');
@@ -66,7 +67,7 @@ function defaultRun(cmd,args=[],opts={}){
 /* O app reabre sozinho: bundle = `open "<app>"`; fonte = `npm start` destacado.
    Falha de reabertura é registrada (não silêncio): o worker termina e ninguém
    reabre é estado que o usuário precisa saber explicar. */
-function spawnReopen(reopen,env=process.env,log=()=>{}){
+function spawnReopen(reopen,env=process.env,log=/** @type {Function} */ (()=>{})){
  if(!reopen||!reopen.cmd)return;
  try{
   const child=spawn(reopen.cmd,reopen.args||[],{cwd:reopen.cwd||undefined,detached:true,stdio:'ignore',shell:!!reopen.shell||needsShell(reopen.cmd),env});
@@ -76,7 +77,7 @@ function spawnReopen(reopen,env=process.env,log=()=>{}){
 }
 /* Reabrir: em produção um `spawn` destacado (bundle = `open "<app>"`; fonte =
    `npm start`); nos testes, uma função que só registra o pedido. */
-function doReopen(reopen,log=()=>{}){
+function doReopen(reopen,log=/** @type {Function} */ (()=>{})){
  if(typeof reopen==='function'){try{reopen();}catch{}return;}
  if(reopen)spawnReopen(reopen,undefined,log);
 }
@@ -86,6 +87,7 @@ function pidAlive(pid){
  try{process.kill(pid,0);return true;}
  catch(e){return !(e&&e.code==='ESRCH');}
 }
+/** @param {any} pid @param {number} [timeoutMs] @param {{pollMs?: number}} [options] */
 function waitForPid(pid,timeoutMs=60000,{pollMs=500}={}){
  return new Promise(resolve=>{
   const started=Date.now();
@@ -134,6 +136,7 @@ function writeHandshake(file,data){
   fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');
  }catch{}
 }
+/** @param {any} file @param {number} [timeoutMs] @param {{pollMs?: number}} [options] */
 function waitForHandshake(file,timeoutMs=15000,{pollMs=250}={}){
  return new Promise(resolve=>{
   const started=Date.now();

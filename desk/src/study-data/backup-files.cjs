@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -85,6 +86,7 @@ function realPathOf(target) {
    rodada cresceria sobre a anterior; contendo o runtime, a manutenção do
    destino mexeria na árvore do app. O CLI chama `snapshot`/`backupNow` direto,
    então a guarda mora aqui, antes de criar qualquer pasta. */
+/** @param {{runtime?: any, root?: any}} options */
 function assertDestinationOutsideRuntime({runtime, root}) {
   if (!runtime) throw new BackupError(invalidValue('runtime do snapshot', runtime, 'caminho absoluto'));
   if (!root) throw new BackupError(invalidValue('destino do snapshot', root, 'caminho absoluto'));
@@ -100,13 +102,13 @@ function assertDestinationOutsideRuntime({runtime, root}) {
   return {runtime: runtimeReal, root: rootReal};
 }
 function copyFileStreaming(from, to) {
-  return new Promise((resolve, reject) => {
+  return new Promise(/** @param {(value?: unknown) => void} resolve */ (resolve, reject) => {
     fs.mkdirSync(path.dirname(to), {recursive: true});
     const input = fs.createReadStream(from);
     const output = fs.createWriteStream(to);
     input.on('error', reject);
     output.on('error', reject);
-    output.on('close', resolve);
+    output.on('close', () => resolve());
     input.pipe(output);
   });
 }

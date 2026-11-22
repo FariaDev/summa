@@ -14,7 +14,7 @@ test('a partida do renderer não carrega o pdf.js antes do primeiro PDF', () => 
   assert.ok([...report.moduleFiles, ...report.dynamic.map((row) => row.file)].every((file) => !file.includes('\\')),
     'caminho do relatório com separador do sistema: use `/`');
   assert.ok(!report.moduleFiles.includes('node_modules/pdfjs-dist/build/pdf.mjs'),
-    'o pdf.js (860 KiB) voltou para o caminho de partida: use src/pdfjs-loader.mjs');
+    'o pdf.js (860 KiB) voltou para o caminho de partida: use src/pdf/pdfjs-loader.mjs');
 });
 
 test('o núcleo das Configurações (133 KiB) só entra quando o diálogo abre', () => {
@@ -26,14 +26,14 @@ test('o núcleo das Configurações (133 KiB) só entra quando o diálogo abre',
 test('o núcleo da primeira abertura (125 KiB) só entra quando a tela vale', () => {
   const report = measureBoot({root: DESK});
   assert.ok(!report.moduleFiles.includes('src/generated/firstrun.core.js'),
-    'o firstrun.core.js voltou para o caminho de partida: use src/first-run-boot.mjs');
-  assert.ok(!report.moduleFiles.includes('src/first-run.mjs'),
-    'a tela da primeira abertura voltou para o caminho de partida: use src/first-run-boot.mjs');
+    'o firstrun.core.js voltou para o caminho de partida: use src/setup/first-run-boot.mjs');
+  assert.ok(!report.moduleFiles.includes('src/setup/first-run.mjs'),
+    'a tela da primeira abertura voltou para o caminho de partida: use src/setup/first-run-boot.mjs');
 });
 
 test('o painel de Estatísticas só entra quando é aberto', () => {
   const report = measureBoot({root: DESK});
-  assert.ok(!report.moduleFiles.includes('src/study-stats.mjs'),
+  assert.ok(!report.moduleFiles.includes('src/study/study-stats.mjs'),
     'o study-stats.mjs voltou para o caminho de partida');
   assert.ok(!report.moduleFiles.includes('src/generated/studystats.core.js'),
     'o studystats.core.js voltou para o caminho de partida: use src/lazy-module.mjs');
@@ -70,15 +70,15 @@ test('a aba Livre e o Caderno de revisão ficam fora do grafo estático', () => 
   const report = measureBoot({root: DESK});
   const dynamicFiles = report.dynamic.map((row) => row.file);
   for (const file of [
-    'src/free-study.mjs',
-    'src/free-models.mjs',
+    'src/study/free-study.mjs',
+    'src/study/free-models.mjs',
     'src/review.mjs',
     'src/generated/review.core.js',
     'src/materials/template.mjs',
   ]) {
     assert.ok(!report.moduleFiles.includes(file), `${file} voltou ao caminho de partida`);
   }
-  for (const file of ['src/free-study.mjs', 'src/free-models.mjs', 'src/review.mjs']) {
+  for (const file of ['src/study/free-study.mjs', 'src/study/free-models.mjs', 'src/review.mjs']) {
     assert.ok(dynamicFiles.includes(file), `${file} não está acessível pelo carregamento dinâmico`);
   }
 });
@@ -89,13 +89,13 @@ test('KaTeX, diálogos de primeiro uso e atalhos ficam fora da partida (PR-4)', 
   const dynamicFiles = report.dynamic.map((row) => row.file);
   for (const file of [
     'node_modules/katex/dist/katex.mjs',
-    'src/sidechat.mjs',
+    'src/sidechat/sidechat.mjs',
     'src/generated/sidechat.core.js',
     'src/guide.mjs',
     'src/generated/guideview.core.js',
-    'src/study-search.mjs',
+    'src/study/study-search.mjs',
     'src/generated/studysearch.core.js',
-    'src/pdf-notes.mjs',
+    'src/pdf/pdf-notes.mjs',
     'src/generated/studyannotations.core.js',
     'src/backup-panel.mjs',
     'src/conversation-library.mjs',
@@ -109,15 +109,15 @@ test('KaTeX, diálogos de primeiro uso e atalhos ficam fora da partida (PR-4)', 
   }
   for (const file of [
     'node_modules/katex/dist/katex.mjs',
-    'src/sidechat.mjs',
+    'src/sidechat/sidechat.mjs',
     'src/guide.mjs',
-    'src/study-search.mjs',
-    'src/pdf-notes.mjs',
+    'src/study/study-search.mjs',
+    'src/pdf/pdf-notes.mjs',
     'src/backup-panel.mjs',
     'src/conversation-library.mjs',
     'src/triage.mjs',
     'src/activity.mjs',
-    'src/tutor-reason.mjs',
+    'src/tutor/tutor-reason.mjs',
     'src/generated/shortcutview.core.js',
   ]) {
     assert.ok(dynamicFiles.includes(file), `${file} não está acessível pelo carregamento dinâmico`);

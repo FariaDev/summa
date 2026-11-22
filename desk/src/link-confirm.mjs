@@ -1,3 +1,4 @@
+// @ts-check
 /* Confirmação antes de abrir um link que veio de atividade (#81). A atividade é
    gerada pelo modelo, e um "Ver resposta" pode apontar para phishing: o domínio
    de destino aparece em destaque no `#link-dialog` (do index.html, com o
@@ -72,7 +73,7 @@ function onClose(event) {
  */
 export function confirmOpenLink(url) {
   const dialog = document.getElementById('link-dialog');
-  if (!dialog || dialog.open) return Promise.resolve(false);
+  if (!dialog || /** @type {HTMLDialogElement} */ (dialog).open) return Promise.resolve(false);
   /* Um fechamento ainda na fila conta com a resposta que ele trouxe, antes de limpar. */
   settle(dialog);
   const {host, path} = linkParts(url);
@@ -81,12 +82,12 @@ export function confirmOpenLink(url) {
   pathLine.textContent = path;
   /* O endereço inteiro fica no hover: o caminho encurtado não esconde o destino. */
   pathLine.title = url;
-  dialog.returnValue = '';
+  /** @type {HTMLDialogElement} */ (dialog).returnValue = '';
   /* Mesmo ouvinte em cada abertura: `addEventListener` não duplica. */
   dialog.addEventListener('close', onClose);
   return new Promise((resolve) => {
     waiting = resolve;
     /* O foco cai em Cancelar (autofocus no HTML): um Enter de reflexo não abre o link. */
-    dialog.showModal();
+    /** @type {HTMLDialogElement} */ (dialog).showModal();
   });
 }

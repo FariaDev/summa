@@ -7,7 +7,7 @@ import {createRequire} from 'node:module';
 import {createI18n} from '../src/i18n.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
-import {pdfSummary} from '../src/setup-flow.mjs';
+import {pdfSummary} from '../src/setup/setup-flow.mjs';
 
 /* #88: o resumo da pasta no passo PDFs diz o total e desempata nome repetido
    com a subpasta. O caminho relativo vem do host (`first-run.cjs`), como a

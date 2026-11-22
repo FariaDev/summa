@@ -1,8 +1,9 @@
+// @ts-check
 import {$,S,save,toast,updateContextSummary} from './state.mjs';
 import {icon} from '../icons.mjs';
 import {t} from './ui-text.mjs';
-import {loadSidechat,mountSidechat,setSidechatVisible,sidechatElement} from './sidechat-loader.mjs';
-import {isDetachedSidechat,focusDetachedSidechat,attachSidechat,paintDetachButton,setDetachedWindowState,reopenDetachedSidechat} from './sidechat-detach.mjs';
+import {loadSidechat,mountSidechat,setSidechatVisible,sidechatElement} from './sidechat/sidechat-loader.mjs';
+import {isDetachedSidechat,focusDetachedSidechat,attachSidechat,paintDetachButton,setDetachedWindowState,reopenDetachedSidechat} from './sidechat/sidechat-detach.mjs';
 
 /* ---------------------------------------------------------------------------
    Área de apoio: o segundo leitor (Formulário) e o chat lateral dividem o
@@ -45,6 +46,7 @@ function defaults(){
 
 /* A matéria entra: estado salvo por matéria manda; sem estado salvo vale o
    layout de sempre (2 leitores com o Formulário aberto; 1 leitor recolhido). */
+/** @param {{courseId?: any, two?: any, formLabel?: any, referenceVisible?: any, sidechatDetached?: any, sidechatAlwaysOnTop?: any}} [options] */
 export function beginCourse({courseId,two,formLabel,referenceVisible,sidechatDetached,sidechatAlwaysOnTop}={}){
  supportState.courseId=courseId||'';
  supportState.two=!!two;

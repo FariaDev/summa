@@ -1,3 +1,4 @@
+// @ts-check
 /* `calcular` — UM texto e um formato de resultado para os três motores
    (Pi `mesa_calcular`, Claude e OpenCode `calcular`). O cálculo é o MESMO
    avaliador da calculadora da janela (`desk/calculator.mjs`): parser próprio,

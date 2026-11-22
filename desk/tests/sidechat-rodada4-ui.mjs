@@ -28,7 +28,7 @@ const SAVED={id:'sc-44444444-4444-4444-8444-444444444444',engine:'opencode',
 const SCOPE='Limites.pdf p. 1, Formulario.pdf p. 1';
 
 async function injectSaved(page,target){
- await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat.mjs');sidechat.openSavedSidechat(payload);},SAVED);
+ await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat/sidechat.mjs');sidechat.openSavedSidechat(payload);},SAVED);
  await target.waitForFunction(expected=>document.querySelector('#sidechat-scope-text')?.textContent===expected,SCOPE,{timeout:10000});
  await target.evaluate(()=>document.activeElement?.blur?.());
 }

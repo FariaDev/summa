@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {createMiniFlow} from '../src/mini-mode.mjs';
 import {createAmbitusPage} from '../src/ambitus-page.mjs';
-import {createNotebookTray} from '../src/tutor-notebooks.mjs';
+import {createNotebookTray} from '../src/tutor/tutor-notebooks.mjs';
 import {displayUserText} from '../text.mjs';
 
 const require = createRequire(import.meta.url);

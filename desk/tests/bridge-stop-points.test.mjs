@@ -33,11 +33,11 @@ const POINTS = [
   {where: 'sessão nova', file: 'src/course-conversations.mjs', anchor: 'window.desk.newSession('},
   {where: 'abrir conversa da matéria', file: 'src/course-conversations.mjs', anchor: 'window.desk.openSession(file)'},
   {where: 'relink de provedor OpenCode (finish)', file: 'src/opencode-providers.mjs', anchor: 'if(next?.relinked)', must: RELINKS},
-  {where: 'chave OpenCode aprovada (startWithKey)', file: 'src/free-models.mjs', anchor: 'export async function startWithKey', must: RELINKS},
-  {where: 'remover chave OpenCode', file: 'src/free-models.mjs', anchor: 'window.desk.opencodeKeyRemove', must: RELINKS},
-  {where: 'promoção Livre→matéria (free-promote)', file: 'src/free-study.mjs', anchor: 'const leftFree=', must: RELINKS},
+  {where: 'chave OpenCode aprovada (startWithKey)', file: 'src/study/free-models.mjs', anchor: 'export async function startWithKey', must: RELINKS},
+  {where: 'remover chave OpenCode', file: 'src/study/free-models.mjs', anchor: 'window.desk.opencodeKeyRemove', must: RELINKS},
+  {where: 'promoção Livre→matéria (free-promote)', file: 'src/study/free-study.mjs', anchor: 'const leftFree=', must: RELINKS},
   {where: 'atualização de componente (toolHost.relink)', file: 'src/tool-notices.mjs', anchor: 'window.desk.toolUpdateRun', must: RELINKS},
-  {where: 'save-config da primeira abertura', file: 'src/first-run.mjs', anchor: 'window.desk.saveConfig'},
+  {where: 'save-config da primeira abertura', file: 'src/setup/first-run.mjs', anchor: 'window.desk.saveConfig'},
 ];
 
 const EXCLUSIONS = [

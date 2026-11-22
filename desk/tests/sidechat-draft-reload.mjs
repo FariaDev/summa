@@ -135,7 +135,7 @@ await withArtifacts('lateral-draft-reload-corridas',async ctx=>{
  /* Bridge controlado: `sidechatSave` fica pendente até o teste liberar cada
     ACK — é o que permite ver o save antigo de A confirmar DEPOIS do input B. */
  await page.evaluate(async()=>{
-  const mod=await import('./src/sidechat.mjs');
+  const mod=await import('./src/sidechat/sidechat.mjs');
   const stateOf=async()=>(await import('./src/state.mjs')).S;
   const fake={id:'',n:0,opens:[],saves:[],listeners:[],messages:[],drafts:{},sessionOf:{},currentBySession:{},pendingSaves:[]};
   const payload=async()=>{
@@ -181,7 +181,7 @@ await withArtifacts('lateral-draft-reload-corridas',async ctx=>{
    resolveNext:()=>{const pending=fake.pendingSaves.shift();if(pending)pending.resolve({ok:true,draft:pending.input.draft});},
    pending:()=>fake.pendingSaves.length,
    mirrors:()=>{const out={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith('mesa.sidechat.draft'))out[key]=localStorage.getItem(key);}return out;},
-   state:async()=>{const sidechat=await import('./src/sidechat.mjs');const current=sidechat.sidechatState();return {id:current.id,draft:current.draft,scope:current.scope};}
+   state:async()=>{const sidechat=await import('./src/sidechat/sidechat.mjs');const current=sidechat.sidechatState();return {id:current.id,draft:current.draft,scope:current.scope};}
   };
   mod.setSidechatBridge(bridge);
  });

@@ -9,7 +9,7 @@ import {createRequire} from 'node:module';
 import {installDom} from './dom-shim.mjs';
 import {notebookCardNode, notebookChipNode, notebookPageLabel} from '../src/notebook-card.mjs';
 import {attachedNotebooks, notebookFactsOf} from '../src/notebook-facts.mjs';
-import {historyTurns} from '../src/worklog.mjs';
+import {historyTurns} from '../src/worklog/worklog.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};
 

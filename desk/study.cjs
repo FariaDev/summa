@@ -1,3 +1,4 @@
+// @ts-check
 const fs=require('node:fs');
 const {authorizeXopp}=require('./xopp-authorization.cjs');
 const core=require('./src/generated/study.core.js').default;

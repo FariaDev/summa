@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 /* Identidade de execução do host Pi (achado N1 da revisão final de 2026-10-08).
  *

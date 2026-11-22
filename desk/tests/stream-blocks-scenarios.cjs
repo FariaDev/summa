@@ -18,7 +18,7 @@ async function scenarioStreamBlocks({electron}) {
   try {
     await win.loadFile(path.join(__dirname, 'figures-page.html'));
     return await win.webContents.executeJavaScript(`(async () => {
-      const {paintMessageBody, resetStreamPaintStats, streamPaintStats} = await import(${JSON.stringify(url('src/chat-stream-view.mjs'))});
+      const {paintMessageBody, resetStreamPaintStats, streamPaintStats} = await import(${JSON.stringify(url('src/chat/chat-stream-view.mjs'))});
       const {ensureMath} = await import(${JSON.stringify(url('src/markdown.mjs'))});
       await ensureMath();
       const {STREAM_BLOCKS_FIXTURES} = await import(${JSON.stringify(url('tests/stream-blocks-fixtures.mjs'))});

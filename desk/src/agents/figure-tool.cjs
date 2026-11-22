@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* "Ver o que desenhei" no caminho Claude (#60): o MESMO guia da extensão do Pi
@@ -7,7 +8,7 @@
 const FIGURE_TOOL_NAME = 'mcp__mesa__ver_figura';
 const {toolErrorText} = require('./tool-error-text.cjs');
 
-/** @param {(args: object) => Promise<any>} viewFigure @param {{language?: string}} [options] */
+/** @param {(args: Record<string, any>) => Promise<any>} viewFigure @param {{language?: string}} [options] */
 async function createFigureTool(viewFigure, {language} = {}) {
   const [{tool}, {z}, guide, fields] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),

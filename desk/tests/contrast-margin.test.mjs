@@ -9,7 +9,7 @@ import path from 'node:path';
    mede o par real de cada tema. */
 const desk = path.resolve(import.meta.dirname, '..');
 const style = fs.readFileSync(path.join(desk, 'style.css'), 'utf8');
-const chat = fs.readFileSync(path.join(desk, 'src', 'tutor-chat.css'), 'utf8');
+const chat = fs.readFileSync(path.join(desk, 'src', 'tutor', 'tutor-chat.css'), 'utf8');
 
 function themePair(name) {
   const line = style.split('\n').find((item) => item.includes(`--${name}:light-dark(`));

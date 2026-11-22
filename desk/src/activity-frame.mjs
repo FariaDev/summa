@@ -1,3 +1,4 @@
+// @ts-check
 import * as quadro from './activity-view.mjs';
 import {t} from './ui-text.mjs';
 import {confirmOpenLink, openConfirmedLink} from './link-confirm.mjs';
@@ -9,7 +10,7 @@ import {HEIGHT_RESERVED,MAX_ATTEMPT_BYTES,MAX_STATE_BYTES,MAX_STATE_ENVELOPE_BYT
 
 /**
  * Cria as funções deste grupo sobre o contexto compartilhado do host.
- * @param {object} ctx estado e funções do `createActivityHost` (getters preguiçosos)
+ * @param {Record<string, any>} ctx estado e funções do `createActivityHost` (getters preguiçosos)
  * @returns {{stopFrame, flushState, postRaw, post, onMessage, mount}}
  * @example Object.assign(ctx,createActivityFrame(ctx));
  */
@@ -278,6 +279,7 @@ export function createActivityFrame(ctx) {
     }
     return evicted === null || ctx.host.mounted.size < ctx.maxMounted;
   }
+  /** @param {any} ctl @param {{restore?: any, fresh?: boolean}} [options] */
   function mount(ctl, {restore, fresh = false} = {}) {
     if (ctl.stopped) return false;
     /* Parar o PRÓPRIO card ANTES de medir a quota: reiniciar/reabrir um card

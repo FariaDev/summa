@@ -1,3 +1,4 @@
+// @ts-check
 /* Nota sugerida pelo tutor na conversa (#139). O texto vem do modelo e NÃO é
    confiável: título e conteúdo entram por `textContent`, nunca por HTML. O
    cartão só mostra botões enquanto a sugestão está pendente; "Guardar" chama o
@@ -15,6 +16,7 @@ const node = (tag, className = '', text = '') => {
 
 const statusOf = (card) => (typeof card?.status === 'string' ? card.status : 'pending');
 
+/** @param {any} label @param {any} className @param {any} action @param {{disabled?: boolean, key?: string}} [options] */
 function button(label, className, action, {disabled = false, key = ''} = {}) {
   const element = node('button', className, label);
   element.type = 'button';
@@ -26,7 +28,7 @@ function button(label, className, action, {disabled = false, key = ''} = {}) {
 
 /**
  * Cria o cartão de uma nota sugerida.
- * @param {object} card cartão público (`kind: 'note'`)
+ * @param {Record<string, any>} card cartão público (`kind: 'note'`)
  * @param {{noteSave?: Function, dismiss?: Function}} api
  * @returns {HTMLElement}
  * @example const el = noteCardElement(card, {noteSave: (id) => window.desk.noteCardSave({id})});
@@ -74,7 +76,7 @@ export function noteCardElement(card, api) {
   }
 
   function paint() {
-    const active = document.activeElement?.dataset?.cardKey || '';
+    const active = /** @type {HTMLElement} */ (document.activeElement)?.dataset?.cardKey || '';
     const parts = [node('div', 'note-heading', t('note.heading'))];
     parts.push(node('h3', 'note-title', String(state.card.title || '')));
     /* Conteúdo não confiável: `textContent` é o caminho, mesmo com Markdown. */

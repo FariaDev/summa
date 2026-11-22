@@ -55,7 +55,7 @@ function createServeOwner({findBinary, keyEnv, baseEnv = () => process.env, cwd,
   /* Quem espera a subida: cada `acquire()` ganha um lugar nesta lista. Como a
      subida é dividida (principal + lateral + rascunho), cancelar é desistir do
      PRÓPRIO lugar — a subida só aborta quando ninguém mais espera (#57). */
-  /** @type {{seat?: object, resolve: (lease: ServeLease) => void, reject: (error: unknown) => void, settled: boolean}[]} */
+  /** @type {{seat?: Record<string, any>, resolve: (lease: ServeLease) => void, reject: (error: unknown) => void, settled: boolean}[]} */
   let waiters = [];
 
   /* Cancelar desiste da subida em nome de quem pediu (`seat`, um por adaptador):
@@ -169,12 +169,12 @@ function createServeOwner({findBinary, keyEnv, baseEnv = () => process.env, cwd,
     }
   }
 
-  /** @param {object} [seat] quem espera: `cancelStarting(seat)` desiste só deste lugar */
+  /** @param {Record<string, any>} [seat] quem espera: `cancelStarting(seat)` desiste só deste lugar */
   function acquire(seat) {
     /* Cada chamada ganha o seu lugar na espera, mas a subida é uma só: duas
        chamadas juntas dividem o mesmo `starting` mesmo com a chave vindo do
        cofre assíncrono. Quem cancela rejeita só o próprio lugar (#57). */
-    /** @type {{seat?: object, resolve: (lease: ServeLease) => void, reject: (error: unknown) => void, settled: boolean}|null} */
+    /** @type {{seat?: Record<string, any>, resolve: (lease: ServeLease) => void, reject: (error: unknown) => void, settled: boolean}|null} */
     let entry = null;
     const waiting = new Promise((resolve, reject) => { entry = {seat, resolve, reject, settled: false}; });
     waiters.push(/** @type {NonNullable<typeof entry>} */ (entry));

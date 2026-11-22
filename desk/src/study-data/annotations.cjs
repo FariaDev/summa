@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Anotações de página (Mesa): `runtime/pdf-notes.json`.
@@ -78,6 +79,7 @@ function kindTag(kind) {
   return kind === 'duvida' ? DOUBT_TAG : NOTE_TAG;
 }
 
+/** @param {any} one @param {{id?: any}} [options] */
 function coreItemOf(one, {id} = {}) {
   const source = isPlainObject(one) ? one : {};
   const ref = isPlainObject(source.ref) ? source.ref : source;
@@ -100,6 +102,7 @@ function coreItemOf(one, {id} = {}) {
 /* Um registro do arquivo → forma do núcleo → item do host (JSON puro). O
  * `newItem` do núcleo apara/corta e levanta a página para 1. Id vazio é aceito
  * aqui (o item novo do diálogo ainda não tem id); quem decide é o `saveNote`. */
+/** @param {any} raw @param {{keep?: boolean}} [options] */
 function normalizeItem(raw, {keep = true} = {}) {
   const source = isPlainObject(raw) ? raw : {};
   const id = String(source.id || '');
@@ -204,6 +207,7 @@ function writeStore(runtime, store) {
 }
 
 /* Lista de itens de um escopo (tolerante; nunca lança por arquivo ilegível). */
+/** @param {any} runtime @param {any} scope @param {{page?: any}} [options] */
 function readNotes(runtime, scope, {page} = {}) {
   const {store} = readStore(runtime);
   const list = normalizeList(store[scopeOf(scope)]);
@@ -243,7 +247,7 @@ function isAuthorizedRef(item, authorizedPaths) {
 
 function assertAuthorized(item, authorizedPaths) {
   if (isAuthorizedRef(item, authorizedPaths)) return true;
-  const error = new Error(message('annot.error.unauthorized'));
+  const error = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error(message('annot.error.unauthorized')));
   error.code = 'UNAUTHORIZED';
   throw error;
 }

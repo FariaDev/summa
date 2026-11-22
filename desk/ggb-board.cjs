@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Quadro do GeoGebra por uso do tutor (#53): o host do applet entrega o que lê
@@ -85,7 +86,7 @@ function createGgbBoard({applet, store, key, onChange = () => {}, now = Date.now
       if (plan.$ === 'RestoreNone') return {restored: false, ...status()};
       const [previous, ...rest] = kept;
       const swapped = plan.$ === 'RestoreSwap'
-        ? [{b64: await applet.snapshot(), origin: originName(core.originOf(tutorSignature.has(key()), tutorSignature.get(key()) === summary.objects)), at: now()}, ...rest]
+        ? [{b64: await applet.snapshot(), origin: /** @type {'tutor'|'student'} */ (originName(core.originOf(tutorSignature.has(key()), tutorSignature.get(key()) === summary.objects))), at: now()}, ...rest]
         : rest;
       await applet.load(previous.b64);
       store.write(key(), swapped);

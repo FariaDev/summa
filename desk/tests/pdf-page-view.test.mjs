@@ -11,7 +11,7 @@ import {createRequire} from 'node:module';
 import {tinyPdf} from './helpers.mjs';
 import {fakePdfjs} from './fake-pdf-render.mjs';
 import {normalizePageView} from '../pdf-page-view.cjs';
-import {pdfTool, readPdfPages} from '../src/extensions/mesa-mcp/pdf-tool.mjs';
+import {pdfTool, readPdfPages} from '../src/extensions/summa-mcp/pdf-tool.mjs';
 
 const require = createRequire(import.meta.url);
 const {createPdfPageReader, MAX_IMAGE_CHARS} = require('../pdf-page-text.cjs');

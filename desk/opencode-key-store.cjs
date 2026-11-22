@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Cofre da chave do OpenCode Zen (#44). A chave NUNCA vai para `config.json`,

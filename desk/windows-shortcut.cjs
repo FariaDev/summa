@@ -1,3 +1,4 @@
+// @ts-check
 /* Atalho no menu Iniciar do Windows (#178). Sem instalador a Mesa roda pelo
    electron.exe, e o Windows mostra o ícone embutido dele no Iniciar e nas
    notificações. O atalho com o AppUserModelId da Mesa resolve os dois. É criado
@@ -55,7 +56,7 @@ function removeLegacyShortcut(fs,file,log){
 /**
  * Cria ou atualiza o atalho da Mesa no menu Iniciar do Windows. Fora do Windows
  * não faz nada. Falha de leitura/gravação é logada e devolvida, sem lançar.
- * @param {{shell: {readShortcutLink: (file: string) => object, writeShortcutLink: (file: string, operation: string, details: object) => boolean}, platform: string, env: Record<string,string|undefined>, execPath: string, appPath: string, assetsDir: string, defaultApp: boolean, fs: {mkdirSync: (dir: string, options: {recursive: boolean}) => unknown, existsSync: (file: string) => boolean, rmSync: (file: string, options: {force: boolean}) => unknown}, log?: (area: string, line: string) => void}} deps
+ * @param {{shell: {readShortcutLink: (file: string) => object, writeShortcutLink: (file: string, operation: string, details: Record<string, any>) => boolean}, platform: string, env: Record<string,string|undefined>, execPath: string, appPath: string, assetsDir: string, defaultApp: boolean, fs: {mkdirSync: (dir: string, options: {recursive: boolean}) => unknown, existsSync: (file: string) => boolean, rmSync: (file: string, options: {force: boolean}) => unknown}, log?: (area: string, line: string) => void}} deps
  * @returns {{changed: boolean, file?: string, error?: string}}
  * @example ensureStartMenuShortcut({shell,platform:process.platform,env:process.env,execPath:process.execPath,appPath:app.getAppPath(),assetsDir:path.join(__dirname,'assets'),defaultApp:!!process.defaultApp,fs,log:appendLog});
  */

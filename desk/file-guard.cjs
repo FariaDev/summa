@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Guarda `file:` da sessão (rodada 2026-11): nega por padrão e aceita só os
@@ -100,7 +101,8 @@ function containedRealpath(file, roots, {caseSensitive = process.platform !== 'w
    `index.html` puxa). Negar por padrão e aceitar só estes saiu tão simples
    quanto negar só o runtime — então vale a lista fechada: aluno nenhum mora
    aqui, e dado novo fora daqui já nasce negado. */
-const STATIC_DIRS = ['src', 'assets', 'node_modules'];
+/* `out/renderer` é o build do electron-vite (`npm run preview`, #125). */
+const STATIC_DIRS = ['src', 'assets', 'node_modules', path.join('out', 'renderer')];
 const STATIC_FILES = ['index.html', 'preload.cjs', 'renderer.mjs', 'style.css', 'text.mjs', 'icons.mjs', 'highlight.mjs', 'calculator.mjs'];
 
 /**
@@ -130,7 +132,7 @@ function staticAppEntries(appRoot) {
  * @example fileSubresourceBlocked({url: 'file:///app/desk/src/x.mjs', resourceType: 'image', appRoot: '/app/desk'}) // {cancel:false,…}
  * @example fileSubresourceBlocked({url: 'file:///tmp/x.png', resourceType: 'image', appRoot: '/app/desk'}).cancel // true
  */
-function fileSubresourceBlocked({url, resourceType = '', appRoot = null, runtimeRoot = null, dataRoots = [], staticEntries = null} = {}) {
+function fileSubresourceBlocked({url, resourceType = '', appRoot = null, runtimeRoot = null, dataRoots = [], staticEntries = null} = /** @type {any} */ ({})) {
   const target = String(url || '');
   if (!isFileUrl(target)) return {cancel: false, reason: 'nao-file'};
   if (String(resourceType) === 'mainFrame') return {cancel: false, reason: 'documento'};
@@ -158,10 +160,10 @@ function fileSubresourceBlocked({url, resourceType = '', appRoot = null, runtime
  * `live` é o estado vivo (`live.config.vaultPath`, `live.courses[].path`):
  * função porque cursos/cofre mudam no `save-config` depois da instalação.
  * @param {{appRoot: string, runtimeRoot?: string|null, live?: {config?: {vaultPath?: string}, courses?: {path?: string}[]}|null, dataRoots?: string[]|(() => string[])}} input
- * @returns {{appRoot: string, runtimeRoot: string|null, dataRoots: () => string[]}}
+ * @returns {{appRoot: string, runtimeRoot: string|null, dataRoots: string[]|(() => string[])}}
  * @example fileGuardOptions({appRoot: '/app/desk', runtimeRoot: '/tmp/rt', live: null}).appRoot // '/app/desk'
  */
-function fileGuardOptions({appRoot, runtimeRoot = null, live = null, dataRoots = null} = {}) {
+function fileGuardOptions({appRoot, runtimeRoot = null, live = null, dataRoots = null} = /** @type {any} */ ({})) {
   return {
     appRoot: String(appRoot || ''),
     runtimeRoot: typeof runtimeRoot === 'string' && runtimeRoot ? runtimeRoot : null,

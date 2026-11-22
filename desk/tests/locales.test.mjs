@@ -74,7 +74,7 @@ function bendMessages() {
 }
 
 /* O HTML estático: o index.html e a marcação que saiu dele para caber no teto (#64). */
-const staticMarkup = () => [path.join(deskDir, 'index.html'), path.join(deskDir, 'src', 'setup-markup.mjs')].map(read).join('\n');
+const staticMarkup = () => [path.join(deskDir, 'index.html'), path.join(deskDir, 'src', 'setup', 'setup-markup.mjs')].map(read).join('\n');
 
 function htmlKeys() {
   const html = staticMarkup();

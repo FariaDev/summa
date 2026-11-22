@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {installDom} from './dom-shim.mjs';
 
 installDom();
-const {createFreeStudyLoader, mountFreeStudyBoot} = await import('../src/free-study-loader.mjs');
+const {createFreeStudyLoader, mountFreeStudyBoot} = await import('../src/study/free-study-loader.mjs');
 
 const tick = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms));
 

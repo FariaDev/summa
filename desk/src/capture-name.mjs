@@ -1,3 +1,4 @@
+// @ts-check
 /* Nome do arquivo da captura do Conferir (puro, sem DOM). O anexo se chama
    como o programa capturado: "Xournal++" → xournal.png (o nome de sempre),
    "OneNote" → onenote.png. Acento e símbolos saem; nome que não sobra nada

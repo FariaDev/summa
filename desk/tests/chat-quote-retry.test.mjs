@@ -7,7 +7,7 @@ import test from 'node:test';
 import {installDom} from './dom-shim.mjs';
 
 installDom();
-const {quoteButtonDecision} = await import('../src/chat-quote.mjs');
+const {quoteButtonDecision} = await import('../src/chat/chat-quote.mjs');
 
 test('com texto e rect zerado, retenta até 4 vezes', () => {
   const zero = {width: 0, height: 0, top: 100, bottom: 100};

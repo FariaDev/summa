@@ -15,7 +15,7 @@ test('a marca é a integral parada do path aprovado, sem luminária', () => {
 });
 
 test('um brilho só atravessa a integral e o texto; reduzido respira sem brilho', () => {
-  const css = fs.readFileSync(new URL('../src/tutor-chat.css', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../src/tutor/tutor-chat.css', import.meta.url), 'utf8');
   assert.match(css, /\.work-shine\{[^}]*mask-image:linear-gradient\(90deg,color-mix\(in srgb,var\(--mix-black\) 30%,transparent\) 0 40%,var\(--mix-black\) 50%,color-mix\(in srgb,var\(--mix-black\) 30%,transparent\) 60% 100%\)[^}]*animation:work-shine calc\(var\(--t-loop\) \* 1\.5\) linear infinite\}/);
   assert.match(css, /@keyframes work-shine\{from\{-webkit-mask-position:100% 0;mask-position:100% 0\}to\{-webkit-mask-position:0 0;mask-position:0 0\}\}/);
   assert.match(css, /@media \(prefers-reduced-motion:reduce\)\{\.work-shine\{animation:work-breathe calc\(var\(--t-loop\) \* 5 \/ 3\) var\(--ease-move\) infinite;-webkit-mask-image:none;mask-image:none\}\}/);

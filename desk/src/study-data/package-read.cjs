@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -24,6 +25,7 @@ function assertDistinctDestination(destinations, destination) {
 /* Abre o arquivo SEM tocar o disco de destino: valida zip, manifesto, limites
    e o hash de cada arquivo. Devolve manifesto + mapa de buffers prontos para a
    prévia de importação. */
+/** @param {any} buffer @param {{limits?: Record<string, any>}} [options] */
 function openPackage(buffer, {limits = {}} = {}) {
   let entries;
   try {
@@ -87,6 +89,7 @@ function openPackage(buffer, {limits = {}} = {}) {
 }
 /* Onde o pacote pousa: `<root>/<nome>`; nome ocupado ganha sufixo, nunca
    sobrescreve. O host escolhe a raiz (diálogo) e passa o nome sugerido. */
+/** @param {{root?: any, name?: any}} options */
 function planDestination({root, name}) {
   const base = path.resolve(root);
   const desired = safeDirName(name, 'Matéria importada');

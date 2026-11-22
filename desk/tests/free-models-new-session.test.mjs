@@ -14,7 +14,7 @@ import {fakeTutorDesk} from './fake-desk-tutor.mjs';
 const {window, elFor} = installDom();
 const state = await import('../src/state.mjs');
 const {S} = state;
-const {startWithKey, initFreeModels} = await import('../src/free-models.mjs');
+const {startWithKey, initFreeModels} = await import('../src/study/free-models.mjs');
 const desk = fakeTutorDesk(window);
 const tick = (ms = 10) => new Promise((resolve) => setTimeout(resolve, ms));
 

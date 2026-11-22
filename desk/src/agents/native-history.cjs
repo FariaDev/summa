@@ -1,3 +1,4 @@
+// @ts-check
 const {message}=require('../i18n.mjs');
 const {describeReceived}=require('../error-detail.mjs');
 // Full export reads only the descriptor's explicit native ID via the official

@@ -35,7 +35,7 @@ function createHarness(serve, overrides = {}) {
   const logs = [];
   const lease = {baseUrl: serve.url, password: PASSWORD, binary: '/fake/opencode', ...(overrides.lease || {})};
   const adapter = new OpenCodeAdapter({conversationId: 'conv-1', sessionId: '', onSessionId: (id) => adopted.push(id), acquire: async () => lease, directory: '/tmp/mesa-ws/conv-1',
-    systemPrompt: SYSTEM, persistDelivery: (patch) => deliveries.push(patch), mcpConfig: () => ({type: 'local', command: ['node', 'mesa-mcp.mjs']}), readVersion: fakeReadVersion,
+    systemPrompt: SYSTEM, persistDelivery: (patch) => deliveries.push(patch), mcpConfig: () => ({type: 'local', command: ['node', 'summa-mcp.mjs']}), readVersion: fakeReadVersion,
     log: (area, line) => logs.push({area, line}), ...overrides});
   adapter.on('event', (event) => events.push(event));
   return {adapter, events, deliveries, lease, adopted, logs};

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Fluxo do turno do ClaudeAdapter: eventos de stream, quadros do assistente,
@@ -9,9 +10,13 @@
 const turnPolicy = require('./claude-turn-policy.cjs');
 const {MAX_COMPLETED_KEYS, ASSISTANT_ERROR_CODES} = require('./claude-adapter-contract.cjs');
 const {normalizeAssistantBlocks, capToolDetails, assistantFrameKey, summarizeToolResult, normalizeUsage, resultText} = require('./claude-adapter-history.cjs');
-const {imageBlocksOf} = require('../marked-pages.mjs');
+const {imageBlocksOf} = require('../pdf/marked-pages.mjs');
 
-class ClaudeAdapterStream {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterStream extends AdapterBase {
   _markCompleted(key) {
     if (!key) return true;
     if (this._completed.has(key)) return false;

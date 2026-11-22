@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -50,6 +51,7 @@ function writeInside(root, rel, data) {
 /* Grava o arquivo do pacote de forma EXCLUSIVA: um arquivo que apareça entre a
    prévia e a escrita (ou uma segunda exportação simultânea) nunca é
    sobrescrito — o nome ganha sufixo, como o destino de importação. */
+/** @param {{root?: any, name?: any, buffer?: any, attempts?: number}} [options] */
 function writePackageFile({root, name, buffer, attempts = 50} = {}) {
   if (!Buffer.isBuffer(buffer)) throw new PackageError(uiMsg('err.pkg.noContent'));
   const base = path.resolve(String(root || ''));

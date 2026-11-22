@@ -3,7 +3,7 @@
    de ferramenta e sem quebrar quando a lista chega depois de outra abertura. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {activityItemsWithoutSlot, activityTurnIndex, previewAnchorElement, recoverActivitySlots} from '../src/history-activity-slots.mjs';
+import {activityItemsWithoutSlot, activityTurnIndex, previewAnchorElement, recoverActivitySlots} from '../src/history/history-activity-slots.mjs';
 
 const slot = (toolCallId, version = 1, createdAt = 0) => ({toolCallId, version, createdAt});
 

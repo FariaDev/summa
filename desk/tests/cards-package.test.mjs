@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {historyTurns} from '../src/worklog.mjs';
+import {historyTurns} from '../src/worklog/worklog.mjs';
 
 const require = createRequire(import.meta.url);
 const packages = require('../src/study-data/packages.cjs');

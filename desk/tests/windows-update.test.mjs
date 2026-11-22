@@ -21,7 +21,7 @@ function installedCopy() {
   const installDir = path.join(root, 'Programs', 'Summa');
   const payload = path.join(installDir, 'resources', 'app');
   fs.mkdirSync(payload, {recursive: true});
-  fs.writeFileSync(path.join(payload, 'package.json'), JSON.stringify({name: 'learning-desk', version: '1.2.0'}));
+  fs.writeFileSync(path.join(payload, 'package.json'), JSON.stringify({name: 'summa', version: '1.2.0'}));
   fs.writeFileSync(path.join(payload, 'main.cjs'), '// payload');
   const clone = path.join(root, 'mesa');
   fs.mkdirSync(path.join(clone, 'desk', 'scripts'), {recursive: true});

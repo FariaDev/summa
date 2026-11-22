@@ -1,3 +1,4 @@
+// @ts-check
 /* Instruções da ferramenta "ver o que desenhei" (#60) — UM texto para os três
    motores (Pi `mesa_ver_figura`, Claude e OpenCode `ver_figura`): mudam juntas,
    e `tests/native-tool-parity.mjs` e `figure-tool.test.mjs` conferem. O mesmo

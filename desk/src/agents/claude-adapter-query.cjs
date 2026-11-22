@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Sessão do ClaudeAdapter: carga do SDK, Query viva, opções, consumo do fluxo
@@ -12,7 +13,11 @@ const turnPolicy = require('./claude-turn-policy.cjs');
 const {CLAUDE_CLIENT_APP, DISALLOWED_TOOLS, ClaudeAdapterError, MessageQueue} = require('./claude-adapter-contract.cjs');
 const {errorText} = require('./claude-adapter-input.cjs');
 
-class ClaudeAdapterQuery {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterQuery extends AdapterBase {
   async _loadSdk() {
     if (this._sdk) return this._sdk;
     if (this._sdkLoader) {
@@ -93,7 +98,7 @@ class ClaudeAdapterQuery {
   }
 
   _buildOptions(generation) {
-    const options = {
+    const options = /** @type {Record<string, any>} */ ({
       cwd: this._cwd,
       ...(this._persistSession ? {} : {persistSession: false}),
       settingSources: [],
@@ -109,7 +114,7 @@ class ClaudeAdapterQuery {
       canUseTool: (toolName, input, opts) => this._canUseTool(generation, toolName, input, opts),
       hooks: {PreToolUse: [{hooks: [async (input) => this._preToolUse(generation, input)]}]},
       env: this._spawnEnv(),
-    };
+    });
     /* O tutor só alcança o MCP `mesa` (#91/#92). O curinga do servidor em
        processo pré-aprova as ferramentas da Mesa; o rascunho de revisão não
        recebe nada. */

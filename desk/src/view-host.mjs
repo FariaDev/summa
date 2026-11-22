@@ -1,3 +1,4 @@
+// @ts-check
 import {text} from './ui-text.mjs';
 import {parseMessage} from './i18n.mjs';
 
@@ -76,7 +77,7 @@ export function retranslateTree(root = document) {
     source.shown = text(source.raw);
     node.nodeValue = source.shown;
   }
-  const elements = root.nodeType === 1 ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*');
+  const elements = /** @type {Iterable<Element>} */ (root.nodeType === 1 ? [root, ...root.querySelectorAll('*')] : root.querySelectorAll('*'));
   for (const el of elements) {
     for (const [name, source] of attrSources.get(el) ?? []) {
       if (el.getAttribute(name) !== source.shown) continue;
@@ -92,6 +93,9 @@ export function childrenOf(node) {
   return out;
 }
 
+/* O tipo do nó DOM depende do nó Bend (`Html` vira fragmento, `Nil` vira
+   texto); quem chama sabe qual pediu, por isso o retorno é `any`. */
+/** @param {any} node @param {Record<string, Function>} [handlers] @returns {any} */
 export function build(node, handlers = {}) {
   if (!node) return document.createTextNode('');
   if (node.$ === 'Html') {
@@ -125,7 +129,7 @@ export function build(node, handlers = {}) {
       const event = key.slice(3);
       const handler = handlers[val];
       if (handler && EVENTS.has(event)) {
-        el.addEventListener(event, handler);
+        el.addEventListener(event, /** @type {EventListener} */ (handler));
         boundEvents.set(el, `${boundEvents.get(el) || ''}${event}=${val};`);
       }
       continue;
@@ -210,7 +214,7 @@ function adoptSource(sources, live, fresh) {
 
 /* Preserva foco (por key/id) e seleção do campo focado em volta de um render. */
 export function preserveFocus(parent, fn) {
-  const active = typeof document !== 'undefined' ? document.activeElement : null;
+  const active = /** @type {HTMLInputElement | null} */ (typeof document !== 'undefined' ? document.activeElement : null);
   const inside = active && parent.contains(active);
   const id = inside ? active.dataset?.key || active.id : '';
   const start = inside && typeof active.selectionStart === 'number' ? active.selectionStart : null;

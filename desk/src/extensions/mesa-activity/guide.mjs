@@ -1,3 +1,4 @@
+// @ts-check
 /* Instruções das ferramentas de quadro do tutor — UM texto para os dois motores
    (extensão do Pi `mesa_criar_atividade`/`mesa_previsualizar_atividade` e
    `criar_atividade`/`previsualizar_atividade` do Claude): mudam juntas, e o

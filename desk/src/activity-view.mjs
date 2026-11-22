@@ -1,3 +1,4 @@
+// @ts-check
 /* Ponte JS do núcleo do quadro (`core/activityview.bend`, #42): converte fatos
    do host para o Bend e as listas do Bend para JS. Usada pelo renderer
    (`src/activity.mjs`) e pelos hosts CJS (`activity-runtime.cjs`,
@@ -24,6 +25,7 @@ export const frameTitle = (raw, title) => text(core.frameTitle(String(raw ?? '')
 /* Os rótulos são mensagens do núcleo; cada leitura traduz no idioma de agora
    (uma constante congelada na carga ficaria no idioma antigo). */
 const labelOf = (read) => ({get: () => text(read()), enumerable: true});
+/** @type {Readonly<Record<string, string>>} */
 export const TEXT = Object.freeze(Object.defineProperties({}, {
   fullscreen: labelOf(core.fullscreenLabel),
   exitFullscreen: labelOf(core.exitFullscreenLabel),

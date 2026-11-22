@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {rendererSources} from './renderer-sources.mjs';
 import {_electron as electron} from '@playwright/test';
 
 /* #67: alvo mínimo de clique de 24px (WCAG 2.5.8). Varre as regras de botão
@@ -14,7 +15,7 @@ const MIN_TARGET = 24;
 const HIT_AREA = ['.mention-chip-remove', '.attachment .attachment-remove'];
 
 function sheets() {
-  const src = fs.readdirSync(path.join(desk, 'src')).filter((f) => f.endsWith('.css')).map((f) => path.join('src', f));
+  const src = rendererSources(desk, (f) => f.endsWith('.css')).map((f) => path.join('src', f));
   return ['style.css', ...src].map((rel) => ({rel, css: fs.readFileSync(path.join(desk, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')}));
 }
 
@@ -48,7 +49,7 @@ test('.set-link tem ao menos 24px de altura (auditoria rodada 2, D7)', () => {
   /* Links de ação de Ajustes ("Conferir de novo", "Como funciona") mediam
      14px; o mínimo do WCAG 2.2 (2.5.8) é 24px. O padding é simétrico para o
      texto não se deslocar em relação ao vizinho. */
-  const css = fs.readFileSync(path.join(desk, 'src', 'settings.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = fs.readFileSync(path.join(desk, 'src', 'settings', 'settings.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const rules = [...css.matchAll(/\.set-link\{([^}]*)\}/g)].map((m) => m[1]);
   assert.ok(rules.length > 0, 'settings.css: esperada a regra .set-link');
   const rule = rules.find((body) => /min-height\s*:/.test(body));
@@ -60,7 +61,7 @@ test('.set-link tem ao menos 24px de altura (auditoria rodada 2, D7)', () => {
 });
 
 test('a borda invisível existe e soma 24px nos 18px do desenho', () => {
-  const composer = fs.readFileSync(path.join(desk, 'src', 'composer.css'), 'utf8');
+  const composer = fs.readFileSync(path.join(desk, 'src', 'composer', 'composer.css'), 'utf8');
   const rule = composer.match(/:is\(([^)]*)\)::after\{content:"";position:absolute;inset:-3px/);
   assert.ok(rule, 'composer.css: esperado :is(...)::after{content:"";position:absolute;inset:-3px…}');
   assert.deepEqual(rule[1].split(',').map((s) => s.trim()), HIT_AREA);
@@ -78,7 +79,7 @@ test('alvos da F3 medem 24px na cascata real', {skip: NO_DISPLAY ? 'sem DISPLAY 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-target-size-'));
   const main = path.join(dir, 'main.cjs');
   const view = path.join(dir, 'view.html');
-  const css = ['style.css', 'src/readers.css', 'src/settings.css', 'src/opencode-providers.css']
+  const css = ['style.css', 'src/readers.css', 'src/settings/settings.css', 'src/opencode-providers.css']
     .map((sheet) => `<link rel="stylesheet" href="file://${path.join(desk, sheet)}">`).join('\n');
   fs.writeFileSync(view, `<!doctype html><html><head><meta charset="utf-8">${css}</head><body>
 <div class="pdf-panel"><div class="pdf-title"><button class="pager" type="button"><span class="pager-current">1</span><span class="page-total"> / 2</span></button></div></div>

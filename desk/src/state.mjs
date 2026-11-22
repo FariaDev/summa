@@ -1,10 +1,11 @@
+// @ts-check
 import {icon} from '../icons.mjs';
-import {noteOwnScroll} from './chat-scroll-view.mjs';
-export {distanceFromEnd,revealInChat,applyChatScroll} from './chat-scroll-view.mjs';
-import {showHistory,historyIdentityShown,resetAttachments,restoreAttachments} from './chat.mjs';
-import {adopt as adoptQueue} from './queue.mjs';
+import {noteOwnScroll} from './chat/chat-scroll-view.mjs';
+export {distanceFromEnd,revealInChat,applyChatScroll} from './chat/chat-scroll-view.mjs';
+import {showHistory,historyIdentityShown,resetAttachments,restoreAttachments} from './chat/chat.mjs';
+import {adopt as adoptQueue} from './queue/queue.mjs';
 import {setResumeRecord} from './resume.mjs';
-import {PdfPanel,makePdfDivider,setPdfSplitPct,pdfSplitValue,pdfRotationsSnapshot,restorePdfRotations} from './pdf.mjs';
+import {PdfPanel,makePdfDivider,setPdfSplitPct,pdfSplitValue,pdfRotationsSnapshot,restorePdfRotations} from './pdf/pdf.mjs';
 import {deactivateGeogebra} from './ggb.mjs';
 import {initCalculator} from './calc.mjs';
 import {beginCourse as beginSupport,attachPanels as attachSupport} from './support.mjs';
@@ -18,9 +19,9 @@ import {build} from './view-host.mjs';
 import {applyHelpFlags} from './dialogs.mjs';
 import deliveryCore from './generated/agentdelivery.core.js';
 import {captureViewLayout} from './layout-presets.mjs';
-import {translatedPanelLabel,translatedPanelToggle} from './layout-settings.mjs';
+import {translatedPanelLabel,translatedPanelToggle} from './settings/layout-settings.mjs';
 import {t,text as translate,formatDate,currentLanguage} from './ui-text.mjs';
-import {displayFreeTitle} from './free-names.mjs';
+import {displayFreeTitle} from './study/free-names.mjs';
 import {updateContextDock,contextDockOpen} from './context-dock.mjs';
 import {message,parseMessage} from './i18n.mjs';
 import {applyAttrs,applyAttrsOn,applyView} from './live-view.mjs';
@@ -29,12 +30,14 @@ export {refreshMeter};
 import {applyEngineVisibility,setLegacySession} from './visible-engines-ui.mjs';
 import {loadReleaseNotesSeen,releaseNotesSeen} from './release-notes.mjs';import {loadMaterialFolders,materialFoldersSnapshot} from './material-picker-ui.mjs';import {shortModelName} from './model-picker.mjs';import {renderModelPicker,setModelPickerDisabled,loadModelRecents,modelRecentsSnapshot,loadModelFavorites,modelFavoritesSnapshot,loadModelDefault,modelDefaultSnapshot,loadModelLast,modelLastSnapshot} from './model-picker-ui.mjs';import {renderEffortStrip,setEffortStripDisabled,effortLevelText} from './effort-strip.mjs';import {knownEngine,sessionEngine,isNativeEngine,defaultEffort,defaultCapability} from './engine-facts.mjs';
 import {detachConnectFlight,createConnectRunner} from './connect-flight.mjs';
-import {applyDisplayState} from './display-preferences.mjs';
-import {normalizeComposerPins} from './composer-pins.mjs';
-import {loadStudyPlan,studyPlanSnapshot} from './study-plan.mjs';
-import {applyComposerHeight} from './composer-resize.mjs';
-import {tutorNotebookCount} from './tutor-notebooks.mjs';
+import {applyDisplayState} from './settings/display-preferences.mjs';
+import {normalizeComposerPins} from './composer/composer-pins.mjs';
+import {loadStudyPlan,studyPlanSnapshot} from './study/study-plan.mjs';
+import {applyComposerHeight} from './composer/composer-resize.mjs';
+import {tutorNotebookCount} from './tutor/tutor-notebooks.mjs';
 
+/* Quem chama sabe o tipo do elemento (input, select, dialog...), por isso `any`. */
+/** @param {string} s @returns {any} */
 export function $(s){return document.querySelector(s);}
 export const S={supportsImages:true,switching:false,modelCatalog:[],library:[],panels:[],pdfDivider:null,connected:false,connecting:null,busy:false,connectCancelled:false,busySince:0,busyStall:0,healthFails:0,refVisible:true,saveTimer:0,currentSession:'',sessions:[],captureOk:false,windowCaptureOk:false,ambitusLink:false,includeRefs:true,appConfig:{},dialogPending:false,activeCourseName:'',currentTheme:'auto',currentAccent:'graphite',readingSize:'normal',readingWidth:'normal',codeSize:'normal',pdfDark:'invert',composerPins:[],ggbActive:false,currentCourseId:'',workspace:null,autoCompact:false,sendAttemptId:'',bookmarks:[],reviewItems:[],reviewActive:false,attachments:[],pdfAttachments:[],attachGen:0,deskVersion:'',engine:'opencode',detected:{},capabilities:null,conversationStatus:null,uncertain:false,turnCancelled:false,effortLevels:[],effortLevel:'',visibleEngines:null,legacySession:false};
 /* Fatos do indicador de modelo e esforço (ticket #14): o estado de conexão
@@ -159,7 +162,7 @@ function lowerToast(box){
 /* Diálogo aberto com um aviso já na tela: o aviso volta para cima dele. */
 if(typeof MutationObserver==='function'&&typeof document!=='undefined'){
  new MutationObserver(records=>{
-  if(!records.some(r=>r.target?.tagName==='DIALOG'&&r.target.open))return;
+  if(!records.some(r=>/** @type {HTMLDialogElement} */ (r.target)?.tagName==='DIALOG'&&/** @type {HTMLDialogElement} */ (r.target).open))return;
   const box=$('#toast');
   if(box?.childElementCount)raiseToast(box);
  }).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['open']});
@@ -294,7 +297,7 @@ export function paintComposerSend(){
  const text=$('#prompt')?.value||'';
  send.classList.toggle('primary',Boolean(String(text).trim()||S.attachments.length||S.pdfAttachments.length||tutorNotebookCount()));
 }
-export function save(immediate=false){paintComposerSend();clearTimeout(S.saveTimer);if(immediate){window.desk.save(layoutSnapshot()).catch(e=>toast(e.message));return;}S.saveTimer=setTimeout(()=>window.desk.save(layoutSnapshot()).catch(e=>toast(e.message)),400);}
+export function save(immediate=false){paintComposerSend();clearTimeout(S.saveTimer);if(immediate){window.desk.save(layoutSnapshot()).catch(e=>toast(e.message));return;}S.saveTimer=/** @type {any} */ (setTimeout(()=>window.desk.save(layoutSnapshot()).catch(e=>toast(e.message)),400));}
 export function refs(){return S.includeRefs?S.panels.filter((p,i)=>p.path&&(i===0||S.refVisible)).map(p=>({path:p.path,page:p.page})):[];}
 /* A linha de baixo do cabeçalho (r2): o PDF e a página que vão com a mensagem,
    mais a questão ativa. O desenho e o painel Contexto moram em
@@ -331,6 +334,7 @@ export function sessionTitleOf(session){
 /* O núcleo `sessions` grava o preview do `/conferir` em português; a exibição traduz (#41). */
 const STORED_CONFERIR_LABEL='Conferir Xournal++';
 const DATE_PREFIX=/^(\d{2}\/\d{2},\s\d{2}:\d{2})(?:\s·\s)?/;
+/** @type {Intl.DateTimeFormatOptions} */
 const WHEN_FORMAT={day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'};
 /* A data da sessão sai de `started` no idioma da interface; o prefixo do rótulo
    (sempre em português, é o que vai ao disco) só serve quando falta o horário. */
@@ -446,7 +450,7 @@ export function setBusy(value){S.busy=value;if(value){if(!S.busySince)S.busySinc
    título da sessão e a sessão nova continuam travados direto. */
 function setTabsDisabled(value){
  S.tabsLocked=!!value;
- for(const control of document.querySelectorAll('#session-title,#new-session'))control.disabled=!!value;
+ for(const control of /** @type {NodeListOf<HTMLButtonElement>} */ (document.querySelectorAll('#session-title,#new-session')))control.disabled=!!value;
  window.dispatchEvent(new Event('desk-tabs-lock'));
 }
 const IS_MAC=typeof navigator!=='undefined'&&navigator.userAgent.includes('Mac');
@@ -613,6 +617,7 @@ function applyDesk(desk){
  return {title,specs,two,flags};
 }
 let courseLoadGeneration=0;
+/** @param {any} data @param {{publishWorkspace?: boolean}} [options] */
 export async function loadCourse(data,{publishWorkspace=true}={}){
  const loadGeneration=++courseLoadGeneration;
  const previousCourseId=S.currentCourseId;
@@ -718,6 +723,7 @@ function promptPending(){return !!S.dialogPending;}
 async function waitIdle(){for(let i=0;i<80;i++){if(!S.busy&&!S.connecting&&!promptPending())return true;await new Promise(r=>setTimeout(r,150));}return !S.busy&&!S.connecting&&!promptPending();}
 /* `{connect:false}`: a primeira matéria criada na primeira abertura não liga o
    tutor sozinha quando o motor não foi encontrado (o aviso da coluna já diz). */
+/** @param {any} id @param {{connect?: boolean}} [options] */
 export async function switchCourse(id,{connect:autoConnect=true}={}){
  if(S.switching)return;
  /* Com o turno aberto a troca é recusada pelo host; avisar antes do `waitIdle`

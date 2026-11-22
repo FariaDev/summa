@@ -32,7 +32,7 @@ const {message}=require('./src/i18n.mjs');
  *   freeEntryOf: import('./types/main-hosts').FreeSessionHost['freeEntryOf'],
  *   previewFile: import('./types/main-hosts').TutorEngineHost['previewFile'], engine: import('./types/main-hosts').TutorEngineHost['engine'], stopBridge: import('./types/main-hosts').TutorBridgeHost['stopBridge'],
  *   applyCourse: import('./types/main-hosts').CourseStateHost['applyCourse'], persist: import('./types/main-hosts').CourseStateHost['persist']}} options
- * @returns {{runFreePromotion:(args:{record:object, parentDir:string, name:string})=>Promise<{course:object}>}}
+ * @returns {{runFreePromotion:(args:{record:Record<string, any>, parentDir:string, name:string})=>Promise<{course:Record<string, any>}>}}
  * @example const {runFreePromotion}=createFreePromotionHost({live,runtime,configFile,stateFile,...});
  */
 function createFreePromotionHost({live,runtime,configFile,stateFile,persistConfig,courseStates,allowedXopp,ggbCache,appendLog,freeEntryOf,previewFile,engine,stopBridge,applyCourse,persist}){

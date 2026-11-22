@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Zip mínimo (leitura + escrita), SÓ com builtins. É o leitor de zip do app

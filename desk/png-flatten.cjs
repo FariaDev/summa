@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* O PNG da página do Ambitus (#105) chega com o fundo transparente preto: num

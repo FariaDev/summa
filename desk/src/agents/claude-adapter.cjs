@@ -1,3 +1,4 @@
+// @ts-check
 /* Ponte isolada Mesa ↔ Claude Code original (fase 1, experimental — rodada 3).
  *
  * Esta é a única superfície que o main deve importar do motor Claude. O
@@ -142,7 +143,11 @@ const {ClaudeAdapterCommands} = require('./claude-adapter-commands.cjs');
 const {ClaudeAdapterMeter} = require('./claude-adapter-meter.cjs');
 const {COMPACT_TIMEOUT_MS} = require('./claude-compaction.cjs');
 
-class ClaudeAdapter extends EventEmitter {
+/* Mesmo EventEmitter em tempo de execução; o tipo soma os métodos que os
+   mixins instalam no protótipo (`installPrototypeMethods`, no fim do arquivo). */
+const AdapterEmitter = /** @type {new () => EventEmitter & import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (EventEmitter));
+
+class ClaudeAdapter extends AdapterEmitter {
   constructor(options = {}) {
     super();
     const {
