@@ -179,6 +179,16 @@ async function find(fx, query, extra = {}) {
   return search.search(fx.runtime, {query, courses: fx.courses, nowMs: STILL, ...extra});
 }
 
+test('nome da matéria tem um único rótulo e todos os resultados têm id definido', async () => {
+  const fx = fixture();
+  for (const fresh of [true, false]) {
+    const result = await find(fx, 'cálculo', {fresh});
+    const labels = result.hits.filter((hit) => hit.source === 'materia' && hit.courseId === 'Calculo' && hit.openable === false);
+    assert.ok(result.hits.every((hit) => !hit.id.endsWith('undefined')), 'todo resultado tem id definido');
+    assert.equal(labels.length, 1, 'nome da matéria aparece uma vez, inclusive com cache');
+  }
+});
+
 test('resultado cobre conversa, lateral, caderno, anotação, livre, matéria e PDF com página', async () => {
   const fx = fixture();
   const limites = await find(fx, 'limite');
