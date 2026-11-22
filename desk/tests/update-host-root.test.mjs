@@ -56,7 +56,7 @@ test('zip extraído sem install-source.json: rootDir é a raiz da extração',as
   const ipcMain=fakeIpcMain();
   registerUpdateHost({
    ipcMain,shell:fakeShell(),runtime,deskDir:desk,logFile:path.join(runtime,'desk.log'),testMode:false,
-   app:{isPackaged:true,getVersion:()=>'1.2.0',quit:()=>{}},config:()=>({}),win:()=>null,appendLog:()=>{},
+   app:{isPackaged:true,hasSingleInstanceLock:()=>true,getVersion:()=>'1.2.0',quit:()=>{}},config:()=>({}),win:()=>null,appendLog:()=>{},
    toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
   });
   assert.deepEqual(await ipcMain.invoke('update-apply'),{ok:true,version:'1.3.0'});

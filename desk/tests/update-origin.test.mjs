@@ -177,7 +177,7 @@ function hostWith({runtime,deskDir,packaged}){
  const ipcMain=fakeIpcMain();
  registerUpdateHost({
   ipcMain,shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,
-  app:{isPackaged:packaged,getVersion:()=>'1.1.0'},config:()=>({}),win:()=>null,
+  app:{isPackaged:packaged,hasSingleInstanceLock:()=>true,getVersion:()=>'1.1.0'},config:()=>({}),win:()=>null,
   piBinary:()=>'',appendLog:()=>{},toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
  });
  return ipcMain;

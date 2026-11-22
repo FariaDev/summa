@@ -22,7 +22,7 @@ function hostWith({runtime, installed}) {
  const ipcMain = fakeIpcMain();
  registerUpdateHost({
   ipcMain, shell: fakeShell(), runtime, deskDir: runtime, logFile: path.join(runtime, 'desk.log'), testMode: false,
-  app: {isPackaged: true, getVersion: () => installed}, config: () => ({}), win: () => null,
+  app: {isPackaged: true, hasSingleInstanceLock: () => true, getVersion: () => installed}, config: () => ({}), win: () => null,
   appendLog: () => {}, toolHost: {state: () => ({}), persist: () => {}, isBusy: () => false, hasBridge: () => false, relink: () => {}},
  });
  return ipcMain;

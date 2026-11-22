@@ -173,16 +173,40 @@ test('settle não remove caminhos ausentes, vazios ou relativos',async()=>{
  }
 });
 
-function installerHost({runtime,fake,quit=()=>{},version='1.4.0'}){
+function installerHost({runtime,fake,quit=()=>{},version='1.4.0',hasLock=true}){
  const ipcMain=fakeIpcMain();
  registerUpdateHost({
   ipcMain,shell:fakeShell(),runtime,deskDir:INSTALLED,logFile:path.join(runtime,'desk.log'),testMode:false,
-  app:{isPackaged:false,getVersion:()=>version,quit},config:()=>({}),win:()=>null,appendLog:()=>{},
+  app:{isPackaged:false,getVersion:()=>version,hasSingleInstanceLock:()=>hasLock,quit},config:()=>({}),win:()=>null,appendLog:()=>{},
   toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
   platform:'win32',env:{LOCALAPPDATA:LOCAL},installerUpdate:fake,
  });
  return ipcMain;
 }
+
+for(const hasLock of [false,true])test(`startup só encerra atualização pendente com lock: ${hasLock}`,async()=>{
+ const runtime=tmp(),cacheFile=path.join(runtime,'update.json'),dir=path.join(runtime,'update-installer');
+ fs.mkdirSync(dir);
+ fs.writeFileSync(path.join(dir,'setup.exe'),'instalador em uso');
+ await installerUpdate.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
+ const before=fs.readFileSync(cacheFile,'utf8');
+ let settled;
+ const done=new Promise(resolve=>{settled=resolve;});
+ const {fake}=fakeInstallerUpdate({settleInstallerUpdate:async input=>{
+  try{return await installerUpdate.settleInstallerUpdate(input);}finally{settled();}
+ }});
+ installerHost({runtime,fake,hasLock});
+ if(hasLock)await done;
+ else await new Promise(resolve=>setTimeout(resolve,100));
+ if(!hasLock){
+  assert.equal(fs.readFileSync(cacheFile,'utf8'),before);
+  assert.equal(fs.readFileSync(path.join(dir,'setup.exe'),'utf8'),'instalador em uso');
+  return;
+ }
+ assert.equal(fs.existsSync(dir),false);
+ assert.equal(updater.readCache(cacheFile).installerPending,undefined);
+ assert.equal(updater.readCache(cacheFile).lastResult.status,'recovered');
+});
 
 function fakeInstallerUpdate(overrides={}){
  const calls=[];
