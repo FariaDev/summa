@@ -88,7 +88,7 @@ test('marcador independe do destino e recusa ausente, inválido ou outra platafo
  assert.equal(isMacosRelease({deskDir,platform:'darwin'}),true);
  assert.equal(isMacosRelease({deskDir,platform:'win32'}),false);
  assert.equal(seedRuntimePath(DESK),path.join(DESK,'.runtime'));
- assert.equal(userDataDirectory({platform:'darwin',home:'/Users/ana',env:{}}),'/Users/ana/Library/Application Support/Mesa de Estudos');
+ assert.equal(userDataDirectory({platform:'darwin',home:'/Users/ana',env:{}}),path.join('/Users/ana','Library','Application Support','Mesa de Estudos'));
 });
 
 test('migração conserva runtime e procedência do clone pelo atalho antigo',()=>{
