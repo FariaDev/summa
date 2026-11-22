@@ -103,6 +103,10 @@ npm run update:keygen -- --private-key ~/mesa-update-signing.pem
 
    Baixe também o artefato `appimage-linux` do workflow **Instalador do Linux**, gerado da mesma tag e aberto sob xvfb. Build local em Linux x86_64: `APPIMAGETOOL=/caminho/appimagetool npm run appimage:linux -- --out ../appimage-vX.Y.Z`.
 
+   O `sign` lê o `package.json` de dentro das imagens e recusa produto/versão
+   diferentes da tag (e `commit` diferente, quando embutido). O AppImage exige
+   `unsquashfs` do squashfs-tools no PATH (também disponível por Homebrew);
+   o DMG exige `hdiutil` no macOS. Nenhum executável da imagem é iniciado.
    O `sign` recusa se a pública ainda for `PLACEHOLDER` ou se a privada não
    corresponder a ela, e também sem `--exe`, `--appimage` e `--dmg` da mesma versão. Ele gera
    `mesa-estudos-X.Y.Z.zip`, `Summa-Setup-X.Y.Z.exe`, `Summa-X.Y.Z-x86_64.AppImage`, `Summa-X.Y.Z.dmg`,
