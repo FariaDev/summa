@@ -63,12 +63,13 @@ function swapAppImage({file,appImage}){
 
 /**
  * Reabre o arquivo novo sem variáveis da montagem antiga nem modo Node.
- * @param {{appImage:string,env?:NodeJS.ProcessEnv,spawnFn?:typeof spawn}} input
+ * @param {{appImage:string,env?:NodeJS.ProcessEnv,argv?:string[],spawnFn?:typeof spawn}} input
  * @returns {Promise<void>}
  * @example await relaunchAppImage({appImage:'/apps/Summa.AppImage'})
  */
-function relaunchAppImage({appImage,env=process.env,spawnFn=spawn}){
+function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=spawn}){
  const cleanEnv=Object.fromEntries(Object.entries(env).filter(([key])=>!key.startsWith('APPIMAGE')&&!key.startsWith('OWD')&&!['ELECTRON_RUN_AS_NODE','APPDIR','ARGV0','LD_LIBRARY_PATH','LD_PRELOAD','GIO_EXTRA_MODULES','GSETTINGS_SCHEMA_DIR','UNION_PRELOAD'].includes(key)));
+ if(env.APPIMAGE_EXTRACT_AND_RUN||argv.includes('--appimage-extract-and-run'))cleanEnv.APPIMAGE_EXTRACT_AND_RUN='1';
  return new Promise((resolve,reject)=>{
   const child=spawnFn(appImage,[],{detached:true,stdio:'ignore',env:cleanEnv,cwd:path.dirname(appImage)});
   child.once('error',reject);

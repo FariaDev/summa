@@ -123,3 +123,14 @@ test('IPC Linux escolhe AppImage, origem oficial e mantém aberto se download fa
   assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
  }
 });
+
+test('extração sem FUSE persiste na reabertura e no menu, por ambiente ou argumento',async()=>{
+ for(const flags of [{env:{...env,APPIMAGE_EXTRACT_AND_RUN:'1'},argv:[]},{env,argv:['--appimage-extract-and-run']}]){
+  const fake=fakeAppImageProcess(),home=tempDir('summa-extract-');
+  await image.relaunchAppImage({appImage:env.APPIMAGE,...flags,spawnFn:fake.spawnFn});
+  assert.equal(fake.calls[0].options.env.APPIMAGE_EXTRACT_AND_RUN,'1');
+  assert.equal(fake.calls[0].options.env.APPDIR,undefined);
+  ensureLinuxDesktopEntry({platform:'linux',deskDir,assetsDir:path.resolve(import.meta.dirname,'../assets'),home,...flags});
+  assert.match(fs.readFileSync(path.join(home,'.local/share/applications/summa.desktop'),'utf8'),/Exec=env APPIMAGE_EXTRACT_AND_RUN=1 "\/apps\/Summa.AppImage" %U/);
+ }
+});
