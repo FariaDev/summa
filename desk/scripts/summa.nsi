@@ -128,14 +128,15 @@ Function RecoverInterruptedSwap
 FunctionEnd
 
 ; Renomear a pasta só funciona quando nenhum processo da Summa segura arquivos nela.
-Function MoveCurrentAside
+!macro MoveCurrentAside prefix suffix failure
+Function ${prefix}MoveCurrentAside
   ${IfNot} ${FileExists} "$INSTDIR\*.*"
     Return
   ${EndIf}
   StrCpy $R0 0
   retry:
     ClearErrors
-    Rename "$INSTDIR" "$INSTDIR.old"
+    Rename "$INSTDIR" "$INSTDIR.${suffix}"
     ${IfNot} ${Errors}
       Return
     ${EndIf}
@@ -150,7 +151,16 @@ Function MoveCurrentAside
       Goto retry
     ${EndIf}
   giveUp:
-    Call FailInstall
+    Call ${failure}
+FunctionEnd
+!macroend
+
+!insertmacro MoveCurrentAside "" "old" "FailInstall"
+!insertmacro MoveCurrentAside "un." "removing" "un.FailUninstall"
+
+Function un.FailUninstall
+  SetErrorLevel 2
+  Quit
 FunctionEnd
 
 ; A Summa fica aberta durante a extração e só fecha ao ver este arquivo.
@@ -238,13 +248,7 @@ Section "Uninstall"
     SetErrorLevel 2
     Quit
   ${EndIf}
-  ClearErrors
-  Rename "$INSTDIR" "$INSTDIR.removing"
-  ${If} ${Errors}
-    MessageBox MB_ICONEXCLAMATION "$(AppOpen)" /SD IDOK
-    SetErrorLevel 2
-    Quit
-  ${EndIf}
+  Call un.MoveCurrentAside
   RMDir /r "$INSTDIR.removing"
   Delete "$SMPROGRAMS\${APP_NAME}.lnk"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
