@@ -43,14 +43,41 @@ test('detecção exige Linux, arquivo absoluto e payload dentro da montagem',()=
  assert.equal(seedRuntimePath(deskDir),'','runtime usa a pasta de dados, não a montagem');
 });
 
+test('sem sinal de pronto mata processo no prazo e remove arquivo de handshake',async()=>{
+ const dir=tempDir('summa-ready-timeout-'),fake=fakeAppImageProcess({ready:false});
+ await assert.rejects(image.relaunchAppImage({appImage:path.join(dir,'Summa.AppImage'),spawnFn:fake.spawnFn,timeoutMs:20,pollMs:5}),/appImageStart/);
+ assert.ok(fake.calls.includes('kill'));
+ assert.deepEqual(fs.readdirSync(dir),[]);
+});
+
+test('sinal de pronto exige lock; limpeza de backup fica suspensa durante atualização',()=>{
+ const dir=tempDir('summa-ready-signal-'),file=path.join(dir,'handshake');
+ const readyEnv={SUMMA_APPIMAGE_READY_FILE:file};
+ image.signalAppImageReady({app:{hasSingleInstanceLock:()=>false},env:readyEnv});
+ assert.equal(fs.existsSync(file),false);
+ image.signalAppImageReady({app:{hasSingleInstanceLock:()=>true},env:readyEnv});
+ assert.equal(fs.readFileSync(file,'utf8'),'ready');
+ assert.equal(readyEnv.SUMMA_APPIMAGE_READY_FILE,undefined);
+ assert.doesNotThrow(()=>image.signalAppImageReady({app:{hasSingleInstanceLock:()=>true},env:{}}));
+ const backup=path.join(dir,'.Summa.AppImage.old');
+ fs.writeFileSync(backup,'original');
+ image.cleanupAppImagePartials(dir);
+ assert.equal(fs.readFileSync(backup,'utf8'),'original');
+ image.cleanupAppImagePartials(dir,{backups:true});
+ assert.equal(fs.existsSync(backup),false);
+ assert.equal(fs.readFileSync(file,'utf8'),'ready');
+});
+
 test('download conferido ganha modo executável e troca mantém nome do atalho',async()=>{
  const dir=tempDir('summa-image-'),release=makeSignedRelease({appImage:bytes});
  const {file}=await image.prepareAppImageUpdate({version:release.version,publicKey:release.publicKey,dir,fetchBuffer:release.fetchBuffer,fetchAppImage:fakeAppImageDownload(bytes)});
  if(process.platform!=='win32')assert.equal(fs.statSync(file).mode&0o777,0o755);
  const appImage=path.join(dir,'Summa.AppImage');
  fs.writeFileSync(appImage,'antiga');
- image.swapAppImage({file,appImage});
+ const backup=image.swapAppImage({file,appImage});
  assert.deepEqual(fs.readFileSync(appImage),bytes);
+ assert.equal(fs.readFileSync(backup,'utf8'),'antiga');
+ fs.rmSync(backup);
  assert.deepEqual(fs.readdirSync(dir),['Summa.AppImage']);
 });
 
@@ -126,11 +153,13 @@ test('pasta não gravável tem erro próprio e swap recusado apaga parcial',asyn
 
 test('reabertura remove variáveis da montagem antiga e propaga erro de spawn',async()=>{
  const fake=fakeAppImageProcess();
- await image.relaunchAppImage({appImage:env.APPIMAGE,env:{...env,ARGV0:'old',APPIMAGE_SILENT_INSTALL:'1',OWD:'/tmp',ELECTRON_RUN_AS_NODE:'1',LD_LIBRARY_PATH:'/old',HOME:'/home/test'},spawnFn:fake.spawnFn});
- assert.deepEqual(fake.calls[0].options.env,{HOME:'/home/test'});
+ await image.relaunchAppImage({appImage:path.join(tempDir('summa-relaunch-'),'Summa.AppImage'),env:{...env,ARGV0:'old',APPIMAGE_SILENT_INSTALL:'1',OWD:'/tmp',ELECTRON_RUN_AS_NODE:'1',LD_LIBRARY_PATH:'/old',HOME:'/home/test'},spawnFn:fake.spawnFn});
+ const {SUMMA_APPIMAGE_READY_FILE,...cleanEnv}=fake.calls[0].options.env;
+ assert.deepEqual(cleanEnv,{HOME:'/home/test'});
+ assert.equal(fs.existsSync(SUMMA_APPIMAGE_READY_FILE),false);
  assert.equal(fake.calls[0].options.detached,true);
  assert.equal(fake.calls[1],'unref');
- await assert.rejects(image.relaunchAppImage({appImage:env.APPIMAGE,spawnFn:fakeAppImageProcess({error:'EACCES'}).spawnFn}),/EACCES/);
+ await assert.rejects(image.relaunchAppImage({appImage:env.APPIMAGE,spawnFn:fakeAppImageProcess({error:'EACCES'}).spawnFn}),/appImageStart/);
 });
 
 test('settle aplicado ou recuperado preserva estudos e não apaga pasta da instalação',async()=>{
@@ -179,7 +208,7 @@ test('IPC Linux escolhe AppImage, origem oficial e mantém aberto se download fa
 test('extração sem FUSE persiste na reabertura e no menu, por ambiente ou argumento',async()=>{
  for(const flags of [{env:{...env,APPIMAGE_EXTRACT_AND_RUN:'1'},argv:[]},{env,argv:['--appimage-extract-and-run']}]){
   const fake=fakeAppImageProcess(),home=tempDir('summa-extract-');
-  await image.relaunchAppImage({appImage:env.APPIMAGE,...flags,spawnFn:fake.spawnFn});
+  await image.relaunchAppImage({appImage:path.join(home,'Summa.AppImage'),...flags,spawnFn:fake.spawnFn});
   assert.equal(fake.calls[0].options.env.APPIMAGE_EXTRACT_AND_RUN,'1');
   assert.equal(fake.calls[0].options.env.APPDIR,undefined);
   ensureLinuxDesktopEntry({platform:'linux',deskDir,assetsDir:path.resolve(import.meta.dirname,'../assets'),home,...flags});

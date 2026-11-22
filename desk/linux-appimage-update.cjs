@@ -2,6 +2,7 @@
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
+const {randomUUID}=require('node:crypto');
 const {spawn}=require('node:child_process');
 const signature=require('./updater-signature.cjs');
 const {defaultFetchBuffer}=require('./updater-check.cjs');
@@ -24,17 +25,17 @@ function isLinuxAppImage({platform=process.platform,env=process.env,deskDir}){
 /**
  * Remove parciais de releases interrompidas sem seguir links nem impedir a abertura.
  * @param {string} dir pasta do AppImage instalado
+ * @param {{backups?:boolean}} [options] remove backups apenas fora de uma troca em voo
  * @returns {void}
  * @example cleanupAppImagePartials('/home/ana/Applications')
  */
-function cleanupAppImagePartials(dir){
+function cleanupAppImagePartials(dir,{backups=false}={}){
  let names;
  try{names=fs.readdirSync(dir);}catch{return;}
  for(const name of names){
   const version=name.match(/\d+\.\d+\.\d+/)?.[0];
-  if(!version)continue;
   try{
-   if(name===`.${signature.appImageAssetName(version)}.part`)fs.rmSync(path.join(dir,name),{force:true});
+   if((version&&name===`.${signature.appImageAssetName(version)}.part`)||(backups&&/^\.Summa(?:-\d+\.\d+\.\d+-x86_64)?\.AppImage\.old$/.test(name)))fs.rmSync(path.join(dir,name),{force:true});
   }catch{}
  }
 }
@@ -71,28 +72,69 @@ async function prepareAppImageUpdate({version,publicKey,dir,fetchBuffer=defaultF
 /**
  * Troca atômica preservando o caminho usado pelos atalhos.
  * @param {{file:string,appImage:string}} input
- * @returns {void}
+ * @returns {string} caminho recuperável da imagem anterior
  * @example swapAppImage({file:'/apps/.Summa.part',appImage:'/apps/Summa.AppImage'})
  */
 function swapAppImage({file,appImage}){
- try{fs.renameSync(file,appImage);}
- catch(error){fs.rmSync(file,{force:true});throw Error(uiMsg('err.update.appImageNotWritable',{error:causeArg(error)}));}
+ const backup=path.join(path.dirname(appImage),`.${path.basename(appImage)}.old`);
+ let linked=false;
+ try{
+  fs.linkSync(appImage,backup);
+  linked=true;
+  fs.renameSync(file,appImage);
+  return backup;
+ }catch(error){
+  if(linked)fs.rmSync(backup,{force:true});
+  fs.rmSync(file,{force:true});
+  throw Error(uiMsg('err.update.appImageNotWritable',{error:causeArg(error)}));
+ }
 }
 
 /**
  * Reabre o arquivo novo sem variáveis da montagem antiga nem modo Node.
- * @param {{appImage:string,env?:NodeJS.ProcessEnv,argv?:string[],spawnFn?:typeof spawn}} input
+ * @param {{appImage:string,env?:NodeJS.ProcessEnv,argv?:string[],spawnFn?:typeof spawn,timeoutMs?:number,pollMs?:number}} input
  * @returns {Promise<void>}
  * @example await relaunchAppImage({appImage:'/apps/Summa.AppImage'})
  */
-function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=spawn}){
+function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=spawn,timeoutMs=60000,pollMs=100}){
  const cleanEnv=Object.fromEntries(Object.entries(env).filter(([key])=>!key.startsWith('APPIMAGE')&&!key.startsWith('OWD')&&!['ELECTRON_RUN_AS_NODE','APPDIR','ARGV0','LD_LIBRARY_PATH','LD_PRELOAD','GIO_EXTRA_MODULES','GSETTINGS_SCHEMA_DIR','UNION_PRELOAD'].includes(key)));
  if(env.APPIMAGE_EXTRACT_AND_RUN||argv.includes('--appimage-extract-and-run'))cleanEnv.APPIMAGE_EXTRACT_AND_RUN='1';
+ const readyFile=path.join(path.dirname(appImage),`.summa-${randomUUID()}.ready`);
+ cleanEnv.SUMMA_APPIMAGE_READY_FILE=readyFile;
  return new Promise((resolve,reject)=>{
   const child=spawnFn(appImage,[],{detached:true,stdio:'ignore',env:cleanEnv,cwd:path.dirname(appImage)});
-  child.once('error',reject);
-  child.once('spawn',()=>{child.unref();resolve();});
+  const deadline=Date.now()+timeoutMs;
+  let timer;
+  const finish=(error)=>{
+   clearTimeout(timer);
+   child.off('error',onError);child.off('exit',onExit);
+   fs.rmSync(readyFile,{force:true});
+   if(error)reject(error);else{child.unref();resolve();}
+  };
+  const onError=error=>finish(Error(uiMsg('err.update.appImageStart',{error:causeArg(error)})));
+  const onExit=code=>onError(Error(`exit ${code}`));
+  const tick=()=>{
+   if(child.exitCode!=null)return onExit(child.exitCode);
+   if(fs.existsSync(readyFile))return finish();
+   if(Date.now()>=deadline){child.kill('SIGKILL');return;}
+   timer=setTimeout(tick,pollMs);
+  };
+  child.once('error',onError);child.once('exit',onExit);
+  timer=setTimeout(tick,pollMs);
  });
 }
 
-module.exports={isLinuxAppImage,cleanupAppImagePartials,prepareAppImageUpdate,swapAppImage,relaunchAppImage};
+/**
+ * Confirma a janela carregada apenas para o processo dono da instância.
+ * @param {{app:{hasSingleInstanceLock:()=>boolean},env?:NodeJS.ProcessEnv}} input
+ * @returns {void}
+ * @example signalAppImageReady({app})
+ */
+function signalAppImageReady({app,env=process.env}){
+ const file=env.SUMMA_APPIMAGE_READY_FILE;
+ if(!file||!app.hasSingleInstanceLock())return;
+ fs.writeFileSync(file,'ready',{flag:'wx',mode:0o600});
+ delete env.SUMMA_APPIMAGE_READY_FILE;
+}
+
+module.exports={isLinuxAppImage,cleanupAppImagePartials,prepareAppImageUpdate,swapAppImage,relaunchAppImage,signalAppImageReady};

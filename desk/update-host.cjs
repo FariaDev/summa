@@ -128,27 +128,30 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   const lock=updater.acquireLock(runtime);
   if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
   let partial='';
+  let backup='';
   try{
    const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
    const {file}=await appImageUpdate.prepareAppImageUpdate({version:target,publicKey,dir:path.dirname(appImage)});
    partial=file;
    await installerUpdate.markInstallerPending({cacheFile:updateCacheFile,version:target,from:installed});
-   appImageUpdate.swapAppImage({file,appImage});
+   backup=appImageUpdate.swapAppImage({file,appImage});
    partial='';
    app.releaseSingleInstanceLock();
    await appImageUpdate.relaunchAppImage({appImage,env});
   }catch(error){
+   if(backup)fs.renameSync(backup,appImage);
    app.requestSingleInstanceLock();
    if(partial)fs.rmSync(partial,{force:true});
    await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
    throw error;
   }finally{updater.releaseLock(lock.file);}
+  if(backup){try{fs.rmSync(backup,{force:true});}catch(error){appendLog('update',`backup AppImage: ${causeArg(error)}`);}}
   appendLog('update',`AppImage da v${target} conferido e reaberto`);
   setTimeout(()=>app.quit(),400);
   return {ok:true,version:target};
  }
  if(!TEST_MODE&&linuxAppImage){
-  if(app.hasSingleInstanceLock())appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')));
+  if(app.hasSingleInstanceLock())appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')),{backups:!env.SUMMA_APPIMAGE_READY_FILE});
   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
    .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
  }

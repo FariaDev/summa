@@ -22,16 +22,18 @@ export function fakeAppImageDownload(bytes,status=200){
  * @param {{error?:string}} [options]
  * @example const process=fakeAppImageProcess();
  */
-export function fakeAppImageProcess({error='',exitImmediately=false}={}){
+export function fakeAppImageProcess({error='',exitImmediately=false,ready=true}={}){
  const calls=[];
  const spawnFn=(file,args,options)=>{
   calls.push({file,args,options});
   const child=new EventEmitter();
   child.unref=()=>calls.push('unref');
+  child.kill=()=>{calls.push('kill');queueMicrotask(()=>child.emit('exit',null));return true;};
   queueMicrotask(()=>{
    if(error)return child.emit('error',Error(error));
    child.emit('spawn');
    if(exitImmediately)child.emit('exit',1);
+   else if(ready&&options.env.SUMMA_APPIMAGE_READY_FILE)fs.writeFileSync(options.env.SUMMA_APPIMAGE_READY_FILE,'ready');
   });
   return child;
  };
@@ -52,6 +54,6 @@ export function fakeAppImageHost(update,{fail=false,hasLock=true}={}){
   appImageUpdate:{isLinuxAppImage:update.isLinuxAppImage,
    cleanupAppImagePartials:update.cleanupAppImagePartials,
    prepareAppImageUpdate:async()=>{calls.push('prepare');if(fail)throw Error('hash recusado');return {file:'/apps/.new.part'};},
-   swapAppImage:()=>calls.push('swap'),relaunchAppImage:async()=>{calls.push('relaunch');}},
+   swapAppImage:()=>{calls.push('swap');},relaunchAppImage:async()=>{calls.push('relaunch');}},
  };
 }
