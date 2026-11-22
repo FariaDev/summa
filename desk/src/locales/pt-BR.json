@@ -1,4 +1,5 @@
 {
+ "err.update.installerBusy": "Outro instalador da Summa já está aberto. Feche-o e tente de novo.",
   "about.by": "Feita por Lucas Faria",
   "about.close": "Fechar o Sobre",
   "about.componentsRefresh": "Conferir os componentes de novo",
