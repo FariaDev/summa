@@ -92,11 +92,11 @@ function swapAppImage({file,appImage}){
 
 /**
  * Reabre o arquivo novo sem variáveis da montagem antiga nem modo Node.
- * @param {{appImage:string,env?:NodeJS.ProcessEnv,argv?:string[],spawnFn?:typeof spawn,timeoutMs?:number,pollMs?:number}} input
+ * @param {{appImage:string,env?:NodeJS.ProcessEnv,argv?:string[],spawnFn?:typeof spawn,killFn?:typeof process.kill,timeoutMs?:number,pollMs?:number}} input
  * @returns {Promise<void>}
  * @example await relaunchAppImage({appImage:'/apps/Summa.AppImage'})
  */
-function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=spawn,timeoutMs=60000,pollMs=100}){
+function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=spawn,killFn=process.kill,timeoutMs=60000,pollMs=100}){
  const cleanEnv=Object.fromEntries(Object.entries(env).filter(([key])=>!key.startsWith('APPIMAGE')&&!key.startsWith('OWD')&&!['ELECTRON_RUN_AS_NODE','APPDIR','ARGV0','LD_LIBRARY_PATH','LD_PRELOAD','GIO_EXTRA_MODULES','GSETTINGS_SCHEMA_DIR','UNION_PRELOAD'].includes(key)));
  if(env.APPIMAGE_EXTRACT_AND_RUN||argv.includes('--appimage-extract-and-run'))cleanEnv.APPIMAGE_EXTRACT_AND_RUN='1';
  const readyFile=path.join(path.dirname(appImage),`.summa-${randomUUID()}.ready`);
@@ -116,7 +116,10 @@ function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=sp
   const tick=()=>{
    if(child.exitCode!=null)return onExit(child.exitCode);
    if(fs.existsSync(readyFile))return finish();
-   if(Date.now()>=deadline){child.kill('SIGKILL');return;}
+   if(Date.now()>=deadline){
+    try{killFn(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}
+    return;
+   }
    timer=setTimeout(tick,pollMs);
   };
   child.once('error',onError);child.once('exit',onExit);

@@ -44,10 +44,25 @@ test('detecção exige Linux, arquivo absoluto e payload dentro da montagem',()=
 });
 
 test('sem sinal de pronto mata processo no prazo e remove arquivo de handshake',async()=>{
- const dir=tempDir('summa-ready-timeout-'),fake=fakeAppImageProcess({ready:false});
- await assert.rejects(image.relaunchAppImage({appImage:path.join(dir,'Summa.AppImage'),spawnFn:fake.spawnFn,timeoutMs:20,pollMs:5}),/appImageStart/);
- assert.ok(fake.calls.includes('kill'));
- assert.deepEqual(fs.readdirSync(dir),[]);
+ for(const groupKillFails of [false,true]){
+  const dir=tempDir('summa-ready-timeout-'),fake=fakeAppImageProcess({ready:false,groupKillFails});
+  await assert.rejects(image.relaunchAppImage({appImage:path.join(dir,'Summa.AppImage'),spawnFn:fake.spawnFn,killFn:fake.killFn,timeoutMs:20,pollMs:5}),/appImageStart/);
+  assert.deepEqual(fake.calls[1],{pid:-12345,signal:'SIGKILL'});
+  assert.equal(fake.calls.includes('kill'),groupKillFails);
+  assert.deepEqual(fs.readdirSync(dir),[]);
+ }
+});
+
+test('falha ao restaurar backup registra erro sem pular lock e limpeza nem mascarar erro original',async()=>{
+ const runtime=tempDir('summa-restore-failure-'),fake=fakeAppImageHost(image,{restoreFail:true}),ipcMain=fakeIpcMain();
+ updater.writeCache(path.join(runtime,'update.json'),{release:{at:Date.now(),version:'1.3.4'}});
+ registerUpdateHost({...fake,ipcMain,shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,platform:'linux',env});
+ await assert.rejects(ipcMain.invoke('update-apply'),{message:'original startup error'});
+ assert.ok(fake.calls.some(call=>call.category==='update'&&call.line.includes('rollback AppImage:')));
+ assert.equal(fake.calls.includes('lock'),true);
+ assert.equal(fake.calls.includes('quit'),false);
+ assert.equal(updater.readCache(path.join(runtime,'update.json')).installerPending,undefined);
+ assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
 });
 
 test('sinal de pronto exige lock; limpeza de backup fica suspensa durante atualização',()=>{

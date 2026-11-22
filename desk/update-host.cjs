@@ -139,7 +139,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
    app.releaseSingleInstanceLock();
    await appImageUpdate.relaunchAppImage({appImage,env});
   }catch(error){
-   if(backup)fs.renameSync(backup,appImage);
+   if(backup){try{fs.renameSync(backup,appImage);}catch(restoreError){appendLog('update',`rollback AppImage: ${causeArg(restoreError)}`);}}
    app.requestSingleInstanceLock();
    if(partial)fs.rmSync(partial,{force:true});
    await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
