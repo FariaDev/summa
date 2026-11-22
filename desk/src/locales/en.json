@@ -1756,6 +1756,7 @@
   "more.compactNow.needsTutor": "Call the tutor to summarize the context.",
   "more.compactNow.unsupported": "Not available on this engine.",
   "notify.replyReady": "Reply ready.",
+  "notify.unreadReplies": "Unread replies: {count}",
   "notify.tutorError": "Tutor error.",
   "opencode.model.default": "OpenCode default",
   "opencode.action.command": "the command",

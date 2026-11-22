@@ -467,7 +467,7 @@ app.whenReady().then(async()=>{
 
 /* Motor e versão em paralelo; o `init` espera esta promessa em voo (#desempenho). */
 let bootReady=null;const startBootReady=()=>bootReady??=Promise.all([engineFactsPrime(),primeDeskVersion()]).then(()=>{}).catch(()=>{});
-const deskNotifier=createDeskNotifier({app,Notification,live,TEST_MODE});
+const deskNotifier=createDeskNotifier({app,Notification,live,TEST_MODE,nativeImage,t:(key,args)=>languageHost.t(key,args)});
 ipcMain.handle('init',async()=>{await startBootReady();return initialData();});
 ipcMain.handle('test-mode',()=>TEST_MODE);
 /* Contrato do tutor (#180): a MESMA resolução do prompt, sem caminho absoluto
