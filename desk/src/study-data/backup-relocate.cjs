@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {RestoreError, atomicWrite, isPlainObject, readJson} = require('./backup-files.cjs');
+const {remapSourcePath, sourcePathFlavor} = require('./source-path.cjs');
 
 /* Restauração — plano e realocação: caminhos absolutos do runtime e das
    matérias reescritos para o destino novo, e os que ficaram velhos.
@@ -31,16 +32,23 @@ const RELOCATABLE_FILES = new Set(['desk.json', 'config.json', 'chat-library.jso
    original permanece intacta. */
 const MATERIAL_REMAP_FILES = new Set([...RELOCATABLE_FILES, 'review.json', 'bookmarks.json', 'resume.json', 'pdf-notes.json']);
 function isRelocatableEntry(rel) {
-  if (RELOCATABLE_FILES.has(rel)) return true;
+  if (MATERIAL_REMAP_FILES.has(rel) || rel === 'external/mesa-config.json') return true;
   return /^free\/[^/]+\/workspace\.json$/.test(rel);
 }
 /* Alguma string da estrutura começa com `from` (um diretório)? Usado para
    saber, na prévia, quais arquivos o remapeamento de material tocaria. */
-function pathPrefixIn(value, from) {
-  if (typeof value === 'string') return value === from || value.startsWith(from + path.sep);
-  if (Array.isArray(value)) return value.some((item) => pathPrefixIn(item, from));
-  if (isPlainObject(value)) return Object.values(value).some((item) => pathPrefixIn(item, from));
+function pathPrefixIn(value, from, to) {
+  if (typeof value === 'string') {
+    const next = remapSourcePath(value, from, to);
+    return next !== null && next !== value;
+  }
+  if (Array.isArray(value)) return value.some((item) => pathPrefixIn(item, from, to));
+  if (isPlainObject(value)) return Object.entries(value).some(([key, item]) => pathPrefixIn(key, from, to) || pathPrefixIn(item, from, to));
   return false;
+}
+
+function existsLocally(candidate) {
+  return sourcePathFlavor(candidate) === path && fs.existsSync(candidate);
 }
 /* Grupos de material de uma versão: snapshots novos trazem `materials` no
    manifesto (origem + partição); snapshots v1 sem metadados são agrupados
@@ -78,7 +86,7 @@ function materialGroupsOf(manifest, runtimeAbs) {
       to: path.join(runtimeAbs, item.archiveBase),
       files: count.files,
       bytes: count.bytes,
-      stale: froms.length ? !froms.some((candidate) => fs.existsSync(candidate)) : false,
+      stale: froms.length ? !froms.some(existsLocally) : false,
       unknown: !froms.length,
     });
   }
@@ -90,16 +98,12 @@ function materialGroupsOf(manifest, runtimeAbs) {
   return out;
 }
 function remapRuntimePaths(value, from, to) {
-  if (typeof value === 'string') {
-    if (value === from) return to;
-    if (value.startsWith(from + path.sep)) return path.join(to, value.slice(from.length + 1));
-    return value;
-  }
+  if (typeof value === 'string') return remapSourcePath(value, from, to) ?? value;
   if (Array.isArray(value)) return value.map((item) => remapRuntimePaths(item, from, to));
   if (isPlainObject(value)) {
-    const out = {};
-    for (const [key, item] of Object.entries(value)) out[remapRuntimePaths(key, from, to)] = remapRuntimePaths(item, from, to);
-    return out;
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+      remapSourcePath(key, from, to) ?? key, remapRuntimePaths(item, from, to),
+    ]));
   }
   return value;
 }
@@ -108,10 +112,8 @@ function remapRuntimePaths(value, from, to) {
 /** @param {any} value @param {{ignoreRoot?: any, out?: any}} [options] */
 function staleAbsolutePaths(value, {ignoreRoot, out = new Set()} = {}) {
   if (typeof value === 'string') {
-    if (value.length > 3 && value.length < 500 && path.isAbsolute(value) && value !== ignoreRoot && !value.startsWith(ignoreRoot + path.sep)) {
-      try {
-        if (!fs.existsSync(value)) out.add(value);
-      } catch {}
+    if (value.length > 3 && value.length < 500 && sourcePathFlavor(value) && value !== ignoreRoot && !value.startsWith(ignoreRoot + path.sep)) {
+      if (!existsLocally(value)) out.add(value);
     }
     return out;
   }

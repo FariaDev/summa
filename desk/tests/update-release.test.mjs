@@ -39,6 +39,13 @@ function repoFixture() {
   return root;
 }
 
+/* #119: o instalador vem do CI; aqui basta um arquivo com o nome da versão. */
+function fakeInstaller(version = '0.1.0') {
+  const file = path.join(tmp(), `Summa-Setup-${version}.exe`);
+  fs.writeFileSync(file, 'instalador de teste');
+  return file;
+}
+
 function runScript(args, {cwd, expectFail = false} = {}) {
   const result = spawnSync(process.execPath, [SCRIPT, ...args], {cwd, encoding: 'utf8'});
   if (!expectFail) assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
@@ -92,14 +99,18 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   git(['tag', '-f', 'v0.1.0'], root);
 
   const out = path.join(tmp(), 'assets');
-  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out], {cwd: root});
+  const installer = fakeInstaller();
+  runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer], {cwd: root});
   const manifestFile = path.join(out, 'mesa-manifest-v0.1.0.json');
   const signatureFile = path.join(out, 'mesa-manifest-v0.1.0.sig');
   const zipFile = path.join(out, 'mesa-estudos-0.1.0.zip');
   for (const file of [manifestFile, signatureFile, zipFile]) assert.equal(fs.existsSync(file), true, path.basename(file));
 
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-  assert.deepEqual(Object.keys(manifest).sort(), ['commit', 'version', 'zipBytes', 'zipSha256']);
+  assert.deepEqual(Object.keys(manifest).sort(), ['commit', 'exeBytes', 'exeSha256', 'version', 'zipBytes', 'zipSha256']);
+  assert.equal(manifest.exeBytes, fs.statSync(installer).size);
+  assert.equal(manifest.exeSha256, crypto.createHash('sha256').update(fs.readFileSync(installer)).digest('hex'));
+  assert.equal(fs.existsSync(path.join(out, 'Summa-Setup-0.1.0.exe')), true, 'o instalador vai para a pasta dos assets');
   assert.equal(manifest.version, '0.1.0');
   assert.equal(manifest.commit, git(['rev-parse', 'v0.1.0^{commit}'], root));
   assert.equal(manifest.zipBytes, fs.statSync(zipFile).size);
@@ -125,6 +136,26 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
 
   const checked = runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root});
   assert.match(checked.stdout, /release v0\.1\.0 confere/);
+
+  /* #119: instalador trocado depois de assinar não passa na conferência. */
+  fs.appendFileSync(path.join(out, 'Summa-Setup-0.1.0.exe'), 'x');
+  const tampered = runScript(['verify', 'v0.1.0', '--dir', out], {cwd: root, expectFail: true});
+  assert.match(tampered.stderr, /instalador tem \d+ bytes/);
+});
+
+test('#119 sign: recusa sem o instalador ou com o instalador de outra versão', () => {
+  const root = repoFixture();
+  const privateFile = path.join(tmp(), 'mesa-update.pem');
+  runScript(['keygen', '--private-key', privateFile], {cwd: root});
+  git(['-c', 'user.email=teste@mesa', '-c', 'user.name=Teste', 'add', '-A'], root);
+  git(['-c', 'user.email=teste@mesa', '-c', 'user.name=Teste', 'commit', '-m', 'chave pública'], root);
+  git(['tag', '-f', 'v0.1.0'], root);
+  const out = path.join(tmp(), 'assets');
+  const missing = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out], {cwd: root, expectFail: true});
+  assert.match(missing.stderr, /informe --exe <Summa-Setup-0\.1\.0\.exe>/);
+  const wrong = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', fakeInstaller('0.0.9')], {cwd: root, expectFail: true});
+  assert.match(wrong.stderr, /recebido Summa-Setup-0\.0\.9\.exe; esperado Summa-Setup-0\.1\.0\.exe/);
+  assert.equal(fs.existsSync(out), false, 'recusa antes de gerar qualquer asset');
 });
 
 test('#80 sign: recusa privada que não corresponde à pública commitada', () => {

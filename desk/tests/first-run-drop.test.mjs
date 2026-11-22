@@ -98,6 +98,31 @@ test('a pasta de dados sugerida é a da configuração ou Documentos/Summa', () 
   assert.equal(suggestedDataFolder({vaultPath: '/dados/minha'}, home), '/dados/minha');
 });
 
+test('Documents respeita OneDrive no Windows e Documentos no Linux', () => {
+  assert.equal(suggestedDataFolder(null, 'C:\\Users\\Ana', 'C:\\Users\\Ana\\OneDrive\\Documents', 'C:\\Users\\Ana', path.win32), 'C:\\Users\\Ana\\OneDrive\\Documents\\Summa');
+  assert.equal(suggestedDataFolder(null, '/home/ana', '/home/ana/Documentos', '/home/ana', path.posix), '/home/ana/Documentos/Summa');
+});
+
+test('Documents dentro do home do Electron acompanha HOME isolado', () => {
+  assert.equal(suggestedDataFolder(null, '/isolated', '/home/ana/Documentos', '/home/ana', path.posix), '/isolated/Documentos/Summa');
+  assert.equal(suggestedDataFolder(null, 'C:\\isolated', 'c:\\users\\ana\\OneDrive\\Documents', 'C:\\Users\\Ana', path.win32), 'C:\\isolated\\OneDrive\\Documents\\Summa');
+});
+
+test('Documents fora do home não muda, inclusive em outra unidade ou prefixo parecido', () => {
+  assert.equal(suggestedDataFolder(null, 'C:\\isolated', 'D:\\Docs', 'C:\\Users\\Ana', path.win32), 'D:\\Docs\\Summa');
+  assert.equal(suggestedDataFolder(null, '/isolated', '/home/ana-other/Docs', '/home/ana', path.posix), '/home/ana-other/Docs/Summa');
+  assert.equal(suggestedDataFolder(null, '/isolated', '/shared/Docs', '/home/ana', path.posix), '/shared/Docs/Summa');
+});
+
+test('Documents ausente, relativo ou igual ao home usa Documents no HOME efetivo', () => {
+  for (const [paths, home, electronHome] of [[path.posix, '/isolated', '/home/ana'], [path.win32, 'C:\\isolated', 'C:\\Users\\Ana']]) {
+    for (const documents of [undefined, null, '', 'relative', electronHome, home]) {
+      assert.equal(suggestedDataFolder(null, home, documents, electronHome, paths), paths.join(home, 'Documents', 'Summa'));
+    }
+    assert.equal(suggestedDataFolder({vaultPath: ' configured '}, home, '/shared/Docs', electronHome, paths), 'configured');
+  }
+});
+
 test('preparar a pasta de dados cria só ela e recusa o que não é caminho absoluto', () => {
   const target = path.join(root, 'home', 'Documents', 'Summa');
   assert.equal(fs.existsSync(target), false, 'nada é criado antes de confirmar');

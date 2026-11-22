@@ -13,7 +13,7 @@ import {trackTempDir} from './temp-dir.mjs';
 
 const require = createRequire(import.meta.url);
 const {findOpenCodeInLoginShell, findOpenCodeInLoginShellAsync, resetOpenCodeShellCache} = require('../src/agents/opencode-shell.cjs');
-const {candidatePaths, findOpenCodeLauncher} = require('../src/agents/opencode-process.cjs');
+const {candidatePaths, findOpenCodeLauncher, findOpenCodeLauncherAsync} = require('../src/agents/opencode-process.cjs');
 
 const HERE = import.meta.dirname;
 const FAKE_SHELL = path.join(HERE, 'fake-login-shell.mjs');
@@ -63,7 +63,7 @@ test('caminho do ambiente e das Configurações vêm antes dos instaladores usua
   assert.equal(configuredOnly[0], path.resolve('/casa', 'bun', 'bin', 'opencode'));
 });
 
-test('no Windows a busca continua só nos caminhos fixos, sem shell', () => {
+test('no Windows um PATH sem opencode não abre o shell de login', () => {
   resetOpenCodeShellCache();
   const home = trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-shell-win-')));
   try {
@@ -75,6 +75,25 @@ test('no Windows a busca continua só nos caminhos fixos, sem shell', () => {
   } finally {
     fs.rmSync(home, {recursive: true, force: true});
   }
+});
+
+test('no Windows acha o opencode.cmd instalado só no PATH', async () => {
+  const home = trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-shell-path-')));
+  const bin = path.join(home, 'npm global');
+  const shim = path.join(bin, 'opencode.cmd');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'opencode'), '#!/bin/sh\n');
+  fs.writeFileSync(shim, '@echo off\r\n');
+  const options = {home, platform: 'win32', env: {Path: `"${bin}";${home}`, PATHEXT: '.EXE;.CMD'}};
+  assert.equal(findOpenCodeLauncher(options), shim);
+  assert.equal(await findOpenCodeLauncherAsync(options), shim);
+  fs.writeFileSync(path.join(bin, 'opencode.exe'), '');
+  assert.equal(findOpenCodeLauncher({...options, env: {...options.env, PATHEXT: '.CMD;.EXE'}}), shim);
+  const fixed = path.join(home, '.opencode', 'bin', 'opencode.exe');
+  fs.mkdirSync(path.dirname(fixed), {recursive: true});
+  fs.writeFileSync(fixed, '');
+  assert.equal(findOpenCodeLauncher(options), fixed);
+  assert.equal(await findOpenCodeLauncherAsync(options), fixed);
 });
 
 test('quem já está num caminho fixo não abre o shell de login', () => {

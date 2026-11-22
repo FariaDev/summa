@@ -61,12 +61,29 @@ function resolveDrop(paths){
  throw Error(uiMsg('err.firstrun.dropPdfs'));
 }
 
-/* A pasta de dados sugerida: a que a configuração já tem ou, sem ela,
-   `Documentos/Summa` do usuário. `os.homedir()` (e não o `documents`
-   do Electron) segue o `HOME`, como o resto do config.cjs. */
-function suggestedDataFolder(config,home){
+/* Documents vem do sistema para respeitar redirecionamento e tradução.
+   Dentro do home do Electron, rebase para os.homedir(): o HOME isolado dos
+   testes continua valendo como no config.cjs; pastas externas ficam intactas. */
+/** Suggest the configured vault or the system Documents folder, respecting HOME overrides.
+ * @param {{vaultPath?: string}|null} config
+ * @param {string} home Effective home used by the configuration.
+ * @param {string} [documents] Electron's Documents directory.
+ * @param {string} [electronHome] Electron's home directory.
+ * @param {typeof path} [paths] Native path operations (injectable for portable tests).
+ * @returns {string} Suggested data directory; no directory is created.
+ * @example suggestedDataFolder(null, '/home/ana', '/home/ana/Documentos', '/home/ana')
+ */
+function suggestedDataFolder(config,home,documents,electronHome,paths=path){
  const current=config&&typeof config.vaultPath==='string'?config.vaultPath.trim():'';
- return current||path.join(home,'Documents','Summa');
+ if(current)return current;
+ if(typeof documents!=='string'||!paths.isAbsolute(documents))return paths.join(home,'Documents','Summa');
+ if(typeof electronHome==='string'&&paths.isAbsolute(electronHome)){
+  const relative=paths.relative(electronHome,documents);
+  if(!relative)return paths.join(home,'Documents','Summa');
+  if(relative!=='..'&&!relative.startsWith(`..${paths.sep}`)&&!paths.isAbsolute(relative))documents=paths.join(home,relative);
+ }
+ if(!paths.relative(home,documents))return paths.join(home,'Documents','Summa');
+ return paths.join(documents,'Summa');
 }
 
 /* Cria a pasta de dados (e só ela) quando a pessoa confirma. */

@@ -1,4 +1,4 @@
-# 6. Updater próprio assinado, sem electron-updater
+# 7. Updater próprio assinado, sem electron-updater
 
 **Status:** decidida em 2026-11-21 (fase 6 da modernização do `desk/`),
 depois de comparar o updater atual com `electron-updater` + GitHub Releases.
@@ -16,10 +16,12 @@ O que o updater de hoje garante ([release.md](../agents/release.md)):
 
 - **Três formas de instalação com um mecanismo só:** zip de fonte (`git
   archive`, relançado com `npm start`), clone git (pull até a tag assinada) e
-  bundle (`Summa.app` no macOS, pasta por usuário no Windows, ADR 0005), em que
-  só o payload troca e o Electron acompanha `node_modules`.
+  bundle (`Summa.app` no macOS, em que só o payload troca e o Electron
+  acompanha `node_modules`). No Windows, o bundle é o instalador `.exe` da
+  [ADR 0006](0006-instalador-exe-no-windows.md), que o mesmo `update-host` baixa
+  e confere com o manifesto assinado.
 - **Raiz de confiança Ed25519 do autor:** manifesto assinado com `{version,
-  commit, zipSha256, zipBytes}`, teto de bytes em todo download, commit da tag
+  commit, zipSha256, zipBytes}` (e `exeSha256`/`exeBytes` desde a ADR 0006), teto de bytes em todo download, commit da tag
   conferido nos modos git/bundle, rollback quando algo falha.
 - **Ensaio antes de assinar:** o `sign` recusa se o updater da versão
   publicada anterior não aplicar o zip candidato sem perder arquivo, dado do
@@ -45,7 +47,8 @@ O que o updater de hoje garante ([release.md](../agents/release.md)):
 Manter o updater próprio. A assinatura Ed25519 com chave do autor, o ensaio
 contra a versão publicada anterior e o suporte a zip de fonte e clone git são
 requisitos deliberados (#80, #130, #153, ADR 0005), não acidente de
-implementação. O `electron-updater` cobriria só o modo bundle, e mesmo nele
+implementação. A ADR 0006 já recusou o electron-builder com electron-updater
+no Windows pelo mesmo motivo: um segundo manifesto e outra raiz de confiança. O `electron-updater` cobriria só o modo bundle, e mesmo nele
 pediria assinatura de código paga no macOS e no Windows, electron-builder no
 release, uma dependência de runtime e uma versão-ponte para quem já instalou.
 Os scripts customizados continuam.
@@ -60,6 +63,6 @@ Os scripts customizados continuam.
 
 ## Referências
 
-- [`docs/agents/release.md`](../agents/release.md), ADR 0005.
+- [`docs/agents/release.md`](../agents/release.md), ADR 0005 e ADR 0006.
 - `electron-updater` README (sistemas suportados) e Squirrel.Mac README
   (verificação de assinatura de código no update).

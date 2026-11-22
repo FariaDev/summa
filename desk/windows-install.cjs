@@ -313,4 +313,4 @@ function installWindows({desk,root,electronDir,env,version,deps={}}){
  return {installDir:target,payloadDir:payload.dest,shortcut:shortcutFile(env)};
 }
 
-module.exports={INSTALL_DIR_NAME,OPEN_APP_MESSAGE,UNINSTALL_KEY,UNINSTALL_SCRIPT,PUBLISHER,installDir,payloadDir,shortcutScript,registryValues,registryScript,uninstallScript,uninstallTargets,installWindows,copyElectronDist};
+module.exports={copyElectronDist,INSTALL_DIR_NAME,OPEN_APP_MESSAGE,UNINSTALL_KEY,UNINSTALL_SCRIPT,PUBLISHER,installDir,payloadDir,shortcutScript,registryValues,registryScript,uninstallScript,uninstallTargets,installWindows};

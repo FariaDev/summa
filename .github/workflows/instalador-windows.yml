@@ -1,0 +1,72 @@
+name: Instalador do Windows
+
+# Gera o Summa-Setup-X.Y.Z.exe e prova o ciclo inteiro numa conta do Windows
+# (#119, ADR 0006). Na tag, o artefato é o arquivo que o autor assina no Mac com
+# `npm run update:sign -- vX.Y.Z --exe <arquivo>` e publica na Release.
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - desk/scripts/summa.nsi
+      - desk/scripts/build-windows-installer.mjs
+      - desk/scripts/installer-smoke.ps1
+      - desk/windows-installer-update.cjs
+      - desk/bundle-runtime.cjs
+      - .github/workflows/instalador-windows.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  instalador:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desk
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+          cache-dependency-path: desk/package-lock.json
+
+      - name: A tag é a versão do package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: NSIS
+        shell: pwsh
+        run: |
+          $makensis = 'C:\Program Files (x86)\NSIS\makensis.exe'
+          if (-not (Test-Path -LiteralPath $makensis)) { choco install nsis -y --no-progress }
+          if (-not (Test-Path -LiteralPath $makensis)) { throw "makensis ausente em $makensis" }
+          "MAKENSIS=$makensis" >> $env:GITHUB_ENV
+
+      - name: Gerar o instalador
+        run: npm run installer:windows -- --out "${{ runner.temp }}\instalador"
+
+      - name: Instalar, abrir, atualizar e desinstalar
+        shell: pwsh
+        run: |
+          $setup = (Get-ChildItem "${{ runner.temp }}\instalador\Summa-Setup-*.exe").FullName
+          ./scripts/installer-smoke.ps1 -Setup $setup
+
+      - name: SHA-256 do instalador
+        shell: pwsh
+        run: Get-FileHash "${{ runner.temp }}\instalador\Summa-Setup-*.exe" -Algorithm SHA256 | Format-List Path, Hash
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador-windows
+          path: ${{ runner.temp }}/instalador/Summa-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30

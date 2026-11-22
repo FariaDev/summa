@@ -3,7 +3,7 @@ const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nati
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
 const {rendererEntry,loadRenderer}=require('./renderer-entry.cjs');
-const {promisify}=require('node:util');const {execFile}=require('node:child_process');
+const {promisify}=require('node:util');const {execFile,spawn}=require('node:child_process');const {once}=require('node:events');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
 /* Bytecode da partida na pasta de dados do usuário; sem API/permissão, abre sem cache (#desempenho). */
@@ -11,7 +11,7 @@ enableDeskCompileCache({dir:path.join(process.env.LEARNING_DESK_RUNTIME||default
 const {placeWindow}=require('./lib.cjs');
 const {keepWindowOnDisplays}=require('./window-display-host.cjs');
 const {mergeCourses}=require('./courses.cjs');
-const {readConfig,needsSetup,normalize,installRoot}=require('./config.cjs');
+const {readConfig,needsSetup,normalize,installRoot,hasSourceTree}=require('./config.cjs');
 const firstRun=require('./first-run.cjs');
 const {createStudyServices}=require('./src/study-data/services.cjs');
 const {createNoteTurnCap}=require('./src/study-data/note-turn-cap.cjs');
@@ -179,7 +179,7 @@ if(!TEST_MODE){if(!app.requestSingleInstanceLock())app.quit();app.on('second-ins
 let session=state.session||'';
 const ggb=createGeogebraHost({WebContentsView,openExternal:openExternalLink,confirmExternal:confirmExternalLink,win:()=>win,deskState:()=>state,courseKey:()=>courseId===FREE_ID?`free-${freeSessionId}`:courseId,persist:(...args)=>persist(...args)/* persist vem do host de estado, criado depois */,runtime,appendLog,tutorT:(key,args)=>languageHost.tutorT(key,args),ggbPage:TEST_MODE&&process.env.LEARNING_DESK_GGB_PAGE||undefined,
  /* Teste: só o pacote que o teste aponta (um `setup` de verdade na máquina de quem testa não pode mudar o resultado). */
- ggbPackDir:TEST_MODE?process.env.LEARNING_DESK_GGB_PACK||'':packDirFor(installRoot())});
+ ggbPackDir:TEST_MODE?process.env.LEARNING_DESK_GGB_PACK||'':hasSourceTree()?packDirFor(installRoot()):path.join(runtime,'geogebra')});
 let freeSessionId='';
 /* Chave do último bloco de contexto enviado nesta sessão: contexto igual não é
    reenviado (o histórico já carrega a versão anterior). Zera quando a conversa
@@ -497,7 +497,11 @@ ipcMain.handle('pick-folder',async()=>{const r=await dialog.showOpenDialog(win,{
    vira a pasta da matéria (`first-run.cjs`); a pasta de dados sugerida só é
    criada na confirmação; o resto (gravar matéria e pasta de dados na
    configuração local) é o `save-config` de sempre. */
-ipcMain.handle('first-run-defaults',()=>({dataFolder:firstRun.suggestedDataFolder(config,os.homedir())}));
+ipcMain.handle('first-run-defaults',()=>{
+ let documents,home;
+ try{documents=app.getPath('documents');home=app.getPath('home');}catch{/* Electron can lack a Documents folder in an isolated profile. */}
+ return {dataFolder:firstRun.suggestedDataFolder(config,os.homedir(),documents,home)};
+});
 ipcMain.handle('first-run-prepare',(_e,folder)=>({path:firstRun.prepareDataFolder(folder)}));
 ipcMain.handle('first-run-resolve-drop',(_e,paths)=>firstRun.resolveDrop(paths));
 ipcMain.handle('pick-xopp',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Xournal++',extensions:['xopp']}],properties:['openFile']});
@@ -686,10 +690,19 @@ const phoneHost=createPhoneHost({
  appendLog,
 });
 phoneHost.register();
-ipcMain.handle('open-xournal',()=>{
+ipcMain.handle('open-xournal',async()=>{
  const target=require('./components.cjs').xournalTarget(config,process.platform);
  if(!target)throw Error(message('err.capture.pathMissing'));
- return shell.openPath(target);
+ if(process.platform!=='linux')return shell.openPath(target);
+ try{
+  const child=spawn(target,[],{detached:true,stdio:'ignore'});
+  await once(child,'spawn');
+  child.unref();
+  return '';
+ }catch(error){
+  const {describeReceived}=require('./src/error-detail.mjs');
+  throw Error(message('err.xournal.launchFailed',{received:describeReceived(target),cause:error.code||error.name}));
+ }
 });
 
 const toolHost={

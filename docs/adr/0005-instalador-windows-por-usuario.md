@@ -1,6 +1,7 @@
 # 5. Instalador Windows por usuário, sem ferramenta de empacotamento
 
-**Status:** decidida em 2026-11-12 (#181), com a recomendação aceita pelo autor
+**Status:** substituída pela [ADR 0006](0006-instalador-exe-no-windows.md) em
+2026-11-18 (#119). Decidida em 2026-11-12 (#181), com a recomendação aceita pelo autor
 no comentário da issue ("siga suas recomendações"). A prova na VM Windows
 (instalar, abrir, atualizar e desinstalar em conta limpa) fica para depois da
 integração e segue o roteiro do ticket.

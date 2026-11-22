@@ -21,6 +21,9 @@ const PLACEHOLDER_MARK='PLACEHOLDER';
 const MANIFEST_MAX_BYTES=64*1024;
 const SIGNATURE_MAX_BYTES=8*1024;
 const ZIP_MAX_BYTES=64*1024*1024;
+/* O instalador do Windows leva o Electron inteiro (#119): o teto folga sobre os
+   ~120 MB de hoje sem aceitar um download sem limite. */
+const INSTALLER_MAX_BYTES=512*1024*1024;
 const RELEASE_ASSET_BASE='https://github.com/FariaDev/summa/releases/download/v';
 
 /**
@@ -35,9 +38,19 @@ function normalizeVersion(value){
 }
 
 /**
- * URLs públicas dos três assets de uma Release assinada.
+ * Nome do instalador do Windows publicado na Release (#119).
+ * @param {string} version versão estável, com ou sem `v`
+ * @returns {string}
+ * @example installerAssetName('v1.4.0') // 'Summa-Setup-1.4.0.exe'
+ */
+function installerAssetName(version){
+ return `Summa-Setup-${normalizeVersion(version)}.exe`;
+}
+
+/**
+ * URLs públicas dos assets de uma Release assinada.
  * @param {string} version versão estável (`X.Y.Z`)
- * @returns {{manifest:string,signature:string,zip:string}}
+ * @returns {{manifest:string,signature:string,zip:string,installer:string}}
  * @example updateAssetUrls('1.0.3').manifest // 'https://github.com/…/mesa-manifest-v1.0.3.json'
  */
 function updateAssetUrls(version){
@@ -47,6 +60,7 @@ function updateAssetUrls(version){
   manifest:`${base}/mesa-manifest-v${v}.json`,
   signature:`${base}/mesa-manifest-v${v}.sig`,
   zip:`${base}/mesa-estudos-${v}.zip`,
+  installer:`${base}/${installerAssetName(v)}`,
  };
 }
 
@@ -114,10 +128,21 @@ function zipHashText(value){
  return hash;
 }
 
+/* Os dois campos do instalador andam juntos (#119). Releases anteriores à 1.4.0
+   não os têm, e o updater antigo ignora campo que não conhece. */
+function installerFields(parsed){
+ if(parsed.exeSha256===undefined&&parsed.exeBytes===undefined)return {};
+ const exeSha256=String(parsed.exeSha256||'').trim().toLowerCase();
+ if(!/^[0-9a-f]{64}$/.test(exeSha256))throw invalidManifest('campo exeSha256 ausente ou fora do formato SHA-256');
+ const exeBytes=Number(parsed.exeBytes);
+ if(!Number.isSafeInteger(exeBytes)||exeBytes<=0)throw invalidManifest('campo exeBytes ausente ou não inteiro positivo');
+ return {exeSha256,exeBytes};
+}
+
 /**
  * Os campos do manifesto, já validados (sem confiar na assinatura ainda).
  * @param {Buffer} bytes conteúdo exato do `mesa-manifest-vX.Y.Z.json`
- * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number}}
+ * @returns {{version:string,commit:string,zipSha256:string,zipBytes:number,exeSha256?:string,exeBytes?:number}}
  * @example parseManifest(Buffer.from('{"version":"1.0.3",…}'))
  */
 function parseManifest(bytes){
@@ -132,6 +157,7 @@ function parseManifest(bytes){
   commit:commitText(parsed.commit),
   zipSha256:zipHashText(parsed.zipSha256),
   zipBytes:zipBytesNumber(parsed.zipBytes),
+  ...installerFields(parsed),
  };
 }
 
@@ -183,6 +209,31 @@ function assertZipMatchesManifest(zip,manifest){
  const sha256=crypto.createHash('sha256').update(buffer).digest('hex');
  if(sha256!==manifest.zipSha256)throw refuse('err.update.zipHash');
  return {sha256};
+}
+
+/**
+ * O manifesto assinado declara um instalador que cabe no teto do download.
+ * @param {{version:string,exeSha256?:string,exeBytes?:number}} manifest
+ * @param {number} [maxBytes]
+ * @returns {{exeSha256:string,exeBytes:number}}
+ * @example assertInstallerDeclared({version:'1.4.0',exeSha256:'ab…',exeBytes:1024})
+ */
+function assertInstallerDeclared(manifest,maxBytes=INSTALLER_MAX_BYTES){
+ if(!manifest.exeSha256||!manifest.exeBytes)throw refuse('err.update.installerMissing',{version:manifest.version});
+ if(manifest.exeBytes>maxBytes)throw refuse('err.update.installerTooLarge',{bytes:manifest.exeBytes,max:maxBytes});
+ return {exeSha256:manifest.exeSha256,exeBytes:manifest.exeBytes};
+}
+
+/**
+ * O instalador baixado é exatamente o que o manifesto assinado declara.
+ * @param {{bytes:number,sha256:string}} received tamanho e SHA-256 do arquivo
+ * @param {{exeSha256:string,exeBytes:number}} declared
+ * @returns {void}
+ * @example assertInstallerMatches({bytes:1024,sha256:'ab…'},{exeBytes:1024,exeSha256:'ab…'})
+ */
+function assertInstallerMatches(received,declared){
+ if(received.bytes!==declared.exeBytes)throw refuse('err.update.installerBytes',{received:received.bytes,expected:declared.exeBytes});
+ if(received.sha256!==declared.exeSha256)throw refuse('err.update.installerHash');
 }
 
 /**
@@ -263,7 +314,7 @@ async function fetchReleaseAsset({fetchBuffer,url,maxBytes,version,failureKey}){
  * precisa) o zip com tamanho e SHA-256 do manifesto. Nada é aplicado aqui.
  * @param {{version:string,publicKey:string,fetchBuffer:Function,needZip:boolean,
  *   manifestMaxBytes?:number,signatureMaxBytes?:number,zipMaxBytes?:number}} input
- * @returns {Promise<{manifest:{version:string,commit:string,zipSha256:string,zipBytes:number},zip:Buffer|null,urls:{manifest:string,signature:string,zip:string}}>}
+ * @returns {Promise<{manifest:{version:string,commit:string,zipSha256:string,zipBytes:number},zip:Buffer|null,urls:{manifest:string,signature:string,zip:string,installer:string}}>}
  * @example const release=await loadSignedRelease({version:'1.0.3', publicKey, fetchBuffer, needZip:true})
  */
 async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifestMaxBytes=MANIFEST_MAX_BYTES,signatureMaxBytes=SIGNATURE_MAX_BYTES,zipMaxBytes=ZIP_MAX_BYTES}){
@@ -281,7 +332,8 @@ async function loadSignedRelease({version,publicKey,fetchBuffer,needZip,manifest
 }
 
 module.exports={
- EMBEDDED_UPDATE_PUBLIC_KEY,PLACEHOLDER_MARK,MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,
+ EMBEDDED_UPDATE_PUBLIC_KEY,PLACEHOLDER_MARK,MANIFEST_MAX_BYTES,SIGNATURE_MAX_BYTES,ZIP_MAX_BYTES,INSTALLER_MAX_BYTES,
+ installerAssetName,assertInstallerDeclared,assertInstallerMatches,
  updateAssetUrls,normalizeVersion,readUpdatePublicKey,isPlaceholderKey,publicKeyOf,
  parseManifest,verifySignedManifest,assertZipMatchesManifest,assertTagCommitMatches,assertAppliedCommitMatches,assertZipWithinLimit,tagMissingError,
  fetchReleaseAsset,loadSignedRelease,

@@ -48,6 +48,7 @@ const {assertRuntimeAtRest, backupNow, latestActivity, list, prune, readStatus, 
 const {buildSources} = require('./backup-capture.cjs');
 const {readAutoState, runAutoBackup, shouldAutoBackup, writeAutoState} = require('./backup-schedule.cjs');
 const {readConfig, readConfigFile, resolveSettings, writeConfig, writeConfigFile} = require('./backup-config.cjs');
+const {sourcePathFlavor} = require('./source-path.cjs');
 
 /* ---------- restauração (prévia → staging → aplicar/rollback) ---------- */
 
@@ -72,8 +73,8 @@ async function prepareRestore({runtime, root, snapshotId, recentMs = 0, allowAct
   const staging = path.join(stateDir, 'staging', planId);
   removeQuiet(staging);
   fs.mkdirSync(staging, {recursive: true});
-  const oldRuntime = manifest.runtime && typeof manifest.runtime.path === 'string' ? path.resolve(manifest.runtime.path) : '';
-  const from = oldRuntime && oldRuntime !== runtimeAbs ? oldRuntime : '';
+  const oldRuntime = manifest.runtime?.path;
+  const from = sourcePathFlavor(oldRuntime) && oldRuntime !== runtimeAbs ? oldRuntime : '';
   const materialGroups = materialGroupsOf(manifest, runtimeAbs);
   const relocated = [];
   const stale = new Set();
@@ -145,7 +146,7 @@ async function prepareRestore({runtime, root, snapshotId, recentMs = 0, allowAct
       const raw = readJson(joinUnder(staging, rel));
       if (raw === null) continue;
       const prefixes = (Array.isArray(group.froms) && group.froms.length ? group.froms : [group.from]).filter((prefix) => prefix && prefix !== group.to);
-      if (prefixes.some((prefix) => pathPrefixIn(raw, prefix))) materialChanges.add(rel);
+      if (prefixes.some((prefix) => pathPrefixIn(raw, prefix, group.to))) materialChanges.add(rel);
       if (rel === 'config.json' && group.courseId && isPlainObject(raw) && Array.isArray(raw.courses)
         && raw.courses.some((course) => isPlainObject(course) && String(course.id || '') === group.courseId && course.path !== group.to)) {
         materialChanges.add(rel);

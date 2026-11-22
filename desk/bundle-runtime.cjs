@@ -176,4 +176,4 @@ function installBundle({desk,root,app,version}){
  fs.utimesSync(app,new Date(),new Date());
  return {dest,managed};
 }
-module.exports={runtimePackages,stageBundlePayload,installBundle,installWindowsBundle,recordInstallSource};
+module.exports={runtimePackages,stageBundlePayload,installBundle,installWindowsBundle,recordInstallSource,writeManifest};
