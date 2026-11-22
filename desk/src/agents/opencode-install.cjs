@@ -196,6 +196,7 @@ async function downloadVerified({url, integrity, file, fetchImpl, onProgress, ti
  * @returns {Promise<void>}
  */
 async function extractPackage({archive, directory, platform, env, runCommand}) {
+  // O GNU tar de Git/usr/bin pode vir primeiro no PATH e ler C:\... como host remoto (fbaccc6).
   const tar = platform === 'win32' ? path.win32.join(env.SystemRoot || env.windir || 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
   try {
     await runCommand(tar, ['-xzf', archive, '-C', directory]);
