@@ -228,3 +228,16 @@ test('próxima abertura registra aplicada ou recuperada, limpa download e não t
   assert.equal(await update.settleInstallerUpdate({cacheFile,current,dir,failureReason:'não instalou'}),null);
  }
 });
+
+test('próxima abertura conserva o erro do helper depois de ready, com fallback sem erro',async()=>{
+ for(const saved of ['erro real do helper','',null]){
+  const runtime=tmp(),cacheFile=path.join(runtime,'update.json'),dir=path.join(runtime,'update-dmg');
+  fs.mkdirSync(dir);fs.writeFileSync(path.join(dir,'ready'),'ready\n');
+  if(saved!==null)fs.writeFileSync(path.join(dir,'error'),saved);
+  await update.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
+  const result=await update.settleInstallerUpdate({cacheFile,current:'1.4.0',dir,failureReason:'não instalou'});
+  assert.equal(result.reason,saved||'não instalou');
+  assert.equal(updater.readCache(cacheFile).lastResult.reason,saved||'não instalou');
+  assert.equal(fs.existsSync(dir),false);
+ }
+});
