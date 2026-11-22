@@ -48,6 +48,24 @@ function Start-Setup([string]$file, [string[]]$arguments) {
   return $process
 }
 
+function Start-Uninstall {
+  $launcher = Start-Setup (Join-Path $dir 'Uninstall Summa.exe') @('/S')
+  $deadline = (Get-Date).AddSeconds(10)
+  while ((Get-Date) -lt $deadline) {
+    $child = Get-CimInstance Win32_Process -Filter "ParentProcessId = $($launcher.Id)" | Select-Object -First 1
+    if ($child) {
+      $worker = Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue
+      if ($worker) {
+        $null = $worker.Handle
+        $processes.Add($worker)
+        return $worker
+      }
+    }
+    Start-Sleep -Milliseconds 50
+  }
+  throw "Recebido: nenhum processo filho do desinstalador (PID $($launcher.Id)) em 10 s. Esperado: cópia temporária do desinstalador em execução."
+}
+
 function Wait-Setup([System.Diagnostics.Process]$process) {
   if (-not $process.WaitForExit(600000)) {
     throw 'Recebido: instalador em execução após 600 s. Esperado: término em até 600 s.'
@@ -107,24 +125,33 @@ try {
   Start-Process -FilePath $exe | Out-Null
   Wait-Summa 'a Summa abre de novo'
   Start-Sleep -Seconds 5
-  $uninstall = Start-Setup (Join-Path $dir 'Uninstall Summa.exe') @('/S')
-  Wait-Setup $uninstall | Out-Null
-  Start-Sleep -Seconds 10
+  $uninstall = Start-Uninstall
+  Assert-True ((Wait-Setup $uninstall) -eq 2) 'a desinstalação travada informa a falha'
+  Assert-True (Test-Path -LiteralPath $dir) 'a pasta instalada continua no lugar depois da recusa'
   Assert-True (Test-Path -LiteralPath $exe) 'desinstalar com a Summa aberta não apaga a pasta'
   Stop-Summa
-  $uninstall = Start-Setup (Join-Path $dir 'Uninstall Summa.exe') @('/S')
-  Wait-Setup $uninstall | Out-Null
+  Start-Sleep -Seconds 5
+  Assert-True (Test-Path -LiteralPath $dir) 'a recusa não deixa uma remoção pendente ao fechar a Summa'
+
+  Start-Process -FilePath $exe | Out-Null
+  Wait-Summa 'a Summa reabre depois da recusa'
+  Start-Sleep -Seconds 5
+  $uninstall = Start-Uninstall
+  Start-Sleep -Seconds 5
+  Assert-True (-not $uninstall.HasExited) 'o desinstalador espera a Summa fechar'
+  Assert-True (Test-Path -LiteralPath $exe) 'a versão aberta continua inteira durante a desinstalação'
+  Stop-Summa
+  Assert-True ((Wait-Setup $uninstall) -eq 0) 'a desinstalação termina sem erro'
   Wait-Removed
   Assert-True (-not (Test-Path -LiteralPath "$dir.removing")) 'não sobra pasta da remoção'
   Assert-True (Test-Path -LiteralPath $marker) 'os dados do aluno ficam'
-  Write-Output 'instalador aprovado'
 } finally {
   foreach ($process in $processes) {
     if (-not $process.HasExited) { & taskkill.exe /PID $process.Id /T /F | Out-Null }
   }
   Stop-Summa
   if (Test-Path -LiteralPath (Join-Path $dir 'Uninstall Summa.exe')) {
-    $cleanup = Start-Setup (Join-Path $dir 'Uninstall Summa.exe') @('/S')
+    $cleanup = Start-Uninstall
     Wait-Setup $cleanup | Out-Null
     Wait-Removed
   }
@@ -132,3 +159,4 @@ try {
   $env:LEARNING_DESK_RUNTIME = $previousRuntime
   $env:LEARNING_VAULT = $previousVault
 }
+Write-Output 'instalador aprovado'
