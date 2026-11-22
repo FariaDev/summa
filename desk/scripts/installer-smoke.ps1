@@ -23,7 +23,10 @@ function Assert-CleanAccount {
 }
 
 function Get-Summa {
-  @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase) })
+  @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
+    $processPath = $_.Path
+    $processPath -and $processPath.StartsWith("$dir\", [StringComparison]::OrdinalIgnoreCase)
+  })
 }
 
 function Stop-Summa {

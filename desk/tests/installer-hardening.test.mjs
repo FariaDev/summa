@@ -51,6 +51,14 @@ test('smoke recusa estado existente antes de escrever e limita esperas', () => {
   assert.doesNotMatch(smoke, /-PassThru -Wait|\.WaitForExit\(\)/);
 });
 
+test('smoke le o caminho do processo uma vez e ignora caminho nulo', () => {
+  const smoke = script('installer-smoke.ps1');
+  const getter = smoke.match(/function Get-Summa \{([\s\S]*?)\n\}/)[1];
+  assert.equal((getter.match(/\$_\.Path\b/g) || []).length, 1);
+  assert.match(getter, /\$processPath = \$_\.Path/);
+  assert.match(getter, /\$processPath -and \$processPath\.StartsWith/);
+});
+
 test('o build amarra a identidade do instalador ao commit', () => {
   assert.match(script('summa.nsi'), /VIAddVersionKey.*"SummaCommit".*"\$\{COMMIT\}"/);
   assert.match(script('build-windows-installer.mjs'), /-DCOMMIT=/);
