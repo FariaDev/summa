@@ -1756,6 +1756,7 @@
   "more.compactNow.needsTutor": "Chame o tutor para resumir o contexto.",
   "more.compactNow.unsupported": "Indisponível neste motor.",
   "notify.replyReady": "Resposta pronta.",
+  "notify.unreadReplies": "Respostas não lidas: {count}",
   "notify.tutorError": "Erro do tutor.",
   "opencode.model.default": "Padrão do OpenCode",
   "opencode.action.command": "o comando",
