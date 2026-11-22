@@ -62,6 +62,40 @@ test('hash, tamanho, HTTP e corpo vazio recusados não alteram a antiga nem deix
  }
 });
 
+test('preparação limpa parciais de outras versões e preserva nomes não exatos',async()=>{
+ const dir=tempDir('summa-stale-versions-'),release=makeSignedRelease({appImage:bytes});
+ const preserved=['Summa.AppImage','Summa-1.3.3-x86_64.AppImage','.Summa-notes.txt','.Other-1.4.1-x86_64.AppImage.part','Summa-1.4.1-x86_64.AppImage.part','.Summa-1.4.1-x86_64.AppImage.part.bak','.Summa-1.4.1-arm64.AppImage.part','.Summa-1.4-x86_64.AppImage.part','.Summa-1.4.1-beta-x86_64.AppImage.part'];
+ for(const name of preserved)fs.writeFileSync(path.join(dir,name),'preservado');
+ for(const version of ['0.0.1','12.34.56'])fs.writeFileSync(path.join(dir,`.Summa-${version}-x86_64.AppImage.part`),'interrompido');
+ const {file}=await image.prepareAppImageUpdate({version:release.version,publicKey:release.publicKey,dir,fetchBuffer:release.fetchBuffer,fetchAppImage:fakeAppImageDownload(bytes)});
+ assert.deepEqual(fs.readdirSync(dir).sort(),[...preserved,path.basename(file)].sort());
+ for(const name of preserved)assert.equal(fs.readFileSync(path.join(dir,name),'utf8'),'preservado');
+});
+
+test('abertura AppImage limpa parcial sem pedido pendente e outras instalações preservam',()=>{
+ for(const platform of ['linux','darwin']){
+  const dir=tempDir('summa-startup-partial-'),runtime=tempDir('summa-startup-runtime-'),stale=path.join(dir,'.Summa-1.4.1-x86_64.AppImage.part');
+  const preserved=['Summa.AppImage','.Summa-notes.txt','.Other.AppImage.part'];
+  fs.writeFileSync(stale,'interrompido');
+  for(const name of preserved)fs.writeFileSync(path.join(dir,name),'preservado');
+  const fake=fakeAppImageHost(image);
+  registerUpdateHost({...fake,appImageUpdate:image,ipcMain:fakeIpcMain(),shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,platform,env:{...env,APPIMAGE:path.join(dir,'Summa.AppImage')}});
+  assert.equal(fs.existsSync(stale),platform!=='linux');
+  for(const name of preserved)assert.equal(fs.readFileSync(path.join(dir,name),'utf8'),'preservado');
+ }
+});
+
+test('limpeza tolera pasta ausente e entrada não removível, sem seguir symlink',()=>{
+ const dir=tempDir('summa-sweep-errors-'),target=path.join(dir,'preservado'),blocked=path.join(dir,'.Summa-1.2.3-x86_64.AppImage.part');
+ fs.writeFileSync(target,'preservado');
+ fs.mkdirSync(blocked);
+ fs.symlinkSync(target,path.join(dir,'.Summa-1.2.4-x86_64.AppImage.part'));
+ assert.doesNotThrow(()=>image.cleanupAppImagePartials(path.join(dir,'ausente')));
+ assert.doesNotThrow(()=>image.cleanupAppImagePartials(dir));
+ assert.equal(fs.readFileSync(target,'utf8'),'preservado');
+ assert.deepEqual(fs.readdirSync(dir).sort(),[path.basename(blocked),'preservado'].sort());
+});
+
 test('pasta não gravável tem erro próprio e swap recusado apaga parcial',async()=>{
  const release=makeSignedRelease({appImage:bytes});
  await assert.rejects(image.prepareAppImageUpdate({version:release.version,publicKey:release.publicKey,dir:'/proc',fetchBuffer:release.fetchBuffer,fetchAppImage:fakeAppImageDownload(bytes)}),/appImageNotWritable/);

@@ -148,6 +148,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
   return {ok:true,version:target};
  }
  if(!TEST_MODE&&linuxAppImage){
+  appImageUpdate.cleanupAppImagePartials(path.dirname(String(env.APPIMAGE||'')));
   installerUpdate.settleInstallerUpdate({cacheFile:updateCacheFile,current:app.getVersion(),mode:'appimage',failureReason:uiMsg('err.update.appImageFailed')})
    .catch(error=>appendLog('update',`resultado do AppImage não registrado: ${causeArg(error)}`));
  }

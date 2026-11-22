@@ -22,18 +22,36 @@ function isLinuxAppImage({platform=process.platform,env=process.env,deskDir}){
 }
 
 /**
+ * Remove parciais de releases interrompidas sem seguir links nem impedir a abertura.
+ * @param {string} dir pasta do AppImage instalado
+ * @returns {void}
+ * @example cleanupAppImagePartials('/home/ana/Applications')
+ */
+function cleanupAppImagePartials(dir){
+ let names;
+ try{names=fs.readdirSync(dir);}catch{return;}
+ for(const name of names){
+  const version=name.match(/\d+\.\d+\.\d+/)?.[0];
+  if(!version)continue;
+  try{
+   if(name===`.${signature.appImageAssetName(version)}.part`)fs.rmSync(path.join(dir,name),{force:true});
+  }catch{}
+ }
+}
+
+/**
  * Baixa e autentica no mesmo sistema de arquivos do AppImage instalado.
  * @param {{version:string,publicKey:string,dir:string,fetchBuffer?:Function,fetchAppImage?:(url:string)=>Promise<Response>}} input
  * @returns {Promise<{file:string,manifest:object}>}
  * @example await prepareAppImageUpdate({version:'1.4.1',publicKey,dir:'/home/ana/Applications'})
  */
 async function prepareAppImageUpdate({version,publicKey,dir,fetchBuffer=defaultFetchBuffer,fetchAppImage=fetchReleaseFile}){
+ cleanupAppImagePartials(dir);
  const {manifest,urls}=await signature.loadSignedRelease({version,publicKey,fetchBuffer,needZip:false});
  const declared=signature.assertAppImageDeclared(manifest);
  const file=path.join(dir,`.${signature.appImageAssetName(manifest.version)}.part`);
  try{
   fs.accessSync(dir,fs.constants.W_OK|fs.constants.X_OK);
-  fs.rmSync(file,{force:true});
   // Criação exclusiva não segue links deixados por outro processo na pasta compartilhada.
   fs.closeSync(fs.openSync(file,'wx',0o600));
  }catch(error){throw Error(uiMsg('err.update.appImageNotWritable',{error:causeArg(error)}));}
@@ -77,4 +95,4 @@ function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=sp
  });
 }
 
-module.exports={isLinuxAppImage,prepareAppImageUpdate,swapAppImage,relaunchAppImage};
+module.exports={isLinuxAppImage,cleanupAppImagePartials,prepareAppImageUpdate,swapAppImage,relaunchAppImage};

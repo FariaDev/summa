@@ -46,6 +46,7 @@ export function fakeAppImageHost(update,{fail=false}={}){
   toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
   config:()=>({}),win:()=>null,appendLog:()=>{},
   appImageUpdate:{isLinuxAppImage:update.isLinuxAppImage,
+   cleanupAppImagePartials:update.cleanupAppImagePartials,
    prepareAppImageUpdate:async()=>{calls.push('prepare');if(fail)throw Error('hash recusado');return {file:'/apps/.new.part'};},
    swapAppImage:()=>calls.push('swap'),relaunchAppImage:async()=>{calls.push('relaunch');}},
  };
