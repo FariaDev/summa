@@ -35,6 +35,16 @@ test('DMG leva app independente, identidade, auxiliares e manifesto', {skip:proc
   assert.equal(execFileSync('plutil',['-extract',key,'raw',plist],{encoding:'utf8'}).trim(),value);
  }
  for(const file of ['mesa.icns','visual-check/windows'])assert.ok(fs.existsSync(path.join(app,'Contents/Resources',file)),file);
+ const swap=path.join(app,'Contents/MacOS/summa-swap');
+ const exchange=tempDir('summa-native-swap-'),installed=path.join(exchange,'Summa.app'),staged=path.join(exchange,'staged app');
+ fs.mkdirSync(installed);fs.mkdirSync(staged);
+ fs.writeFileSync(path.join(installed,'version'),'anterior');
+ fs.writeFileSync(path.join(staged,'version'),'nova');
+ assert.throws(()=>execFileSync(swap,[installed,staged+'.absent'],{stdio:'pipe'}),/renamex_np/);
+ assert.equal(fs.readFileSync(path.join(installed,'version'),'utf8'),'anterior');
+ execFileSync(swap,[installed,staged]);
+ assert.equal(fs.readFileSync(path.join(installed,'version'),'utf8'),'nova');
+ assert.equal(fs.readFileSync(path.join(staged,'version'),'utf8'),'anterior');
  assert.equal(fs.readFileSync(path.join(app,'Contents/Resources/visual-check/windows'),'utf8'),'native helper');
  assert.equal(fs.existsSync(path.join(app,'Contents/Resources/default_app.asar')),false);
  assert.equal(fs.readlinkSync(path.join(stage,'Applications')),'/Applications');

@@ -31,14 +31,21 @@ O updater confere o manifesto assinado (`mesa-manifest-vX.Y.Z.json` +
 - **macOS pelo DMG**: o marcador `release-install.json` identifica a instalação
   em qualquer pasta. Baixa `Summa-X.Y.Z.dmg`, confere `dmgBytes`/SHA-256 e a
   assinatura do manifesto; usa o Electron instalado, sem Node/npm/Git do sistema.
-  O helper monta somente leitura e copia para `Summa.app.new` com o app aberto,
-  remove quarentena, confere assinatura ad-hoc/versão e só então autoriza fechar.
-  Aguarda o PID sair, troca a pasta com recuperação em `.old`, desmonta e reabre.
+  O helper monta somente leitura e copia para uma pasta temporária no mesmo volume com o app aberto,
+  desmonta a imagem, remove quarentena, confere assinatura ad-hoc/versão e só então autoriza fechar.
+  Aguarda o PID sair, troca os dois bundles em uma operação atômica e reabre.
+  Se for interrompido, `Summa.app` continua sendo a versão anterior ou a nova;
+  uma pasta oculta `.Summa.app.update-*` pode sobrar, mas não impede outra tentativa.
   Pasta sem escrita recusa antes do download; dados/config/runtime ficam fora
   do bundle. O resultado é conferido pela versão na próxima abertura;
 - todo download tem teto (manifesto 64 KB, assinatura 8 KB, zip 64 MB) e o
   stream é cancelado ao passar dele. Sem manifesto, assinatura inválida ou
   hash/commit diferente, nada é aplicado — o rollback normal continua valendo.
+
+Se uma versão antiga deixou apenas `Summa.app.old` e `Summa.app.new` em
+Aplicativos, renomeie `Summa.app.old` para `Summa.app` (somente se estiver ausente),
+guarde `Summa.app.new` fora dessa pasta e instale o DMG novo. O atualizador antigo
+ainda usa duas renomeações para instalar a primeira versão que contém a correção.
 
 ### Uma vez: gerar o par de chaves
 
