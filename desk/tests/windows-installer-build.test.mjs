@@ -104,9 +104,9 @@ test('the uninstaller shares the bounded Retry/Cancel rename loop',()=>{
 
 test('#119: a troca interativa pergunta logo e reserva a espera longa ao silêncio ou atualização',()=>{
  const move=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
- assert.match(move,/!define INTERACTIVE_SWAP_ATTEMPTS 7/);
+ assert.match(NSI,/!define INTERACTIVE_SWAP_ATTEMPTS 7/);
  assert.match(NSI,/!define SWAP_ATTEMPTS 240/);
- assert.match(move,/retry:\s+(?:;[^\n]*\n\s*)?!define INTERACTIVE_SWAP_ATTEMPTS 7\s+StrCpy \$R1 \$\{INTERACTIVE_SWAP_ATTEMPTS\}\s+\$\{If\} \$\{Silent\}\s+\$\{OrIf\} \$IsUpdate == "1"\s+StrCpy \$R1 \$\{SWAP_ATTEMPTS\}\s+\$\{EndIf\}/);
+ assert.match(move,/StrCpy \$R1 \$\{INTERACTIVE_SWAP_ATTEMPTS\}\s+\$\{If\} \$\{Silent\}\s+\$\{OrIf\} \$IsUpdate == "1"\s+StrCpy \$R1 \$\{SWAP_ATTEMPTS\}\s+\$\{EndIf\}\s+retry:/);
  assert.match(move,/\$\{If\} \$R0 < \$R1\s+Sleep 500\s+Goto retry/);
  assert.match(move,/MessageBox MB_RETRYCANCEL\|MB_ICONEXCLAMATION "\$\(AppOpen\)" IDCANCEL giveUp\s+StrCpy \$R0 0\s+Goto retry/);
 });
