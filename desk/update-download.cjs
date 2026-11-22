@@ -5,14 +5,14 @@ const fs=require('node:fs');
 
 /**
  * Grava um stream com teto de bytes e SHA-256 incremental.
- * @param {{response:Response,partial:string,maxBytes:number}} input
+ * @param {{response:Response,partial:string,maxBytes:number,fsImpl?:typeof fs}} input
  * @returns {Promise<{bytes:number,sha256:string}>}
  * @example await downloadReleaseFile({response,partial:'update.part',maxBytes:1024})
  */
-async function downloadReleaseFile({response,partial,maxBytes}){
+async function downloadReleaseFile({response,partial,maxBytes,fsImpl=fs}){
  if(!response.body)throw Error('Download sem corpo; esperado stream de bytes');
  const hash=crypto.createHash('sha256');
- const output=fs.openSync(partial,fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_TRUNC|(fs.constants.O_NOFOLLOW||0),0o600);
+ const output=fsImpl.openSync(partial,fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_TRUNC|(fs.constants.O_NOFOLLOW||0),0o600);
  let bytes=0;
  try{
   const reader=response.body.getReader();
@@ -25,9 +25,13 @@ async function downloadReleaseFile({response,partial,maxBytes}){
     break;
    }
    hash.update(value);
-   fs.writeSync(output,value);
+   for(let offset=0;offset<value.length;){
+    const written=fsImpl.writeSync(output,value,offset,value.length-offset);
+    if(written<=0)throw Error('Escrita sem progresso; esperado gravar o download completo');
+    offset+=written;
+   }
   }
- }finally{fs.closeSync(output);}
+ }finally{fsImpl.closeSync(output);}
  return {bytes,sha256:hash.digest('hex')};
 }
 

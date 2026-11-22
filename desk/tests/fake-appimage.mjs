@@ -1,4 +1,10 @@
 import {EventEmitter} from 'node:events';
+import fs from 'node:fs';
+
+/** Simula disco com escritas curtas ou sem progresso. */
+export function fakeShortWritingFs(limit){
+ return {...fs,writeSync(fd,buffer,offset,length){return fs.writeSync(fd,buffer,offset,Math.min(limit,length));}};
+}
 
 /**
  * Download controlado, sem rede, com falhas HTTP opcionais.
