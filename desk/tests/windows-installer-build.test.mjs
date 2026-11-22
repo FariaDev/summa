@@ -87,7 +87,19 @@ test('#119: a Summa reabre logo depois da troca, sem esperar apagar a versão an
 test('#119: o desinstalador confere a pasta e recusa com a Summa aberta',()=>{
  const uninstall=NSI.slice(NSI.indexOf('Section "Uninstall"'));
  assert.ok(uninstall.indexOf('!= "$LOCALAPPDATA\\Programs\\Summa"')<uninstall.indexOf('RMDir /r'));
- assert.ok(uninstall.indexOf('Rename "$INSTDIR" "$INSTDIR.removing"')<uninstall.indexOf('RMDir /r "$INSTDIR.removing"'));
+ assert.ok(uninstall.indexOf('Call un.MoveCurrentAside')<uninstall.indexOf('RMDir /r "$INSTDIR.removing"'));
+});
+
+test('the uninstaller shares the bounded Retry/Cancel rename loop',()=>{
+ const uninstall=NSI.slice(NSI.indexOf('Section "Uninstall"'));
+ assert.match(uninstall,/Call un.MoveCurrentAside/);
+ assert.match(NSI,/!insertmacro MoveCurrentAside "un\." "removing" "un\.FailUninstall"/);
+ const retry=NSI.slice(NSI.indexOf('!macro MoveCurrentAside'),NSI.indexOf('!macroend'));
+ assert.match(retry,/Rename "\$INSTDIR" "\$INSTDIR\.\$\{suffix\}"/);
+ assert.match(retry,/\$R0 < \$\{SWAP_ATTEMPTS\}[\s\S]*Sleep 500[\s\S]*Goto retry/);
+ assert.match(retry,/\$\{IfNot\} \$\{Silent\}[\s\S]*MB_RETRYCANCEL\|MB_ICONEXCLAMATION[\s\S]*IDCANCEL giveUp\s+StrCpy \$R0 0\s+Goto retry/);
+ assert.match(retry,/giveUp:\s+Call \$\{failure\}/);
+ assert.match(NSI,/Function un.FailUninstall\s+SetErrorLevel 2\s+Quit\s+FunctionEnd/);
 });
 
 function installedPayload(){

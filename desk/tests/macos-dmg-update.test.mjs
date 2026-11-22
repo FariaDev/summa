@@ -101,21 +101,31 @@ test('readiness aguarda extração; saída antecipada ou timeout cancela sem qui
 function installation(){
  const base=tmp(),app=path.join(base,'Summa.app'),dir=path.join(base,'update');
  fs.mkdirSync(app);fs.mkdirSync(dir);
+ fs.mkdirSync(path.join(app,'Contents/MacOS'),{recursive:true});
+ fs.writeFileSync(path.join(app,'Contents/MacOS/summa-swap'),'',{mode:0o755});
  fs.writeFileSync(path.join(app,'old'),'versão antiga');
  return {app,dir,file:path.join(dir,'Summa-1.4.1.dmg'),pid:123,version:'1.4.1'};
 }
 
-test('copia e confere com app aberto, troca só após PID sair, desmonta e reabre',async()=>{
+test('copia, desmonta e confere com app aberto, troca só após PID sair e reabre',async()=>{
  const input=installation(),fake=fakeDmgCommands(input);
  await applyMacosDmg(input,fake);
  assert.equal(fake.observedReady,true);
  assert.ok(fs.existsSync(path.join(input.app,'Contents/Resources/app/package.json')));
  assert.equal(fs.existsSync(input.app+'.old'),false);
- assert.equal(fs.existsSync(input.app+'.new'),false);
- assert.deepEqual(fake.renames,[[input.app,input.app+'.old'],[input.app+'.new',input.app]]);
+ assert.deepEqual(fs.readdirSync(path.dirname(input.app)).sort(),['Summa.app','update']);
+ const swap=fake.calls.filter(([cmd])=>path.basename(cmd)==='summa-swap');
+ assert.equal(swap.length,1);
+ assert.equal(swap[0][1],input.app);
+ assert.equal(path.dirname(path.dirname(swap[0][2])),path.dirname(input.app));
  assert.ok(fake.calls.some(call=>call[0]==='/usr/bin/xattr'&&call.includes('com.apple.quarantine')));
  assert.ok(fake.calls.some(call=>call.includes('-readonly')&&call.includes('-nobrowse')));
- assert.equal(fake.calls.at(-2)[1],'detach');
+ const attach=fake.calls.find(call=>call[1]==='attach');
+ const detach=fake.calls.find(call=>call[1]==='detach');
+ assert.equal(detach[2],attach[attach.indexOf('-mountpoint')+1]);
+ assert.notEqual(path.dirname(detach[2]),input.dir);
+ assert.equal(fs.existsSync(detach[2]),false);
+ assert.ok(fake.calls.indexOf(detach)<fake.calls.indexOf(swap[0]));
  assert.deepEqual(fake.calls.at(-1),['/usr/bin/open',input.app]);
 });
 
@@ -124,8 +134,7 @@ test('falhas de montagem/cópia/assinatura/troca, app preso e cancelamento prese
   const input=installation(),fake=fakeDmgCommands({...input,...options});
   await assert.rejects(applyMacosDmg(input,fake));
   assert.equal(fs.readFileSync(path.join(input.app,'old'),'utf8'),'versão antiga');
-  assert.equal(fs.existsSync(input.app+'.new'),false);
-  assert.equal(fs.existsSync(input.app+'.old'),false);
+  assert.deepEqual(fs.readdirSync(path.dirname(input.app)).sort(),['Summa.app','update']);
   assert.ok(fs.existsSync(path.join(input.dir,'error')));
   if(options.fail==='swap')assert.deepEqual(fake.calls.at(-1),['/usr/bin/open',input.app]);
  }
@@ -156,12 +165,16 @@ test('identidade do app no DMG informa kind e versões recebidos e esperados',as
  }
 });
 
-test('não apaga uma recuperação anterior; pasta sem escrita recusa antes de preparar',async()=>{
+test('resíduos de uma atualização interrompida não bloqueiam a próxima nem são apagados',async()=>{
  const input=installation();
- fs.mkdirSync(input.app+'.old');
- fs.writeFileSync(path.join(input.app+'.old','backup'),'backup');
- await assert.rejects(applyMacosDmg(input,fakeDmgCommands(input)),error=>enText(error.message).startsWith('Summa.app.new or Summa.app.old already exists'));
- assert.equal(fs.readFileSync(path.join(input.app+'.old','backup'),'utf8'),'backup');
+ const residues=[input.app+'.old',input.app+'.new',path.join(path.dirname(input.app),'.Summa.app.update-crash')];
+ for(const dir of residues){fs.mkdirSync(dir);fs.writeFileSync(path.join(dir,'backup'),'backup');}
+ await applyMacosDmg(input,fakeDmgCommands(input));
+ assert.ok(fs.existsSync(path.join(input.app,'Contents/Resources/app/package.json')));
+ for(const dir of residues)assert.equal(fs.readFileSync(path.join(dir,'backup'),'utf8'),'backup');
+});
+
+test('pasta sem escrita recusa antes de preparar',()=>{
  assert.throws(()=>update.assertWritableBundle(path.join(tmp(),'missing','Summa.app')),error=>/^Could not write to the Summa\.app folder \(.+\)\. Move Summa\.app to a folder you can write to/.test(enText(error.message)));
 });
 

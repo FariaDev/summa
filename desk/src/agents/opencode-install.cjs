@@ -191,12 +191,15 @@ async function downloadVerified({url, integrity, file, fetchImpl, onProgress, ti
 /**
  * O `tar` do sistema (o instalador v2 também exige `tar`); o mesmo pacote do
  * OpenCode já vem nesse formato.
- * @param {{archive: string, directory: string, runCommand: (file: string, args: string[]) => Promise<unknown>}} input
+ * @param {{archive: string, directory: string, platform: NodeJS.Platform, env: NodeJS.ProcessEnv,
+ *   runCommand: (file: string, args: string[]) => Promise<unknown>}} input
  * @returns {Promise<void>}
  */
-async function extractPackage({archive, directory, runCommand}) {
+async function extractPackage({archive, directory, platform, env, runCommand}) {
+  // O GNU tar de Git/usr/bin pode vir primeiro no PATH e ler C:\... como host remoto (fbaccc6).
+  const tar = platform === 'win32' ? path.win32.join(env.SystemRoot || env.windir || 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
   try {
-    await runCommand('tar', ['-xzf', archive, '-C', directory]);
+    await runCommand(tar, ['-xzf', archive, '-C', directory]);
   } catch (error) {
     throw new OpenCodeInstallError('extract', 'err.opencode.install.extract', {cause: String(error?.message || error)}, error);
   }
@@ -385,7 +388,7 @@ function installedVersion(binary, {timeoutMs = VERSION_TIMEOUT_MS, spawnProcess 
  * conferida. O destino é `<runtime>/opencode/<versão>/bin` (#94); `~/.opencode`
  * nunca é tocado. Dependências entram por parâmetro para o teste não tocar na
  * rede nem no disco real.
- * @param {{runtime: string, platform?: NodeJS.Platform, arch?: string,
+ * @param {{runtime: string, platform?: NodeJS.Platform, arch?: string, env?: NodeJS.ProcessEnv,
  *   version?: string, onProgress?: (progress: {phase: string, percent?: number}) => void,
  *   fetchImpl?: typeof globalThis.fetch, readFile?: typeof fs.readFileSync, runSync?: typeof spawnSync,
  *   existsSync?: typeof fs.existsSync, mkdtemp?: typeof fsp.mkdtemp, rm?: typeof fsp.rm,
@@ -397,7 +400,7 @@ function installedVersion(binary, {timeoutMs = VERSION_TIMEOUT_MS, spawnProcess 
  * @example await installOpenCode({runtime: '/tmp/runtime', fetchImpl: fakeFetch})
  */
 async function installOpenCode({
-  runtime, platform = process.platform, arch = process.arch,
+  runtime, platform = process.platform, arch = process.arch, env = process.env,
   version = PINNED_VERSION, onProgress = () => {}, fetchImpl = globalThis.fetch,
   readFile = fs.readFileSync, runSync = spawnSync, existsSync = fs.existsSync,
   mkdtemp = fsp.mkdtemp, rm = fsp.rm, mkdir = fsp.mkdir, copyFile = fsp.copyFile,
@@ -417,7 +420,7 @@ async function installOpenCode({
     onProgress({phase: 'download', percent: 0});
     await downloadVerified({url: packageInfo.tarball, integrity: packageInfo.integrity, file: archive, fetchImpl, onProgress, timeoutMs: downloadTimeoutMs});
     onProgress({phase: 'extract'});
-    await extractPackage({archive, directory, runCommand: (file, args) => runCommand(file, args, {timeoutMs: installTimeoutMs, spawnProcess})});
+    await extractPackage({archive, directory, platform, env, runCommand: (file, args) => runCommand(file, args, {timeoutMs: installTimeoutMs, spawnProcess})});
     const binary = extractedBinary(directory, platform);
     if (!binary) throw new OpenCodeInstallError('binary', 'err.opencode.install.binary');
     onProgress({phase: 'install'});

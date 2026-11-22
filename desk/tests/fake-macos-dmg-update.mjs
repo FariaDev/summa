@@ -22,34 +22,38 @@ export function fakeDmgProcess({error=false}={}){
  return {calls,child,spawn};
 }
 
-export function fakeDmgCommands({app,dir,version='1.4.1',markerKind='macos-dmg',markerVersion=version,packageVersion=version,fail='',cancel=false}){
- const calls=[],renames=[];
+export function fakeDmgCommands({dir,version='1.4.1',markerKind='macos-dmg',markerVersion=version,packageVersion=version,fail='',cancel=false}){
+ const calls=[];
  let observedReady=false;
  function run(cmd,args){
   calls.push([cmd,...args]);
   if(fail&&path.basename(cmd)===fail)throw Error(`falhou ${fail}`);
   if(path.basename(cmd)==='hdiutil'&&args[0]==='attach'){
-   const payload=path.join(dir,'volume','Summa.app','Contents','Resources','app');
+   const payload=path.join(args[args.indexOf('-mountpoint')+1],'Summa.app','Contents','Resources','app');
    fs.mkdirSync(payload,{recursive:true});
    fs.writeFileSync(path.join(payload,'package.json'),JSON.stringify({version:packageVersion}));
    fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:markerKind,version:markerVersion}));
+  }
+  if(path.basename(cmd)==='hdiutil'&&args[0]==='detach'){
+   if(fs.existsSync(path.join(dir,'ready')))throw Error('detach depois de ready');
+   fs.rmSync(path.join(args.at(-1),'Summa.app'),{recursive:true,force:true});
   }
   if(path.basename(cmd)==='ditto'){
    if(fs.existsSync(path.join(dir,'ready')))throw Error('ready antes da cópia');
    fs.cpSync(args[0],args[1],{recursive:true});
    if(cancel)fs.writeFileSync(path.join(dir,'cancel'),'cancel');
   }
- }
- function rename(from,to){
-  renames.push([from,to]);
-  if(fail==='swap'&&from===app+'.new')throw Error('falhou swap');
-  fs.renameSync(from,to);
+  if(path.basename(cmd)==='summa-swap'){
+   if(fail==='swap')throw Error('falhou swap');
+   const [current,next]=args,aside=next+'.aside';
+   fs.renameSync(current,aside);fs.renameSync(next,current);fs.renameSync(aside,next);
+  }
  }
  function pidAlive(){
   observedReady=fs.existsSync(path.join(dir,'ready'));
   return fail==='pid';
  }
- return {calls,renames,run,rename,pidAlive,waitMs:0,get observedReady(){return observedReady;}};
+ return {calls,run,pidAlive,waitMs:0,get observedReady(){return observedReady;}};
 }
 
 export function fakeDmgHost({runtime,deskDir,fail=''}){

@@ -1,6 +1,7 @@
 // @ts-check
 'use strict';
 const fs=require('node:fs');
+const os=require('node:os');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const {message:uiMsg}=require('./src/i18n.mjs');
@@ -11,6 +12,12 @@ function run(cmd,args){
  return execFileSync(cmd,args,{timeout:10*60*1000,stdio:'pipe',env});
 }
 function pidAlive(pid){try{process.kill(pid,0);return true;}catch{return false;}}
+function detachVolume(execute,mount){
+ try{
+  try{execute('/usr/bin/hdiutil',['detach',mount]);}
+  catch{execute('/usr/bin/hdiutil',['detach','-force',mount]);}
+ }finally{try{fs.rmdirSync(mount);}catch{}}
+}
 
 /** Overrides de ensaio continuam valendo ao reabrir. @param {string} app @param {NodeJS.ProcessEnv} [env] @returns {string[]} @example reopenArgs(app,{LEARNING_DESK_RUNTIME:'/runtime'}) */
 function reopenArgs(app,env=process.env){
@@ -20,27 +27,31 @@ function reopenArgs(app,env=process.env){
 }
 
 /**
- * Pré-extrai a imagem, espera o app sair e troca as pastas com recuperação.
+ * Pré-extrai a imagem, espera o app sair e troca as pastas atomicamente.
  * @param {{file:string,app:string,dir:string,pid:number,version:string,lockFile?:string}} input
- * @param {{run?:Function,pidAlive?:Function,sleep?:Function,rename?:typeof fs.renameSync,waitMs?:number}} [deps]
+ * @param {{run?:Function,pidAlive?:Function,sleep?:Function,waitMs?:number}} [deps]
  * @returns {Promise<void>}
  * @example await applyMacosDmg({file,app,dir,pid,version})
  */
 async function applyMacosDmg(input,deps={}){
  const {file,app,dir,pid,version,lockFile=''}=input;
- const execute=deps.run||run,alive=deps.pidAlive||pidAlive,pause=deps.sleep||sleep,rename=deps.rename||fs.renameSync;
- const next=app+'.new',old=app+'.old',mount=path.join(dir,'volume');
- let mounted=false,staged=false,moved=false,committed=false,ready=false;
+ const execute=deps.run||run,alive=deps.pidAlive||pidAlive,pause=deps.sleep||sleep;
+ const swap=path.join(app,'Contents','MacOS','summa-swap');
+ let mount='',stage='',ready=false;
  const cancelled=()=>fs.existsSync(path.join(dir,'cancel'));
  try{
-  if(fs.existsSync(next)||fs.existsSync(old))throw Error(uiMsg('err.update.dmgLeftover'));
-  fs.mkdirSync(mount);
-  mounted=true;
+  fs.accessSync(swap,fs.constants.X_OK);
+  // Uma montagem órfã não deve impedir a limpeza da pasta de download.
+  mount=fs.mkdtempSync(path.join(os.tmpdir(),'summa-dmg-volume-'));
   execute('/usr/bin/hdiutil',['attach','-nobrowse','-readonly','-mountpoint',mount,file]);
   const source=path.join(mount,'Summa.app');
   if(!fs.lstatSync(source).isDirectory())throw Error(uiMsg('err.update.dmgNoApp'));
-  fs.mkdirSync(next);staged=true;
+  // A troca exige o mesmo volume. Um processo morto não reserva o caminho do próximo.
+  stage=fs.mkdtempSync(path.join(path.dirname(app),'.'+path.basename(app)+'.update-'));
+  const next=path.join(stage,'Summa.app');
+  fs.mkdirSync(next);
   execute('/usr/bin/ditto',[source,next]);
+  detachVolume(execute,mount);mount='';
   execute('/usr/bin/xattr',['-dr','com.apple.quarantine',next]);
   execute('/usr/bin/codesign',['--verify','--deep',next]);
   const payload=path.join(next,'Contents','Resources','app');
@@ -55,19 +66,13 @@ async function applyMacosDmg(input,deps={}){
    await pause(250);
   }
   if(cancelled())throw Error(uiMsg('err.update.dmgCancelled'));
-  rename(app,old);moved=true;
-  rename(next,app);committed=true;
+  execute(swap,[app,next]);
  }catch(error){
-  if(moved&&!committed){
-   try{rename(old,app);}
-   catch{fs.writeFileSync(path.join(dir,'error'),uiMsg('err.update.dmgRecoveryIncomplete'));throw error;}
-  }
   fs.writeFileSync(path.join(dir,'error'),String(error?.message||error));
   throw error;
  }finally{
-  if(staged&&!committed){try{fs.rmSync(next,{recursive:true,force:true});}catch{}}
-  if(committed){try{fs.rmSync(old,{recursive:true,force:true});}catch{}}
-  if(mounted){try{execute('/usr/bin/hdiutil',['detach',mount]);}catch{try{execute('/usr/bin/hdiutil',['detach','-force',mount]);}catch{}}}
+  if(stage){try{fs.rmSync(stage,{recursive:true,force:true});}catch{}}
+  if(mount){try{detachVolume(execute,mount);}catch{}}
   if(lockFile){try{fs.rmSync(lockFile,{force:true});}catch{}}
   if((ready||!alive(pid))&&fs.existsSync(app))execute('/usr/bin/open',reopenArgs(app));
  }

@@ -9,7 +9,9 @@
      `auth status`); a última vem do registry `@anthropic-ai/claude-code`. Sem
      reserva do SDK desde o #51: fora da faixa aceita, a linha diz a faixa.
      Sem resposta do registry = "não deu para conferir" (offline), nunca erro.
-   - Node: o que o worker/setup usam é o node do SISTEMA — medido com
+   - Node: só em quem roda do código ou do bundle ligado a ele; o instalador
+     (.exe, AppImage, DMG) se atualiza sem Node e não mostra a linha (#148).
+     O que o worker/setup usam é o node do SISTEMA — medido com
      `node --version` (o `process.versions.node` do main do Electron é o
      runtime EMBUTIDO e não serve); sem resposta cai no embutido, rotulado
      como tal. Abaixo de 22.19 o painel avisa. O corte é decisão do núcleo
@@ -176,7 +178,7 @@ async function collect(opts={}){
  const {
   config={},cacheFile='',version='',manual=false,testMode=false,
   fetchJson=updater.defaultFetchJson,run=defaultRun,now=Date.now(),
-  platform=process.platform,nodeVersion,nodeSource,
+  platform=process.platform,nodeVersion,nodeSource,systemNode=true,
  }=opts;
  const fetchNet=testMode?async()=>{throw Error('modo de teste');}:fetchJson;
  const cache=cacheFile?updater.readCache(cacheFile):{};
@@ -211,8 +213,8 @@ async function collect(opts={}){
  }
 
  /* Node: B3 — mede o node do SISTEMA (o que o worker/setup usam); o corte
-    22.19 é do núcleo. */
- {
+    22.19 é do núcleo. Instalador não usa Node para nada: sem linha e sem medir. */
+ if(systemNode){
   const info=nodeVersion===undefined?await systemNodeVersion({run}):{version:String(nodeVersion||''),source:nodeSource||'system'};
   const [major,minor]=String(info.version||'').split('.').map(n=>Number(n)||0);
   const state=!info.version?{$:'CompUnknown'}:dialogsCore.nodeState(major,minor);
