@@ -47,12 +47,17 @@ function hashFile(abs) {
     const hash = crypto.createHash('sha256');
     const stream = fs.createReadStream(abs);
     let size = 0;
+    let ended = false;
     stream.on('data', (chunk) => {
       size += chunk.length;
       hash.update(chunk);
     });
     stream.on('error', reject);
-    stream.on('end', () => resolve({sha256: hash.digest('hex'), size}));
+    stream.on('end', () => { ended = true; });
+    stream.on('close', () => {
+      if (!ended) return reject(Object.assign(new Error('leitura de backup encerrada antes do fim'), {code: 'ERR_STREAM_PREMATURE_CLOSE'}));
+      resolve({sha256: hash.digest('hex'), size});
+    });
   });
 }
 function hashBuffer(buffer) {

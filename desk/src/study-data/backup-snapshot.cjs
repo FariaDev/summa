@@ -3,6 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {renameWithWindowsRetry} = require('../../json-file.cjs');
 const {message: uiMsg} = require('../i18n.mjs');
 const {causeArg, invalidValue} = require('../error-detail.mjs');
 const {joinUnder} = require('./zipkit.cjs');
@@ -28,8 +29,10 @@ function assertRuntimeAtRest({runtime, root = '', recentMs = 0, allowActive = fa
   }
   return activity;
 }
-/** @param {{runtime?: any, root?: any, deskDir?: string, materials?: any[], external?: any[], binaries?: string, reason?: string, label?: string, now?: any, recentMs?: number, allowActive?: boolean, log?: any}} options */
-async function snapshot({runtime, root, deskDir = '', materials = [], external = [], binaries = 'include', reason = 'manual', label = '', now = new Date(), recentMs = 0, allowActive = false, log = () => {}}) {
+/** @param {{runtime?: any, root?: any, deskDir?: string, materials?: any[], external?: any[], binaries?: string, reason?: string, label?: string, now?: any, recentMs?: number, allowActive?: boolean, log?: any}} options
+ * @param {{platform?: string, rename?: (from: string, to: string) => void, wait?: (ms: number) => void}} [renameDeps]
+ */
+async function snapshot({runtime, root, deskDir = '', materials = [], external = [], binaries = 'include', reason = 'manual', label = '', now = new Date(), recentMs = 0, allowActive = false, log = () => {}}, renameDeps) {
   assertDestinationOutsideRuntime({runtime, root});
   assertRuntimeAtRest({runtime, root, recentMs, allowActive});
   const rootAbs = path.resolve(root);
@@ -130,7 +133,7 @@ async function snapshot({runtime, root, deskDir = '', materials = [], external =
     };
     atomicWrite(manifestPath(staging), `${JSON.stringify(manifest, null, 2)}\n`);
     atomicWrite(path.join(staging, EXCLUDED_NAME), `${JSON.stringify({excluded: excludedList, warnings}, null, 2)}\n`);
-    fs.renameSync(staging, dir);
+    renameWithWindowsRetry(staging, dir, renameDeps);
     return {
       snapshotId: id,
       path: dir,
