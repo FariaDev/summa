@@ -454,10 +454,6 @@ export function closePdfNotes() {
   state.open = false;
 }
 
-export function isPdfNotesOpen() {
-  return !!state.open;
-}
-
 /* ---------- teclado, barra e o resultado da busca ---------- */
 
 function onKeydown(event) {
