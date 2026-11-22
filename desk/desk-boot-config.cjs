@@ -3,6 +3,8 @@
 
 const {readConfig,writeConfig,seedConfig,normalize,legacyCloneRuntime}=require('./config.cjs');
 const {linuxXournalPath}=require('./xournal-path.cjs');
+const {isMacosRelease,previousMacosRuntime}=require('./macos-release.cjs');
+const path=require('node:path');
 
 /* Config da partida (#43 fase 2: saiu do main.cjs). Os overrides de ambiente
    valem só para esta execução e eram repetidos duas vezes no main: na leitura
@@ -40,6 +42,10 @@ function loadBootConfig({configFile,env,persist}){
    const keepsCloneRuntime=!!config.runtimePath&&config.runtimePath===legacyCloneRuntime();
    if(persist&&(config.vaultPath||config.courses.length||keepsCloneRuntime))writeConfig(configFile,config);
   }
+ }
+ if(persist&&!envRuntime&&isMacosRelease()&&!config.runtimePath){
+  const previous=previousMacosRuntime({configDir:path.dirname(configFile)});
+  if(previous){config.runtimePath=previous;writeConfig(configFile,config);}
  }
  return applyEnvOverrides(config,env);
 }

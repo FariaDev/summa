@@ -154,11 +154,11 @@ function installWindowsBundle({desk,root,installDir,version}){
  * parte do `npm run install-app` que não toca no sistema (sem assinatura, sem
  * atalho em ~/Applications, sem LaunchServices): o teste do app empacotado
  * (#51) a roda numa cópia temporária do Electron.app.
- * @param {{desk: string, root: string, app: string, version: string}} input
+ * @param {{desk: string, root: string, app: string, version: string, recordSource?: boolean}} input
  * @returns {{dest: string, managed: string[]}}
  * @example installBundle({desk, root, app: '/tmp/x/Summa.app', version: '0.5.0'})
  */
-function installBundle({desk,root,app,version}){
+function installBundle({desk,root,app,version,recordSource=true}){
  if(!fs.existsSync(path.join(app,'Contents','Info.plist')))throw Error(`installBundle: esperava um .app com Contents/Info.plist, recebeu ${JSON.stringify(app)}`);
  setPlistString(app,'CFBundleShortVersionString',version||'0.0.0');
  /* O Electron.app de origem traz `electron.icns` e nome Electron; o bundle da
@@ -170,7 +170,7 @@ function installBundle({desk,root,app,version}){
  if(fs.existsSync(path.join(desk,'assets','mesa.icns')))setPlistString(app,'CFBundleIconFile','mesa.icns');
  const dest=path.join(app,'Contents','Resources','app');
  const managed=stageBundlePayload(desk,dest);
- recordInstallSource(root,dest);
+ if(recordSource)recordInstallSource(root,dest);
  writeManifest(dest,managed,version||'');
  copyBundleHelpers({desk,root,app});
  fs.utimesSync(app,new Date(),new Date());
