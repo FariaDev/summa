@@ -1,4 +1,5 @@
 {
+ "err.update.installerBusy": "Another Summa installer is already open. Close it and try again.",
   "about.by": "Made by Lucas Faria",
   "about.close": "Close About",
   "about.componentsRefresh": "Check the components again",

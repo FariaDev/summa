@@ -6,6 +6,7 @@ import path from 'node:path';
 import {spawnSync, execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {tempDir} from './temp-dir.mjs';
+import {fakePeInstaller} from './fake-pe-installer.mjs';
 
 /* Script de release assinada (#80) rodando de verdade: git local temporário,
    par Ed25519 gerado no teste e nenhuma rede. Cobre keygen, sign, verify e a
@@ -39,10 +40,10 @@ function repoFixture() {
   return root;
 }
 
-/* #119: o instalador vem do CI; aqui basta um arquivo com o nome da versão. */
-function fakeInstaller(version = '0.1.0') {
+/* #119: a identidade PE deve corresponder à tag, não apenas ao nome. */
+function fakeInstaller(version = '0.1.0', commit = 'a'.repeat(40)) {
   const file = path.join(tmp(), `Summa-Setup-${version}.exe`);
-  fs.writeFileSync(file, 'instalador de teste');
+  fs.writeFileSync(file, fakePeInstaller({version, commit}));
   return file;
 }
 
@@ -58,6 +59,18 @@ function runScript(args, {cwd, expectFail = false} = {}) {
   else assert.notEqual(result.status, 0, 'o script tinha de recusar');
   return result;
 }
+
+test('sign recusa texto com nome de exe antes de gerar os assets', () => {
+  const root = repoFixture();
+  const privateFile = path.join(tmp(), 'mesa-update.pem');
+  runScript(['keygen', '--private-key', privateFile], {cwd: root});
+  const installer = path.join(tmp(), 'Summa-Setup-0.1.0.exe');
+  fs.writeFileSync(installer, 'isto nao e um PE');
+  const out = path.join(tmp(), 'assets');
+  const result = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', fakeAppImage()], {cwd: root, expectFail: true});
+  assert.match(result.stderr, /identidade.*recebido.*esperado/);
+  assert.equal(fs.existsSync(out), false);
+});
 
 test('#80 keygen: grava a privada fora do repositório e a pública no lugar do marcador', () => {
   const root = repoFixture();
@@ -105,7 +118,7 @@ test('#80 sign/verify: monta zip com prefixo, manifesto com o commit da tag e as
   git(['tag', '-f', 'v0.1.0'], root);
 
   const out = path.join(tmp(), 'assets');
-  const installer = fakeInstaller();
+  const installer = fakeInstaller('0.1.0', git(['rev-parse', 'v0.1.0^{commit}'], root));
   const appImage = fakeAppImage();
   runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage], {cwd: root});
   const manifestFile = path.join(out, 'mesa-manifest-v0.1.0.json');

@@ -46,14 +46,16 @@ export function stageSizeKb(stage) {
 
 /**
  * Argumentos do `makensis` para esta versão.
- * @param {{desk: string, stage: string, outFile: string, version: string, installedKb: number}} input
+ * @param {{desk: string, stage: string, outFile: string, version: string, installedKb: number, commit: string}} input
  * @returns {string[]}
- * @example makensisArgs({desk, stage, outFile: 'Summa-Setup-1.4.0.exe', version: '1.4.0', installedKb: 412000})
+ * @example makensisArgs({desk, stage, outFile: 'Summa-Setup-1.4.0.exe', version: '1.4.0', installedKb: 412000, commit: 'a'.repeat(40)})
  */
-export function makensisArgs({desk, stage, outFile, version, installedKb}) {
+export function makensisArgs({desk, stage, outFile, version, installedKb, commit}) {
+  if (!/^[0-9a-f]{40}$/.test(commit)) throw Error(`commit inválido: recebido ${JSON.stringify(commit)}; esperado SHA-1 git com 40 dígitos hexadecimais`);
   return [
     '-V2', '-WX',
     `-DVERSION=${version}`,
+    `-DCOMMIT=${commit}`,
     `-DSTAGE_DIR=${stage}`,
     `-DOUT_FILE=${outFile}`,
     `-DINSTALLED_KB=${installedKb}`,
@@ -79,13 +81,14 @@ async function electronDistFor(args) {
 
 async function main(args) {
   const version = JSON.parse(fs.readFileSync(path.join(DESK, 'package.json'), 'utf8')).version;
+  const commit = execFileSync('git', ['-C', DESK, 'rev-parse', 'HEAD'], {encoding: 'utf8'}).trim();
   const outDir = path.resolve(flagValue(args, '--out') || path.join(DESK, '..', 'release-installer'));
   const outFile = path.join(outDir, installerAssetName(version));
   const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'summa-installer-'));
   try {
     stageWindowsRelease({desk: DESK, electronDist: await electronDistFor(args), stage, version});
     fs.mkdirSync(outDir, {recursive: true});
-    execFileSync(process.env.MAKENSIS || 'makensis', makensisArgs({desk: DESK, stage, outFile, version, installedKb: stageSizeKb(stage)}), {stdio: 'inherit'});
+    execFileSync(process.env.MAKENSIS || 'makensis', makensisArgs({desk: DESK, stage, outFile, version, installedKb: stageSizeKb(stage), commit}), {stdio: 'inherit'});
   } finally {
     fs.rmSync(stage, {recursive: true, force: true});
   }

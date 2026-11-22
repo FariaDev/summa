@@ -7,6 +7,8 @@ import {createRequire} from 'node:module';
 import {makeSignedRelease} from './fake-update-release.mjs';
 import {fakeIpcMain,fakeShell} from './fake-electron-shell.mjs';
 import {tempDir} from './temp-dir.mjs';
+import {exitedInstaller} from './fake-installer-process.mjs';
+import {message} from '../src/i18n.mjs';
 
 /* #119: no Windows instalado, a atualização é o instalador conferido pelo
    manifesto assinado. Nenhum teste toca a rede nem abre um `.exe` de verdade. */
@@ -21,6 +23,10 @@ const INSTALLED=`${LOCAL}\\Programs\\Summa\\resources\\app`;
 const INSTALLER=Buffer.from('instalador assinado da Summa');
 const tmp=()=>tempDir('summa-installer-update-');
 const serveInstaller=bytes=>async()=>new Response(bytes);
+
+test('codigo 3 explica que outro instalador ja esta aberto',async()=>{
+ await assert.rejects(installerUpdate.waitForInstallerReady({child:exitedInstaller(3),readyFile:path.join(tmp(),'ready')}),{message:message('err.update.installerBusy')});
+});
 
 function prepare(release,{download=INSTALLER,dir=path.join(tmp(),'update-installer')}={}){
  return {dir,run:installerUpdate.prepareInstallerUpdate({version:release.version,publicKey:release.publicKey,dir,fetchBuffer:release.fetchBuffer,fetchInstaller:serveInstaller(download)})};
