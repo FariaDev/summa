@@ -1574,6 +1574,7 @@
   "keys.status.cancelled": "Gravação cancelada.",
   "keys.status.cleared": "“{action:key}” ficou sem atalho.",
   "keys.status.needModifier": "Use ⌘, ⌥ ou ⌃ junto com uma tecla.",
+  "keys.status.needModifierOther": "Use Ctrl ou Alt junto com uma tecla.",
   "keys.status.now": "“{action:key}” agora é {shortcut}.",
   "keys.status.press": "Pressione a nova combinação para “{action:key}”. Esc cancela.",
   "keys.status.restored": "“{action:key}” voltou ao padrão ({shortcut}).",

@@ -608,7 +608,7 @@ function captureKey(init){
   return;
  }
  if(!parseAccel(combo)){
-  setStatus(platformKeyText(t('keys.status.needModifier')),'error');
+  setStatus(message(isMac?'keys.status.needModifier':'keys.status.needModifierOther'),'error');
   return;
  }
  const conflict=conflictFor(combo,capturing);
