@@ -13,7 +13,7 @@ const core = require('../generated/studysearch.core.js').default;
 
 const INDEX_DIR = 'study-search';
 const INDEX_FILE = 'index.json';
-const INDEX_VERSION = 2;
+const INDEX_VERSION = 3;
 const MAX_INDEX_BYTES = 24 * 1024 * 1024;
 const MAX_DOC_CHARS = 4000;
 const MAX_DOCS = 400;
@@ -54,7 +54,7 @@ const whole = (value) => {
 const sha1 = (value) => crypto.createHash('sha1').update(String(value)).digest('hex');
 const sha256 = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
 const keyOf = (file) => sha1(path.resolve(String(file))).slice(0, 20);
-/* Slug do material para o id opaco (`materia`); não é caminho. */
+/* Id opaco de matéria ou caminho relativo do PDF dentro dela. */
 const materialKey = (courseId, name) => sha1(`${courseId}\u0000${name}`).slice(0, 20);
 const reviewKey = (courseId, question, file, page) => sha1(`${courseId}\u0000${question}\u0000${file}\u0000${page}`).slice(0, 20);
 /* Dobra por code point com mapa UTF-16 → índice original (mesma técnica da

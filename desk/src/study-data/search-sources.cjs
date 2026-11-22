@@ -449,7 +449,7 @@ function gather(runtime, {courses = []} = {}) {
       courseName: course.name,
       title: course.name,
       when: 0,
-      names: pdfs.map((pdf) => ({name: text(pdf.name, 200), path: text(pdf.path, 4096)})).filter((pdf) => pdf.name && pdf.path),
+      names: pdfs.map((pdf) => ({name: text(pdf.name, 200), path: text(pdf.path, 4096), relativePath: path.relative(course.path, pdf.path).split(path.sep).join('/')})).filter((pdf) => pdf.name && pdf.path),
     });
     for (const pdf of pdfs) {
       candidates.push({
