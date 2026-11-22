@@ -49,11 +49,17 @@ await withArtifacts('plano-estudo',async ctx=>{
  await openPlan(page);
  await page.locator('#study-plan-pop [data-action="add"]').click();
  await page.locator('#study-plan-pop .study-plan-text').nth(0).fill('Q1 derivadas');
+ await page.locator('#study-plan-pop .study-plan-text').nth(0).dispatchEvent('keydown',{key:'Enter',isComposing:true});
+ assert.equal(await page.locator('#study-plan-pop .study-plan-text').count(),1,'Enter durante composição não cria tarefa');
  await page.locator('#study-plan-pop .study-plan-text').nth(0).press('Enter');
  await page.waitForFunction(()=>document.activeElement?.classList.contains('study-plan-text')&&document.querySelectorAll('.study-plan-text').length===2,undefined,{timeout:5000});
  await page.keyboard.type('Q2 limites');
  await page.locator('#study-plan-pop .study-plan-text').nth(1).press('Enter');
  await page.waitForFunction(()=>document.querySelectorAll('.study-plan-text').length===3,undefined,{timeout:5000});
+ await page.locator('#study-plan-pop .study-plan-text').nth(2).dispatchEvent('keydown',{key:'Backspace',isComposing:true});
+ assert.equal(await page.locator('#study-plan-pop .study-plan-text').count(),3,'Backspace durante composição não remove tarefa vazia');
+ await page.locator('#study-plan-pop .study-plan-text').nth(2).dispatchEvent('keydown',{key:'Escape',isComposing:true});
+ assert.equal(await page.locator('#study-plan-pop').isVisible(),true,'Escape durante composição não fecha o Plano');
  await page.keyboard.press('Backspace');
  await page.waitForFunction(()=>document.querySelectorAll('.study-plan-text').length===2,undefined,{timeout:5000});
  assert.deepEqual(await taskTexts(page),['Q1 derivadas','Q2 limites'],'Enter criou a segunda; o Backspace em vazio tirou a terceira');
