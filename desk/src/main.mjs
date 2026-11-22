@@ -1,5 +1,6 @@
 // @ts-check
 import {bindPointerDrag} from './pointer-drag.mjs';
+import {xournalMenuAvailable} from './study/xournal-menu.mjs';
 import {icon} from '../icons.mjs';
 import {$,S,toast,toastFailure,conferirAppName,updateCheckButton,applyCaptureAvailability,cancelConnect,connectionState,save,calcHeightPx,studySnapshot,pageRefs,refs,layoutSnapshot,updateContextSummary,sessionTitleOf,applyStudy,applyTheme,applyAccent,ACCENTS,labelBtn,settings,connect,invalidateConnect,loadCourse,switchCourse,supportsCapability,relabelTutorColumn,relabelFreeCourseName,paintComposerSend} from './state.mjs';
 import {visibleEngines,setLegacySession,legacyContinueEngine,relabelLegacySession} from './visible-engines-ui.mjs';
@@ -713,8 +714,7 @@ function paletteAvailableActions(){
  command('study-backup',t('study.backup'),'download',{run:()=>studyBackup.abrirBackup()});
  command('study-share',t('study.share'),'upload',{run:()=>studyBackup.abrirCompartilhar()});
  command('tutor-pdf',t('study.tutorPdf'),'sparkles',{run:()=>openTutorPdf()});
- const xournalOff=desk.xournal===false||(S.appConfig.platform==='win32'&&!S.appConfig.xournalPath);
- if(!xournalOff)command('xournal',t('palette.openXournal'),'external',{run:()=>openXournal()});
+ if(xournalMenuAvailable(S.appConfig))command('xournal',t('palette.openXournal'),'external',{run:()=>openXournal()});
  if(desk.endDay!==false)command('end-day',t('palette.endDay'),'moon',{disabled:!!S.busy,reason:t('palette.reason.stopFirst'),run:()=>openEndDay()});
  const panelsCfg=Array.isArray(desk.panels)?desk.panels:[];
  if(panelsCfg.length>1){

@@ -1,6 +1,7 @@
 // @ts-check
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {discoverCourses}=require('./courses.cjs');
+const {linuxXournalPath}=require('./xournal-path.cjs');
 
 // Núcleos provados: core/library.bend (escolha dos PDFs) e core/config.bend
 // (normalização da configuração). A ponte manda fatos (Maybe/Bool) e o núcleo
@@ -188,6 +189,7 @@ function homeVaultExists(){return fs.existsSync(path.join(HOME_VAULT,'Courses'))
 
 // Xournal++: .app no macOS; .exe nos caminhos comuns do Windows (semeia só se existir).
 function detectXournalPath(){
+ if(process.platform==='linux')return linuxXournalPath();
  if(process.platform==='darwin')return fs.existsSync('/Applications/Xournal++.app')?'/Applications/Xournal++.app':'';
  if(process.platform==='win32'){
   const candidates=[
