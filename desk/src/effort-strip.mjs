@@ -101,11 +101,6 @@ export function setEffortStripDisabled(disabled) {
   for (const button of box.querySelectorAll('[role="radio"]')) button.setAttribute('aria-disabled', String(strip.disabled));
 }
 
-/** O nível marcado agora (`''` antes de haver catálogo). @returns {string} */
-export function effortStripValue() {
-  return strip.value;
-}
-
 /** @param {string} level @param {string} text */
 function radioOf(level, text) {
   const button = document.createElement('button');
