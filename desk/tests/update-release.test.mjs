@@ -7,6 +7,7 @@ import {spawnSync, execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {tempDir} from './temp-dir.mjs';
 import {fakePeInstaller} from './fake-pe-installer.mjs';
+import {fakeReleaseImage} from './fake-release-image-tools.mjs';
 
 /* Script de release assinada (#80) rodando de verdade: git local temporário,
    par Ed25519 gerado no teste e nenhuma rede. Cobre keygen, sign, verify e a
@@ -47,24 +48,70 @@ function fakeInstaller(version = '0.1.0', commit = 'a'.repeat(40)) {
   return file;
 }
 
-function fakeAppImage(version = '0.1.0') {
+function fakeAppImage(version = '0.1.0', identity = {name:'summa', version}) {
   const file = path.join(tmp(), `Summa-${version}-x86_64.AppImage`);
-  fs.writeFileSync(file, 'AppImage de teste');
+  fs.writeFileSync(file, fakeReleaseImage('AppImage', identity));
   return file;
 }
 
-function fakeDmg(version = '0.1.0') {
+function fakeDmg(version = '0.1.0', identity = {name:'summa', version}) {
   const file = path.join(tmp(), `Summa-${version}.dmg`);
-  fs.writeFileSync(file, 'imagem DMG de teste');
+  fs.writeFileSync(file, fakeReleaseImage('DMG', identity));
   return file;
 }
 
 function runScript(args, {cwd, expectFail = false} = {}) {
-  const result = spawnSync(process.execPath, [SCRIPT, ...args], {cwd, encoding: 'utf8'});
+  const result = spawnSync(process.execPath, ['--import', path.join(DESK, 'tests', 'fake-release-image-tools.mjs'), SCRIPT, ...args], {cwd, encoding: 'utf8'});
   if (!expectFail) assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   else assert.notEqual(result.status, 0, 'o script tinha de recusar');
   return result;
 }
+
+for (const kind of ['AppImage', 'DMG']) test(`sign recusa ${kind} renomeado de outra versão antes de gerar assets`, () => {
+  const root = repoFixture();
+  const privateFile = path.join(tmp(), 'mesa-update.pem');
+  runScript(['keygen', '--private-key', privateFile], {cwd:root});
+  const commit = git(['rev-parse', 'v0.1.0^{commit}'], root);
+  const out = path.join(tmp(), 'assets');
+  const wrong = {name:'summa', version:'0.0.9'};
+  const result = runScript(['sign', 'v0.1.0', '--private-key', privateFile, '--out', out,
+    '--exe', fakeInstaller('0.1.0', commit), '--appimage', fakeAppImage('0.1.0', kind === 'AppImage' ? wrong : undefined),
+    '--dmg', fakeDmg('0.1.0', kind === 'DMG' ? wrong : undefined)], {cwd:root, expectFail:true});
+  assert.match(result.stderr, /identidade.*recebido.*0.0.9.*esperado.*0.1.0/);
+  assert.equal(fs.existsSync(out), false);
+});
+
+for (const kind of ['AppImage', 'DMG']) test(`sign confere produto, commit opcional e payload inválido de ${kind}`, () => {
+  const root = repoFixture();
+  const privateFile = path.join(tmp(), 'mesa-update.pem');
+  runScript(['keygen', '--private-key', privateFile], {cwd:root});
+  const commit = git(['rev-parse', 'v0.1.0^{commit}'], root);
+  const out = path.join(tmp(), 'assets');
+  const installer = fakeInstaller('0.1.0', commit);
+  const image = fakeAppImage();
+  const dmg = fakeDmg();
+  const target = kind === 'AppImage' ? image : dmg;
+  const args = ['sign', 'v0.1.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', image, '--dmg', dmg];
+  for (const identity of [null, {}, {name:'outro', version:'0.1.0'}, {name:'summa', productName:'Outro', version:'0.1.0'}, {name:'summa', version:'0.1.0', commit:'b'.repeat(40)}, {name:'summa', version:'0.1.0', commit:''}]) {
+    fs.writeFileSync(target, fakeReleaseImage(kind, identity));
+    const result = runScript(args, {cwd:root, expectFail:true});
+    assert.match(result.stderr, /identidade.*recebido.*esperado/);
+    assert.equal(fs.existsSync(out), false);
+  }
+  fs.writeFileSync(target, fakeReleaseImage(kind, {name:'summa',version:'0.1.0',commit}).subarray(0,130));
+  assert.match(runScript(args, {cwd:root, expectFail:true}).stderr, /package.json inválido/);
+  assert.equal(fs.existsSync(out), false);
+  fs.writeFileSync(target, '');
+  assert.match(runScript(args, {cwd:root, expectFail:true}).stderr, /não encontrado ou vazio/);
+  assert.equal(fs.existsSync(out), false);
+  if (kind === 'AppImage') {
+    fs.writeFileSync(target, 'isto não é ELF');
+    assert.match(runScript(args, {cwd:root, expectFail:true}).stderr, /imagem ilegível/);
+    assert.equal(fs.existsSync(out), false);
+  }
+  fs.writeFileSync(target, fakeReleaseImage(kind, {name:'summa',version:'0.1.0',commit}));
+  runScript(args, {cwd:root});
+});
 
 test('sign recusa texto com nome de exe antes de gerar os assets', () => {
   const root = repoFixture();

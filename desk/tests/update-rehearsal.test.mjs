@@ -9,6 +9,7 @@ import {auditUpdatedInstall, previousReleaseTag, rehearseUpdate} from '../script
 import {buildReleaseZip} from '../scripts/update-zip.mjs';
 import {releaseAssetsFetcher} from './fake-release-assets.mjs';
 import {fakePeInstaller} from './fake-pe-installer.mjs';
+import {fakeReleaseImage} from './fake-release-image-tools.mjs';
 
 const DESK = path.resolve(import.meta.dirname, '..');
 const KEY = 'CHAVE PUBLICA\n';
@@ -196,13 +197,13 @@ test('sign recusa assinar quando o ensaio falha e não deixa assets', {skip: win
   const out = path.join(keyDir, 'assets');
   const installer = path.join(keyDir, 'Summa-Setup-0.2.0.exe');
   const appImage = path.join(keyDir, 'Summa-0.2.0-x86_64.AppImage');
-  fs.writeFileSync(appImage, 'AppImage de teste');
+  fs.writeFileSync(appImage, fakeReleaseImage('AppImage', {name:'summa', version:'0.2.0'}));
   const dmg = path.join(keyDir, 'Summa-0.2.0.dmg');
-  fs.writeFileSync(dmg, 'imagem DMG de teste');
+  fs.writeFileSync(dmg, fakeReleaseImage('DMG', {name:'summa', version:'0.2.0'}));
   const run = (root) => {
     const commit = execFileSync('git', ['rev-parse', 'v0.2.0^{commit}'], {cwd: root, encoding: 'utf8'}).trim();
     fs.writeFileSync(installer, fakePeInstaller({version: '0.2.0', commit}));
-    return spawnSync(process.execPath, [path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root, encoding: 'utf8'});
+    return spawnSync(process.execPath, ['--import', path.join(DESK, 'tests', 'fake-release-image-tools.mjs'), path.join(DESK, 'scripts', 'update-release.mjs'), 'sign', 'v0.2.0', '--private-key', privateFile, '--out', out, '--exe', installer, '--appimage', appImage, '--dmg', dmg], {cwd: root, encoding: 'utf8'});
   };
   const refused = run(releaseRepo(t, {publicKey: publicPem}));
   assert.notEqual(refused.status, 0);

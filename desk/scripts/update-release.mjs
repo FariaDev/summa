@@ -20,6 +20,7 @@ import {createRequire} from 'node:module';
 import {rehearseBeforeSigning} from './update-rehearsal.mjs';
 import {buildReleaseZip} from './update-zip.mjs';
 import {assertInstallerIdentity} from './installer-identity.mjs';
+import {assertReleaseImageIdentity} from './release-image-identity.mjs';
 
 const require = createRequire(import.meta.url);
 const signature = require('../updater-signature.cjs');
@@ -174,6 +175,8 @@ async function sign(args) {
   const installerBytes = fs.readFileSync(installer);
   assertInstallerIdentity(installerBytes, {version, commit});
   const dmg = releaseImageToSign(args, '--dmg', 'DMG', signature.dmgAssetName(version));
+  assertReleaseImageIdentity(appImage, 'AppImage', {version, commit});
+  assertReleaseImageIdentity(dmg, 'DMG', {version, commit});
   await rehearseBeforeSigning({repoRoot: REPO_ROOT, version});
   fs.mkdirSync(outDir, {recursive: true});
   const zip = buildReleaseZip({repoRoot: REPO_ROOT, version, outDir});
