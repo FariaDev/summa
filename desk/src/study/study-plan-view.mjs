@@ -103,22 +103,26 @@ function toolButton(action, key, iconName, id) {
 function taskRow(task, nowId) {
   const classes = ['study-plan-row', task.done ? 'done' : '', task.id === nowId ? 'now' : ''].filter(Boolean).join(' ');
   const meta = [];
+  const actions = [];
   if (task.pdf) {
-    meta.push(make('span', {class: 'study-plan-ref'}, [t('plan.linked', {name: baseName(task.pdf), page: task.page})]));
-    meta.push(make('button', {type: 'button', 'data-action': 'open', 'data-id': task.id}, [t('plan.open')]));
+    const reference = t('plan.linked', {name: baseName(task.pdf), page: task.page});
+    meta.push(make('button', {type: 'button', class: 'study-plan-ref', 'data-action': 'open', 'data-id': task.id, title: reference, 'aria-label': `${t('plan.open')}: ${reference}`}, [iconNode('file'), make('span', {}, [reference]), iconNode('external')]));
   }
-  if (pageRefs().length) meta.push(make('button', {type: 'button', 'data-action': 'link', 'data-id': task.id}, [t(task.pdf ? 'plan.relink' : 'plan.link')]));
-  if (task.pdf) meta.push(make('button', {type: 'button', 'data-action': 'unlink', 'data-id': task.id}, [t('plan.unlink')]));
+  if (pageRefs().length) actions.push(make('button', {type: 'button', 'data-action': 'link', 'data-id': task.id}, [iconNode('paperclip'), t(task.pdf ? 'plan.relink' : 'plan.link')]));
+  if (task.pdf) actions.push(make('button', {type: 'button', 'data-action': 'unlink', 'data-id': task.id}, [t('plan.unlink')]));
   return make('div', {class: classes}, [
     make('input', {type: 'checkbox', checked: task.done, 'data-action': 'done', 'data-id': task.id, 'aria-label': t('plan.done')}),
     make('div', {class: 'study-plan-main'}, [
-      make('input', {type: 'text', class: 'study-plan-text', value: task.text, maxlength: String(plan.PLAN_LIMITS.text), 'data-action': 'text', 'data-id': task.id, 'aria-label': t('plan.task')}),
+      make('textarea', {class: 'study-plan-text', rows: '1', value: task.text, maxlength: String(plan.PLAN_LIMITS.text), 'data-action': 'text', 'data-id': task.id, 'aria-label': t('plan.task')}),
       make('div', {class: 'study-plan-meta'}, meta),
-    ]),
-    make('div', {class: 'study-plan-tools'}, [
-      toolButton('up', 'plan.up', 'arrowUp', task.id),
-      toolButton('down', 'plan.down', 'arrowUp', task.id),
-      toolButton('remove', 'plan.remove', 'close', task.id),
+      make('div', {class: 'study-plan-actions'}, [
+        ...actions,
+        make('div', {class: 'study-plan-tools'}, [
+          toolButton('up', 'plan.up', 'arrowUp', task.id),
+          toolButton('down', 'plan.down', 'arrowUp', task.id),
+          toolButton('remove', 'plan.remove', 'close', task.id),
+        ]),
+      ]),
     ]),
   ]);
 }
@@ -133,7 +137,7 @@ function renderPop() {
   const cur = plan.studyPlanSnapshot();
   const done = cur.tasks.filter((task) => task.done).length;
   const nowId = plan.currentTaskId(cur);
-  const notes = make('textarea', {'data-action': 'notes', rows: '4', maxlength: String(plan.PLAN_LIMITS.notes), 'aria-label': t('plan.notes')});
+  const notes = make('textarea', {id: 'study-plan-notes', 'data-action': 'notes', rows: '2', maxlength: String(plan.PLAN_LIMITS.notes), 'aria-label': t('plan.notes')});
   /** @type {HTMLTextAreaElement} */ (notes).value = cur.notes;
   pop.replaceChildren(
     make('div', {class: 'study-plan-head'}, [
@@ -141,8 +145,8 @@ function renderPop() {
       cur.tasks.length ? make('span', {class: 'study-plan-count'}, [t('plan.count', {done, total: cur.tasks.length})]) : null,
     ]),
     make('div', {class: 'study-plan-list'}, cur.tasks.map((task) => taskRow(task, nowId))),
-    make('button', {type: 'button', class: 'study-plan-add', 'data-action': 'add'}, [t('plan.add')]),
-    make('div', {class: 'study-plan-notes'}, [make('span', {class: 'study-plan-label'}, [t('plan.notes')]), notes]),
+    make('button', {type: 'button', class: 'study-plan-add', 'data-action': 'add'}, [iconNode('plus'), t('plan.add')]),
+    make('div', {class: 'study-plan-notes'}, [make('label', {class: 'study-plan-label', for: 'study-plan-notes'}, [t('plan.notes')]), notes]),
   );
 }
 
@@ -288,8 +292,13 @@ function onPopChange(event) {
 function onPopInput(event) {
   const field = /** @type {HTMLInputElement | HTMLTextAreaElement} */ (event.target);
   const cur = plan.studyPlanSnapshot();
-  if (field?.dataset.action === 'text') plan.setStudyPlan(plan.editTask(cur, field.dataset.id || '', field.value));
-  else if (field?.dataset.action === 'notes') plan.setStudyPlan(plan.setNotes(cur, field.value));
+  if (field?.dataset.action === 'text') {
+    const id = field.dataset.id || '';
+    const updated = plan.editTask(cur, id, field.value);
+    plan.setStudyPlan(updated);
+    const storedText = updated.tasks.find((task) => task.id === id)?.text;
+    if (storedText !== undefined && field.value !== storedText) field.value = storedText;
+  } else if (field?.dataset.action === 'notes') plan.setStudyPlan(plan.setNotes(cur, field.value));
   else return;
   save();
   paintTrigger();

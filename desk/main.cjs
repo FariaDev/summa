@@ -58,7 +58,7 @@ const {readPalette,phoneLookCss}=require('./phone-look.cjs');
 const {phoneCastCss}=require('./phone-cast.cjs');
 const {createLanguageHost}=require('./language-host.cjs');
 const {ensureLinuxDesktopEntry}=require('./linux-desktop.cjs');
-const {createAppIcon,systemIconTheme}=require('./app-icon-host.cjs');const {WINDOWS_APP_ID,ensureStartMenuShortcut}=require('./windows-shortcut.cjs');
+const {createAppIcon,startupWindowIcon,systemIconTheme}=require('./app-icon-host.cjs');const {WINDOWS_APP_ID,ensureStartMenuShortcut}=require('./windows-shortcut.cjs');
 const {removeLegacyBundle}=require('./legacy-bundle.cjs');
 const {createOpencodeHost}=require('./opencode-host.cjs');const {toolTestFixtures}=require('./tool-test-fixtures.cjs');
 const {createOpenCodeProvidersHost}=require('./opencode-providers-host.cjs');const {createTutorRelink}=require('./tutor-relink.cjs');
@@ -430,7 +430,7 @@ app.whenReady().then(async()=>{
  app.setAboutPanelOptions({applicationName:'Summa',applicationVersion:app.getVersion(),copyright:languageHost.t('about.copyright'),iconPath:path.join(__dirname,'assets','mesa-1024.png')});
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
- win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:path.join(__dirname,'assets',process.platform==='win32'?'mesa.ico':'mesa-1024.png'),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
+ win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:startupWindowIcon(path.join(__dirname,'assets'),process.platform),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
  keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line),skip:()=>miniMode?.isOn()===true});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));
