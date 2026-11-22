@@ -99,6 +99,12 @@ test('same-name PDFs in different course folders have distinct material destinat
   files[1] = moved;
   const updated = await search.search(root, options);
   assert.deepEqual(updated.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files, 'moving a PDF invalidates material metadata');
+  const externalRoot = course.path;
+  course.path = path.join(root, 'relocated', 'course');
+  fs.mkdirSync(course.path, {recursive: true});
+  fs.writeFileSync(path.join(course.path, '_state.md'), `source_roots:\n  - ${externalRoot}\n`);
+  const relocated = await search.search(root, options);
+  assert.deepEqual(relocated.hits.map((hit) => search.resolve(root, hit.id, options).path).sort(), files, 'moving the course with fixed external PDFs invalidates relative-path IDs');
   fs.rmSync(files[0]);
   assert.equal(search.resolve(root, legacyId, options).path, files[1], 'unambiguous legacy IDs still resolve');
   fs.rmSync(files[1]);
