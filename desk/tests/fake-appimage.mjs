@@ -22,13 +22,17 @@ export function fakeAppImageDownload(bytes,status=200){
  * @param {{error?:string}} [options]
  * @example const process=fakeAppImageProcess();
  */
-export function fakeAppImageProcess({error=''}={}){
+export function fakeAppImageProcess({error='',exitImmediately=false}={}){
  const calls=[];
  const spawnFn=(file,args,options)=>{
   calls.push({file,args,options});
   const child=new EventEmitter();
   child.unref=()=>calls.push('unref');
-  queueMicrotask(()=>error?child.emit('error',Error(error)):child.emit('spawn'));
+  queueMicrotask(()=>{
+   if(error)return child.emit('error',Error(error));
+   child.emit('spawn');
+   if(exitImmediately)child.emit('exit',1);
+  });
   return child;
  };
  return {calls,spawnFn};

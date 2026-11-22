@@ -19,6 +19,24 @@ const env={APPIMAGE:'/apps/Summa.AppImage',APPDIR:'/tmp/mount'};
 const deskDir='/tmp/mount/resources/app';
 const bytes=Buffer.from('AppImage assinado');
 
+test('AppImage que sai antes de pronto rejeita e restaura bytes originais sem fechar a Mesa',async()=>{
+ const dir=tempDir('summa-rollback-'),runtime=tempDir('summa-rollback-runtime-');
+ const appImage=path.join(dir,'Summa.AppImage'),file=path.join(dir,'.new.part');
+ fs.writeFileSync(appImage,'original');fs.writeFileSync(file,'nova quebrada');
+ const fake=fakeAppImageHost(image),ipcMain=fakeIpcMain();
+ const process=fakeAppImageProcess({exitImmediately:true});
+ fake.appImageUpdate={...image,prepareAppImageUpdate:async()=>({file}),
+  relaunchAppImage:opts=>image.relaunchAppImage({...opts,spawnFn:process.spawnFn})};
+ updater.writeCache(path.join(runtime,'update.json'),{release:{at:Date.now(),version:'1.3.4'}});
+ registerUpdateHost({...fake,ipcMain,shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,platform:'linux',env:{...env,APPIMAGE:appImage}});
+ await assert.rejects(ipcMain.invoke('update-apply'),/appImageStart/);
+ assert.equal(fs.readFileSync(appImage,'utf8'),'original');
+ assert.equal(fake.calls.includes('lock'),true);
+ assert.equal(fake.calls.includes('quit'),false);
+ assert.equal(updater.readCache(path.join(runtime,'update.json')).installerPending,undefined);
+ assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
+});
+
 test('detecção exige Linux, arquivo absoluto e payload dentro da montagem',()=>{
  assert.equal(image.isLinuxAppImage({platform:'linux',env,deskDir}),true);
  for(const facts of [{platform:'win32',env,deskDir},{platform:'linux',env:{},deskDir},{platform:'linux',env,deskDir:'/tmp/mount-other/app'},{platform:'linux',env,deskDir:'/src/desk'}])assert.equal(image.isLinuxAppImage(facts),false);
