@@ -1,5 +1,6 @@
 // @ts-check
 import {icon} from '../icons.mjs';
+import {createLayoutSaver} from './layout-save.mjs';
 import {noteOwnScroll} from './chat/chat-scroll-view.mjs';
 export {distanceFromEnd,revealInChat,applyChatScroll} from './chat/chat-scroll-view.mjs';
 import {showHistory,historyIdentityShown,resetAttachments,restoreAttachments} from './chat/chat.mjs';
@@ -297,7 +298,8 @@ export function paintComposerSend(){
  const text=$('#prompt')?.value||'';
  send.classList.toggle('primary',Boolean(String(text).trim()||S.attachments.length||S.pdfAttachments.length||tutorNotebookCount()));
 }
-export function save(immediate=false){paintComposerSend();clearTimeout(S.saveTimer);if(immediate){window.desk.save(layoutSnapshot()).catch(e=>toast(e.message));return;}S.saveTimer=/** @type {any} */ (setTimeout(()=>window.desk.save(layoutSnapshot()).catch(e=>toast(e.message)),400));}
+const layoutSaver=createLayoutSaver({state:S,desk:window.desk,snapshot:layoutSnapshot,onError:e=>toast(e.message)});
+export function save(immediate=false){paintComposerSend();layoutSaver.save(immediate);}
 export function refs(){return S.includeRefs?S.panels.filter((p,i)=>p.path&&(i===0||S.refVisible)).map(p=>({path:p.path,page:p.page})):[];}
 /* A linha de baixo do cabeçalho (r2): o PDF e a página que vão com a mensagem,
    mais a questão ativa. O desenho e o painel Contexto moram em
@@ -737,7 +739,7 @@ export async function switchCourse(id,{connect:autoConnect=true}={}){
  if(!tab||tab.classList.contains('active'))return;
  S.switching=true;setTabsDisabled(true);invalidateConnect();
  try{
-  clearTimeout(S.saveTimer);await window.desk.save(layoutSnapshot());
+  await layoutSaver.write();
   const data=await window.desk.switchCourse(id);
   /* A matéria troca junto com a conversa ativa dela: metadados do motor antes
      do vazio e do connect para o rótulo e as capacidades já serem os novos. */

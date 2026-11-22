@@ -469,6 +469,7 @@ app.whenReady().then(async()=>{
  win.on('ready-to-show',()=>{
   if(process.platform==='linux')require('./linux-appimage-update.cjs').signalAppImageReady({app});
  });
+ require('./renderer-save-host.cjs').registerRendererSaveHost({win,ipcMain,quitting:()=>quitting,quit:()=>app.quit()});
  win.on('close',()=>persist());loadRenderer(win,rendererEntry({env:process.env,deskDir:__dirname}));
  scheduleUpdateCheck();
 });

@@ -418,6 +418,7 @@ const deskApi={
   if(!HISTORY_MEDIA_ID.test(value))fail('Mídia do histórico inválida.');
   return invoke('history-media-read',{id:value});
  },ggbShow:p=>invoke('ggb-view',p),ggbFreeze:()=>invoke('ggb-freeze'),ggbShot:()=>invoke('ggb-shot'),ggbSnapshot:()=>invoke('ggb-snapshot'),ggbBoard:()=>invoke('ggb-board'),ggbRestore:()=>invoke('ggb-restore'),onGgbOpen:fn=>ipcRenderer.on('ggb-open',fn),onGgbBoard:fn=>ipcRenderer.on('ggb-board',(_e,status)=>fn(status)),onGgbReady:fn=>ipcRenderer.on('ggb-ready',(_e,status)=>fn(status)),save:s=>invoke('save-state',s),
+ onSaveFlush:fn=>ipcRenderer.on('renderer-save-flush',()=>{Promise.resolve().then(()=>fn()).finally(()=>ipcRenderer.send('renderer-save-flushed')).catch(()=>{});}),
  connect:historyIdentity=>invoke('pi-connect',typeof historyIdentity==='string'?{historyIdentity}:{}),connectCancel:()=>invoke('pi-connect-cancel'),health:()=>invoke('pi-health'),prompt:p=>invoke('pi-prompt',p),tutorWarm:p=>invoke('tutor-warm',p),abort:attemptId=>invoke('pi-abort',typeof attemptId==='string'?{attemptId}:{}),retryLastTurn:()=>invoke('pi-retry-last-turn'),compact:i=>invoke('pi-compact',i),commands:()=>invoke('pi-commands'),autoCompaction:e=>invoke('pi-auto-compaction',e),respond:d=>invoke('pi-response',d),newSession:options=>{
   const raw=typeof options==='string'?{engine:options}:options&&typeof options==='object'?options:{};
   const request={};
