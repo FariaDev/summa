@@ -343,6 +343,7 @@ export function initStudyPlanView() {
   pop.addEventListener('change', onPopChange);
   pop.addEventListener('input', onPopInput);
   pop.addEventListener('keydown', onPopKey);
+  menu.addEventListener('desk-menu-open', renderPop);
   /* Trocar o idioma repinta o Plano: a lista já desenhada guardava o texto antigo (#110). */
   window.addEventListener('desk-language', () => {
     paintTrigger();
