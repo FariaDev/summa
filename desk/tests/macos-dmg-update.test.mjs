@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
+import {performance} from 'node:perf_hooks';
 import {tempDir} from './temp-dir.mjs';
 import {enText} from './pt-text.mjs';
 import {makeSignedRelease} from './fake-update-release.mjs';
@@ -189,6 +190,18 @@ function hostFixture({marker=true,fail=''}={}){
  return host;
 }
 
+test('resultado informa se foi registrado neste processo sem alterar o cache',()=>{
+ const host=hostFixture(),cacheFile=path.join(host.runtime,'update.json');
+ assert.equal(host.ipcMain.invoke('update-result'),null);
+ for(const at of [performance.timeOrigin-1,performance.timeOrigin,Date.now(),undefined]){
+  const lastResult={status:'recovered',reason:'erro salvo',at};
+  updater.writeCache(cacheFile,{lastResult});
+  const persisted=updater.readCache(cacheFile).lastResult;
+  assert.deepEqual(host.ipcMain.invoke('update-result'),{...persisted,fresh:Number(at)>=performance.timeOrigin});
+  assert.deepEqual(updater.readCache(cacheFile).lastResult,persisted);
+ }
+});
+
 test('host despacha pelo marcador, mostra origem normal e só fecha depois de ready',async()=>{
  const host=hostFixture();
  assert.equal(host.ipcMain.invoke('update-origin').kind,'normal');
@@ -226,5 +239,18 @@ test('próxima abertura registra aplicada ou recuperada, limpa download e não t
   assert.equal(fs.existsSync(dir),false);
   assert.equal(fs.readFileSync(path.join(runtime,'session'),'utf8'),'sessão');
   assert.equal(await update.settleInstallerUpdate({cacheFile,current,dir,failureReason:'não instalou'}),null);
+ }
+});
+
+test('próxima abertura conserva o erro do helper depois de ready, com fallback sem erro',async()=>{
+ for(const saved of ['erro real do helper','',null]){
+  const runtime=tmp(),cacheFile=path.join(runtime,'update.json'),dir=path.join(runtime,'update-dmg');
+  fs.mkdirSync(dir);fs.writeFileSync(path.join(dir,'ready'),'ready\n');
+  if(saved!==null)fs.writeFileSync(path.join(dir,'error'),saved);
+  await update.markInstallerPending({cacheFile,version:'1.4.1',from:'1.4.0'});
+  const result=await update.settleInstallerUpdate({cacheFile,current:'1.4.0',dir,failureReason:'não instalou'});
+  assert.equal(result.reason,saved||'não instalou');
+  assert.equal(updater.readCache(cacheFile).lastResult.reason,saved||'não instalou');
+  assert.equal(fs.existsSync(dir),false);
  }
 });

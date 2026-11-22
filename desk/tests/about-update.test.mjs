@@ -4,9 +4,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {installDom} from './dom-shim.mjs';
+import {message} from '../src/i18n.mjs';
+import {t} from '../src/ui-text.mjs';
+import {fakeAboutUpdate} from './fake-about-update.mjs';
 
 installDom();
-const {resultStateOf, updateStateOf} = await import('../src/about-update.mjs');
+const {resultStateOf, updateStateOf, refreshMesaUpdate, aboutHandlers} = await import('../src/about-update.mjs');
+
+function renderedText(node){
+  return [node.textContent,...node.children.map(renderedText)].join(' ');
+}
+
+function renderedNodes(node){return [node,...node.children.flatMap(renderedNodes)];}
+
+test('refresh automático conserva recuperação e botão explícito permite tentar de novo', async () => {
+ for(const status of ['recovered','failed']){
+  const fake=fakeAboutUpdate({status,version:'1.3.3',reason:'erro salvo',fresh:true});
+  Object.assign(window.desk,fake.desk);
+  const box=document.querySelector('#about-update');
+  box.replaceChildren=function(...children){this.children=children;};
+  await refreshMesaUpdate(false);
+  assert.match(renderedText(box),/erro salvo/);
+  assert.equal(fake.checks.length,0);
+  assert.ok(renderedNodes(box).some(node=>node.getAttribute('id')==='update-check'));
+  await aboutHandlers.CheckUpdate();
+  assert.deepEqual(fake.checks,[{manual:true}]);
+  assert.doesNotMatch(renderedText(box),/erro salvo/);
+  assert.match(renderedText(box),/1.3.3/);
+ }
+});
+
+test('refresh automático com recuperação antiga, sem resultado ou com sucesso mantém a checagem normal', async () => {
+  for(const result of [null,{status:'applied',version:'1.3.3'},
+    {status:'recovered',reason:'erro antigo',fresh:false},
+    {status:'recovered',reason:'cache antigo sem flag'}]){
+    const fake=fakeAboutUpdate(result);
+    Object.assign(window.desk,fake.desk);
+    await refreshMesaUpdate(false);
+    assert.deepEqual(fake.checks,[{manual:false}]);
+  }
+});
 
 test('#160: clone sujo recusado vira UpdateDirtyClone com a contagem', () => {
   assert.deepEqual(
@@ -27,6 +64,18 @@ test('falha persistida do AppImage mostra a versão recuperada e o motivo', () =
     resultStateOf({status: 'failed', version: '1.3.4', reason: 'startup failed'}),
     {$: 'UpdateRecovered', version: '1.3.4', reason: 'startup failed'},
   );
+});
+
+test('resultado recuperado traduz o motivo marcado antes de chegar à view', () => {
+  for (const status of ['recovered', 'failed']) {
+   for (const key of ['err.update.dmgStillOpen', 'err.update.installerFailed', 'err.update.appImageFailed']) {
+    assert.deepEqual(
+      resultStateOf({status, version: '1.3.3', reason: message(key)}),
+      {$: 'UpdateRecovered', version: '1.3.3', reason: t(key)},
+    );
+   }
+  }
+  assert.equal(resultStateOf({status: 'recovered'}).reason, '');
 });
 
 /* #21: a checagem marca a instalação vinda do repositório antigo; o Sobre

@@ -80,5 +80,17 @@ async function waitForDmgReady({child,dir,timeoutMs}){
  }
 }
 
+/**
+ * Conserva o motivo salvo pelo helper antes de limpar o download na reabertura.
+ * @param {Parameters<typeof installer.settleInstallerUpdate>[0]} input
+ * @returns {ReturnType<typeof installer.settleInstallerUpdate>}
+ * @example await settleInstallerUpdate({cacheFile,current,dir,failureReason})
+ */
+function settleInstallerUpdate(input){
+ let reason='';
+ if(input.dir){try{reason=fs.readFileSync(path.join(input.dir,'error'),'utf8').trim();}catch{}}
+ return installer.settleInstallerUpdate({...input,failureReason:reason||input.failureReason});
+}
+
 module.exports={WORKER_FILES,prepareDmgUpdate,assertWritableBundle,launchDmgUpdate,waitForDmgReady,
- markInstallerPending:installer.markInstallerPending,clearInstallerPending:installer.clearInstallerPending,settleInstallerUpdate:installer.settleInstallerUpdate};
+ markInstallerPending:installer.markInstallerPending,clearInstallerPending:installer.clearInstallerPending,settleInstallerUpdate};

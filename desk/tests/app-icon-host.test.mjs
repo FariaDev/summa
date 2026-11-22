@@ -10,7 +10,7 @@ import {INTEGRAL_VARIANTS, integralSvg} from '../scripts/integral-art.mjs';
    dark-graphite. O app, a janela e o disco são falsos com nome; o último teste
    olha os arquivos gerados de verdade em assets/. */
 const require=createRequire(import.meta.url);
-const {appIconPaths,createAppIcon,iconVariant}=require('../app-icon-host.cjs');
+const {appIconPaths,createAppIcon,iconVariant,startupWindowIcon}=require('../app-icon-host.cjs');
 const DESK=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const ASSETS='/mesa/assets';
 const asset=(...parts)=>path.join(ASSETS,...parts);
@@ -21,6 +21,15 @@ function fakeDisk(files){return (file)=>files.includes(file);}
 function fakeElectronApp(){const calls=[];return {calls,app:{dock:{setIcon:(file)=>calls.push(file)}}};}
 function fakeEmptyIcon(){return EMPTY_DOCK_ICON;}
 function fakeWindow(){const calls=[];return {calls,setIcon:(file)=>calls.push(file),isDestroyed:()=>false};}
+
+test('ícone inicial usa a variante de 256 no Linux sem mudar o pacote nem as outras plataformas',()=>{
+  const compact=asset('app-icon','integral-dark-graphite-256.png');
+  const disk=fakeDisk([compact]);
+  assert.equal(startupWindowIcon(ASSETS,'linux',disk),compact);
+  assert.equal(startupWindowIcon(ASSETS,'linux',fakeDisk([])),bundle.dock);
+  assert.equal(startupWindowIcon(ASSETS,'win32',disk),bundle.window);
+  assert.equal(startupWindowIcon(ASSETS,'darwin',disk),bundle.dock);
+});
 
 test('as quatro combinações de tema e tinta', () => {
   const cases=[

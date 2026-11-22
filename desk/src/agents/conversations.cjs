@@ -168,15 +168,15 @@ function validateMessage(message) {
   return true;
 }
 
-function validateMessages(messages) {
+function validateMessages(messages, descriptorBytes = Infinity) {
   if (!Array.isArray(messages) || messages.length > MAX_MESSAGE_COUNT) return false;
-  if (messages.length && bytes(messages) > MAX_MESSAGES_BYTES) return false;
+  // Six times the source bounds canonical JSON, including numeric expansion (1e20 → 21 digits).
+  if (messages.length && descriptorBytes * 6 > MAX_MESSAGES_BYTES && bytes(messages) > MAX_MESSAGES_BYTES) return false;
   for (const message of messages) if (!validateMessage(message)) return false;
   return true;
 }
-
 /* Descritor válido (schema exato). Fora disso é null — nunca Pi silencioso. */
-function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE) {
+function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE, descriptorBytes = Infinity) {
   if (!isPlainObject(raw)) return false;
   if (raw.schemaVersion !== SCHEMA_VERSION) return false;
   if (raw.engine !== engine) return false;
@@ -191,16 +191,14 @@ function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE) {
   if (raw.pinnedExecutable !== undefined && !boundedString(raw.pinnedExecutable, MAX_PATH)) return false;
   if (raw.delivery !== undefined && !validateDelivery(raw.delivery)) return false;
   if (raw.nativeTurns !== undefined && !validateNativeTurns(raw.nativeTurns)) return false;
-  if (raw.messages !== undefined && !validateMessages(raw.messages)) return false;
+  if (raw.messages !== undefined && !validateMessages(raw.messages, descriptorBytes)) return false;
   if (raw.importedTranscript !== undefined && !boundedString(raw.importedTranscript, 50000)) return false;
   if (raw.importedPrefixLength !== undefined && (!Number.isInteger(raw.importedPrefixLength)||raw.importedPrefixLength<0||raw.importedPrefixLength>MAX_MESSAGE_COUNT)) return false;
   if (raw.origin !== undefined && !validateOrigin(raw.origin)) return false;
   if (raw.handoff !== undefined && !validateHandoff(raw.handoff)) return false;
   return true;
 }
-
 /* ---------- leitura ---------- */
-
 /** @param {any} file @param {{runtime?: any}} [options] */ function readClaudeConversation(file, {runtime} = {}) {
   const uuid = managedUuid(file);
   if (!uuid) return null;
@@ -216,13 +214,14 @@ function validDescriptor(raw, uuid, engine = ENGINE_CLAUDE) {
     return null;
   }
   if (!stat.isFile() || stat.size > MAX_DESCRIPTOR_BYTES) return null;
-  let raw;
+  let raw, payload;
   try {
-    raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    payload = fs.readFileSync(file, 'utf8');
+    raw = JSON.parse(payload);
   } catch {
     return null;
   }
-  if (!validDescriptor(raw, uuid, managedEngine(file))) return null;
+  if (!validDescriptor(raw, uuid, managedEngine(file), Buffer.byteLength(payload))) return null;
   /* O turno em voo manda nos campos que ele mudou; o resto continua no descritor. */
   const pendingTurn = turnMetadataPatch(file);
   return pendingTurn ? {...raw, ...pendingTurn} : raw;

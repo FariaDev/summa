@@ -48,6 +48,26 @@ const readJson = (file) => JSON.parse(readRaw(file));
 const writeJson = (file, value) => writeFileSync(file, JSON.stringify(value));
 const tmpLeftovers = (dir) => readdirSync(dir).filter((name) => name.includes('.tmp-'));
 
+test('descriptor byte shortcut preserves message validation and canonical byte limits', () => {
+  withRuntime((runtime) => {
+    const file = conversations.createClaudeConversation({runtime, courseId: 'c1'});
+    const descriptor = readJson(file);
+    for (const messages of [[], [{role: 'user', content: [{type: 'text', text: 'ação 😀'}]}]]) {
+      writeJson(file, {...descriptor, messages});
+      assert.deepEqual(conversations.readClaudeConversation(file, {runtime}).messages, messages);
+    }
+    writeJson(file, {...descriptor, messages: [{role: 'invalid', content: []}]});
+    assert.equal(conversations.readClaudeConversation(file, {runtime}), null);
+    const numbers = Array(600000).fill(1e20);
+    const messages = [{role: 'user', content: [], numbers}];
+    const compact = JSON.stringify({...descriptor, messages}).replaceAll('100000000000000000000', '1e20');
+    assert.ok(Buffer.byteLength(compact) < conversations.MAX_MESSAGES_BYTES);
+    assert.ok(bytesOf(messages) > conversations.MAX_MESSAGES_BYTES);
+    writeFileSync(file, compact);
+    assert.equal(conversations.readClaudeConversation(file, {runtime}), null);
+  });
+});
+
 test('model/effort selection survives reopen without changing the native session or delivery', () => {
   withRuntime((runtime) => {
     const file = conversations.createClaudeConversation({runtime, courseId: 'c1', model: 'sonnet', effort: 'high'});

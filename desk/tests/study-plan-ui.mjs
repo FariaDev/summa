@@ -58,12 +58,26 @@ await withArtifacts('plano-estudo',async ctx=>{
  await page.waitForFunction(()=>document.querySelectorAll('.study-plan-text').length===2,undefined,{timeout:5000});
  assert.deepEqual(await taskTexts(page),['Q1 derivadas','Q2 limites'],'Enter criou a segunda; o Backspace em vazio tirou a terceira');
  assert.equal(await page.evaluate(()=>document.activeElement?.value),'Q2 limites','o foco volta para a tarefa anterior ao apagar');
+ assert.equal(await page.locator('#study-plan-pop .study-plan-text').first().evaluate(field=>field.tagName),'TEXTAREA','o texto da tarefa é editado numa área de texto');
+ const shortText=page.locator('#study-plan-pop .study-plan-text').nth(1);
+ const shortHeight=await shortText.evaluate(field=>field.getBoundingClientRect().height);
+ await shortText.fill('Q2 limites '.repeat(18).trim());
+ const longHeight=await shortText.evaluate(field=>field.getBoundingClientRect().height);
+ assert.ok(longHeight>shortHeight,'uma tarefa longa cresce para mostrar o texto quebrado');
+ await shortText.fill('Q2 limites');
+ const textWidths=await page.locator('#study-plan-pop .study-plan-text').first().evaluate(field=>({field:field.getBoundingClientRect().width,main:field.closest('.study-plan-main')?.getBoundingClientRect().width||0}));
+ assert.ok(textWidths.field>=textWidths.main*.9,'o campo de texto ocupa quase toda a largura da tarefa');
+ const multiline=page.locator('#study-plan-pop .study-plan-text').first();
+ await multiline.fill('Q1\nQ2');
+ assert.equal(await multiline.inputValue(),'Q1 Q2','a quebra de linha colada volta ao formato armazenado');
+ await multiline.fill('Q1 derivadas');
 
  /* ---------- 3. ligar ao PDF aberto e abrir ---------- */
  const firstRow=page.locator('#study-plan-pop .study-plan-row').nth(0);
  await firstRow.locator('[data-action="link"]').click();
  await page.waitForFunction(()=>/Lista\.pdf · p\. 1/.test(document.querySelector('#study-plan-pop .study-plan-row')?.textContent||''),undefined,{timeout:5000});
  assert.equal(await firstRow.locator('[data-action="open"]').count(),1,'tarefa com PDF mostra abrir');
+ assert.equal(await firstRow.locator('.study-plan-ref').evaluate(reference=>reference.tagName==='BUTTON'&&reference.dataset.action==='open'),true,'o nome do PDF é um botão de abrir');
  assert.equal(await page.locator('#study-plan-pop .study-plan-row').nth(1).locator('[data-action="open"]').count(),0,'tarefa sem PDF não mostra abrir');
 
  /* desligar do PDF tira o PDF e a página; a tarefa volta a oferecer ligar. Ligar de novo deixa a 1ª como estava. */
@@ -78,10 +92,12 @@ await withArtifacts('plano-estudo',async ctx=>{
 
  /* ---------- 4. editar no lugar, marcar a primeira e escrever nas Anotações ---------- */
  await page.locator('#study-plan-pop .study-plan-text').nth(0).fill('Q1 derivadas (regra da cadeia)');
+ assert.equal(await page.locator('label[for="study-plan-notes"]').count(),1,'Anotações tem rótulo ligado ao campo');
+ assert.equal(await page.locator('#study-plan-notes').evaluate(field=>field.tagName),'TEXTAREA','Anotações é uma área de texto');
  await firstRow.locator('input[type="checkbox"]').check();
  await page.waitForFunction(()=>/agora: Q2 limites/.test(document.querySelector('#study-plan-menu .study-plan-trigger')?.textContent||''),undefined,{timeout:5000});
  assert.equal(await triggerText(page),'Plano · agora: Q2 limites','marcar a primeira faz o botão mostrar a segunda');
- await page.locator('#study-plan-pop textarea').fill('Prova sexta. Regra da cadeia.');
+ await page.locator('#study-plan-notes').fill('Prova sexta. Regra da cadeia.');
  await pollUntil(()=>savedPlan(runtime),plan=>plan&&plan.notes==='Prova sexta. Regra da cadeia.'&&plan.tasks[0]?.done===true&&plan.tasks[0]?.pdf.endsWith('Lista.pdf')&&plan.tasks[0]?.text==='Q1 derivadas (regra da cadeia)',{timeout:8000,interval:100,what:'o plano gravado no desk.json'});
 
  /* ---------- 5. fechar e reabrir: tudo volta ---------- */
@@ -92,11 +108,11 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.deepEqual(await taskTexts(page),['Q1 derivadas (regra da cadeia)','Q2 limites'],'os textos voltaram');
  assert.equal(await page.locator('#study-plan-pop .study-plan-row').nth(0).locator('input[type="checkbox"]').isChecked(),true,'a marca voltou');
  assert.match(await page.locator('#study-plan-pop .study-plan-row').nth(0).textContent()||'',/Lista\.pdf · p\. 1/,'o PDF ligado voltou');
- assert.equal(await page.locator('#study-plan-pop textarea').inputValue(),'Prova sexta. Regra da cadeia.','as Anotações voltaram');
+ assert.equal(await page.locator('#study-plan-notes').inputValue(),'Prova sexta. Regra da cadeia.','as Anotações voltaram');
  assert.equal(await page.locator('#study-plan-pop .study-plan-count').textContent(),'1 de 2','a contagem reflete a marca');
 
  /* ---------- 6. abrir leva o leitor à página e fecha a lista ---------- */
- await page.locator('#study-plan-pop .study-plan-row').nth(0).locator('[data-action="open"]').click();
+ await page.locator('#study-plan-pop .study-plan-row').nth(0).locator('.study-plan-ref').click();
  await page.locator('#study-plan-pop').waitFor({state:'hidden'});
  assert.equal(await page.locator('.pdf-panel canvas').count()>0,true,'o leitor segue aberto');
 

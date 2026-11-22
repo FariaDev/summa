@@ -2,7 +2,7 @@
 import {$,S,toast} from './state.mjs';
 import {openGuide} from './guide-loader.mjs';
 import {message as uiMessage} from './i18n.mjs';
-import {t,formatDate} from './ui-text.mjs';
+import {t,text,formatDate} from './ui-text.mjs';
 import {renderAboutLead,renderAboutOrigin,renderAboutUpdate,renderComponentChecking,renderHelpVersion} from './dialogs.mjs';
 import {noticesOpened,showRows,askUpdate} from './tool-notices.mjs';
 import {isOffline,onOfflineChange} from './offline-state.mjs';
@@ -78,7 +78,7 @@ function resultStateOf(result){
  /* #160: clone sujo recusado antes de qualquer troca — o Sobre diz que nada
     foi atualizado, com a contagem de arquivos, no lugar de "voltou". */
  if(result.status==='refused'&&result.reason==='dirty-clone')return {$:'UpdateDirtyClone',files:String(result.files||'')};
- if(result.status==='recovered'||result.status==='failed')return {$:'UpdateRecovered',version:String(result.version||''),reason:String(result.reason||'')};
+ if(result.status==='recovered'||result.status==='failed')return {$:'UpdateRecovered',version:String(result.version||''),reason:text(String(result.reason||''))};
  if(result.status==='incomplete')return {$:'UpdateIncomplete',version:String(result.version||''),reason:String(result.reason||'')};
  return {$:'UpdateIdle'};
 }
@@ -118,8 +118,12 @@ async function refreshComponents(manual){
  catch(e){if(manual)toast(e.message);}
 }
 async function refreshMesaUpdate(manual){
- if(isOffline()){paintOfflineUpdate();return;}
  try{
+  if(!manual){
+   const result=await window.desk.updateResult();
+   if((result?.status==='recovered'||result?.status==='failed')&&result.fresh){renderAboutUpdate(resultStateOf(result),aboutHandlers);return;}
+  }
+  if(isOffline()){paintOfflineUpdate();return;}
   await readOrigin();
   renderAboutUpdate(updateStateOf(await window.desk.updateCheck({manual:!!manual})),aboutHandlers);
  }catch(e){if(manual)toast(e.message);}
@@ -166,4 +170,4 @@ function paintUpdateNotice(){
  button.hidden=false;
 }
 
-export {openHelp,aboutHandlers,refreshAbout,openAbout,syncUpdateNotice,paintUpdateNotice,resultStateOf,updateStateOf};
+export {openHelp,aboutHandlers,refreshAbout,refreshMesaUpdate,openAbout,syncUpdateNotice,paintUpdateNotice,resultStateOf,updateStateOf};

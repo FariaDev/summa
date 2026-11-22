@@ -86,7 +86,8 @@ export function addTask(plan, {afterId = '', id = newTaskId(), text = ''} = {}) 
 }
 
 /**
- * Troca o texto de uma tarefa (edição no lugar; sem diálogo).
+ * Troca o texto de uma tarefa (edição no lugar; sem diálogo) e reduz quebras
+ * de linha a espaços.
  * @param {StudyPlan} plan
  * @param {string} id
  * @param {string} text
@@ -94,7 +95,7 @@ export function addTask(plan, {afterId = '', id = newTaskId(), text = ''} = {}) 
  * @example editTask(plan, 'a', 'Q1 corrigida').tasks[0].text
  */
 export function editTask(plan, id, text) {
-  return patchTask(plan, id, {text: clip(text, PLAN_LIMITS.text)});
+  return patchTask(plan, id, {text: clip(text.replace(/\s*[\r\n]+\s*/g, ' '), PLAN_LIMITS.text)});
 }
 
 /**
