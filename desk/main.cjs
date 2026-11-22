@@ -2,7 +2,7 @@
 const {app,BrowserWindow,ipcMain,dialog,shell,Menu,screen,systemPreferences,nativeImage,nativeTheme,WebContentsView,Notification,powerMonitor,protocol,safeStorage,clipboard}=require('electron');
 const crypto=require('node:crypto');
 const fs=require('node:fs');const path=require('node:path');const os=require('node:os');
-const {promisify}=require('node:util');const {execFile}=require('node:child_process');
+const {promisify}=require('node:util');const {execFile,spawn}=require('node:child_process');const {once}=require('node:events');
 const execFileAsync=promisify(execFile);const {enableDeskCompileCache}=require('./compile-cache.cjs');
 const {electronUserData}=require('./user-data.cjs');
 /* Bytecode da partida na pasta de dados do usuário; sem API/permissão, abre sem cache (#desempenho). */
@@ -688,10 +688,19 @@ const phoneHost=createPhoneHost({
  appendLog,
 });
 phoneHost.register();
-ipcMain.handle('open-xournal',()=>{
+ipcMain.handle('open-xournal',async()=>{
  const target=require('./components.cjs').xournalTarget(config,process.platform);
  if(!target)throw Error(message('err.capture.pathMissing'));
- return shell.openPath(target);
+ if(process.platform!=='linux')return shell.openPath(target);
+ try{
+  const child=spawn(target,[],{detached:true,stdio:'ignore'});
+  await once(child,'spawn');
+  child.unref();
+  return '';
+ }catch(error){
+  const {describeReceived}=require('./src/error-detail.mjs');
+  throw Error(message('err.xournal.launchFailed',{received:describeReceived(target),cause:error.code||error.name}));
+ }
 });
 
 const toolHost={

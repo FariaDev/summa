@@ -1060,6 +1060,7 @@
   "err.update.zipDownload": "Could not download the signed zip for v{version} ({error}) — update refused.",
   "err.update.zipHash": "The zip SHA-256 does not match the signed manifest — update refused.",
   "err.update.zipTooLarge": "The signed manifest declares a {bytes}-byte zip, above the {max}-byte cap — update refused.",
+  "err.xournal.launchFailed": "Could not start Xournal++ ({cause}). The path in Settings must point to the Xournal++ executable; received {received}.",
   "err.zip.badCompressedSize": "inconsistent zip (compressed size of {name})",
   "err.zip.badContent": "corrupted zip (content of {name})",
   "err.zip.badCrc": "corrupted zip (CRC of {name})",

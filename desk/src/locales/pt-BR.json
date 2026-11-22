@@ -1060,6 +1060,7 @@
   "err.update.zipDownload": "Não foi possível baixar o zip assinado da v{version} ({error}) — atualização recusada.",
   "err.update.zipHash": "O SHA-256 do zip não confere com o manifesto assinado — atualização recusada.",
   "err.update.zipTooLarge": "O manifesto assinado declara um zip de {bytes} bytes, acima do teto de {max} — atualização recusada.",
+  "err.xournal.launchFailed": "Não foi possível abrir o Xournal++ ({cause}). O caminho nas Configurações deve apontar para o executável do Xournal++; recebido {received}.",
   "err.zip.badCompressedSize": "zip inconsistente (tamanho comprimido de {name})",
   "err.zip.badContent": "zip corrompido (conteúdo de {name})",
   "err.zip.badCrc": "zip corrompido (CRC de {name})",
