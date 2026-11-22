@@ -1,0 +1,61 @@
+name: Instalador do macOS
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - desk/scripts/build-macos-dmg.mjs
+      - desk/macos-dmg-update.cjs
+      - desk/macos-dmg-worker.cjs
+      - desk/macos-release.cjs
+      - desk/bundle-runtime.cjs
+      - .github/workflows/instalador-macos.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  instalador:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desk
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: npm
+          cache-dependency-path: desk/package-lock.json
+
+      - name: A tag é a versão do package.json
+        run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+        if: startsWith(github.ref, 'refs/tags/v')
+
+      - name: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: Gerar o instalador
+        run: npm run installer:macos -- --out "${{ runner.temp }}/instalador"
+
+      - name: Conferir a imagem e a assinatura do app
+        run: |
+          volume="$(mktemp -d)"
+          trap 'hdiutil detach "$volume" || true; rmdir "$volume" || true' EXIT
+          hdiutil attach -nobrowse -readonly -mountpoint "$volume" "${{ runner.temp }}"/instalador/Summa-*.dmg
+          codesign --verify --deep "$volume/Summa.app"
+          test "$(readlink "$volume/Applications")" = /Applications
+
+      - name: SHA-256 do instalador
+        run: shasum -a 256 "${{ runner.temp }}"/instalador/Summa-*.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador-macos
+          path: ${{ runner.temp }}/instalador/Summa-*.dmg
+          if-no-files-found: error
+          retention-days: 30
