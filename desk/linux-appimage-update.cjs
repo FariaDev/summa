@@ -117,7 +117,7 @@ function relaunchAppImage({appImage,env=process.env,argv=process.argv,spawnFn=sp
    if(child.exitCode!=null)return onExit(child.exitCode);
    if(fs.existsSync(readyFile))return finish();
    if(Date.now()>=deadline){
-    try{killFn(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}
+    try{if(!child.pid)throw Error('no pid');killFn(-child.pid,'SIGKILL');}catch{child.kill('SIGKILL');}
     return;
    }
    timer=setTimeout(tick,pollMs);
