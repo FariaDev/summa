@@ -7,7 +7,7 @@ const {isLinuxAppImage}=require('./linux-appimage-update.cjs');
 
 function desktopExec(file){
  const escaped=file.replace(/%/g,'%%').replace(/[\\"`$]/g,'\\$&');
- return `"${escaped}"`;
+ return `"${escaped}"`.replace(/\\/g,'\\\\');
 }
 
 function writeChanged(file,content){

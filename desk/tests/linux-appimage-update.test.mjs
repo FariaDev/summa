@@ -100,7 +100,7 @@ test('integração desktop escapa Exec, respeita XDG e não regrava conteúdo ig
  const input={platform:'linux',deskDir,assetsDir:path.resolve(import.meta.dirname,'../assets'),home,env:{...env,APPIMAGE:'/apps/uma pasta/Summa%".AppImage',XDG_DATA_HOME:xdg}};
  assert.equal(ensureLinuxDesktopEntry(input),true);
  const entry=path.join(xdg,'applications/summa.desktop');
- assert.match(fs.readFileSync(entry,'utf8'),/Exec="\/apps\/uma pasta\/Summa%%\\".AppImage" %U/);
+ assert.ok(fs.readFileSync(entry,'utf8').includes(String.raw`Exec="/apps/uma pasta/Summa%%\\".AppImage" %U`));
  assert.ok(fs.readFileSync(entry,'utf8').includes('\nTryExec=/apps/uma pasta/Summa%".AppImage\nStartupWMClass=summa\n'));
  const before=fs.statSync(entry).mtimeMs;
  assert.equal(ensureLinuxDesktopEntry(input),false);
@@ -133,4 +133,14 @@ test('extração sem FUSE persiste na reabertura e no menu, por ambiente ou argu
   ensureLinuxDesktopEntry({platform:'linux',deskDir,assetsDir:path.resolve(import.meta.dirname,'../assets'),home,...flags});
   assert.match(fs.readFileSync(path.join(home,'.local/share/applications/summa.desktop'),'utf8'),/Exec=env APPIMAGE_EXTRACT_AND_RUN=1 "\/apps\/Summa.AppImage" %U/);
  }
+});
+
+test('Exec aplica escaping de argumento e depois de valor desktop',()=>{
+ const home=tempDir('summa-desktop-escaping-');
+ const appImage='/apps/uma pasta/Summa\\"`$%.AppImage';
+ ensureLinuxDesktopEntry({platform:'linux',deskDir,assetsDir:path.resolve(import.meta.dirname,'../assets'),home,env:{...env,APPIMAGE:appImage}});
+ const entry=fs.readFileSync(path.join(home,'.local/share/applications/summa.desktop'),'utf8');
+ const expected='Exec="/apps/uma pasta/Summa'+'\\'.repeat(6)+'"'+'\\'.repeat(2)+'`'+'\\'.repeat(2)+'$%%.AppImage" %U';
+ assert.ok(entry.includes(expected));
+ assert.ok(entry.includes('TryExec=/apps/uma pasta/Summa'+'\\'.repeat(2)+'"`$%.AppImage'));
 });
