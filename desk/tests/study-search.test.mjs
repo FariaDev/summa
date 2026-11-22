@@ -339,6 +339,24 @@ test('limites: consulta curta, teto da lista, teto por arquivo e truncado', asyn
   }
 });
 
+test('índice em cache acompanha a renomeação da matéria sem reextrair PDFs', async () => {
+  const fx = fixture();
+  fx.courses[0].name = 'Oldcoursealpha';
+  const scope = {sources: ['materia']};
+  const before = await find(fx, 'Oldcoursealpha', {scope});
+  assert.ok(before.hits.length > 0);
+  fx.courses[0].name = 'Newcoursebeta';
+  const renamed = await find(fx, 'Newcoursebeta', {scope});
+  assert.ok(renamed.hits.length > 0, 'nome novo entra na busca em cache');
+  assert.ok(renamed.hits.every((hit) => hit.courseName === 'Newcoursebeta'));
+  assert.equal(renamed.index.added, 1, 'só o metadado da matéria é reextraído');
+  assert.ok(renamed.index.reused > 0, 'arquivos inalterados continuam no cache');
+  assert.equal((await find(fx, 'Oldcoursealpha', {scope})).hits.length, 0);
+  const cached = await find(fx, 'Newcoursebeta', {scope});
+  assert.equal(cached.index.added, 0);
+  assert.deepEqual(cached.hits, renamed.hits);
+});
+
 test('índice incremental: reusa o inalterado, reindexa o alterado e invalida', async () => {
   const fx = fixture();
   const first = await find(fx, 'limites');

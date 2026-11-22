@@ -261,7 +261,7 @@ async function search(runtime, options = {}) {
     const key = candidate.kind === 'material' ? `material:${candidate.courseId}` : keyOf(candidate.file);
     /* Metadado de matéria não tem arquivo: a assinatura é a lista de nomes; no lateral, `sourceSig` cobre o arquivo das mensagens (#136). */
     const labelSig = candidate.chat ? sha1(`${candidate.chat.id}\u0000${candidate.chat.title}\u0000${candidate.chat.topic}\u0000${candidate.chat.favorite}`).slice(0, 12) : '';
-    const sig = candidate.kind === 'material' ? sha1((candidate.names || []).map((pdf) => pdf.name).join('\n')).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
+    const sig = candidate.kind === 'material' ? sha1(JSON.stringify([candidate.title, (candidate.names || []).map((pdf) => pdf.name)])).slice(0, 16) : `${Math.round(stats.mtimeMs)}:${stats.size}:${candidate.sourceSig || ''}${labelSig}`;
     const cached = index.files[key];
     if (cached && cached.sig === sig && cached.kind === candidate.kind) {
       cached.at = clock();
