@@ -1,3 +1,4 @@
+// @ts-check
 /* Painel "Componentes" do Sobre: versão instalada e estado de Claude Code,
    Node e Xournal++. As decisões de texto/estrutura são do núcleo
    (`core/dialogsview.bend` → `dialogsview.core.js`); aqui são os fatos de host.
@@ -49,6 +50,7 @@ function parseVersion(text){
 /* B3: o Node que interessa é o do SISTEMA (o que o worker/setup e o npm usam).
    `process.versions.node` no main do Electron é o runtime EMBUTIDO; medir de
    verdade com `node --version`. Sem resposta = embutido, rotulado como tal. */
+/** @param {{run?: any, timeout?: number}} [options] */
 async function systemNodeVersion({run=defaultRun,timeout=5000}={}){
  try{
   const r=await run('node',['--version'],{timeout});
@@ -71,6 +73,7 @@ function xournalTarget(config,platform){
 }
 
 /* Xournal++: .app no macOS (plist), .exe no Windows (--version). */
+/** @param {{target?: any, platform?: any, run?: any}} options */
 async function xournalVersion({target,platform=process.platform,run=defaultRun}){
  if(!target)return '';
  try{
@@ -92,6 +95,7 @@ async function xournalVersion({target,platform=process.platform,run=defaultRun})
  }catch{return '';}
 }
 
+/** @param {any} entry @param {{latest?: string, offline?: boolean}} [options] */
 function rowState(entry,{latest='',offline=false}={}){
  /* Sem resposta do registry a Mesa não adivinha, nunca ✓: com a versão
     instalada conhecida isso é "não deu para conferir" (offline, não é erro);
@@ -107,10 +111,12 @@ const verOf=claudeEnvironment.versionRecord;
 
 /* A versão em jogo (a oferecida, ou a instalada em dia) passa da testada com
    esta Mesa? É a mesma conta do núcleo, sem memória. */
+/** @param {{installed?: any, latest?: any, tested?: any}} options */
 function aheadOf({installed,latest,tested}){
  return noticeCore.noticeOf(verOf(installed),verOf(latest),verOf(tested),noticeCore.emptyMemory(),0).ahead;
 }
 
+/** @param {any} id @param {{override?: any, cacheFile?: any, fetchJson?: any, now?: any, manual?: any, cacheOnly?: any}} options */
 function latestFor(id,{override,cacheFile,fetchJson,now,manual,cacheOnly}){
  if(override&&typeof override[id]==='string'){
   return {version:override[id],known:!!override[id]};

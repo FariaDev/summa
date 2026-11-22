@@ -1,3 +1,4 @@
+// @ts-check
 /* `quiz` — UM texto, um esquema e um resultado para os três motores
    (Pi `mesa_quiz`, Claude `mcp__mesa__quiz`, OpenCode `mesa_quiz`). A
    ferramenta MOSTRA o cartão e volta na hora; o aluno responde no ritmo dele e

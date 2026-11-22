@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {rendererSources} from './renderer-sources.mjs';
 
 /* #67: contraste WCAG AA dos dois temas e dos dois acentos, lido do style.css.
    Texto pede 4,5:1; o anel de foco, que não é texto, pede 3:1. */
@@ -79,7 +80,7 @@ test('o fundo da ação principal se destaca 3:1 das superfícies nos dois temas
 });
 
 test('texto de status usa as versões -text, não o tom de ícone e fundo', () => {
-  const sheets = [path.join(desk, 'style.css'), ...fs.readdirSync(path.join(desk, 'src')).filter((f) => f.endsWith('.css')).map((f) => path.join(desk, 'src', f))];
+  const sheets = [path.join(desk, 'style.css'), ...rendererSources(desk, (f) => f.endsWith('.css')).map((f) => path.join(desk, 'src', f))];
   for (const sheet of sheets) {
     const hit = fs.readFileSync(sheet, 'utf8').match(/(?<![-\w])color:var\(--(danger|success|warn)\)/);
     assert.equal(hit, null, `${path.basename(sheet)}: ${hit?.[0]}; esperado color:var(--${hit?.[1]}-text)`);
@@ -119,7 +120,7 @@ test('o trio ∫ Σ ∇ segue os dois acentos e passa nos dois temas (#100)', ()
 test('texto de status sai dos -text, nunca do --danger/--success/--warn (D1)', () => {
   const src = path.join(desk, 'src');
   const offenders = [];
-  for (const file of fs.readdirSync(src).filter((name) => name.endsWith('.css') || name.endsWith('.mjs'))) {
+  for (const file of rendererSources(desk, (name) => name.endsWith('.css') || name.endsWith('.mjs'))) {
     const lines = fs.readFileSync(path.join(src, file), 'utf8').split('\n');
     lines.forEach((line, index) => {
       if (/(^|[{\s])color\s*:\s*var\(--(danger|success|warn)[,)]/.test(line)) {
@@ -138,7 +139,8 @@ test('piso de legibilidade: nenhum font-size a 10px no CSS (D2)', () => {
   const roots = [desk, path.join(desk, 'src')];
   const offenders = [];
   for (const root of roots) {
-    for (const file of fs.readdirSync(root).filter((name) => name.endsWith('.css'))) {
+    const files = root === desk ? fs.readdirSync(root).filter((name) => name.endsWith('.css')) : rendererSources(desk, (name) => name.endsWith('.css'));
+    for (const file of files) {
       const lines = fs.readFileSync(path.join(root, file), 'utf8').split('\n');
       lines.forEach((line, index) => {
         if (/font-size\s*:[^;{}]*\b10px\b/.test(line)) offenders.push(`${file}:${index + 1}: ${line.trim()}`);

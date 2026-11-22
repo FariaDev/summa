@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Religação do MCP `mesa` antes de cada envio (#63): o MCP é um processo
@@ -10,7 +11,7 @@ const {mesaMcpStatus} = require('./opencode-mcp.cjs');
 /**
  * Confere o MCP antes do envio e religa quando ele caiu. Chamadas simultâneas
  * dividem a mesma conferência.
- * @param {object} adapter o `OpenCodeAdapter` dono da sessão
+ * @param {Record<string, any>} adapter o `OpenCodeAdapter` dono da sessão
  * @returns {Promise<void>}
  * @example await ensureMesaMcp(adapter);
  */

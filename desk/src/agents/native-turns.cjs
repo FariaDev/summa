@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Turnos do motor no descritor (#164): o `msg_…` que o servidor deu à fala
@@ -28,7 +29,7 @@ function validateNativeTurns(turns) {
 
 /**
  * Aplica o patch `nativeTurns` no descritor em construção.
- * @param {Record<string, unknown>} next @param {Record<string, unknown>} patch
+ * @param {Record<string, unknown>} next @param {Record<string, any>} patch
  * @param {(text: string) => Error} patchError @param {(field: string, value: unknown, expected: string) => string} invalidValue
  * @returns {void}
  * @example patchNativeTurns(next, {nativeTurns: [{user: 'u1', messageId: 'msg_1'}]}, patchError, invalidValue);

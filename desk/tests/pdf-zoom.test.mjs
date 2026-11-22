@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {handlePdfZoomKey,rememberPdfReader,selectedPdfReader,zoomIntent} from '../src/pdf-zoom.mjs';
+import {handlePdfZoomKey,rememberPdfReader,selectedPdfReader,zoomIntent} from '../src/pdf/pdf-zoom.mjs';
 
 /* Atalho de zoom do leitor (#111): a intenção vem das teclas e o alvo é o
    último leitor clicado/rolado, enquanto visível. Sem alvo o atalho não é

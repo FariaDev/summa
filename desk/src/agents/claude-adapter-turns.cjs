@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Ciclo do turno do ClaudeAdapter: eventos, entrega, prazo, recusa antes da
@@ -7,7 +8,11 @@
 const {ClaudeAdapterError} = require('./claude-adapter-contract.cjs');
 const {errorText} = require('./claude-adapter-input.cjs');
 
-class ClaudeAdapterTurns {
+/* Base só de tipo: em tempo de execução é `Object`; os métodos vão para o
+   protótipo do ClaudeAdapter (`installPrototypeMethods`). */
+const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host').ClaudeAdapterMixinSelf} */ (/** @type {unknown} */ (Object));
+
+class ClaudeAdapterTurns extends AdapterBase {
   _emit(type, payload = {}, identity = null) {
     this.emit('event', {
       type,

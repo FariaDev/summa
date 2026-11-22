@@ -105,7 +105,7 @@ await withArtifacts('worklog-caderno', async (ctx) => {
 
  /* N9 (rodada 2): ao vivo a cabeça leva o verbo e o passo mostra só o alvo. */
  const live = () => page.evaluate(async () => {
-  const {workRowFrom} = await import('./src/worklog-view.mjs');
+  const {workRowFrom} = await import('./src/worklog/worklog-view.mjs');
   const log = {startedAt: Date.now() - 1000, endedAt: 0, reason: '', text: '', steps: [
    {id: 'live-caderno', kind: 'tool', status: 'running', toolName: 'mesa_ler_caderno', args: {caminho: '/tmp/x/aula-nova.xopp', pagina: 1}},
   ]};

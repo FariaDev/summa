@@ -37,7 +37,7 @@ export function describeReceived(value) {
   return describeKeys(value);
 }
 
-/** @param {object} value */
+/** @param {Record<string, any>} value */
 function describeKeys(value) {
   const keys = Object.keys(value);
   const shown = keys.slice(0, MAX_KEYS).map((key) => (SAFE_TEXT.test(key) ? key : '?'));

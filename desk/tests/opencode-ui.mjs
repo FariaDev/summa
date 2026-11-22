@@ -110,7 +110,7 @@ await withArtifacts('opencode-motor',async ctx=>{
 
  /* 4b. Chat lateral com o OpenCode (#74): responde pelo mesmo servidor, num ses_ próprio. */
  await page.locator('#sidechat-toggle').click();
- await pollUntil(()=>page.evaluate(async()=>{const mod=await import('./src/sidechat.mjs');return mod.sidechatState().id||'';}),id=>id!=='',{what:'a sessão do chat lateral',timeout:20000});
+ await pollUntil(()=>page.evaluate(async()=>{const mod=await import('./src/sidechat/sidechat.mjs');return mod.sidechatState().id||'';}),id=>id!=='',{what:'a sessão do chat lateral',timeout:20000});
  assert.equal((await page.locator('#sidechat-engine').textContent()).trim(),'OpenCode','o lateral diz o motor');
  await page.locator('#sidechat-prompt').fill('pergunta lateral');
  await page.locator('#sidechat-send').click();

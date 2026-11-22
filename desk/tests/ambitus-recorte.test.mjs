@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {notebookRecorte, notebookCardKey, attachedNotebooks} from '../src/notebook-facts.mjs';
 import {notebookCardOf, notebookSendFacts} from '../src/ambitus-page.mjs';
-import {createNotebookTray} from '../src/tutor-notebooks.mjs';
+import {createNotebookTray} from '../src/tutor/tutor-notebooks.mjs';
 import {createI18n, message} from '../src/i18n.mjs';
 import ptBR from '../src/locales/pt-BR.json' with {type: 'json'};
 import en from '../src/locales/en.json' with {type: 'json'};

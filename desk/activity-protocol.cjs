@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path = require('node:path');
@@ -41,6 +42,7 @@ const KATEX_FILES = new Set(['katex.min.css', 'katex.min.js', 'contrib/auto-rend
    nada de rede. Hoje só o Chart.js (MIT, © Chart.js Contributors). */
 const LIB_HOST = 'lib';
 const LIB_FILES = new Map([['chart.umd.min.js', path.join(__dirname, 'node_modules', 'chart.js', 'dist', 'chart.umd.min.js')]]);
+/** @param {{entry?: any, mainPid?: any, metric?: any, livePids?: any}} [options] */
 function canTerminateActivityProcess({entry,mainPid,metric,livePids}={}) {
   return !!entry&&Number.isInteger(entry.pid)&&entry.pid>0&&Number.isInteger(mainPid)&&mainPid>0&&entry.pid!==mainPid
     &&Number.isFinite(entry.creationTime)&&entry.creationTime>0&&metric?.type==='Tab'
@@ -51,6 +53,7 @@ function canTerminateActivityProcess({entry,mainPid,metric,livePids}={}) {
    watchdog confirmadas como travadas. Nenhum frame desconhecido/host/saudável
    permite o kill — esta é a diferença em relação ao caminho sem
    compartilhamento, e preserva a guarda de PID/creationTime. */
+/** @param {{entry?: any, mainPid?: any, metric?: any, others?: any}} [options] */
 function canTerminateSharedStalledProcess({entry,mainPid,metric,others}={}) {
   if(!canTerminateActivityProcess({entry,mainPid,metric,livePids:[]}))return false;
   return Array.isArray(others)&&others.length>0&&others.every((item)=>!!item&&item.stalled===true);
@@ -115,6 +118,7 @@ function activityFramesOtherThan(frames, entry) {
      artefato em andamento; guarda a entrada por até `retryMs` sem deixar o
      timer do watchdog parar;
    - `drop`: enumeração completa sem motivo para kill (ou prazo estourado). */
+/** @param {{pid?: any, complete?: any, frames?: any, frame?: any, stalled?: any, waitedMs?: any, framelessMs?: number, retryMs?: any, confirmMs?: any, mounting?: boolean}} [options] */
 function detachedActivityDecision({pid, complete, frames, frame, stalled, waitedMs, framelessMs = 0, retryMs = DETACHED_RETRY_MS, confirmMs = FRAMELESS_CONFIRM_MS, mounting = false} = {}) {
   const identified = Number.isInteger(pid) && pid > 0;
   if (!identified || complete !== true || !Array.isArray(frames)) {

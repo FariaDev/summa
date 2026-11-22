@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente de `buscar_material` para o Pi e o OpenCode: a mesma ponte local e o
    mesmo token do quadro (`LEARNING_DESK_ACTIVITY_BRIDGE`), rota `/search`.
    O host recorta a matéria e o texto de PDF; o modelo só manda consulta e limite. */

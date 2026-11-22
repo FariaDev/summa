@@ -17,7 +17,7 @@ const quizCore = require('../src/generated/quizcard.core.js').default;
 const {createActivityBridge} = require('../activity-bridge.cjs');
 const {createCardTools} = require('../src/agents/card-tools.cjs');
 const {registerTutorPromptHost} = require('../tutor-prompt-host.cjs');
-const {mesaTools} = await import('../src/extensions/mesa-mcp/tools.mjs');
+const {mesaTools} = await import('../src/extensions/summa-mcp/tools.mjs');
 const {showCard} = await import('../src/cards/client.mjs');
 
 function runtime() {

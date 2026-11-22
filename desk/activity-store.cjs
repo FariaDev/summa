@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Store imutável das atividades do tutor, por conversa.
@@ -71,6 +72,7 @@ const {isPlainObject} = require('./plain-object.cjs');
    corrige o pedido pelo nome que mandou (#43 fase 3). */
 const fieldError = (code, field, value, expected) => new ActivityStoreError(code, uiMsg('err.activity.field', {field, received: describeReceived(value), expected}));
 
+/** @param {any} value @param {any} field @param {any} max @param {{allowEmpty?: boolean}} [options] */
 function requireString(value, field, max, {allowEmpty = false} = {}) {
   const expected = `string(${allowEmpty ? 0 : 1}..${max})`;
   if (typeof value !== 'string' || value.length > max) throw fieldError('BAD_SPEC', field, value, expected);
@@ -249,6 +251,7 @@ function matchesIndex(data, conversationId, identity) {
   return stored === identity.value;
 }
 
+/** @param {{runtime?: any}} [options] */
 function createActivityStore({runtime} = {}) {
   if (typeof runtime !== 'string' || !path.isAbsolute(runtime)) throw new ActivityStoreError('BAD_INPUT', invalidValue('runtime', runtime, 'caminho absoluto'));
   const root = path.join(runtime, 'activities');
@@ -366,6 +369,7 @@ function createActivityStore({runtime} = {}) {
     root,
     /* Lista os itens da conversa, mais recentes primeiro. Corrupção não é
        mascarada: quem chamou recebe CORRUPT e o arquivo fica no disco. */
+    /** @param {{conversationId?: any}} [options] */
     list({conversationId} = {}) {
       const {dir, identity} = locateDir(conversationId);
       const data = loadIndex(dir, conversationId, identity);
@@ -375,6 +379,7 @@ function createActivityStore({runtime} = {}) {
         .map((item) => ({...item}));
     },
 
+    /** @param {{conversationId?: any, id?: any, version?: any}} [options] */
     read({conversationId, id, version} = {}) {
       const {dir, identity} = locateDir(conversationId);
       const data = loadIndex(dir, conversationId, identity);
@@ -389,6 +394,7 @@ function createActivityStore({runtime} = {}) {
     /* Publica (ou repete de forma idempotente). `spec` é o payload do modelo;
        `toolCallId`/`callRef` são a identidade da chamada; `generation` é a
        geração da conversa capturada pelo host. */
+    /** @param {{conversationId?: any, generation?: number, toolCallId?: string, callRef?: string, spec?: any, activityId?: string, heights?: any, createdAt?: any}} [options] */
     async publish({conversationId, generation = 0, toolCallId = '', callRef = '', spec, activityId = '', heights, createdAt = Date.now()} = {}) {
       const clean = normalizeSpec(spec);
       const measured = normalizeHeights(heights);
@@ -444,6 +450,7 @@ function createActivityStore({runtime} = {}) {
       });
     },
 
+    /** @param {{conversationId?: any, id?: any, version?: any, hash?: any}} [options] */
     stateGet({conversationId, id, version, hash} = {}) {
       const {dir, identity} = locateDir(conversationId);
       const data = loadIndex(dir, conversationId, identity);
@@ -456,6 +463,7 @@ function createActivityStore({runtime} = {}) {
       return {item: {...item}, state: entry ? entry.state : null, updatedAt: entry ? entry.updatedAt : 0};
     },
 
+    /** @param {{conversationId?: any, id?: any, version?: any, hash?: any, state?: any, updatedAt?: any}} [options] */
     async stateSave({conversationId, id, version, hash, state, updatedAt = Date.now()} = {}) {
       const clean = normalizeState(state);
       const identity = portableIdentity(runtime, conversationId);
@@ -480,6 +488,7 @@ function createActivityStore({runtime} = {}) {
       });
     },
 
+    /** @param {{conversationId?: any}} [options] */
     stats({conversationId} = {}) {
       const {dir, identity} = locateDir(conversationId);
       const data = loadIndex(dir, conversationId, identity);

@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,capabilities,toast} from './state.mjs';
 import statusCore from './generated/statusview.core.js';
 import {applyAttrs,applyView} from './live-view.mjs';

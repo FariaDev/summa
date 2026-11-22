@@ -1,6 +1,8 @@
+// @ts-check
 /* A identidade da chamada é o `toolCallId` do motor (Pi). No MCP `mesa` do
    OpenCode (#57) o servidor MCP não conhece o id da chamada: ele manda um
    `callRef` e a Mesa casa a chamada com o `session.tool.called` do SSE. */
+/** @param {any} bridge @param {any} spec @param {{toolCallId?: string, callRef?: string, signal?: any}} [options] */
 export async function createActivity(bridge, spec, {toolCallId = '', callRef = '', signal} = {}) {
   if (!bridge || typeof bridge.token !== 'string' || !/^http:\/\/127\.0\.0\.1:\d+\/activity$/.test(bridge.url || '')) {
     throw Error('Publicar atividade pelo tutor está disponível na sessão principal da Mesa.');
@@ -50,6 +52,7 @@ export async function createActivity(bridge, spec, {toolCallId = '', callRef = '
 
 /* Prévia do quadro (#42): mesma ponte, mesmo token, rota `/preview`. Nada é
    publicado nem gravado; a Mesa devolve o print, a altura e o console. */
+/** @param {any} bridge @param {any} spec @param {{signal?: any}} [options] */
 export async function previewActivity(bridge, spec, {signal} = {}) {
   if (!bridge || typeof bridge.token !== 'string' || !/^http:\/\/127\.0\.0\.1:\d+\/activity$/.test(bridge.url || '')) {
     throw Error('A prévia do quadro está disponível na sessão principal da Mesa.');

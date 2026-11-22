@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Instruções de sistema que a Mesa manda aos motores — UM lugar só.
@@ -29,7 +30,7 @@ const TOOL_DESCRIPTIONS_ENGLISH_LINE='Tool descriptions are in English; always a
 
 /**
  * A frase de idioma do tutor; valor desconhecido acompanha o aluno.
- * @param {'follow'|'pt-BR'|'en'} [tutorLanguage]
+ * @param {string} [tutorLanguage] 'follow', 'pt-BR' ou 'en'
  * @returns {string}
  * @example tutorLanguageLine('en') // 'Responda em inglês, a língua que o aluno escolheu…'
  */
@@ -122,6 +123,7 @@ const NOTE_OFFER='- salvar_nota, para sugerir uma nota em Notas/;';
 const REVIEW_OFFER='- propor_revisao uma vez por momento importante, nunca em toda resposta; não peça "Guardar para revisar".';
 const OFFER_CLOSING='Ofereça quando ajudar o aluno a avançar; a descrição de cada ferramenta diz como usá-la.';
 
+/** @param {{pdf?: boolean, review?: boolean}} [options] */
 function offerPrompt({pdf=true,review=true}={}){
  const items=[GEOGEBRA_OFFER,CHAT_FIGURE_OFFER,BOARD_OFFER,...(pdf?[PDF_OFFER]:[]),CARD_OFFER,...(review?[REVIEW_OFFER]:[]),CALC_OFFER,MATERIALS_OFFER,NOTE_OFFER];
  return ['Além do texto, você pode oferecer:',...items,OFFER_CLOSING].join('\n');
@@ -129,6 +131,7 @@ function offerPrompt({pdf=true,review=true}={}){
 
 /* A sessão principal de cada motor: citação e o que oferecer. A aba Livre não
    tem caderno de revisão: `review` falso tira a oferta de `propor_revisao` (B2). */
+/** @param {{pdf?: boolean, review?: boolean}} [options] */
 function mainSessionPrompt({pdf=true,review=true}={}){
  return CITATION_PROMPT+'\n\n'+offerPrompt({pdf,review});
 }

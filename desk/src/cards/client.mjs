@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente dos cartões pela ponte da Mesa (#92): valida com a MESMA função dos
    três motores e pede o registro ao host. A ferramenta volta assim que o
    cartão está guardado e mostrado — não espera o aluno. */
@@ -9,7 +10,7 @@ import {normalizeAsk, normalizeQuiz} from './input.mjs';
  * @param {'quiz'|'ask'} kind
  * @param {unknown} args argumentos do modelo
  * @param {{toolCallId?: string, callRef?: string, signal?: AbortSignal, fetchImpl?: typeof fetch}} [options]
- * @returns {Promise<{shown: boolean, id: string, card?: object}>}
+ * @returns {Promise<{shown: boolean, id: string, card?: Record<string, any>}>}
  * @example await showCard(grant, 'quiz', {question: '2+2?', options: [{label: '3'}, {label: '4'}], correctAnswer: '4'})
  */
 export async function showCard(bridge, kind, args, {toolCallId = '', callRef = '', signal, fetchImpl = fetch} = {}) {

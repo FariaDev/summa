@@ -64,6 +64,20 @@ jobs:
           git config --global user.name "CI"
           git config --global user.email "ci@mesa.local"
 
+      # Portões rápidos como passos próprios (Ubuntu): o `pretest` já os roda,
+      # mas aqui a falha aparece com o nome do portão em vez de "npm test".
+      - name: Sintaxe (npm run check)
+        if: runner.os == 'Linux'
+        run: npm run check
+
+      - name: Tipos (npm run typecheck)
+        if: runner.os == 'Linux'
+        run: npm run typecheck
+
+      - name: Lint (npm run lint)
+        if: runner.os == 'Linux'
+        run: npm run lint
+
       - name: Testes de unidade (Linux, sob xvfb)
         if: runner.os == 'Linux'
         env:

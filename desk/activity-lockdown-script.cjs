@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Atividades — o prelude de isolamento que roda antes do HTML do modelo.

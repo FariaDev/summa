@@ -1,3 +1,4 @@
+// @ts-check
 // Adaptador do núcleo provado em core/wheel.bend: o host resolve os fatos
 // (cooldown, limites, direção, limiar) e o núcleo decide. Para mudar a lógica,
 // edite o core e rode `npm run build:bend` — este arquivo só traduz.

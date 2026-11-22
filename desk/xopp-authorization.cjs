@@ -1,6 +1,14 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
+
+/* O padrão é o realpath nativo, o mesmo da leitura (`authorizedPath`): no macOS o
+   JS devolve a caixa digitada e o nativo a do disco (revisão do e0edfd81). */
+/** @param {string} value @returns {string} */
+function nativeRealpath(value) {
+  return (fs.realpathSync.native || fs.realpathSync)(value);
+}
 
 /**
  * Autoriza um caderno `.xopp` na lista viva (`allowedXopp`):
@@ -18,11 +26,6 @@ const fs = require('node:fs');
  * allowed.has('/cofre/aula.xopp') // true
  * allowed.has(fs.realpathSync.native('/cofre/aula.xopp')) // true
  */
-/* O padrão é o realpath nativo, o mesmo da leitura (`authorizedPath`): no macOS o
-   JS devolve a caixa digitada e o nativo a do disco (revisão do e0edfd81). */
-function nativeRealpath(value) {
-  return (fs.realpathSync.native || fs.realpathSync)(value);
-}
 
 function authorizeXopp(allowedXopp, rawPath, realpath = nativeRealpath) {
   if (!allowedXopp || typeof allowedXopp.add !== 'function') return;

@@ -151,7 +151,7 @@ await withArtifacts('free-study-ui',async ctx=>{
  /* Payload sem histórico é uma atualização parcial da conversa Pi; uma
     lista vazia explícita é autoritativa e limpa o histórico anterior. */
  await page.evaluate(async()=>{
-  const {showHistory}=await import('./src/chat.mjs');
+  const {showHistory}=await import('./src/chat/chat.mjs');
   showHistory([{role:'assistant',content:[{type:'text',text:'Marcador de histórico'}]}]);
   const data=await window.__freeData({library:window.__freeBase.library,state:window.__freeBase.state,workspace:window.__freeBase.workspace});
   delete data.messages;
@@ -400,7 +400,7 @@ await withArtifacts('free-study-ui',async ctx=>{
  await page.waitForFunction(()=>document.querySelector('#free-title')?.value==='Sessão A');
  assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--chat').trim()),'511px','medida da sessão A aplicada');
  await page.evaluate(async()=>{
-  const {showHistory}=await import('./src/chat.mjs');
+  const {showHistory}=await import('./src/chat/chat.mjs');
   showHistory([{role:'assistant',content:[{type:'text',text:'Histórico da sessão A'}]}]);
  });
  await page.evaluate(()=>{
@@ -417,7 +417,7 @@ await withArtifacts('free-study-ui',async ctx=>{
  /* Troca para a sessão livre B (MESMO curso, sessão diferente). */
  await page.evaluate(()=>window.__applyWorkspace(window.__freePayload({state:{chatWidth:505},library:[],workspace:{kind:'free',title:'Sessão B'},session:'pi-livre-B.jsonl',sessions:[{label:'B',path:'pi-livre-B.jsonl'}]})));
  await page.waitForFunction(()=>document.querySelector('#free-title')?.value==='Sessão B');
- await page.evaluate(async()=>{const {showHistory}=await import('./src/chat.mjs');showHistory([{role:'assistant',content:[{type:'text',text:'Histórico da sessão B'}]}]);});
+ await page.evaluate(async()=>{const {showHistory}=await import('./src/chat/chat.mjs');showHistory([{role:'assistant',content:[{type:'text',text:'Histórico da sessão B'}]}]);});
  await page.evaluate(()=>window.__resolveStale());
  await page.waitForTimeout(500);// espera fixa: "nada acontece em 0,5 s" — o resultado atrasado não troca título nem histórico da sessão atual
  assert.equal(await page.locator('#free-title').inputValue(),'Sessão B','resultado atrasado não troca o título da sessão atual');

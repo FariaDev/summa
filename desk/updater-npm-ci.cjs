@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const path=require('node:path');
@@ -102,7 +103,7 @@ function describeElectronProcesses(processes){
  * @returns {Promise<{ok:boolean, remaining:{pid:number,exe:string}[], unreadable?:boolean}>}
  * @example await waitForElectronProcesses({deskDir,log:console.log}) // {ok:true,remaining:[]}
  */
-async function waitForElectronProcesses({deskDir,platform=process.platform,timeoutMs=ELECTRON_WAIT_TIMEOUT_MS,pollMs=ELECTRON_WAIT_POLL_MS,list=listElectronProcesses,sleep=defaultSleep,now=Date.now,log=()=>{}}={}){
+async function waitForElectronProcesses({deskDir,platform=process.platform,timeoutMs=ELECTRON_WAIT_TIMEOUT_MS,pollMs=ELECTRON_WAIT_POLL_MS,list=listElectronProcesses,sleep=defaultSleep,now=Date.now,log=()=>{}}=/** @type {any} */ ({})){
  if(platform!=='win32')return {ok:true,remaining:[]};
  const started=now();
  let announced=false;
@@ -129,7 +130,7 @@ async function waitForElectronProcesses({deskDir,platform=process.platform,timeo
 /**
  * Código de trava de arquivo no erro do npm ci (propriedade `code` ou texto de
  * stderr/mensagem, porque o npm sai com código 1 e escreve EPERM no stderr).
- * @param {unknown} error
+ * @param {any} error
  * @returns {string} `EPERM`/`EBUSY`/`ENOTEMPTY`, ou '' quando não é trava
  * @example fileLockCode(Object.assign(Error('npm ci'),{stderr:'npm error code EBUSY'})) // 'EBUSY'
  */
@@ -150,7 +151,7 @@ function fileLockCode(error){
  * @returns {Promise<{attempts:number}>}
  * @example await npmCiWithRetry({deskDir,run,platform:'win32',log}) // {attempts:2}
  */
-async function npmCiWithRetry({deskDir,run,platform=process.platform,log=()=>{},sleep=defaultSleep,delays=NPM_CI_RETRY_DELAYS_MS}={}){
+async function npmCiWithRetry({deskDir,run,platform=process.platform,log=()=>{},sleep=defaultSleep,delays=NPM_CI_RETRY_DELAYS_MS}=/** @type {any} */ ({})){
  const attempts=delays.length+1;
  for(let attempt=1;;attempt++){
   try{

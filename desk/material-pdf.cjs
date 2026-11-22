@@ -187,7 +187,7 @@ function lockSession(session) {
 }
 
 /** Monta o PDF numa janela escondida e devolve os bytes, sem gravar.
- * @typedef {{title?: string, markdown?: string, model?: string, options?: object, context?: string, timeoutMs?: number, signal?: AbortSignal}} PdfRequest
+ * @typedef {{title?: string, markdown?: string, model?: string, options?: Record<string, any>, context?: string, timeoutMs?: number, signal?: AbortSignal}} PdfRequest
  * @param {PdfRequest} [request] */
 async function renderPdf({title = '', markdown = '', model, options, context = '', timeoutMs, signal} = {}) {
   if (typeof markdown !== 'string') fail('BAD_PAYLOAD', uiMsg('err.pdf.notMarkdown'));

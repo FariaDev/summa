@@ -1,3 +1,4 @@
+// @ts-check
 import {$,S,toast} from './state.mjs';
 import {openGuide} from './guide-loader.mjs';
 import {message as uiMessage} from './i18n.mjs';
@@ -20,7 +21,7 @@ async function openHelp(section=''){
 }
 /* "Como funciona" (#90): link curto que abre a seção certa do guia. */
 document.addEventListener('click',event=>{
- const link=event.target?.closest?.('[data-open-guide]');
+ const link=/** @type {HTMLElement} */ (event.target)?.closest?.('[data-open-guide]');
  if(!link)return;
  event.preventDefault();
  openHelp(String(link.dataset.openGuide||''));

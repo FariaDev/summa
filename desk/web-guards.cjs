@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Guardas das janelas web (revisão de segurança): nenhuma página ganha

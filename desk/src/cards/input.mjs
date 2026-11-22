@@ -1,3 +1,4 @@
+// @ts-check
 /* Entrada dos cartões `quiz` e `perguntar` — UMA validação para os três
    motores (#92). O guia de cada ferramenta (`mesa-quiz/guide.mjs` e
    `mesa-perguntar/guide.mjs`) declara os campos; este módulo confere o que o
@@ -30,6 +31,7 @@ const fail = (label, value, expected) => {
   throw Error(invalidValue(label, value, expected));
 };
 
+/** @param {any} label @param {any} value @param {{min?: number, max?: any, trim?: boolean}} [options] */
 function boundedText(label, value, {min = 0, max, trim = true} = {}) {
   if (typeof value !== 'string') fail(label, value, `string(${min}..${max})`);
   const out = trim ? value.trim() : value;
@@ -77,7 +79,7 @@ function correctValuesOf(raw, options, multiSelect) {
 
 /**
  * Normaliza e valida o pedido da ferramenta `quiz`.
- * @param {unknown} raw argumentos do modelo
+ * @param {any} raw argumentos do modelo (validados aqui)
  * @returns {{kind: 'quiz', question: string, details: string, note: string, explanation: string, options: Array<{label: string, value: string}>, multiSelect: boolean, correctValues: string[]}}
  * @example normalizeQuiz({question: '2+2?', options: [{label: '3'}, {label: '4'}], correctAnswer: '4'})
  */
@@ -116,7 +118,7 @@ function askOptions(raw, questionIndex) {
 
 /**
  * Normaliza e valida o pedido da ferramenta `perguntar`.
- * @param {unknown} raw argumentos do modelo
+ * @param {any} raw argumentos do modelo (validados aqui)
  * @returns {{kind: 'ask', questions: Array<{question: string, header: string, options: Array<{label: string, description: string}>, multiSelect: boolean}>}}
  * @example normalizeAsk({questions: [{question: 'Como você resolveu?', options: []}]})
  */

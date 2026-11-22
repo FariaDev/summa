@@ -1,3 +1,4 @@
+// @ts-check
 import {build,childrenOf,preserveFocus,renderChildren} from './view-host.mjs';
 
 /* Aplicadores de árvore do núcleo em nós vivos do index.html (#43 fase 2:

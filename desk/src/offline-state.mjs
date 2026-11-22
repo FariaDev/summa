@@ -1,3 +1,4 @@
+// @ts-check
 /* Estado de rede do renderer (#142): `navigator.onLine` mais os eventos
    `online`/`offline` bastam. Sem polling e sem consultar o main — o sinal do
    navegador é o que o aluno vê (Wi-Fi cabo, modo avião) e é o que o teste

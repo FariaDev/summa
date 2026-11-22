@@ -1,5 +1,5 @@
 // Bridge falso do chat lateral para testes unitários do renderer
-// (`src/sidechat.mjs`, via `setSidechatBridge`): nenhum Electron, nenhum motor.
+// (`src/sidechat/sidechat.mjs`, via `setSidechatBridge`): nenhum Electron, nenhum motor.
 // O teste dirige cada aceite na mão — `prompt()` só resolve quando o teste
 // chamar `resolvePrompt`, como o ACK do host real.
 /**

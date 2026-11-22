@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Classe grande dividida por responsabilidade (#43 fase 2): cada arquivo

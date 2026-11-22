@@ -1,5 +1,9 @@
+// @ts-check
 /* Decisão do diálogo quando o tutor propõe um card. A interface mede o que o
    aluno fez; quem deixa o card entrar no caderno é `proposalEnters` no núcleo. */
+
+/* O diálogo guarda a proposta aberta em campos próprios (`_proposalId`, `_proposalSilent`). */
+/** @typedef {HTMLDialogElement & {_proposalId?: string, _proposalSilent?: boolean, _dirty?: Set<string>}} ProposalDialog */
 
 /**
  * O que o fechamento do diálogo significa para o host.
@@ -18,9 +22,9 @@ export function proposalDecision({returnValue, dirty} = {}) {
  * Abre o diálogo de revisão com o card do tutor. Com o diálogo já aberto (o
  * aluno no meio de outro card), responde `busy` e não troca nada. A referência
  * é a página aberta, nunca um caminho que o modelo tenha mandado.
- * @param {HTMLDialogElement|null} dialog
+ * @param {ProposalDialog|null} dialog
  * @param {{id?: string, question?: string, attempt?: string, difficulty?: string}} payload
- * @param {{fill: (options: object) => unknown, openRef: () => object, respond?: (answer: object) => Promise<unknown>, t: (key: string) => string}} deps
+ * @param {{fill: (options: Record<string, any>) => unknown, openRef: () => object, respond?: (answer: Record<string, any>) => Promise<unknown>, t: (key: string) => string}} deps
  * @example showProposal(dialogOf(), {id: 'p1', question: 'Por que N = P cos θ?'}, {fill, openRef, respond, t})
  */
 export function showProposal(dialog, payload, {fill, openRef, respond, t}) {
@@ -55,7 +59,7 @@ export function showProposal(dialog, payload, {fill, openRef, respond, t}) {
 
 /**
  * O host desistiu da proposta (janela, sessão, saída): fecha sem responder de novo.
- * @param {HTMLDialogElement|null} dialog
+ * @param {ProposalDialog|null} dialog
  * @param {{id?: string}} payload
  * @example silenceProposal(dialogOf(), {id: 'p1'})
  */
@@ -67,9 +71,9 @@ export function silenceProposal(dialog, payload) {
 
 /**
  * Fechou o diálogo de uma proposta: manda a decisão ao host, que é quem grava.
- * @param {HTMLDialogElement} dialog
- * @param {object} item o card como ficou no formulário
- * @param {{respond?: (answer: object) => Promise<any>, toast: (text: string) => void, message: (key: string) => string, onItems: (items: object[]) => void}} deps
+ * @param {ProposalDialog} dialog
+ * @param {Record<string, any>} item o card como ficou no formulário
+ * @param {{respond?: (answer: Record<string, any>) => Promise<any>, toast: (text: string) => void, message: (key: string) => string, onItems: (items: Record<string, any>[]) => void}} deps
  * @example finishProposal(dialog, formItem(dialog), {respond, toast, message, onItems})
  */
 export function finishProposal(dialog, item, {respond, toast, message, onItems}) {

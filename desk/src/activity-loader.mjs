@@ -8,7 +8,7 @@ import {watchActivityColumn} from './activity-column.mjs';
 /**
  * Cria a fachada do host de atividades.
  * @param {() => Promise<typeof import('./activity.mjs')>} [importModule]
- * @returns {{init: (options?: object) => void, load: () => Promise<any>, current: () => any | null}}
+ * @returns {{init: (options?: Record<string, any>) => void, load: () => Promise<any>, current: () => any | null}}
  * @example const activity = createActivityLoader(); activity.init({composer}); await activity.load();
  */
 export function createActivityLoader(importModule = () => import('./activity.mjs')) {

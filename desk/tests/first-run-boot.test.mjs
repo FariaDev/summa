@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createFirstRunBoot, wantsFirstRunScreen} from '../src/first-run-boot.mjs';
+import {createFirstRunBoot, wantsFirstRunScreen} from '../src/setup/first-run-boot.mjs';
 
 const configured = {needsSetup: false, courses: [{id: 'calculo', kind: 'course'}]};
 const empty = {needsSetup: false, courses: [{id: 'mesa-free', kind: 'free'}]};

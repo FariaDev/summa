@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Campos de linhagem do descritor (#87): `origin` aponta para a sessão de onde

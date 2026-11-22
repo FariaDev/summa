@@ -1,3 +1,4 @@
+// @ts-check
 /* #190: o nome antigo do bundle. Quem atualiza da versão publicada roda o
    updater antigo, que reabre `Mesa de Estudos.app`; o install-app troca esse
    caminho por um link para o Summa.app, e o Summa já aberto apaga o link.

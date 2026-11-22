@@ -1,3 +1,4 @@
+// @ts-check
 /* Aviso "Desfazer" para remoções do Caderno e das Anotações (renderer).
  *
  * Independente do toast global (não importa `state.mjs`, não usa `#toast`):

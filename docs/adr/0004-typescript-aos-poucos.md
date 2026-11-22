@@ -45,7 +45,7 @@ A migração é **incremental, sem reescrita**, e o `strict` é a última fatia.
    `checkJs` enxergar as chaves e assinaturas reais.
 2. **Fatia (b): as fronteiras viram `.mts`/`.cts`.** Contrato dos motores
    (`src/agents/` — `service.cjs` e o contrato de `claude-adapter`), IPC
-   (`preload.cjs`) e ferramentas do MCP (`src/extensions/mesa-mcp/`). É
+   (`preload.cjs`) e ferramentas do MCP (`src/extensions/summa-mcp/`). É
    implementação TypeScript, não só declaração `.d.ts`.
 3. **Fatia (c): o resto quando um ticket já mexer no arquivo.** Módulos
    grandes quebram por responsabilidade nessa hora, como o padrão dos

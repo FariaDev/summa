@@ -113,7 +113,7 @@ function registerTutorPromptHost({ipcMain,live,runtime,FREE_ID,allowedXopp,ggb,a
     fala do aluno; o host decide quando chamar.
     @param {string} text
     @param {{conversationId?: string}} [options]
-    @returns {Promise<object>} */
+    @returns {Promise<Record<string, any>>} */
  async function sendText(text,options={}){
   if(typeof text!=='string'||!text.trim())throw Error('O resultado do cartão está vazio.');
   const conversationId=typeof options.conversationId==='string'?options.conversationId:'';

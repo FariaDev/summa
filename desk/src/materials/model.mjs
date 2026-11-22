@@ -1,3 +1,4 @@
+// @ts-check
 /* Modelos de PDF do tutor (Lista, Apostila, Resumo, Simulado, Formulário e o
    Livre de sempre): a ponte entre o núcleo (`core/materialmodel.bend`, com leis
    e provas) e o resto da Mesa. Nada aqui decide regra — ordem, padrão, opções
@@ -48,6 +49,7 @@ export function modelList() {
 }
 
 /* Qual modelo vale e por quê: pedido do tutor → último da matéria → livre. */
+/** @param {{requested?: any, last?: any}} [options] */
 export function resolveModel({requested, last} = {}) {
   const asked = modelFact(requested);
   const kept = modelFact(last);

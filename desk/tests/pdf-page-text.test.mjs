@@ -10,8 +10,8 @@ import {createRequire} from 'node:module';
 import {tinyPdf} from './helpers.mjs';
 import {imagePagesPdf, multiPagePdf} from './synthetic-pdf.mjs';
 import {message} from '../src/i18n.mjs';
-import {PDF_FIELDS, createPdfSession, pdfTool, pdfPagesText, readPdfPages} from '../src/extensions/mesa-mcp/pdf-tool.mjs';
-import {mesaTools} from '../src/extensions/mesa-mcp/tools.mjs';
+import {PDF_FIELDS, createPdfSession, pdfTool, pdfPagesText, readPdfPages} from '../src/extensions/summa-mcp/pdf-tool.mjs';
+import {mesaTools} from '../src/extensions/summa-mcp/tools.mjs';
 
 const require = createRequire(import.meta.url);
 const {createPdfPageReader, pageText, pageRange} = require('../pdf-page-text.cjs');

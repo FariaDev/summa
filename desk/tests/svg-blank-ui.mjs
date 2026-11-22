@@ -82,7 +82,7 @@ await withArtifacts('svg-blank', async (ctx) => {
 
   await openSidechat(page);
   await page.evaluate(async (payload) => {
-    const sidechat = await import('./src/sidechat.mjs');
+    const sidechat = await import('./src/sidechat/sidechat.mjs');
     sidechat.openSavedSidechat(payload);
   }, SAVED);
   await page.waitForFunction(() => {

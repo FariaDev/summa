@@ -1,3 +1,4 @@
+// @ts-check
 /* Continuar a sessão em outro motor (#87): uma troca por vez e o aviso do que
    fica na origem (D4=A: fila, rascunho e anexos não viajam). Puro e sem DOM
    para o teste cobrir sem janela; quem chama lê o S e o DOM.

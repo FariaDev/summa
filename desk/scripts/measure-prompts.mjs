@@ -85,7 +85,7 @@ export async function claudeTools(deskDir = desk) {
  * @example (await openCodeTools()).main.map((tool) => tool.name) // ['geogebra', ...]
  */
 export async function openCodeTools(deskDir = desk) {
-  const file = path.join(deskDir, 'src', 'extensions', 'mesa-mcp', 'tools.mjs');
+  const file = path.join(deskDir, 'src', 'extensions', 'summa-mcp', 'tools.mjs');
   if (!fs.existsSync(file)) return null;
   const {mesaTools} = await import(pathToFileURL(file).href);
   const env = {

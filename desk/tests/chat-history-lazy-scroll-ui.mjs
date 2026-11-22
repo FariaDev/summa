@@ -11,11 +11,11 @@ import {pollUntil} from './waits.mjs';
  observador vivo nem pinta a conversa errada (nas duas ordens). */
 
 async function settleFormats(page) {
-  await pollUntil(async () => page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending),
+  await pollUntil(async () => page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending),
     (pending) => typeof pending === 'number', {timeout: 30000, what: 'a pendência assentar'});
-  const before = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending);
+  const before = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending);
   await page.waitForTimeout(800); // espera fixa: o observador formata em rajadas; a pendência tem que parar de cair
-  const after = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending);
+  const after = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending);
   assert.ok(after <= before, 'a pendência assenta');
 }
 
@@ -23,7 +23,7 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
   const {app, page, errors, runtime, pdfPath} = await openLazyDesk(300, {options: {quoteRef: {name: 'Limites.pdf', page: 7}}, tag: 'rolagem', pdfSeed: 'Limites.pdf'});
   ctx.app = app;
   ctx.runtime = runtime;
-  const pendingOpen = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending);
+  const pendingOpen = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending);
   assert.ok(pendingOpen > 500, `a conversa longa abre em casca (${pendingOpen} pendentes)`);
 
   /* Meia altura: espera o que está na vista formatar; o alvo segue em casca.
@@ -40,7 +40,7 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
      levava a vista até ela, e a subida pulava (achado integrando a #118). */
   const question = await page.evaluate(async () => {
     const {messageScroller} = await import('./src/state.mjs');
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const scroller = messageScroller();
     const view = scroller.getBoundingClientRect();
     const target = [...document.querySelectorAll('#messages .message.user[data-lazy-shell]')].filter((el) => el.getBoundingClientRect().bottom < view.top).at(-1);
@@ -64,7 +64,7 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
      os outros testes rodam com o padrão ligado). */
   const anchored = await page.evaluate(async () => {
     const {messageScroller} = await import('./src/state.mjs');
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const scroller = messageScroller();
     scroller.style.overflowAnchor = 'none';
     const view = scroller.getBoundingClientRect();
@@ -138,7 +138,7 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
   /* Citação para longe: o caminho real (`revealInChat`) formata antes de rolar e
      cai no lugar certo. Parte do fim: quem já está à vista não rola, de propósito. */
   const shellJump = await page.evaluate(async () => {
-    const {revealInChat} = await import('./src/chat-scroll-view.mjs');
+    const {revealInChat} = await import('./src/chat/chat-scroll-view.mjs');
     const {messageScroller} = await import('./src/state.mjs');
     const scroller = messageScroller();
     const view = scroller.getBoundingClientRect();
@@ -151,7 +151,7 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
   assert.equal(shellJump.shell, false, 'formatou antes de rolar');
   assert.ok(shellJump.bottomGap <= 4, `abaixo da vista, encosta o fim dela (a ${shellJump.bottomGap.toFixed(1)}px)`);
   const quote = await page.evaluate(async () => {
-    const {revealInChat} = await import('./src/chat-scroll-view.mjs');
+    const {revealInChat} = await import('./src/chat/chat-scroll-view.mjs');
     const {messageScroller} = await import('./src/state.mjs');
     const el = document.querySelectorAll('#messages .message.assistant')[0];
     const scroller = messageScroller();
@@ -174,10 +174,10 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
   /* Corrida, ordem 1: monta B com a formatação de A pendente. */
   const messagesB = buildLazyMessages(100);
   const raceAB = await page.evaluate(async (msgsB) => {
-    const lazy = await import('./src/history-format-lazy.mjs');
+    const lazy = await import('./src/history/history-format-lazy.mjs');
     const kept = [...document.querySelectorAll('#messages .message[data-lazy-shell]')].slice(0, 3);
     const genBefore = lazy.lazyStats().generation;
-    const {showHistory} = await import('./src/chat.mjs');
+    const {showHistory} = await import('./src/chat/chat.mjs');
     showHistory(msgsB);
     const {messageScroller} = await import('./src/state.mjs');
     messageScroller().scrollTop = messageScroller().scrollHeight;
@@ -194,10 +194,10 @@ await withArtifacts('chat-history-lazy-scroll', async (ctx) => {
   /* Corrida, ordem 2: sair antes de formatar mata o observador; voltar pinta. */
   const messagesA = buildLazyMessages(300, {quoteRef: {name: 'Limites.pdf', page: 7}});
   const raceBA = await page.evaluate(async (msgsA) => {
-    const lazy = await import('./src/history-format-lazy.mjs');
+    const lazy = await import('./src/history/history-format-lazy.mjs');
     window.dispatchEvent(new Event('desk-conversation-changed'));
     const cancelled = lazy.lazyStats();
-    const {showHistory} = await import('./src/chat.mjs');
+    const {showHistory} = await import('./src/chat/chat.mjs');
     showHistory(msgsA);
     const {messageScroller} = await import('./src/state.mjs');
     messageScroller().scrollTop = messageScroller().scrollHeight;

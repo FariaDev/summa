@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Desfazer remoção — tokens, prazos e merge no backend (em processo).
@@ -44,7 +45,7 @@ function core() {
     try {
       coreCache = require(file).default;
     } catch (error) {
-      const missing = new Error('O núcleo do Desfazer não foi gerado (core/undoview.bend → desk/src/generated/undoview.core.js).');
+      const missing = /** @type {Error & {code?: string, [field: string]: any}} */ (new Error('O núcleo do Desfazer não foi gerado (core/undoview.bend → desk/src/generated/undoview.core.js).'));
       missing.code = 'UNDO_CORE_MISSING';
       missing.cause = error;
       throw missing;
@@ -98,6 +99,7 @@ function createUndoStore(options = {}) {
   return {
     /* Emite o token para o item removido. `schedule` é o instantâneo da agenda
      * do Caderno (ou null): volta por ID no undo, sem sync que perca histórico. */
+    /** @param {{kind?: string, scopeKey?: string, item?: any, index?: number, schedule?: any, token?: string, at?: any}} [options] */
     issue({kind = '', scopeKey = '', item, index = 0, schedule = null, token = '', at = Date.now()} = {}) {
       const now = Math.max(0, Math.trunc(Number(at) || 0));
       prune(now);
@@ -118,6 +120,7 @@ function createUndoStore(options = {}) {
     /* Valida sem consumir quando a decisão do núcleo é `Ready`. `authorized` pode
      * ser um booleano ou `(entry) => boolean` (as anotações precisam do item
      * guardado para conferir o caminho contra a biblioteca atual). */
+    /** @param {{token?: string, scopeKey?: string, authorized?: boolean|((entry: any) => boolean), at?: any}} [options] */
     check({token = '', scopeKey = '', authorized = true, at = Date.now()} = {}) {
       const now = Math.max(0, Math.trunc(Number(at) || 0));
       const key = textOf(token);

@@ -1,8 +1,9 @@
+// @ts-check
 import guideCore from './generated/guideview.core.js';
 import {renderChildren,applyIcons} from './view-host.mjs';
 import {icon} from '../icons.mjs';
 import {t,text} from './ui-text.mjs';
-import {createMascote} from './mascote.mjs';
+import {createMascote} from './mascote/mascote.mjs';
 
 /* Guia da Mesa (`#help-dialog`): o aplicador do núcleo `core/guideview.bend`.
    A ordem das seções e o "Próximo"/"Anterior" são do núcleo; aqui só se
@@ -52,6 +53,7 @@ function titleAndBody(unit) {
   return [unit.querySelector('span[data-i18n]'), unit.querySelector('.guide-combo')];
 }
 
+/** @param {{id?: any, unit?: any}} options */
 function hitRow({id, unit}) {
   const [title, body] = titleAndBody(unit);
   const row = document.createElement('section');

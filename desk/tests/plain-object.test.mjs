@@ -19,7 +19,7 @@ test('os módulos do main usam plain-object.cjs em vez de copiar a linha', () =>
   const copies = [];
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
-      if (entry.name.startsWith('.') || ['node_modules', 'tests', 'generated'].includes(entry.name)) continue;
+      if (entry.name.startsWith('.') || ['node_modules', 'tests', 'generated', 'out'].includes(entry.name)) continue;
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.name.endsWith('.cjs') && entry.name !== 'plain-object.cjs' && /(?:const|function)\s+isPlainObject\b/.test(fs.readFileSync(full, 'utf8'))) copies.push(path.relative(DESK, full));

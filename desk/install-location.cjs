@@ -1,3 +1,4 @@
+// @ts-check
 /* Raiz e reabertura do app instalado (#181). O payload do `.app` mora em
    `Contents/Resources/app`; o da instalação por usuário do Windows, em
    `resources\app`. A profundidade muda, e o updater precisa do caminho certo
@@ -26,7 +27,7 @@ function appRootFromDesk(deskDir,platform=process.platform){
  * `electron.exe` da instalação no Windows. Fora de bundle (código/clone), é o
  * `npm start` de sempre.
  * @param {{mode: string, deskDir: string, platform?: string}} input
- * @returns {{cmd: string, args: string[], cwd: string, shell?: boolean}}
+ * @returns {{cmd: string, args: string[], cwd?: string, shell?: boolean}}
  * @example reopenInstalled({mode:'bundle',deskDir:'C:\\...\\Summa\\resources\\app',platform:'win32'})
  * // {cmd:'C:\\...\\Summa\\electron.exe',args:[],cwd:'C:\\...\\Summa'}
  */

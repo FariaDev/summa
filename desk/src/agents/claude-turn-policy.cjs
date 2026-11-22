@@ -1,3 +1,4 @@
+// @ts-check
 /* Política pura de liquidação do turno Claude Code — ponte Mesa ↔ SDK 0.3.325.
  *
  * Módulo PURO: não importa o SDK, não faz I/O, não cria timer, não abre rede,

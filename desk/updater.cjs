@@ -1,3 +1,4 @@
+// @ts-check
 /* Updater por clique da Mesa: checagem (GitHub releases da tag pública) e
    aplicação (git / bundle / zip) com rollback.
 
@@ -95,6 +96,7 @@ function bundleSourceError(sourceDir){
    com prazo antes do ci e repete com espera crescente quando a falha é trava;
    quem segurava vai para o log com pid e caminho, nunca para a mensagem do
    Sobre. Fora do Windows nada muda. */
+/** @param {{deskDir?: any, run?: any, platform?: any, log?: any, sleep?: any, listElectronProcesses?: any}} options */
 async function npmCi({deskDir,run,platform=process.platform,log=()=>{},sleep=defaultSleep,listElectronProcesses=defaultListElectronProcesses}){
  if(platform==='win32')await waitForElectronProcesses({deskDir,platform,list:listElectronProcesses,sleep,log});
  await npmCiWithRetry({deskDir,run,platform,log,sleep});
@@ -134,6 +136,7 @@ function logRunOutput(result,log){
  }
 }
 
+/** @param {{mode?: any, sourceDir?: any, run?: any, log?: any, platform?: any}} options */
 async function syncBundle({mode,sourceDir,run,log,platform=process.platform}){
  const installScript=path.join(sourceDir,'desk','scripts','install-app.mjs');
  /* #181: no Windows o app instalado mora fora do clone
@@ -172,7 +175,7 @@ async function assertCleanClone(sourceDir,run){
  if(sujos.length){
   /* #160: código estável e contagem para o Sobre explicar a recusa sem parsear
      o texto do log (que continua o mesmo, para quem lê o desk.log). */
-  const error=Error('o clone tem trabalho local (git status não limpo: '+sujos.length+' arquivo(s)) — atualização abortada para não destruir mudanças; commit/stash e rode de novo');
+  const error=/** @type {Error & {code?: string, [field: string]: any}} */ (Error('o clone tem trabalho local (git status não limpo: '+sujos.length+' arquivo(s)) — atualização abortada para não destruir mudanças; commit/stash e rode de novo'));
   error.code='DIRTY_CLONE';
   error.files=sujos.length;
   throw error;
@@ -181,6 +184,7 @@ async function assertCleanClone(sourceDir,run){
 
 /* #80: a tag anunciada pode ainda não existir no clone (release nova). Busca
    as tags e resolve o commit; tag ausente depois disso recusa o update. */
+/** @param {{sourceDir?: any, version?: any, run?: any, log?: any}} options */
 async function resolveTagCommit({sourceDir,version,run,log}){
  const tag=`v${normalizeVersion(version)}`;
  const rev=async()=>{

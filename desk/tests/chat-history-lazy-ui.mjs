@@ -27,7 +27,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   });
   assert.equal(lastAssistant.shell, false, 'o fim, que abre primeiro, já nasce formatado');
   assert.ok(lastAssistant.katex > 0, 'a última resposta tem KaTeX pintado');
-  const stats = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats());
+  const stats = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats());
   assert.equal(stats.armed, false, 'o lote fecha depois da montagem');
 
   /* Anúncio em massa (#118): a região segue `polite`, mas a bolha em casca não
@@ -46,7 +46,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
 
   /* O rico custa chamadas de `markup`: com a casca, só a cauda pinta. */
   const second = await page.evaluate(async (msgs) => {
-    const {showHistory} = await import('./src/chat.mjs');
+    const {showHistory} = await import('./src/chat/chat.mjs');
     const {resetMarkupStats, markupStats} = await import('./src/markdown.mjs');
     resetMarkupStats();
     const started = performance.now();
@@ -59,9 +59,9 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
 
   /* O HTML tardio é idêntico ao desenho direto. */
   const identical = await page.evaluate(async () => {
-    const {message} = await import('./src/chat-message-view.mjs');
+    const {message} = await import('./src/chat/chat-message-view.mjs');
     const shell = [...document.querySelectorAll('#messages .message.assistant[data-lazy-shell]')].find((el) => !el._raw.includes('```') && !el._raw.includes('<script>'));
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const scroller = document.querySelector('#chat').scrollHeight > document.querySelector('#chat').clientHeight + 1 ? document.querySelector('#chat') : document.querySelector('#messages');
     const top = scroller.scrollTop;
     const painted = formatLazyShell(shell);
@@ -88,7 +88,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   assert.ok(provisional.danger.text.includes('<script>'), 'o <script> cru aparece como texto');
   assert.equal(provisional.xss, undefined, 'nada executa na casca');
   const dangerAfter = await page.evaluate(async () => {
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const el = [...document.querySelectorAll('#messages .message.assistant[data-lazy-shell]')].find((node) => node._raw.includes('<script>'));
     formatLazyShell(el);
     return {scripts: el.querySelectorAll('script').length, jsLinks: el.querySelectorAll('a[href^="javascript:"]').length, code: el.querySelectorAll('pre.hl').length, xss: window.__lazyXss};
@@ -138,7 +138,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
 
   /* Seleção atravessa cascas; copiar leva o texto cru. */
   const selection = await page.evaluate(async () => {
-    const {selectionInsideMessages} = await import('./src/chat-quote.mjs');
+    const {selectionInsideMessages} = await import('./src/chat/chat-quote.mjs');
     const list = [...document.querySelectorAll('#messages .message[data-lazy-shell]')].slice(400, 403);
     const range = document.createRange();
     range.setStart(list[0].querySelector('.body').firstChild, 0);
@@ -166,7 +166,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   /* Seleção em curso (#118): formatar com seleção dentro da casca não formata
      agora — a casca fica pendente, a seleção intacta; ao sair, formata. */
   const deferId = await page.evaluate(async () => {
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const el = [...document.querySelectorAll('#messages .message.user[data-lazy-shell]')].find((node) => node.textContent.includes('Pergunta 60:'));
     const body = el.querySelector('.body');
     const range = document.createRange();
@@ -206,7 +206,7 @@ await withArtifacts('chat-history-lazy', async (ctx) => {
   ctx.runtime = small.runtime;
   assert.equal(await shells(small.page), 0, 'curta não deixa casca');
   assert.ok((await bubbles(small.page)) >= 140, 'as bolhas montam');
-  const smallStats = await small.page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats());
+  const smallStats = await small.page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats());
   assert.deepEqual({pending: smallStats.pending, armed: smallStats.armed}, {pending: 0, armed: false}, 'sem pendência');
   const katex = await small.page.evaluate(() => document.querySelectorAll('#messages .katex').length);
   assert.ok(katex > 50, `a curta já abre toda formatada (${katex} KaTeX)`);

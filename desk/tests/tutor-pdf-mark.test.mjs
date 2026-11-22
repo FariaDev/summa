@@ -9,8 +9,8 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fakeAgentAdapter} from './fake-agent-adapter.mjs';
 import {fakeIpcMain} from './fake-electron-shell.mjs';
-import {historyTurns} from '../src/worklog.mjs';
-import {markedImageMessage, markedImagesOf, markOf, markSource} from '../src/marked-pages.mjs';
+import {historyTurns} from '../src/worklog/worklog.mjs';
+import {markedImageMessage, markedImagesOf, markOf, markSource} from '../src/pdf/marked-pages.mjs';
 
 const require = createRequire(import.meta.url);
 const {NativeService} = require('../src/agents/service.cjs');

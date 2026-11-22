@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Transcrição do ClaudeAdapter: blocos do assistente, resumo de ferramenta,

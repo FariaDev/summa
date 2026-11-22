@@ -1,3 +1,4 @@
+// @ts-check
 /* Cliente de `propor_revisao` para o Pi e o OpenCode: a mesma ponte local e o
    mesmo token do quadro, rota `/review-proposal`. O prazo daqui é maior que o
    do host (120 s) para a resposta do aluno chegar antes do fetch desistir. */
@@ -8,7 +9,7 @@ const CLIENT_TIMEOUT_MS = 135000
  * @param {{url?: string, token?: string} | null | undefined} bridge concessão (`LEARNING_DESK_ACTIVITY_BRIDGE`)
  * @param {{question?: string, attempt?: string, difficulty?: string}} spec o card, sem caminho
  * @param {{signal?: AbortSignal, timeoutMs?: number}} [options]
- * @returns {Promise<{proposed: true, status: string, saved: boolean, item: object | null, reason?: string}>}
+ * @returns {Promise<{proposed: true, status: string, saved: boolean, item: Record<string, any> | null, reason?: string}>}
  * @example proposeReview({url: 'http://127.0.0.1:9/activity', token: 't'}, {question: 'Limite'})
  */
 export async function proposeReview(bridge, spec, {signal, timeoutMs = CLIENT_TIMEOUT_MS} = {}) {

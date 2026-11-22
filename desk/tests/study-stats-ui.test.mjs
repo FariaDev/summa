@@ -1,6 +1,6 @@
 /* Painel de Estatísticas (renderer independente).
 
-   `desk/src/study-stats.mjs` não importa o estado global nem edita o shell: o
+   `desk/src/study/study-stats.mjs` não importa o estado global nem edita o shell: o
    integrador chama `initStudyStats({state, host})` e o módulo monta o próprio
    botão e o próprio `<dialog>` acessível. Aqui o teste roda o módulo com um DOM
    mínimo de mentira e um host simulado, provando o que o painel DESENHA e o que
@@ -16,7 +16,7 @@ import {pathToFileURL} from 'node:url';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {setUiLanguage} from '../src/ui-text.mjs';
-import {FREE_COURSE_ID} from '../src/free-names.mjs';
+import {FREE_COURSE_ID} from '../src/study/free-names.mjs';
 
 const SRC = join(dirname(dirname(fileURLToPath(import.meta.url))), 'src');
 
@@ -127,7 +127,7 @@ let version = 0;
    arquivo de produção. */
 async function loadPanel(options) {
   version += 1;
-  const module = await import(`${pathToFileURL(join(SRC, 'study-stats.mjs')).href}?v=${version}`);
+  const module = await import(`${pathToFileURL(join(SRC, 'study', 'study-stats.mjs')).href}?v=${version}`);
   return module.initStudyStats(options);
 }
 

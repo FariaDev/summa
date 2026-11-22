@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /** Fundo da janela principal e da filha (#157): os mesmos hex que

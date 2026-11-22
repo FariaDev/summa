@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Runtime de atividades: documento servido por origem própria, contenção e
@@ -36,6 +37,7 @@ const {buildActivityDocument, cspFor} = require('./activity-document.cjs');
    reexportadas para compatibilidade dos testes e dos hosts. */
 const {filePathForUrl, isFileUrl, isPathUnderRoot, staticAppEntries, fileSubresourceBlocked, fileGuardOptions} = require('./file-guard.cjs');
 
+/** @param {{onWatchdog?: any, store?: unknown}} [options] */
 function createActivityRuntime({onWatchdog} = {}) {
   const registry = new Map();
   const watchdogEvent = (event) => {
@@ -133,6 +135,7 @@ function createActivityRuntime({onWatchdog} = {}) {
      que ficou sem NENHUM frame é encerrado mesmo sem travamento confirmado
      (`detached-frameless`): o Parar cedo demais não pode deixar o laço vivo.
      Nunca mata o processo do renderer principal da janela. */
+  /** @param {any} win @param {{watchdog?: boolean}} [options] */
   const attachWindow = (win, {watchdog = true} = {}) => {
     if (!win || (!win.webContents && !win)) return;
     const wc = win.webContents || win;

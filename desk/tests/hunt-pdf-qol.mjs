@@ -124,7 +124,7 @@ function readerFacts(page, index) {
   }, index);
 }
 
-// O `src/pdf-reader-qol.css` é do root: enquanto o link não estiver no
+// O `src/pdf/pdf-reader-qol.css` é do root: enquanto o link não estiver no
 // `index.html`, o teste injeta a folha para medir o layout e avisa alto.
 async function ensureQolCss(page) {
   const linked = await page.evaluate(() => [...document.querySelectorAll('link[rel="stylesheet"]')]
@@ -373,7 +373,7 @@ await withArtifacts('pdf-qol', async (ctx) => {
 
     check('fase matéria: sem pageerror', pageErrors.length === 0, pageErrors.slice(0, 3).join(' | '));
     check('fase matéria: sem erro no console', consoleErrors.length === 0, consoleErrors.slice(0, 3).join(' | '));
-    if (!linked) console.log('PENDÊNCIA ROOT: ligar `src/pdf-reader-qol.css` no `index.html` (depois do style.css).');
+    if (!linked) console.log('PENDÊNCIA ROOT: ligar `src/pdf/pdf-reader-qol.css` no `index.html` (depois do style.css).');
   } catch (error) {
     check('fase matéria: execução do roteiro', false, error.stack?.split('\n').slice(0, 3).join(' | ') || error.message);
   }

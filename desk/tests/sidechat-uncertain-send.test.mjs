@@ -207,7 +207,7 @@ for (const name of ['HTMLInputElement', 'HTMLTextAreaElement', 'SVGElement']) {
 }
 
 const {fakeSidechatBridge} = await import('./fake-sidechat-bridge.mjs');
-const sidechat = await import('../src/sidechat.mjs');
+const sidechat = await import('../src/sidechat/sidechat.mjs');
 
 function freshMount({uncertain = false} = {}) {
   /* O estado do módulo é único: cada cenário começa do zero (sem id, sem

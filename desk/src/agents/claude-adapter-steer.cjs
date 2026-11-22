@@ -30,7 +30,7 @@ const {isUuid, errorText, asAdapterError} = require('./claude-adapter-input.cjs'
 const turnPolicy = require('./claude-turn-policy.cjs');
 
 /**
- * @typedef {{id: string, wireUuid: string, turn: any, item: object|null, phase: string|null,
+ * @typedef {{id: string, wireUuid: string, turn: any, item: Record<string, any>|null, phase: string|null,
  *   finalized: boolean, timer: NodeJS.Timeout|null, resolve: (value: {accepted: true, id: string}) => void,
  *   reject: (error: Error) => void, promise: Promise<{accepted: true, id: string}>}} SteerDelivery
  */
@@ -42,7 +42,7 @@ const AdapterBase = /** @type {new () => import('../../types/claude-adapter-host
 class ClaudeAdapterSteer extends AdapterBase {
   /**
    * Entrega `prepared` na consulta viva do turno em voo.
-   * @param {{id: string, prepared: {blocks: object[]}}} input
+   * @param {{id: string, prepared: {blocks: Record<string, any>[]}}} input
    * @returns {Promise<{accepted: true, id: string}>}
    * @example await adapter.send({id, text: 'na verdade, use a fórmula 2', delivery: 'steer'}) // → _sendSteer
    */

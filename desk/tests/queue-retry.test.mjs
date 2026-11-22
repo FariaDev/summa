@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createQueueRetry} from '../src/queue-retry.mjs';
+import {createQueueRetry} from '../src/queue/queue-retry.mjs';
 function harness(){
  let id=0;const tasks=new Map(),delays=[],holds=[];let retries=0;
  const gate=createQueueRetry({retry:()=>{retries++;},hold:s=>holds.push(s),schedule:(fn,ms)=>{delays.push(ms);tasks.set(++id,fn);return id;},cancel:id=>tasks.delete(id)});

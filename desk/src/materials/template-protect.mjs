@@ -1,3 +1,4 @@
+// @ts-check
 import {marked} from '../../node_modules/marked/lib/marked.esm.js';
 
 /* Material — proteção do código (fenced, indentado e aninhado) antes de

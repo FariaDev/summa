@@ -1,3 +1,4 @@
+// @ts-check
 /* Propor um card de revisão — UM texto para os três motores (Pi
    `mesa_propor_revisao`, Claude e OpenCode `propor_revisao`). O quando usar
    mora no prompt do tutor (`desk-prompts.cjs`); aqui fica o como. Descrição e

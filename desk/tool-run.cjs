@@ -1,3 +1,4 @@
+// @ts-check
 /* Roda o comando de atualização de uma ferramenta e entrega a saída.
 
    Só o `file`+`args` que `tool-facts.updatePlan` montou chegam aqui (nunca texto

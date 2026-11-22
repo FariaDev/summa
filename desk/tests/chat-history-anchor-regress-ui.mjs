@@ -15,7 +15,7 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
   const {app, page, errors, runtime} = await openLazyDesk(300, {tag: 'ancora-regress'});
   ctx.app = app;
   ctx.runtime = runtime;
-  const pendingOpen = await page.evaluate(async () => (await import('./src/history-format-lazy.mjs')).lazyStats().pending);
+  const pendingOpen = await page.evaluate(async () => (await import('./src/history/history-format-lazy.mjs')).lazyStats().pending);
   assert.ok(pendingOpen > 500, `a conversa longa abre em casca (${pendingOpen} pendentes)`);
 
   /* Meia altura: espera o que está na vista formatar; o alvo segue em casca.
@@ -41,7 +41,7 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
   /* Item 1: a segunda casca não engole o desvio pendente da primeira. */
   const item1 = await page.evaluate(async () => {
     const {messageScroller} = await import('./src/state.mjs');
-    const anchorMod = await import('./src/history-scroll-anchor.mjs');
+    const anchorMod = await import('./src/history/history-scroll-anchor.mjs');
     const scroller = messageScroller();
     anchorMod.stopHistoryAnchor();
     for (const spacer of document.querySelectorAll('[data-probe-spacer]')) spacer.remove();
@@ -72,7 +72,7 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
   /* Item 2: a âncora sai da vista (+800px) e o desvio corrige antes da troca. */
   const item2 = await page.evaluate(async () => {
     const {messageScroller} = await import('./src/state.mjs');
-    const anchorMod = await import('./src/history-scroll-anchor.mjs');
+    const anchorMod = await import('./src/history/history-scroll-anchor.mjs');
     const scroller = messageScroller();
     anchorMod.stopHistoryAnchor();
     for (const spacer of document.querySelectorAll('[data-probe-spacer]')) spacer.remove();
@@ -102,7 +102,7 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
   /* Item 4: zerar o `wanted` drena até assentar, em vez de parar na hora. */
   const item4 = await page.evaluate(async () => {
     const {messageScroller} = await import('./src/state.mjs');
-    const anchorMod = await import('./src/history-scroll-anchor.mjs');
+    const anchorMod = await import('./src/history/history-scroll-anchor.mjs');
     const scroller = messageScroller();
     anchorMod.stopHistoryAnchor();
     anchorMod.setHistoryAnchorWanted(true);
@@ -139,8 +139,8 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
   }, wheelFrom, {timeout: 8000});
   const item3 = await page.evaluate(async () => {
     const {messageScroller, followBottom} = await import('./src/state.mjs');
-    const anchorMod = await import('./src/history-scroll-anchor.mjs');
-    const lazy = await import('./src/history-format-lazy.mjs');
+    const anchorMod = await import('./src/history/history-scroll-anchor.mjs');
+    const lazy = await import('./src/history/history-format-lazy.mjs');
     const scroller = messageScroller();
     /* A roda subiu de verdade (medido fora); o scroll dela é um gesto real e
        liga a âncora por desenho. Espera assinar parado — âncora desligada e
@@ -210,8 +210,8 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
 
   /* Item 6: delta só de espaço/quebra não conta como resposta. */
   const item6 = await page.evaluate(async () => {
-    const {turnState} = await import('./src/chat-turn-state.mjs');
-    const turn = await import('./src/chat-turn.mjs');
+    const {turnState} = await import('./src/chat/chat-turn-state.mjs');
+    const turn = await import('./src/chat/chat-turn.mjs');
     const savedAnswer = turnState.turnHadAnswer;
     turnState.turnHadAnswer = false;
     turn.appendAssistantDelta('\n', null);
@@ -232,8 +232,8 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
 
   /* Item 7: o aviso velho não volta depois do `hide` na janela do `await`. */
   const item7 = await page.evaluate(async () => {
-    const {hideFreeLimitNote} = await import('./src/free-limit-notice.mjs');
-    const {paintFreeLimitTurn} = await import('./src/chat.mjs');
+    const {hideFreeLimitNote} = await import('./src/study/free-limit-notice.mjs');
+    const {paintFreeLimitTurn} = await import('./src/chat/chat.mjs');
     const {S} = await import('./src/state.mjs');
     hideFreeLimitNote();
     const desk = window.desk;
@@ -257,7 +257,7 @@ await withArtifacts('chat-history-anchor-regress', async (ctx) => {
 
   /* Item 5 por último: `beginLazyHistory` limpa o adiado da seleção. */
   const item5 = await page.evaluate(async () => {
-    const lazy = await import('./src/history-format-lazy.mjs');
+    const lazy = await import('./src/history/history-format-lazy.mjs');
     const shell = document.querySelector('#messages .message[data-lazy-shell]');
     if (!shell) return {skip: 'sem casca'};
     const text = shell.querySelector('.body') || shell;

@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Notas do tutor (#91): `Notas/<título>.md` dentro da matéria (ou do

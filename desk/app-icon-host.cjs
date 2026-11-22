@@ -1,3 +1,4 @@
+// @ts-check
 /* Ícone do app com a Mesa aberta (#61, #189). O Dock do macOS e a janela/barra
    de tarefas do Windows mostram a integral a pincel na combinação de tema e
    acento; o ícone do pacote (Finder, Launchpad, Iniciar, instalador) é o

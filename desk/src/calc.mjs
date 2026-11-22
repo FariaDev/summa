@@ -1,3 +1,4 @@
+// @ts-check
 import calcCore from './generated/calcview.core.js';
 import {calculate} from '../calculator.mjs';
 import {icon} from '../icons.mjs';

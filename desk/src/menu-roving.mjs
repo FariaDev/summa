@@ -1,3 +1,4 @@
+// @ts-check
 /* Setas nos menus da barra superior (#67): o padrão de menu do WAI-ARIA, sem
    estado — quem chama lê os itens visíveis e foca o índice devolvido. */
 

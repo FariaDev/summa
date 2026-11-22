@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const conversations=require('../agents/conversations.cjs');

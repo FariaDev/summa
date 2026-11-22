@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Chat lateral da Mesa: segundo chat com história própria, isolado do principal.
@@ -55,18 +56,18 @@ const isNative = (engine) => conversations.NATIVE_ENGINES.includes(engine);
 /**
  * Chats laterais da conversa principal: escopo, limites, motor e gravação.
  * @param {{runtime: string, current: () => {session: string, courseId: string, engine: string, courseName: string, model?: string|null, effort?: string|null},
- *   snapshot: (request: {refs: Array<{path: string, page: number}>}) => object, validPdf: (path: string) => string,
- *   createEngine: (request: {engine: string, id: string, descriptor: {claude?: string|null, session?: string|null}, onEvent: (event: object) => void}) => object | Promise<object>,
- *   emit: (payload: object) => void, log: (scope: string, line: string) => void,
+ *   snapshot: (request: {refs: Array<{path: string, page: number}>}) => Record<string, any>, validPdf: (path: string) => string,
+ *   createEngine: (request: {engine: string, id: string, descriptor: {claude?: string|null, session?: string|null}, onEvent: (event: Record<string, any>) => void}) => Record<string, any> | Promise<Record<string, any>>,
+ *   emit: (payload: Record<string, any>) => void, log: (scope: string, line: string) => void,
  *   revokeCardGrant?: ((grant: {token: string}) => void) | null, now?: () => number,
- *   validateImages?: ((images: unknown) => object[]) | null,
+ *   validateImages?: ((images: unknown) => Record<string, any>[]) | null,
  *   notebookNote?: ((notebooks: unknown) => string) | null,
  *   imageOnlyText?: (() => string) | null}} options
  *   `validateImages` mede e encolhe os anexos de imagem (o mesmo `promptImages` do tutor);
  *   `notebookNote` confere os cadernos anexados e devolve o bloco escondido que o motor lê (lança se algum não é conhecido);
  *   `imageOnlyText` dá a frase padrão que o motor lê quando a pessoa manda só imagem (#109).
  */
-function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now, validateImages = null, notebookNote = null, imageOnlyText = null} = {}) {
+function createSideChatManager({runtime, current, snapshot, validPdf, createEngine, emit, log, revokeCardGrant = null, now = Date.now, validateImages = null, notebookNote = null, imageOnlyText = null} = /** @type {any} */ ({})) {
   if (typeof runtime !== 'string' || !runtime) fail('runtime obrigatório para o chat lateral.');
   if (typeof current !== 'function') fail('current() obrigatório para o chat lateral.');
   if (typeof snapshot !== 'function') fail('snapshot() obrigatório para o chat lateral.');
@@ -81,7 +82,7 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
      invalida desfechos tardios quando a entrada é fechada (suspend/troca/fresh). */
   const active = new Map();
   const cardSessions = new Map();
-  /** @type {ReturnType<typeof createSideChatManager>|null} */
+  /** @type {Record<string, any>|null} */
   let manager = null;
 
   function cardSessionOf(descriptor) {
@@ -92,14 +93,14 @@ function createSideChatManager({runtime, current, snapshot, validPdf, createEngi
       runtime,
       conversation: () => id,
       sendText: (text) => manager.prompt({id, text}),
-      emit: (payload) => emit?.({id, engine: descriptor.engine, event: {...payload, cardType: payload.type, type: 'card'}}),
+      emit: (/** @type {Record<string, any>} */ payload) => emit?.({id, engine: descriptor.engine, event: {...payload, cardType: payload.type, type: 'card'}}),
       appendLog: report,
     });
     cardSessions.set(id, session);
     return session;
   }
 
-  /** Imagens da bandeja, medidas e encolhidas como as do tutor; sem validador, o anexo é recusado. @param {unknown} raw @returns {object[]} */
+  /** Imagens da bandeja, medidas e encolhidas como as do tutor; sem validador, o anexo é recusado. @param {unknown} raw @returns {Record<string, any>[]} */
   function attachedImages(raw) {
     if (raw === undefined || (Array.isArray(raw) && !raw.length)) return [];
     if (!Array.isArray(raw) || typeof validateImages !== 'function') fail(uiMsg('err.sidechat.attachInvalid', {received: JSON.stringify(raw)?.slice(0, 80) ?? 'undefined'}));

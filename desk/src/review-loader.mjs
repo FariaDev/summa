@@ -1,3 +1,4 @@
+// @ts-check
 import {createLazyModule} from './lazy-module.mjs';
 
 /**
@@ -5,7 +6,7 @@ import {createLazyModule} from './lazy-module.mjs';
  * `review.core.js`) só entram quando a aba abre, uma resposta é guardada para
  * revisar ou o tutor propõe um card.
  * @param {() => Promise<typeof import('./review.mjs')>} importModule
- * @returns {{init: () => Promise<void>, activate: () => Promise<void>, deactivate: () => void, openFromMessage: (node?: object | null) => Promise<void>, openProposal: (payload: object) => Promise<void>, cancelProposal: (payload: object) => void, current: () => any | null}}
+ * @returns {{init: () => Promise<void>, activate: () => Promise<void>, deactivate: () => void, openFromMessage: (node?: Record<string, any> | null) => Promise<void>, openProposal: (payload: Record<string, any>) => Promise<void>, cancelProposal: (payload: Record<string, any>) => void, current: () => any | null}}
  * @example const review = createReviewLoader(); await review.activate();
  */
 export function createReviewLoader(importModule = () => import('./review.mjs')) {
@@ -74,7 +75,7 @@ export const activateReview = () => review.activate();
  */
 export const deactivateReview = () => review.deactivate();
 /** Abre o diálogo de revisão a partir de uma mensagem do tutor.
- * @param {object | null} [node] a bolha da mensagem
+ * @param {Record<string, any> | null} [node] a bolha da mensagem
  * @returns {Promise<void>}
  * @example await openReviewFromMessage(el);
  */

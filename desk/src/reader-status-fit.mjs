@@ -1,3 +1,4 @@
+// @ts-check
 import {LANGUAGE_EVENT} from './ui-text.mjs';
 
 /* Status do leitor vazio ("Nenhum material"/"No material", auditoria de
@@ -23,7 +24,7 @@ export function statusNaturalWidth(select) {
   const style = getComputedStyle(select);
   const probe = document.createElement('span');
   probe.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font:${style.font};letter-spacing:${style.letterSpacing};padding:${style.padding};border:0;`;
-  probe.textContent = select.selectedOptions[0]?.textContent || '';
+  probe.textContent = /** @type {HTMLSelectElement} */ (select).selectedOptions[0]?.textContent || '';
   document.body.append(probe);
   const width = probe.getBoundingClientRect().width
     + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);

@@ -42,7 +42,7 @@ await withArtifacts('chat-history-lazy-chrome', async (ctx) => {
   await setTheme(page, 'dark');
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark', 'o tema escuro entra');
   await page.evaluate(async () => {
-    const {applyDisplayState} = await import('./src/display-preferences.mjs');
+    const {applyDisplayState} = await import('./src/settings/display-preferences.mjs');
     const {S} = await import('./src/state.mjs');
     applyDisplayState(S, {readingSize: 'larger'});
   });
@@ -53,14 +53,14 @@ await withArtifacts('chat-history-lazy-chrome', async (ctx) => {
   assert.equal(await page.evaluate(() => document.documentElement.lang), 'en', 'o idioma troca');
   assert.ok((await shells()) > 500, 'as cascas sobrevivem a tema, letra e idioma');
   const styled = await page.evaluate(async () => {
-    const {formatLazyShell} = await import('./src/history-format-lazy.mjs');
+    const {formatLazyShell} = await import('./src/history/history-format-lazy.mjs');
     const el = [...document.querySelectorAll('#messages .message.assistant[data-lazy-shell]')].find((node) => node._raw.includes('$$'));
     formatLazyShell(el);
     return el.querySelectorAll('.katex').length;
   });
   assert.ok(styled > 0, 'formata certo no tema escuro, em inglês e com letra maior');
   await page.evaluate(async () => {
-    const {applyDisplayState} = await import('./src/display-preferences.mjs');
+    const {applyDisplayState} = await import('./src/settings/display-preferences.mjs');
     const {S} = await import('./src/state.mjs');
     applyDisplayState(S, {readingSize: 'normal'});
     await (await import('./src/ui-text.mjs')).setUiLanguage('pt-BR');
@@ -78,7 +78,7 @@ await withArtifacts('chat-history-lazy-chrome', async (ctx) => {
   const slots = await page.evaluate(() => document.querySelectorAll('#messages [data-activity-call]').length);
   assert.ok(slots > 10, `os slots de atividade nascem na montagem (${slots})`);
   const figure = await page.evaluate(async () => {
-    const {revealInChat} = await import('./src/chat-scroll-view.mjs');
+    const {revealInChat} = await import('./src/chat/chat-scroll-view.mjs');
     const svg = [...document.querySelectorAll('#messages .message.assistant')].find((el) => el._raw.includes('```svg'));
     revealInChat(svg);
     const plot = [...document.querySelectorAll('#messages .message.assistant')].find((el) => el._raw.includes('```plot'));

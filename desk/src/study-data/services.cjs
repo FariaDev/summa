@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const search=require('./search.cjs');
 const materialSearch=require('./material-search.cjs');
@@ -20,7 +21,7 @@ const sameScope=(provided,current)=>!!provided&&provided.courseId===current.cour
 
 /* O host fornece escopo e biblioteca atuais; nenhum payload amplia acesso. */
 /**
- * @param {{runtime: () => string, courses: () => Array<{id: string, name: string}>,
+ * @param {{runtime: () => string, courses: () => Array<{id: string, name: string, path?: string}>,
  *   scope: () => {courseId: string, conversation: string, freeSessionId: string},
  *   allowed: () => Set<string>, persist: () => void, log?: (scope: string, line: string) => void,
  *   noteTurns?: ReturnType<typeof createNoteTurnCap>}} options

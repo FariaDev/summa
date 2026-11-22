@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 const {normalizeOne}=require('./review.cjs');
 const {message}=require('./src/i18n.mjs');

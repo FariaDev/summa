@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs = require('node:fs');
@@ -16,6 +17,7 @@ const {buildSources} = require('./backup-capture.cjs');
    escrito agora (o Pi gravando JSONL, o app salvando estado). O host pode
    passar `recentMs` (ex.: 1500 ms) e `allowActive` quando ele mesmo já
    garantiu que o app está parado. */
+/** @param {{runtime?: any, root?: string, recentMs?: number, allowActive?: boolean}} options */
 function assertRuntimeAtRest({runtime, root = '', recentMs = 0, allowActive = false}) {
   if (allowActive || !(Number(recentMs) > 0)) return 0;
   const now = Date.now();
@@ -26,6 +28,7 @@ function assertRuntimeAtRest({runtime, root = '', recentMs = 0, allowActive = fa
   }
   return activity;
 }
+/** @param {{runtime?: any, root?: any, deskDir?: string, materials?: any[], external?: any[], binaries?: string, reason?: string, label?: string, now?: any, recentMs?: number, allowActive?: boolean, log?: any}} options */
 async function snapshot({runtime, root, deskDir = '', materials = [], external = [], binaries = 'include', reason = 'manual', label = '', now = new Date(), recentMs = 0, allowActive = false, log = () => {}}) {
   assertDestinationOutsideRuntime({runtime, root});
   assertRuntimeAtRest({runtime, root, recentMs, allowActive});
@@ -185,6 +188,7 @@ function list(root) {
 }
 /* Confere o snapshot no disco contra o próprio manifesto: falta, sobrou ou
    hash diferente. Devolve o relatório; opcionalmente lança (`strict`). */
+/** @param {any} snapshotDir @param {{strict?: boolean, log?: any}} [options] */
 async function verifySnapshot(snapshotDir, {strict = false, log = () => {}} = {}) {
   const manifest = readManifest(snapshotDir);
   if (!manifest) {
@@ -260,6 +264,7 @@ function writeStatus(root, patch) {
 }
 /* Executa o snapshot e mantém o ledger/status em dia — inclusive quando
    falha (o destino continua válido e o erro fica visível). */
+/** @param {{runtime?: any, root?: any, deskDir?: string, materials?: any[], external?: any[], binaries?: string, reason?: string, label?: string, keep?: any, recentMs?: number, allowActive?: boolean, log?: any}} options */
 async function backupNow({runtime, root, deskDir = '', materials = [], external = [], binaries = 'include', reason = 'manual', label = '', keep = DEFAULT_KEEP, recentMs = 0, allowActive = false, log = () => {}}) {
   /* Guarda antes do try: destino recusado não cria a pasta nem o ledger. */
   assertDestinationOutsideRuntime({runtime, root});
@@ -281,6 +286,7 @@ async function backupNow({runtime, root, deskDir = '', materials = [], external 
 }
 /* Retenção: mantém as `keep` versões mais novas; o resto sai (com manifesto
    junto). O snapshot que está em uso por uma restauração é preservado. */
+/** @param {{root?: any, keep?: any, keepIds?: any[], log?: any}} options */
 function prune({root, keep = DEFAULT_KEEP, keepIds = [], log = () => {}}) {
   const listAll = list(root);
   const protectedIds = new Set(keep && keep > 0 ? listAll.slice(0, keep).map((item) => item.snapshotId) : []);
@@ -297,6 +303,7 @@ function prune({root, keep = DEFAULT_KEEP, keepIds = [], log = () => {}}) {
 /* Atividade persistida mais recente; batimentos, logs e índice não contam.
    `ignore` exclui o próprio
    destino do backup quando ele mora dentro da árvore conferida. */
+/** @param {any} runtime @param {{ignore?: string}} [options] */
 function latestActivity(runtime, {ignore = ''} = {}) {
   let newest = 0;
   const ignoreAbs = ignore ? path.resolve(ignore) : '';

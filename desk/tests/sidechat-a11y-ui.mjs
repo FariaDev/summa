@@ -169,7 +169,7 @@ await withArtifacts('lateral-acessibilidade',async ctx=>{
  assert.equal(await page.evaluate(()=>document.querySelector('#sidechat-pin')?.hidden),true,'o sinal do por cima só existe na janela solta');
 
  /* ---- 8 e 14: um aviso só no incerto e Enter com retorno ---- */
- await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat.mjs');sidechat.openSavedSidechat(payload);},{
+ await page.evaluate(async payload=>{const sidechat=await import('./src/sidechat/sidechat.mjs');sidechat.openSavedSidechat(payload);},{
   id:'sc-11111111-1111-4111-8111-111111111111',engine:'opencode',
   messages:[
    {role:'user',text:'Explique o limite fundamental em uma linha.'},

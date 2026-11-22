@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Motores do chat lateral: um canal por chat, com o MESMO transporte do motor
@@ -35,7 +36,7 @@ function previewFromMessages(messages, fallback = '') {
 
 /**
  * Canal Claude de um chat lateral. `deps` troca o adaptador e o serviço nos testes.
- * @param {{id: string, descriptor: string, runtime: string, prepare: (record: object) => unknown,
+ * @param {{id: string, descriptor: string, runtime: string, prepare: (record: Record<string, any>) => Record<string, any>,
  *   sdkLoader?: unknown, claudePath?: string, detectClaude?: unknown, onEvent: (event: object) => void,
  *   log: (scope: string, line: string) => void, readPdf?: (raw: object) => Promise<object>,
  *   readNotebook?: (raw: object) => Promise<object>,
@@ -60,7 +61,7 @@ function createClaudeSideEngine({
   listMaterials = null,
   showCard = null,
   deps = {},
-} = {}) {
+} = /** @type {any} */ ({})) {
   const Adapter = deps.Adapter || ClaudeAdapter;
   const Service = deps.Service || ClaudeService;
   if (typeof prepare !== 'function') throw Error(invalidValue('prepare', prepare, 'function (preparação do Claude no chat lateral)'));
@@ -122,7 +123,7 @@ function createClaudeSideEngine({
 /**
  * O canal lateral sobre um serviço nativo (Claude ou OpenCode). Só o Claude lê
  * os PDFs do contexto pela política de ferramentas; o OpenCode recebe o texto.
- * @param {{engine: 'claude'|'opencode', id: string, service: import('./src/agents/service.cjs').NativeService,
+ * @param {{engine: 'claude'|'opencode', id: string, service: InstanceType<typeof import('./src/agents/service.cjs').NativeService>,
  *   onEvent: (event: object) => void,
  *   log: (scope: string, line: string) => void}} options
  * @example nativeSideChannel({engine: 'opencode', id: 'sc-1', service, onEvent, log})
@@ -145,6 +146,7 @@ function nativeSideChannel({engine, id, service, onEvent, log}) {
       }
       await warming;
     },
+    /** @param {{text?: any, images?: any}} options */
     async prompt({text, images}) {
       const result = await service.request('prompt', {message: text, ...(Array.isArray(images) && images.length ? {images} : {})});
       return {accepted: true, result};
@@ -180,11 +182,11 @@ function nativeSideChannel({engine, id, service, onEvent, log}) {
  * `opencode serve` da principal. `connect` vem do host do tutor OpenCode, que
  * é o dono do servidor, e devolve o serviço já ligado ao adaptador.
  * @param {{id: string, descriptor: string, runtime: string,
- *   connect: (request: {descriptor: string, record: object, id?: string}) => import('./src/agents/service.cjs').NativeService,
+ *   connect: (request: {descriptor: string, record: object, id?: string}) => InstanceType<typeof import('./src/agents/service.cjs').NativeService>,
  *   onEvent: (event: object) => void, log: (scope: string, line: string) => void}} options
  * @example createOpenCodeSideEngine({id, descriptor: descriptor.claude, runtime, connect: openCodeTutor.connectSide, onEvent, log})
  */
-function createOpenCodeSideEngine({id, descriptor, runtime, connect, onEvent, log} = {}) {
+function createOpenCodeSideEngine({id, descriptor, runtime, connect, onEvent, log} = /** @type {any} */ ({})) {
   if (typeof connect !== 'function') throw Error(invalidValue('connect', connect, 'function (serviço OpenCode do chat lateral)'));
   conversations.recoverClaudeConversation(descriptor, {runtime});
   const record = conversations.readClaudeConversation(descriptor, {runtime});

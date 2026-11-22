@@ -14,7 +14,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {testEnv} from './electron-env.mjs';
 import {STREAM_BLOCKS_FIXTURES} from './stream-blocks-fixtures.mjs';
-import {splitStreamBlocks, mathSpans, openMathRange} from '../src/stream-blocks.mjs';
+import {splitStreamBlocks, mathSpans, openMathRange} from '../src/chat/stream-blocks.mjs';
 
 const require = createRequire(import.meta.url);
 const electronPath = require('electron');

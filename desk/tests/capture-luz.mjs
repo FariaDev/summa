@@ -115,7 +115,7 @@ async function setupStates(ctx){
  await nextFrames(page);
  for(const theme of THEMES){await setTheme(page,theme);await shot(page,{name:'min-pronto-900x650',theme});}
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedPi:'/fake/pi',config:{}},{});
  });
  await nextFrames(page);
@@ -151,7 +151,7 @@ async function noEngineStates(ctx){
  await freezeMotion(page);
  await nextFrames(page);
  await page.evaluate(async()=>{
-  const mod=await import('./src/first-run.mjs');
+  const mod=await import('./src/setup/first-run.mjs');
   await mod.enterFirstRun({needsSetup:true,detectedPi:'',detectedOpenCode:'',config:{}},{});
  });
  const clickNext=()=>page.locator('#setup-next').click();

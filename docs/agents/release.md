@@ -3,7 +3,8 @@
 Fluxo de publicação e comportamento real do updater por clique. Vem do
 `AGENTS.md`, onde ficava inteiro (#43). Consulte antes de publicar uma versão
 ou de mexer em `desk/updater.cjs`, `desk/update-host.cjs` ou
-`desk/scripts/update-cli.mjs`.
+`desk/scripts/update-cli.mjs`. Por que o updater é próprio, e não o
+`electron-updater`, está na [ADR 0007](../adr/0007-updater-proprio-assinado.md).
 
 ## Release (fluxo do updater por clique)
 

@@ -50,7 +50,7 @@ const SCOPE_ONE='Limites.pdf p. 1';
 const SCOPE_TWO='Limites.pdf p. 1, Formulario.pdf p. 1';
 
 async function injectSaved(page,payload,expected){
- await page.evaluate(async data=>{const sidechat=await import('./src/sidechat.mjs');sidechat.openSavedSidechat(data);},payload);
+ await page.evaluate(async data=>{const sidechat=await import('./src/sidechat/sidechat.mjs');sidechat.openSavedSidechat(data);},payload);
  await page.waitForFunction(text=>document.querySelector('#sidechat-scope-text')?.textContent===text,expected,{timeout:10000});
  await page.evaluate(()=>document.activeElement?.blur?.());
 }

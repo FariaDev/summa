@@ -1,3 +1,4 @@
+// @ts-check
 /* Campos das ferramentas do tutor — UMA descrição, lida pelos dois motores.
    O guia de cada ferramenta (`guide.mjs`) declara os campos como dados simples;
    `toZod` monta o esquema do Claude (SDK) e `toTypebox` o do Pi (extensão).

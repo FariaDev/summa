@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import {installDom} from './dom-shim.mjs';
 
 installDom();
-const {freeState, beginFreeInflight, endFreeInflight} = await import('../src/free-study-base.mjs');
+const {freeState, beginFreeInflight, endFreeInflight} = await import('../src/study/free-study-base.mjs');
 
 function resetFlight() {
   freeState.generation = 0;

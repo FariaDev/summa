@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Prévia das visualizações e atividades do tutor (#42, parte B).
@@ -43,6 +44,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
    papel do renderer — responde ao `ready` com `init` (sem estado) e com o
    tema completo no `host-context-changed` — e guarda tudo o que o quadro
    mandou para o main ler. */
+/** @param {{background?: any}} options */
 function hostPage({background}) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:${background};overflow:hidden}iframe{display:block;border:0;width:100%;height:900px}</style></head><body><iframe sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe><script>
 window.__mesaPreview={events:[],ready:false};
@@ -79,7 +81,7 @@ function previewSpec(raw = {}) {
 /**
  * @param {{runtime?: ReturnType<typeof import('./activity-runtime.cjs').createActivityRuntime>,
  *   createWindow?: (size: {width: number, height: number}) => import('electron').BrowserWindow,
- *   columnWidth?: () => number, readyMs?: number}} [options]
+ *   columnWidth?: () => number, readyMs?: number, drafts?: ReturnType<typeof createActivityPreviewDrafts>}} [options]
  */
 function createActivityPreview({runtime, createWindow, columnWidth = () => 360, readyMs = READY_MS, drafts = createActivityPreviewDrafts()} = {}) {
   if (!runtime || typeof runtime.remember !== 'function' || typeof runtime.forget !== 'function') throw new Error(invalidValue('runtime', runtime, '{remember, forget}'));
@@ -88,11 +90,12 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
   /** @template T @param {() => Promise<T>} job @returns {Promise<T>} */
   const serial = (job) => {
     const run = chain.then(job, job);
-    chain = run.catch(() => {});
+    chain = /** @type {Promise<any>} */ (run.catch(() => {}));
     return run;
   };
 
   /* Abre a janela escondida com o documento registrado e espera o `ready`. */
+  /** @param {any} spec @param {{theme?: any, accent?: any, width?: any}} options */
   async function open(spec, {theme, accent, width}) {
     const id = `pv-${crypto.randomBytes(6).toString('hex')}`;
     const hash = specHash(spec);
@@ -114,7 +117,7 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
       }
       if (!(await win.webContents.executeJavaScript('window.__mesaPreview.ready'))) {
         const events = await win.webContents.executeJavaScript('window.__mesaPreview.events.map(function(e){return e.data})');
-        const error = new Error(message('err.activity.previewTimeout', {ms: readyMs}));
+        const error = /** @type {Error & {events?: unknown}} */ (new Error(message('err.activity.previewTimeout', {ms: readyMs})));
         error.events = events;
         throw error;
       }
@@ -205,7 +208,7 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
      console da medição (M7): a publicação recusa um quadro com erro e avisa
      quando a medição em si falha. Devolve `heights: undefined` quando alguma
      largura não mediu; o host decide o que fazer com isso.
-     @param {object} [raw] spec do quadro (html/css/js)
+     @param {Record<string, any>} [raw] spec do quadro (html/css/js)
      @returns {Promise<{heights?: number[][], consoleMessages: {level: string, text: string}[]}>} */
   function measure(raw = {}) {
     return serial(async () => {
@@ -236,8 +239,8 @@ function createActivityPreview({runtime, createWindow, columnWidth = () => 360, 
      pré-visualizado. Id de outra conversa ou vencido devolve null: quem chama
      decide a mensagem (A3).
      @param {{conversationId?: string}} scope
-     @param {object} spec
-     @returns {object | null} */
+     @param {Record<string, any>} spec
+     @returns {Record<string, any> | null} */
   function resolveDraft(scope, spec) {
     const previewId = spec && typeof spec.previaId === 'string' ? spec.previaId : '';
     if (!previewId) return spec;

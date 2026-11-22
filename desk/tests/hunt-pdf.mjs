@@ -13,7 +13,7 @@ import {pdfRenderIdle} from './waits.mjs';
 
 const FOLD_MAP={á:'a',à:'a',â:'a',ã:'a',ä:'a',å:'a',é:'e',è:'e',ê:'e',ë:'e',í:'i',ì:'i',î:'i',ï:'i',ó:'o',ò:'o',ô:'o',õ:'o',ö:'o',ú:'u',ù:'u',û:'u',ü:'u',ç:'c',ñ:'n',ý:'y',ÿ:'y'};
 const fold=text=>String(text??'').toLowerCase().replace(/[áàâãäåéèêëíìîïóòôõöúùûüçñýÿ]/g,ch=>FOLD_MAP[ch]||ch);
-// Algoritmo do `highlightLayer` pré-rewrite (git 7075557:desk/src/pdf.mjs):
+// Algoritmo do `highlightLayer` pré-rewrite (git 7075557:desk/src/pdf/pdf.mjs):
 // busca na dobra (`lower`) e recorta o texto original.
 function oldHighlight(text,folded,term){
  const out=[];let pos=0;

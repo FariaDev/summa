@@ -5,7 +5,7 @@ import path from 'node:path';
 
 /* Citação no chat: sem regra para blockquote, o navegador dava 40px de recuo sem
    barra nem cor, e o trecho citado parecia texto solto dentro da bolha. */
-const css = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'src', 'tutor-chat.css'), 'utf8');
+const css = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'src', 'tutor', 'tutor-chat.css'), 'utf8');
 
 test('citação no chat tem barra à esquerda e não herda o recuo de 40px do navegador', () => {
   const rule = css.match(/\.message blockquote\{([^}]*)\}/);

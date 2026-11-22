@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 /* Ferramenta GeoGebra no caminho Claude (#53): o MESMO guia da extensão do Pi
@@ -9,6 +10,7 @@
 const GEOGEBRA_TOOL_NAME = 'mcp__mesa__geogebra';
 const {toolErrorText} = require('./tool-error-text.cjs');
 
+/** @param {any} service @param {{language?: any}} [options] */
 async function createGeogebraTool(service, {language} = {}) {
   const [{tool}, {z}, guide, fields] = await Promise.all([
     import('@anthropic-ai/claude-agent-sdk'),
@@ -17,7 +19,7 @@ async function createGeogebraTool(service, {language} = {}) {
     import('../extensions/tool-fields.mjs'),
   ]);
   const reply = (text) => ({content: [{type: 'text', text}]});
-  return tool('geogebra', guide.description, fields.zodShape(z, guide.fields), async (args) => {
+  return /** @type {Function} */ (tool)('geogebra', guide.description, /** @type {any} */ (fields.zodShape(z, guide.fields)), async (args) => {
     try {
       if (args.action === 'run' && !String(args.command || '').trim()) return reply(guide.missingCommandText);
       if (args.action === 'screenshot') {

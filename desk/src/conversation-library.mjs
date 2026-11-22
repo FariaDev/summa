@@ -1,8 +1,9 @@
+// @ts-check
 import view from './generated/chatlibraryview.core.js';
 import {build} from './view-host.mjs';
 import {S,toast} from './state.mjs';
 import {t,text as translated,formatDate,currentLanguage,LANGUAGE_EVENT} from './ui-text.mjs';
-import {displayFreeTitle} from './free-names.mjs';
+import {displayFreeTitle} from './study/free-names.mjs';
 
 const node=(tag,text='',className='')=>{const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;};
 const fold=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();

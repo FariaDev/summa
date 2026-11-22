@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nearestPageIndex} from '../src/pdf-scroll.mjs';
+import {nearestPageIndex} from '../src/pdf/pdf-scroll.mjs';
 
 /* A varredura antiga, como referência de comportamento. */
 function reference(pages, center) {

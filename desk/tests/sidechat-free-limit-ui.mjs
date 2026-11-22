@@ -28,7 +28,7 @@ const NOTE = '#sidechat-free-limit-note';
 
 const tempDir = (tag) => trackTempDir(fs.mkdtempSync(path.join(os.tmpdir(), `mesa-${tag}-`)));
 const sidechatIdle = (page) => page.waitForFunction(async () => {
-  const mod = await import('./src/sidechat.mjs');
+  const mod = await import('./src/sidechat/sidechat.mjs');
   const state = mod.sidechatState();
   return !state.busy && !state.sending;
 }, undefined, {timeout: 30000});
@@ -109,7 +109,7 @@ await withArtifacts('sidechat-free-limit', async (ctx) => {
   await models.selectOption({value: JSON.stringify(['opencode', PAID_MODEL])});
   await page.waitForFunction((selector) => document.querySelector(selector)?.hidden === true, NOTE, {timeout: 15000});
   const sideModel = await page.evaluate(async () => {
-    const mod = await import('./src/sidechat.mjs');
+    const mod = await import('./src/sidechat/sidechat.mjs');
     return mod.sidechatState().model;
   });
   assert.equal(sideModel, `opencode/${PAID_MODEL}`, 'o modelo do lateral mudou');

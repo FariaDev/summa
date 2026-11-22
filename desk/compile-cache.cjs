@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 
 const fs=require('node:fs');
@@ -20,7 +21,7 @@ const nodeModule=require('node:module');
  * @returns {{enabled: boolean, dir: string, status?: number, reason?: 'disabled'|'unsupported'|'failed'}}
  * @example enableDeskCompileCache({dir: '/home/ana/.mesa/compile-cache', env: {}}).enabled // true
  */
-function enableDeskCompileCache({dir, env=process.env, moduleApi=nodeModule}={}){
+function enableDeskCompileCache({dir, env=process.env, moduleApi=nodeModule}=/** @type {any} */ ({})){
  if(!dir)return {enabled:false,dir:'',reason:'disabled'};
  const off=env.LEARNING_DESK_COMPILE_CACHE==='0'||(env.DESK_TEST==='1'&&env.LEARNING_DESK_COMPILE_CACHE!=='1');
  if(off)return {enabled:false,dir,reason:'disabled'};
