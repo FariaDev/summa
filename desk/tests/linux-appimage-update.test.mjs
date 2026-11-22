@@ -65,6 +65,21 @@ test('falha ao restaurar backup registra erro sem pular lock e limpeza nem masca
  assert.equal(fs.existsSync(path.join(runtime,'update.lock')),false);
 });
 
+test('rollback substitui sucesso prematuro da nova instância por resultado de falha',async()=>{
+ const runtime=tempDir('summa-premature-applied-'),cacheFile=path.join(runtime,'update.json');
+ const fake=fakeAppImageHost(image,{restoreFail:true,settledCacheFile:cacheFile}),ipcMain=fakeIpcMain();
+ updater.writeCache(cacheFile,{release:{at:Date.now(),version:'1.3.4'}});
+ registerUpdateHost({...fake,ipcMain,shell:fakeShell(),runtime,deskDir,logFile:path.join(runtime,'desk.log'),testMode:false,platform:'linux',env});
+ await assert.rejects(ipcMain.invoke('update-apply'),/original startup error/);
+ const cache=updater.readCache(cacheFile);
+ assert.equal(cache.installerPending,undefined);
+ assert.equal(cache.lastResult.status,'failed');
+ assert.equal(cache.lastResult.mode,'appimage');
+ assert.equal(cache.lastResult.version,'1.3.4');
+ assert.match(cache.lastResult.reason,/appImageFailed/);
+ assert.ok(cache.lastResult.at>0);
+});
+
 test('sinal de pronto exige lock; limpeza de backup fica suspensa durante atualização',()=>{
  const dir=tempDir('summa-ready-signal-'),file=path.join(dir,'handshake');
  const readyEnv={SUMMA_APPIMAGE_READY_FILE:file};

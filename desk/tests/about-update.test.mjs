@@ -22,6 +22,13 @@ test('#160: resultado recuperado continua no caso antigo', () => {
   );
 });
 
+test('falha persistida do AppImage mostra a versão recuperada e o motivo', () => {
+  assert.deepEqual(
+    resultStateOf({status: 'failed', version: '1.3.4', reason: 'startup failed'}),
+    {$: 'UpdateRecovered', version: '1.3.4', reason: 'startup failed'},
+  );
+});
+
 /* #21: a checagem marca a instalação vinda do repositório antigo; o Sobre
    mostra o aviso de reinstalar no lugar do botão que recusaria. */
 test('#21: versão nova em instalação do repositório antigo vira UpdateLegacyOrigin', () => {

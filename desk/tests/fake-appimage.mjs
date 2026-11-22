@@ -1,5 +1,6 @@
 import {EventEmitter} from 'node:events';
 import fs from 'node:fs';
+import installerUpdate from '../windows-installer-update.cjs';
 
 /** Simula um sistema de arquivos sem suporte a hard links. */
 export function fakeUnsupportedAppImageLink(){
@@ -57,10 +58,10 @@ export function fakeAppImageProcess({error='',exitImmediately=false,ready=true,g
 /**
  * Dependências do host: nenhuma rede, worker ou processo real.
  * @param {object} update módulo real de detecção
- * @param {{fail?:boolean,hasLock?:boolean,restoreFail?:boolean}} [options]
+ * @param {{fail?:boolean,hasLock?:boolean,restoreFail?:boolean,settledCacheFile?:string}} [options]
  * @example const fake=fakeAppImageHost(update);
  */
-export function fakeAppImageHost(update,{fail=false,hasLock=true,restoreFail=false}={}){
+export function fakeAppImageHost(update,{fail=false,hasLock=true,restoreFail=false,settledCacheFile=''}={}){
  const calls=[];
  return {calls,app:{isPackaged:true,getVersion:()=> '1.3.3',hasSingleInstanceLock:()=>hasLock,quit:()=>calls.push('quit'),releaseSingleInstanceLock:()=>calls.push('unlock'),requestSingleInstanceLock:()=>calls.push('lock')},
   toolHost:{state:()=>({}),persist:()=>{},isBusy:()=>false,hasBridge:()=>false,relink:()=>{}},
@@ -69,6 +70,10 @@ export function fakeAppImageHost(update,{fail=false,hasLock=true,restoreFail=fal
    cleanupAppImagePartials:update.cleanupAppImagePartials,
    prepareAppImageUpdate:async()=>{calls.push('prepare');if(fail)throw Error('hash recusado');return {file:'/apps/.new.part'};},
    swapAppImage:()=>{calls.push('swap');if(restoreFail)return '/missing-summa-backup/image.old';},
-   relaunchAppImage:async()=>{calls.push('relaunch');if(restoreFail)throw Error('original startup error');}},
+   relaunchAppImage:async()=>{
+    calls.push('relaunch');
+    if(settledCacheFile)await installerUpdate.settleInstallerUpdate({cacheFile:settledCacheFile,current:'1.3.4',mode:'appimage',failureReason:'startup failed'});
+    if(restoreFail)throw Error('original startup error');
+   }},
  };
 }

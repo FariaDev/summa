@@ -143,6 +143,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
    app.requestSingleInstanceLock();
    if(partial)fs.rmSync(partial,{force:true});
    await installerUpdate.clearInstallerPending({cacheFile:updateCacheFile});
+   if(backup)await updater.cacheWrite(updateCacheFile,cache=>({...cache,lastResult:{status:'failed',mode:'appimage',version:target,reason:uiMsg('err.update.appImageFailed'),at:Date.now()}}));
    throw error;
   }finally{updater.releaseLock(lock.file);}
   if(backup){try{fs.rmSync(backup,{force:true});}catch(error){appendLog('update',`backup AppImage: ${causeArg(error)}`);}}
