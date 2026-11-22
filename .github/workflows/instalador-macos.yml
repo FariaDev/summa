@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - desk/scripts/build-macos-dmg.mjs
+      - desk/scripts/macos-swap.c
       - desk/macos-dmg-update.cjs
       - desk/macos-dmg-worker.cjs
       - desk/macos-release.cjs
@@ -48,6 +49,7 @@ jobs:
           trap 'hdiutil detach "$volume" || true; rmdir "$volume" || true' EXIT
           hdiutil attach -nobrowse -readonly -mountpoint "$volume" "${{ runner.temp }}"/instalador/Summa-*.dmg
           codesign --verify --deep "$volume/Summa.app"
+          test -x "$volume/Summa.app/Contents/MacOS/summa-swap"
           test "$(readlink "$volume/Applications")" = /Applications
 
       - name: SHA-256 do instalador

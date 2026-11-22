@@ -21,6 +21,9 @@ export function stageMacosRelease({desk,electronApp,stage,version,root=path.dirn
  const app=path.join(stage,'Summa.app');
  bundleElectron.ensureBundleExists({source:electronApp,app});
  const {dest:payload,managed}=runtimeBundle.installBundle({desk,root,app,version,recordSource:false});
+ const executables=path.join(app,'Contents','MacOS');
+ fs.mkdirSync(executables,{recursive:true});
+ execFileSync('xcrun',['clang','-mmacosx-version-min=11.0',path.join(import.meta.dirname,'macos-swap.c'),'-o',path.join(executables,'summa-swap')]);
  for(const name of ['install-source.json','previous-install-source.json'])fs.rmSync(path.join(payload,name),{force:true});
  fs.rmSync(path.join(app,'Contents','Resources','default_app.asar'),{force:true});
  fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:'macos-dmg',version})+'\n');
