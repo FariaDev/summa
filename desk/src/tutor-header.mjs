@@ -13,6 +13,7 @@ import {t,text as translate,LANGUAGE_EVENT} from './ui-text.mjs';
 import {engineReady} from './engine-facts.mjs';
 import {initContextDock,openContextDock,closeContextDock,updateContextDock,syncContextDock} from './context-dock.mjs';
 import {createNewSessionMenu} from './new-session-menu.mjs';
+import {platformKeyText} from './platform-key-text.mjs';
 import {initOfflineState,onOfflineChange,syncOfflineLive,paintOfflineIndicator} from './offline-state.mjs';
 
 /* ---------------------------------------------------------------------------
@@ -213,7 +214,7 @@ function syncMore(){
  if(collapse){
   const collapsed=document.body.classList.contains('chat-collapsed');
   collapse.setAttribute('aria-expanded',String(!collapsed));
-  collapse.title=t(collapsed?'more.collapse.show':'more.collapse.hide');
+  collapse.title=platformKeyText(t(collapsed?'more.collapse.show':'more.collapse.hide'));
  }
 }
 

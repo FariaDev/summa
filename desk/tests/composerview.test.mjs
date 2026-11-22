@@ -30,7 +30,7 @@ test('item da fila só vira steer ocupado, com motor que oferece, fora do envio 
   assert.equal(core.canSteerQueued(true, true, false, true), false, 'item em edição');
 });
 
-test('a linha traz um botão real "Enviar agora" com dica e aria-label', () => {
+test('a linha traz um botão real "Enviar agora"; o host fornece a dica por plataforma', () => {
   const kids = nodes(core.queueItemView(row()).kids);
   assert.equal(kids.length, 3, 'texto + Enviar agora + ×');
   const steer = kids[1];
@@ -39,8 +39,8 @@ test('a linha traz um botão real "Enviar agora" com dica e aria-label', () => {
   assert.equal(attrs.get('type'), 'button');
   assert.equal(attrs.get('class'), 'queue-steer-now');
   assert.equal(attrs.get('on:click'), 'steerNow');
-  assert.equal(ptText(attrs.get('title')), 'Interromper a resposta e enviar agora (⌘⏎)');
-  assert.equal(attrs.get('aria-label'), attrs.get('title'));
+  assert.equal(attrs.has('title'), false);
+  assert.equal(attrs.has('aria-label'), false);
   assert.equal(textOf(steer), 'Enviar agora');
   assert.equal(ptText(attrsOf(kids[2]).get('title')), 'Remover da fila', 'o × continua por último');
 });

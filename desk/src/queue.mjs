@@ -9,9 +9,9 @@ import {sendNowState} from './queue-send-now.mjs';
 import {build,renderChildren,preserveFocus} from './view-host.mjs';
 import {t,LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
+import {platformKeyText} from './platform-key-text.mjs';
 import {icon} from '../icons.mjs';
 import {createQueueIntake} from './queue-intake.mjs';import {tutorNotebookCount} from './tutor-notebooks.mjs';
-
 /* Fila de mensagens da Mesa — nasceu como espelho da fila da Conversa (aposentada na #50)
    e segue sobre o núcleo (`core/composerview.bend`), com uma diferença que aqui é
    o ponto: a fila SOBREVIVE ao fechamento do app (`desk/pending.cjs`, núcleo
@@ -235,7 +235,6 @@ function currentLabel(many){
  const plain=core.queueLabel(recovered,true,count);
  return pendingCore.stripLabel(recovered,S.link?.state!=='online',many,count,plain);
 }
-
 function renderQueue(){
  /* A faixa mora dentro da caixa de mensagem (ticket #15): é a primeira coisa
     da caixa, acima dos anexos e do campo. */
@@ -264,6 +263,7 @@ function renderQueue(){
  }
  /* O × é ícone, como os da mensagem; nome acessível e dica vêm do núcleo. */
  for(const button of strip.querySelectorAll('.queue-remove'))button.innerHTML=icon('close');
+ for(const button of strip.querySelectorAll('.queue-steer-now')){button.title=platformKeyText(t('queue.steerNowTitle'));button.setAttribute('aria-label',button.title);}
  /* Conversa incerta: ação à vista, desligada, com o motivo e a saída (Limpar) (#36). */
  const sendNow=strip.querySelector('.queue-send-now');
  if(sendNow&&actions.blocked){

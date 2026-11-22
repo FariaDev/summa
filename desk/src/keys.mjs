@@ -1,6 +1,7 @@
 import {build, childrenOf, preserveFocus, preserveScroll, renderChildren} from './view-host.mjs';
 import {onStaticTextApplied, t, LANGUAGE_EVENT} from './ui-text.mjs';
 import {message} from './i18n.mjs';
+import {platformKeyText} from './platform-key-text.mjs';
 
 // Atalhos editáveis da Mesa — catálogo, remapeamento e editor (Guia da Mesa → Atalhos → Personalizar…).
 //
@@ -165,7 +166,7 @@ function displayParts(accel){
  if(parsed.mods.includes('Mod')||parsed.mods.includes('Ctrl'))mods.push('Ctrl');
  if(parsed.mods.includes('Alt'))mods.push('Alt');
  if(parsed.mods.includes('Shift'))mods.push('Shift');
- return [...new Set(mods),glyph];
+ return [...new Set(mods),platformKeyText(glyph)];
 }
 
 export function format(accel){
@@ -435,7 +436,7 @@ function editorSections(){
    t(action.label),
    shown,
    !!action.fixed,
-   action.note||'',
+   platformKeyText(action.note||''),
    !!overrides[action.id],
   ));
  }
@@ -607,7 +608,7 @@ function captureKey(init){
   return;
  }
  if(!parseAccel(combo)){
-  setStatus(message('keys.status.needModifier'),'error');
+  setStatus(platformKeyText(t('keys.status.needModifier')),'error');
   return;
  }
  const conflict=conflictFor(combo,capturing);
@@ -644,11 +645,6 @@ window.addEventListener('keydown',e=>{
    Ctrl/Shift (os `data-key` da ajuda já são dinâmicos; isto cobre a prosa, os
    <kbd> e os title/aria-label). Roda uma vez, no boot, sobre o HTML estático —
    o texto dinâmico das conversas nunca é tocado. */
-function swapGlyphs(text,kbd){
- return kbd
-  ? String(text).replace(/⌘/g,'Ctrl').replace(/⇧/g,'Shift')
-  : String(text).replace(/⌘⇧/g,'Ctrl+Shift+').replace(/⌘ /g,'Ctrl+').replace(/⌘/g,'Ctrl+').replace(/⇧/g,'Shift+');
-}
 export function applyPlatformKeys(scope=[document.documentElement]){
  if(isMac||typeof document==='undefined')return;
  for(const root of scope){
@@ -656,11 +652,11 @@ export function applyPlatformKeys(scope=[document.documentElement]){
   while(walker.nextNode())nodes.push(walker.currentNode);
   for(const node of nodes){
    const inKbd=!!node.parentElement?.closest?.('kbd');
-   node.textContent=swapGlyphs(node.textContent,inKbd);
+   node.textContent=platformKeyText(node.textContent,inKbd);
   }
   for(const el of [root,...root.querySelectorAll('[title],[aria-label]')]){
-   if(el.hasAttribute('title'))el.setAttribute('title',swapGlyphs(el.getAttribute('title'),false));
-   if(el.hasAttribute('aria-label'))el.setAttribute('aria-label',swapGlyphs(el.getAttribute('aria-label'),false));
+   if(el.hasAttribute('title'))el.setAttribute('title',platformKeyText(el.getAttribute('title')));
+   if(el.hasAttribute('aria-label'))el.setAttribute('aria-label',platformKeyText(el.getAttribute('aria-label')));
   }
  }
 }
