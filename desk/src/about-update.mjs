@@ -121,7 +121,7 @@ async function refreshMesaUpdate(manual){
  try{
   if(!manual){
    const result=await window.desk.updateResult();
-   if(result?.status==='recovered'){renderAboutUpdate(resultStateOf(result),aboutHandlers);return;}
+   if(result?.status==='recovered'&&result.fresh){renderAboutUpdate(resultStateOf(result),aboutHandlers);return;}
   }
   if(isOffline()){paintOfflineUpdate();return;}
   await readOrigin();

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
+import {performance} from 'node:perf_hooks';
 import {tempDir} from './temp-dir.mjs';
 import {enText} from './pt-text.mjs';
 import {makeSignedRelease} from './fake-update-release.mjs';
@@ -188,6 +189,18 @@ function hostFixture({marker=true,fail=''}={}){
  host.runtime=runtime;host.deskDir=deskDir;
  return host;
 }
+
+test('resultado informa se foi registrado neste processo sem alterar o cache',()=>{
+ const host=hostFixture(),cacheFile=path.join(host.runtime,'update.json');
+ assert.equal(host.ipcMain.invoke('update-result'),null);
+ for(const at of [performance.timeOrigin-1,performance.timeOrigin,Date.now(),undefined]){
+  const lastResult={status:'recovered',reason:'erro salvo',at};
+  updater.writeCache(cacheFile,{lastResult});
+  const persisted=updater.readCache(cacheFile).lastResult;
+  assert.deepEqual(host.ipcMain.invoke('update-result'),{...persisted,fresh:Number(at)>=performance.timeOrigin});
+  assert.deepEqual(updater.readCache(cacheFile).lastResult,persisted);
+ }
+});
 
 test('host despacha pelo marcador, mostra origem normal e só fecha depois de ready',async()=>{
  const host=hostFixture();

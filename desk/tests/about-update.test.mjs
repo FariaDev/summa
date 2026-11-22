@@ -18,7 +18,7 @@ function renderedText(node){
 function renderedNodes(node){return [node,...node.children.flatMap(renderedNodes)];}
 
 test('refresh automático conserva recuperação e botão explícito permite tentar de novo', async () => {
-  const fake=fakeAboutUpdate({status:'recovered',version:'1.3.3',reason:'erro salvo'});
+  const fake=fakeAboutUpdate({status:'recovered',version:'1.3.3',reason:'erro salvo',fresh:true});
   Object.assign(window.desk,fake.desk);
   const box=document.querySelector('#about-update');
   box.replaceChildren=function(...children){this.children=children;};
@@ -32,8 +32,10 @@ test('refresh automático conserva recuperação e botão explícito permite ten
   assert.match(renderedText(box),/1.3.3/);
 });
 
-test('refresh automático sem resultado ou com sucesso mantém a checagem normal', async () => {
-  for(const result of [null,{status:'applied',version:'1.3.3'}]){
+test('refresh automático com recuperação antiga, sem resultado ou com sucesso mantém a checagem normal', async () => {
+  for(const result of [null,{status:'applied',version:'1.3.3'},
+    {status:'recovered',reason:'erro antigo',fresh:false},
+    {status:'recovered',reason:'cache antigo sem flag'}]){
     const fake=fakeAboutUpdate(result);
     Object.assign(window.desk,fake.desk);
     await refreshMesaUpdate(false);
