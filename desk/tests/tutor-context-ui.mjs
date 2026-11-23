@@ -32,9 +32,13 @@ await withArtifacts('tutor-context',async ctx=>{
  await resizeWindow(app,page,1440,900);
  await freezeMotion(page);
 
- /* A linha do cabeçalho abre o painel; dois PDFs viram o primeiro + "+1". */
+ /* A linha do cabeçalho abre o painel; dois PDFs viram o primeiro + "+1".
+    Espera a linha assentar: no CI do Windows (run 45106707934) ela foi lida
+    com "p. 2" enquanto o leitor ainda se ajustava à janela redimensionada. */
+ const settled=/Limites\.pdf, p\.\s?1 \+1/;
+ await page.waitForFunction(source=>new RegExp(source).test(document.querySelector('#context-summary')?.textContent||''),settled.source,{timeout:10000}).catch(()=>{});
  const lineText=(await page.locator('#context-summary').textContent()).trim();
- assert.match(lineText,/Limites\.pdf, p\.\s?1 \+1/,'a linha mostra o primeiro PDF e "+1"');
+ assert.match(lineText,settled,'a linha mostra o primeiro PDF e "+1"');
  await page.locator('#context-line').click();
  await page.waitForSelector('#context-dock:not([hidden])');
  assert.equal(await page.locator('#context-dock #study-context').isVisible(),true,'a edição está à vista');
