@@ -100,7 +100,7 @@
  "src/command-palette.mjs": 31,
  "src/connect-flight.mjs": 2,
  "src/context-dock.mjs": 16,
- "src/conversation-library-loader.mjs": 5,
+ "src/conversation-library-loader.mjs": 4,
  "src/course-conversations.mjs": 10,
  "src/settings/density.mjs": 3,
  "src/extensions/summa-mcp/notebook-background.mjs": 1,
