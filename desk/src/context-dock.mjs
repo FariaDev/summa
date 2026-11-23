@@ -328,7 +328,8 @@ function buildLine(){
  line.setAttribute('aria-controls','context-dock');line.setAttribute('aria-expanded','false');line.hidden=true;
  const summary=document.createElement('span');summary.id='context-summary';
  line.append(summary);
- title.after(line);
+ /* Fora da barra do cabeçalho, para ela ter a altura das barras dos leitores. */
+ (title.closest('.chat-head')||title).after(line);
  return {line,summary};
 }
 

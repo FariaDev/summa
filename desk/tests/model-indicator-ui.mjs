@@ -53,7 +53,10 @@ await withArtifacts('model-indicator',async ctx=>{
  assert.deepEqual(row.filter(el=>!el.follows).map(el=>el.id),listOf(boxCore.actionIds()),'a fileira segue a ordem do núcleo: o indicador logo antes de Parar/Enviar');
  /* Botão fora do núcleo (`data-follows`) fica logo depois do que segue: Foto do celular depois do Anexar (#36). */
  for(const [i,el] of row.entries())if(el.follows)assert.equal(row[i-1]?.id,el.follows,`#${el.id} logo depois de #${el.follows}`);
- assert.deepEqual(await page.locator('.chat-head > *, .chat-head-actions > *').evaluateAll(list=>list.filter(el=>el.id).map(el=>el.id)),listOf(headCore.headIds()),'o cabeçalho fica com título, chat lateral, sessão nova e Mais opções');
+ /* A linha de contexto fica logo abaixo da barra, no `.chat-top`; o resto, na ordem do núcleo, dentro dela. */
+ const headOrder=listOf(headCore.headIds());
+ assert.deepEqual(await page.locator('.chat-head > *, .chat-head-actions > *').evaluateAll(list=>list.filter(el=>el.id).map(el=>el.id)),headOrder.filter(id=>id!=='context-line'),'o cabeçalho fica com título, chat lateral, sessão nova e Mais opções');
+ assert.equal(await page.locator('.chat-top > .chat-head + #context-line').count(),1,'a linha de contexto vem logo depois da barra');
  assert.equal(await indicatorText(page),'DeepSeek V4.1 Flash Free · padrão','mostra o modelo e o esforço em uso (esforço em palavra curta)');
  assert.equal(await indicator.getAttribute('data-state'),'on','o estado de conexão está no indicador');
  assert.equal(await page.locator('#status-dot').count(),1,'um só ponto de estado');
@@ -164,10 +167,10 @@ await withArtifacts('model-indicator',async ctx=>{
   const tag=`${theme==='light'?'claro':'escuro'}-${width}x${height}`;
   const viewport=await page.evaluate(()=>({w:innerWidth,h:innerHeight,sw:document.documentElement.scrollWidth}));
   assert.ok(viewport.sw<=viewport.w+1,`${tag}: sem rolagem horizontal`);
-  /* o cabeçalho tem duas linhas (controles + contexto), com o título longo
-     cortado e tudo dentro; a linha de contexto não vira terceira linha */
+  /* o cabeçalho é uma linha da altura das barras, com o título longo cortado
+     e tudo dentro; a linha de contexto fica logo abaixo */
   const headBox=await rect(page,'.chat-head'),chatBox=await rect(page,'#chat');
-  assert.ok(headBox.height<=bar+24,`${tag}: o cabeçalho continua em duas linhas (${headBox.height})`);
+  assert.ok(Math.abs(headBox.height-bar)<=1,`${tag}: o cabeçalho tem a altura das barras (${headBox.height})`);
   assert.ok(headBox.top>=chatBox.top-0.5&&headBox.top<=chatBox.top+1,`${tag}: cabeçalho no topo da coluna`);
   const headIds=listOf(headCore.headIds()).map(id=>`#${id}`);
   for(const id of headIds)inside(await rect(page,id),viewport.w,viewport.h,`${tag} ${id}`);
@@ -175,9 +178,8 @@ await withArtifacts('model-indicator',async ctx=>{
   const firstRow=parts.filter(part=>part.sel!=='#context-line');
   for(let i=1;i<firstRow.length;i++)assert.ok(firstRow[i].left>=firstRow[i-1].right-0.5,`${tag}: ${firstRow[i].sel} não invade ${firstRow[i-1].sel}`);
   const contextPart=parts.find(part=>part.sel==='#context-line');
-  for(const part of parts)assert.ok(part.top>=headBox.top-0.5&&part.bottom<=headBox.bottom+0.5,`${tag}: ${part.sel} dentro do cabeçalho`);
-  assert.ok(contextPart.top>=parts.find(part=>part.sel==='#session-title').bottom-0.5,`${tag}: a linha de contexto fica embaixo do título`);
-  for(const part of firstRow.filter(part=>part.sel!=='#session-title'))assert.ok(part.left>=contextPart.right-0.5,`${tag}: ${part.sel} fica na coluna das ações`);
+  for(const part of firstRow)assert.ok(part.top>=headBox.top-0.5&&part.bottom<=headBox.bottom+0.5,`${tag}: ${part.sel} dentro do cabeçalho`);
+  assert.ok(contextPart.top>=headBox.bottom-0.5,`${tag}: a linha de contexto fica embaixo da barra`);
   assert.equal(await page.evaluate(()=>{const el=document.querySelector('.chat-head');return el.scrollWidth-el.clientWidth<=1;}),true,`${tag}: nada vaza do cabeçalho`);
   const titleBox=await rect(page,'#session-title');
   assert.ok(titleBox.width>=96,`${tag}: sem o indicador, o título ganha a linha (${titleBox.width}px)`);
@@ -210,7 +212,7 @@ await withArtifacts('model-indicator',async ctx=>{
    const chat=document.querySelector('#chat'),m=document.querySelector('#messages');
    chat.scrollTop=0;m.scrollTop=0;
    const mr=m.getBoundingClientRect();
-   return {headBottom:document.querySelector('.chat-head').getBoundingClientRect().bottom,messagesTop:mr.top};
+   return {headBottom:document.querySelector('.chat-top').getBoundingClientRect().bottom,messagesTop:mr.top};
   });
   assert.ok(first.messagesTop-first.headBottom<=1.5,`${tag}: as mensagens começam logo abaixo do cabeçalho (${first.messagesTop-first.headBottom}px)`);
   await reviewShot(page,out,`${tag}-ligado-mensagens.png`);

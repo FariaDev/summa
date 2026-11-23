@@ -61,9 +61,12 @@ await withArtifacts('tutor-header',async ctx=>{
  const bar=Number.parseFloat(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--bar')));
  assert.equal(bar,40,'a barra do painel é o token --bar de 40px');
  const head=await rect(page,'.chat-head');
- /* O r2 põe a linha de contexto na segunda linha: título e botões na primeira,
-    a linha embaixo; nada de terceira linha. */
- assert.ok(head.height>bar&&head.height<=bar+24,`o cabeçalho tem duas linhas (altura ${head.height})`);
+ /* Título e botões numa linha da altura de --bar, como as barras dos leitores;
+    com a linha de contexto dentro, o cabeçalho tinha 57px e a borda de baixo
+    ficava 17px abaixo da do Enunciado. */
+ assert.ok(Math.abs(head.height-bar)<=1,`o cabeçalho tem a altura das barras (altura ${head.height})`);
+ const readerBar=await rect(page,'.pdf-panel>.pdf-title');
+ assert.ok(Math.abs(head.bottom-readerBar.bottom)<=0.5,`a borda do tutor alinha com a do leitor (${head.bottom} × ${readerBar.bottom})`);
  const parts={};
  for(const id of ['#session-title','#sidechat-toggle','#new-session','#chat-more'])parts[id]=await rect(page,id);
  /* #42: o indicador de modelo saiu do cabeçalho (mora na fileira da caixa de mensagem). */
@@ -73,17 +76,17 @@ await withArtifacts('tutor-header',async ctx=>{
  const contextBox=await rect(page,'#context-line');
  for(const [id,box] of Object.entries(parts))assert.ok(box.top>=head.top-0.5&&box.bottom<=head.bottom+0.5,`${id} fica dentro do cabeçalho`);
  assert.ok(parts['#session-title'].bottom<=contextBox.top+0.5,'a linha de contexto fica embaixo do título');
- for(const id of ['#sidechat-toggle','#new-session','#chat-more'])assert.ok(parts[id].left>=contextBox.right-0.5,`${id} fica na coluna das ações, à direita da linha`);
  inside(contextBox,1440,900,'a linha de contexto cabe na janela');
- assert.ok(contextBox.top>=head.top&&contextBox.bottom<=head.bottom+0.5,`a linha de contexto fica dentro do cabeçalho (${contextBox.top}–${contextBox.bottom} de ${head.top}–${head.bottom})`);
+ const top=await rect(page,'#chat .chat-top');
+ assert.ok(contextBox.top>=head.bottom-0.5&&contextBox.bottom<=top.bottom+0.5,`a linha de contexto fica logo abaixo da barra, no topo do tutor (${contextBox.top}–${contextBox.bottom}; barra até ${head.bottom})`);
  /* r2: título e linha na mesma borda esquerda, com os botões centrados no
-    bloco das duas linhas; a linha usa o degrau pequeno e o tom --muted. */
+    título; a linha usa o degrau pequeno e o tom --muted. */
  const actionsBox=await rect(page,'.chat-head-actions');
  const titleTextBox=await rect(page,'#session-title .session-title-text');
  const summaryBox=await rect(page,'#context-summary');
- const blockCenter=(parts['#session-title'].top+contextBox.bottom)/2;
+ const titleCenter=(parts['#session-title'].top+parts['#session-title'].bottom)/2;
  const actionsCenter=(actionsBox.top+actionsBox.bottom)/2;
- assert.ok(Math.abs(blockCenter-actionsCenter)<=2,`os botões centram no bloco título+linha (${actionsCenter} × ${blockCenter})`);
+ assert.ok(Math.abs(titleCenter-actionsCenter)<=2,`os botões centram no título (${actionsCenter} × ${titleCenter})`);
  assert.ok(Math.abs(contextBox.left-parts['#session-title'].left)<=1,`a linha começa na borda do título (${contextBox.left} × ${parts['#session-title'].left})`);
  assert.ok(Math.abs(summaryBox.left-titleTextBox.left)<=1,`o texto da linha começa no texto do título (${summaryBox.left} × ${titleTextBox.left})`);
  const lineLook=await page.locator('#context-line').evaluate(el=>{const cs=getComputedStyle(el);const probe=document.createElement('span');probe.style.color='var(--muted)';el.parentElement.append(probe);const muted=getComputedStyle(probe).color;probe.remove();return {size:cs.fontSize,color:cs.color,muted,decoration:cs.textDecorationLine};});
