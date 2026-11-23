@@ -349,6 +349,14 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
     paint({resetActive: true});
   });
   search.addEventListener('keydown', onKeydown);
+  /* Tab e Shift+Tab tiravam o foco da busca e deixavam a lista aberta sobre o
+     leitor. O clique fora já fecha pelo `closeOutside`; aqui fecha a saída por
+     teclado, sem devolver o foco ao seletor. */
+  box.addEventListener('focusout', (event) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && box.contains(next)) return;
+    close(false);
+  });
   /* A lista é desenhada uma vez e fica no DOM mesmo fechada; na troca de
      idioma ela é redesenhada para "Abrir PDF…" e os rótulos acompanharem
      (#74: a varredura de idioma achou o texto em pt-BR com a Summa em inglês). */
