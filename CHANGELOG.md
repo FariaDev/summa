@@ -33,7 +33,7 @@ Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhoria
 - **Modo mini:** ao voltar à Mesa depois de desconectar um monitor, a janela reaparece numa tela disponível (#174).
 - **Nome de matéria:** uma matéria chamada `constructor` não impede mais a abertura da Summa (#176).
 - **Conferir no macOS:** o primeiro uso pede a permissão de Gravação de Tela; iniciar pelo código recompila o helper visual quando necessário (#123).
-- **Importação e backup entre sistemas:** favoritos, leitores e referências a materiais voltam a apontar para os arquivos locais ao trazer dados de outro sistema (#124, #132). Pacotes com arquivos que colidem por maiúsculas/minúsculas são recusados antes da gravação (#126).
+- **Importação e backup entre sistemas:** favoritos, leitores e referências a materiais voltam a apontar para os arquivos locais ao trazer dados de outro sistema (#124, #132). Pacotes com arquivos que colidem por maiúsculas/minúsculas são recusados antes da gravação (#126). Um pacote importado não consegue mais autorizar um caderno `.xopp` de fora da matéria pelo `resume.json` (#181).
 - **Backup no Windows:** a criação do backup fecha os arquivos de conferência antes de concluir a pasta, evitando falhas de acesso negado (#152).
 - **Conferir no Windows:** captura a instância escolhida, funciona com caminhos acentuados e renderiza só a janela escolhida, sem copiar janelas que a encobrem. Se a renderização falhar, avisa em vez de capturar a tela (#127, #129, #131).
 - **Imagens da conversa:** nomes com `#` ou `%` e URLs `file:///C:/…` no Windows voltam a abrir (#128, #130).
