@@ -1,26 +1,49 @@
 # Novidades da Summa
 
-## Ainda não lançado
+## 1.4.0
+
+Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhorias no plano e nas buscas. Quem tem a 1.3.x recebe pelo **Atualizar**, inclusive quem instalou pelo zip.
 
 ### Novidades
 
 - **Instalador do Windows:** o `Summa-Setup-X.Y.Z.exe` instala sem administrador, Node nem terminal. A instalação pelo `.exe` também se atualiza pelo botão **Atualizar**, com o instalador conferido pela assinatura e pelo hash da release (#120).
+- **Instaladores do macOS e Linux:** no Mac, abra o `Summa-X.Y.Z.dmg` e arraste a Summa para Aplicativos; no Linux, dê permissão de execução ao `Summa-X.Y.Z-x86_64.AppImage` e abra. Os dois recebem atualizações pelo **Atualizar**, sem Node, npm nem clone, preservando seus estudos. No Mac, a primeira abertura ainda precisa de **Abrir Mesmo Assim** nos ajustes de segurança (#148, #149).
 - **Menus do macOS:** Ocultar Summa (⌘H), Ocultar Outros (⌥⌘H), Mostrar Tudo e o menu **Janela**, com Minimizar (⌘M), Zoom e as janelas abertas (#122).
 
 ### Melhorias
 
-- **Desenvolvimento:** `npm run dev` abre o renderer com HMR; `npm run build` e `npm run preview` permitem testar o bundle. `npm start` continua abrindo o fonte, sem exigir build. A checagem de tipos cobre o projeto inteiro, com `strictNullChecks` e dívida que só pode diminuir (#125).
+- **Plano de estudo:** tarefas longas aparecem em mais de uma linha, a referência ao PDF vira um botão para abrir a página e as ações ficam junto da tarefa. As setas que não podem mover a tarefa ficam desativadas; ao mover, o foco continua numa ação disponível (#167, #183).
+- **Atalhos no Windows e Linux:** as dicas mostram Ctrl, Shift e Enter, em vez dos símbolos do Mac (#137).
+- **Respostas não lidas no Windows:** o ícone da Summa na barra de tarefas mostra a contagem de respostas novas (#139).
+- **Xournal++ no Linux:** a Summa encontra o programa instalado sem exigir que você configure o caminho; ações de abertura indisponíveis deixam de aparecer (#138).
+- **Sobre e ícone:** os instaladores não mostram mais o Node do sistema como requisito para atualizar; no Linux, as janelas de abertura usam o ícone compacto do app (#150, #161).
 - **Pasta de dados:** a primeira abertura respeita a pasta Documentos do sistema, inclusive OneDrive no Windows e `Documentos` no Linux (#136).
 
 ### Correções
 
 - **Atualização no Linux:** `npm run update` lê a mesma configuração e usa a mesma trava do app, inclusive com `XDG_CONFIG_HOME` e `runtimePath` personalizados (#121).
+- **Atualização por AppImage:** downloads interrompidos são limpos. Se a versão nova não abrir, a anterior é restaurada e a Summa continua aberta com o motivo (#154, #164).
+- **Atualização no macOS:** uma interrupção na troca do app não deixa a instalação sem poder abrir. Falhas da troca continuam com o motivo original depois de reiniciar, e os avisos seguem o idioma da interface (#151, #155, #166).
+- **Atualização já em andamento:** abrir a Summa de novo não apaga o download nem o resultado da atualização que está rodando. Falhas ao iniciar o instalador ou esperar a versão nova aparecem no idioma escolhido (#163, #165).
+- **Instalação e remoção no Windows:** dois instaladores, ou o instalador e o desinstalador, não mexem na mesma instalação ao mesmo tempo. Falha ao migrar uma instalação de desenvolvimento preserva a anterior; o instalador pede para fechar a Summa logo no começo, e o desinstalador permite tentar de novo depois de fechá-la (#140, #156, #157, #170).
+- **Plano sem perder edições:** tarefas, anotações e rascunhos de mensagem editados logo antes de fechar a Summa são salvos. O plano atualiza as opções de ligar ao PDF ao abrir, fecha com Esc e não cria tarefa ao confirmar um caractere com um teclado de composição (#168, #178, #184, #186).
+- **Busca de estudos:** PDFs com o mesmo nome em subpastas abrem o arquivo certo; renomear uma matéria atualiza a busca, e o nome da matéria não aparece repetido no resultado (#172, #173, #175).
+- **Busca das Configurações:** corrigir uma busca sem resultados volta a mostrar a seção encontrada; a busca também encontra títulos de grupos e botões como **Adicionar matéria** (#177, #185).
+- **Leitores recolhidos:** abrir uma referência pelo plano, pela busca ou pelos favoritos torna o leitor visível de novo (#169).
+- **Modo mini:** ao voltar à Mesa depois de desconectar um monitor, a janela reaparece numa tela disponível (#174).
+- **Nome de matéria:** uma matéria chamada `constructor` não impede mais a abertura da Summa (#176).
 - **Conferir no macOS:** o primeiro uso pede a permissão de Gravação de Tela; iniciar pelo código recompila o helper visual quando necessário (#123).
 - **Importação e backup entre sistemas:** favoritos, leitores e referências a materiais voltam a apontar para os arquivos locais ao trazer dados de outro sistema (#124, #132). Pacotes com arquivos que colidem por maiúsculas/minúsculas são recusados antes da gravação (#126).
+- **Backup no Windows:** a criação do backup fecha os arquivos de conferência antes de concluir a pasta, evitando falhas de acesso negado (#152).
 - **Conferir no Windows:** captura a instância escolhida, funciona com caminhos acentuados e renderiza só a janela escolhida, sem copiar janelas que a encobrem. Se a renderização falhar, avisa em vez de capturar a tela (#127, #129, #131).
 - **Imagens da conversa:** nomes com `#` ou `%` e URLs `file:///C:/…` no Windows voltam a abrir (#128, #130).
 - **Xournal++ no Linux:** abre o executável configurado diretamente, sem tratá-lo como um arquivo para abrir em outro programa (#133).
 - **OpenCode no Windows:** encontra instalações disponíveis só no PATH e mostra comandos de login executáveis no PowerShell, inclusive `.cmd` e caminhos com espaços (#134, #135).
+- **Instalação do OpenCode:** no Windows, funciona mesmo quando o `tar` do Git aparece primeiro no PATH; se a extração falhar, o aviso mostra o erro real (#153, #162).
+
+### Desenvolvimento
+
+- **Ferramentas e release:** `npm run dev` tem recarga imediata do renderer; build e preview testam o bundle, e `npm start` segue abrindo o fonte. A checagem de tipos cobre o projeto inteiro. A preparação da release confere produto e versão dos instaladores; dependências, testes e caminhos internos foram atualizados e simplificados (#125, #140, #142–#147, #158–#160, #171, #179, #182).
 
 ## 1.3.3
 
