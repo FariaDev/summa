@@ -6,6 +6,10 @@ const packages=require('./packages.cjs');
 const {message}=require('../i18n.mjs');
 const {describeReceived}=require('../error-detail.mjs');
 const plain=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+function insideRoots(file,roots){
+ const value=path.resolve(file);
+ return roots.some(root=>{const base=path.resolve(root);return value===base||value.startsWith(base+path.sep);});
+}
 /* Instala somente dados do novo escopo. Políticas e extensões vindas do
    pacote ficam no arquivo importado para consulta, sem serem ativadas.
    As anotações de página são reancoradas nas raízes do destino: o caminho
@@ -36,11 +40,14 @@ function adoptPackage({runtime,result,writeConfiguration}){
    const source=path.join(result.storeDir,name);if(!fs.existsSync(source))continue;
    const target=path.join(runtime,name),old=readLocal(target);
    const incoming=JSON.parse(fs.readFileSync(source,'utf8'));
+   const roots=[result.materialsDir,result.learningDir].filter(Boolean);
    /* Anotações: porta o payload (novo portátil ou v1) para caminhos DENTRO do
       destino da matéria importada. Nunca copia o caminho absoluto da origem. */
-   const slice=name==='pdf-notes.json'
-    ?packages.resolveNoteStore(incoming,{roots:[result.materialsDir,result.learningDir].filter(Boolean)})
+   let slice=name==='pdf-notes.json'
+    ?packages.resolveNoteStore(incoming,{roots})
     :(plain(incoming)&&Object.hasOwn(incoming,result.courseId)?incoming[result.courseId]:incoming);
+   /* O pacote não pode transformar o caderno do autor em autorização local. */
+   if(name==='resume.json'&&plain(slice)&&typeof slice.xopp==='string'&&!insideRoots(slice.xopp,roots))slice={...slice,xopp:''};
    put(target,{...old,[result.courseId]:slice});
   }
   for(const entry of result.record?.conversations||[]){
