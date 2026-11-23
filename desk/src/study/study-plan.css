@@ -36,7 +36,7 @@
 .study-plan-tools{display:flex;gap:2px;flex:none;margin-left:auto;opacity:0;pointer-events:none;transition:opacity var(--t-fast) var(--ease-out)}
 .study-plan-row:hover .study-plan-tools,.study-plan-row:focus-within .study-plan-tools{opacity:1;pointer-events:auto}
 #study-plan-pop .study-plan-tool{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:0;background:transparent;color:var(--muted);border-radius:var(--r-sm)}
-#study-plan-pop .study-plan-tool:hover{background:var(--active);color:var(--fg)}
+#study-plan-pop .study-plan-tool:hover:not(:disabled){background:var(--active);color:var(--fg)}
 #study-plan-pop .study-plan-tool .icon{width:14px;height:14px}
 #study-plan-pop .study-plan-tool.down .icon{transform:rotate(180deg)}
 #study-plan-pop .study-plan-add{align-self:stretch;justify-content:flex-start;gap:var(--space-3);border:0;background:transparent;margin:var(--space-1) var(--space-3) var(--space-3);padding:var(--space-3);font:inherit;font-size:var(--fs-sm);color:var(--muted);border-radius:var(--r-sm)}
