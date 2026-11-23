@@ -262,7 +262,7 @@ function watchChatScroll(){
  const chat=$('#chat');if(!chat||chatScrollWatch)return;
  chatScrollWatch=new ResizeObserver(scheduleChatScrollMode);
  chatScrollWatch.observe(chat);
- for(const el of [chat.querySelector('.chat-head'),$('#messages'),$('#activity'),$('#composer')]){
+ for(const el of [chat.querySelector('.chat-top'),$('#messages'),$('#activity'),$('#composer')]){
   if(el)chatScrollWatch.observe(el);
  }
  syncChatScrollMode();

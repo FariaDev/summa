@@ -11,27 +11,22 @@
 /* `min-height:0`: a coluna não pode forçar o composer para fora da janela
    (900×650) — quem rola é #messages. */
 #chat{display:flex;flex-direction:column;min-height:0;flex:1;min-width:0}
-/* Cabeçalho do tutor (ticket #13; r2): duas linhas na altura de --bar — o
-   título da sessão em cima e a linha do contexto embaixo —, com os três botões
-   à direita nas duas linhas. O `.chat-top` (cabeçalho + menus) é colado ao
+/* Cabeçalho do tutor (ticket #13; r2): uma linha na altura de --bar, com o
+   título da sessão e os botões à direita; a linha do contexto fica logo
+   abaixo, fora da barra. O `.chat-top` (cabeçalho, linha e menus) é colado ao
    topo: no modo de rolagem da coluna (janela baixa) o cabeçalho continua à
    vista e os menus, ancorados nele, andam juntos. */
 .chat-top{position:sticky;top:0;z-index:6;flex:none;background:var(--side)}
 .sidechat-head{display:flex;align-items:center;column-gap:var(--space-2);flex-wrap:nowrap;flex:none;background:var(--side)}
-/* Duas linhas no cabeçalho do tutor (r2): o título da sessão em cima e a linha
-   do que vai com a mensagem embaixo, na mesma coluna; as ações ocupam as duas
-   linhas à direita. O cabeçalho continua com a altura de --bar. */
-/* row-gap:0 e as duas linhas de 24px: alvos de 24px da WCAG 2.5.8 (r2, #202). */
+/* Uma linha só, como as barras dos leitores ao lado: com o contexto dentro da
+   barra o cabeçalho tinha 57px contra os 40px delas, e a borda de baixo do
+   tutor ficava 17px abaixo da do Enunciado. A padding e a altura vêm da regra
+   comum das barras (readers.css). */
 .chat-head{
- display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;row-gap:0;
- align-items:center;column-gap:var(--space-2);padding-block:var(--space-1);min-height:var(--bar);flex:none;background:var(--side);
- container-type:inline-size;container-name:tutor-head;
+ display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:var(--space-2);
+ flex:none;background:var(--side);container-type:inline-size;container-name:tutor-head;
 }
-.chat-head-actions{grid-column:2;grid-row:1 / span 2;align-self:center}
-/* Sem a linha de contexto (nenhum material), o cabeçalho volta a uma linha e
-   os botões centram com o título; a segunda linha vazia não empurra o bloco. */
-.chat-head:has(#context-line[hidden]){grid-template-rows:auto;row-gap:0}
-.chat-head:has(#context-line[hidden]) .chat-head-actions{grid-row:1}
+.chat-head-actions{grid-column:2;grid-row:1;align-self:center}
 .chat-head button,.sidechat-head button{border:0;background:transparent;box-shadow:none}
 .chat-head .icon-btn:hover,.sidechat-head .icon-btn:hover{background:var(--hover)}
 .chat-head .session-title{

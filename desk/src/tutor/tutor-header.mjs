@@ -106,8 +106,7 @@ function anchorPop(el,trigger){
  const left=Math.min(at.right-box.left-el.offsetWidth,box.width-el.offsetWidth-gutter);
  el.style.left=`${Math.max(gutter,Math.round(left))}px`;
 }
-/* Com a linha de contexto (r2) o cabeçalho tem duas linhas e a borda fixa de
-   `--bar` punha o menu por cima dela; ele nasce no pé do cabeçalho. */
+/* O menu nasce no pé do cabeçalho medido, não numa borda fixa de `--bar` (r2). */
 function dropBelowHead(el){
  const head=$('#chat .chat-head');if(!head||el.offsetParent!==head.offsetParent)return;
  el.style.top=`${head.offsetTop+head.offsetHeight+4}px`;

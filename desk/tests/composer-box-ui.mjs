@@ -128,7 +128,7 @@ await withArtifacts('composer-box',async ctx=>{
    refsPop:!!document.querySelector('#refs-pop'),
    studyVisibleAtRest:(()=>{const el=document.querySelector('#study-context');const b=el.getBoundingClientRect();return b.width>0&&b.height>0;})(),
    summaryInBox:box.contains(document.querySelector('#context-summary')),
-   summaryInHeader:!!document.querySelector('.chat-head')?.contains(document.querySelector('#context-summary')),
+   summaryInHeader:!!document.querySelector('.chat-top')?.contains(document.querySelector('#context-summary')),
   };
  });
  assert.deepEqual(parts.kids,['mention-chips','attachments','prompt','composer-actions'],'a caixa tem chips das ferramentas (#53), anexos, campo e fileira, nessa ordem; o contexto saiu para Mais opções (#123)');
@@ -466,7 +466,8 @@ await withArtifacts('composer-box',async ctx=>{
   },{long:longPdf});
   const cut=await page.evaluate(()=>{
    const line=document.querySelector('#context-line'),summary=document.querySelector('#context-summary');
-   return {over:summary.scrollWidth-summary.clientWidth,title:line.title,text:summary.textContent};
+   /* Com o ponteiro em cima, o tooltip.mjs guarda o title em data-tip enquanto mostra o balão. */
+   return {over:summary.scrollWidth-summary.clientWidth,title:line.title||line.dataset.tip||'',text:summary.textContent};
   });
   assert.ok(cut.over>0,`${tag}: o nome longo corta na linha única (${cut.over}px)`);
   assert.match(cut.title,/Lista de exercicios muito comprida/,'o nome inteiro do PDF fica na dica');
@@ -565,7 +566,7 @@ await withArtifacts('composer-box',async ctx=>{
     const fieldStart=field.getBoundingClientRect().left+parseFloat(getComputedStyle(field).paddingLeft);
     const summary=document.querySelector('#context-summary');
     const summaryBox=summary?.getBoundingClientRect();
-    return {activity:start,activityText:text,firstLetter,field:fieldStart,goes:left('#context-summary > :first-child')??left('#context-summary'),box:left('#composer-box'),column:left('#sidebar'),summaryHidden:!summaryBox||summaryBox.width===0,summaryInHeader:!!document.querySelector('.chat-head')?.contains(summary),summaryInBox:!!document.querySelector('#composer-box')?.contains(summary)};
+    return {activity:start,activityText:text,firstLetter,field:fieldStart,goes:left('#context-summary > :first-child')??left('#context-summary'),box:left('#composer-box'),column:left('#sidebar'),summaryHidden:!summaryBox||summaryBox.width===0,summaryInHeader:!!document.querySelector('.chat-top')?.contains(summary),summaryInBox:!!document.querySelector('#composer-box')?.contains(summary)};
    });
   if(edges.activityText!==null)assert.ok(Math.abs(edges.activityText-edges.activity)<=0.6,`${tag}: "Pensando…" começa no recuo da linha`);
   if(edges.firstLetter!==null)assert.ok(edges.firstLetter>=edges.column+11.5,`${tag}: a primeira letra de "Pensando…" não é cortada pela borda (${edges.firstLetter} × ${edges.column})`);
