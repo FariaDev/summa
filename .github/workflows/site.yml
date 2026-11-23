@@ -1,0 +1,45 @@
+# Publica o site (site/) no GitHub Pages. Roda a cada Release publicada, para o
+# botão de baixar apontar para os instaladores novos, e quando site/ muda na main.
+# Requer Settings → Pages → Source: "GitHub Actions".
+name: site
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/site.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.5'
+      - name: Testes do build
+        run: node --test site/test/*.test.mjs
+      - name: Monta o site com as Releases
+        run: node site/build.mjs --out site/dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -23,3 +23,6 @@ visual-check/windows
 .grok/
 # Medidas das capturas do ciclo de UI: geradas a cada rodada, ficam fora do git.
 docs/design-loop/**/*.json
+
+# Saída do build do site (site/build.mjs).
+site/dist/
