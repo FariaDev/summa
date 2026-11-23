@@ -314,21 +314,26 @@ await withArtifacts('leitor-dois',async ctx=>{
   assert.equal(keyRing.color,ringColor,'Tab até o painel: indicador na cor do anel');
   await shot(page,'foco-painel-claro-1440x900.png');
 
-  /* Páginas: o pager vira campo; as setas do teclado continuam andando. */
- assert.equal(await first.locator('.pager').getAttribute('aria-label'),'Página 1 de 6','o pager diz a página e o total');
+  /* Páginas: o pager vira campo; as setas do teclado continuam andando. A
+     página de partida é a do centro da área do leitor, que depende da altura
+     da janela: sem a faixa de título do sistema (#205) ela é a 3, não a 1. */
+ const startPage=Number((await first.locator('.pager-current').textContent()).trim());
+ assert.ok(startPage>=1&&startPage<=6,`o pager mostra uma página do PDF (${startPage})`);
+ assert.equal(await first.locator('.pager').getAttribute('aria-label'),`Página ${startPage} de 6`,'o pager diz a página e o total');
  await first.locator('.pager').click();
- assert.equal(await first.locator('.page-number').getAttribute('aria-label'),'Página 1 de 6','o campo diz a página e o total');
- await first.locator('.page-number').fill('3');
+ assert.equal(await first.locator('.page-number').getAttribute('aria-label'),`Página ${startPage} de 6`,'o campo diz a página e o total');
+ const target=startPage===2?4:2;
+ await first.locator('.page-number').fill(String(target));
  await first.locator('.page-number').press('Enter');
- await page.waitForFunction(()=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()==='3',undefined,{timeout:8000});
- assert.equal(await first.locator('.pager').getAttribute('aria-label'),'Página 3 de 6','o pager acompanha a página atual');
- assert.equal(await first.locator('.page-number').getAttribute('aria-label'),'Página 3 de 6','o campo acompanha a página atual');
+ await page.waitForFunction(n=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()===String(n),target,{timeout:8000});
+ assert.equal(await first.locator('.pager').getAttribute('aria-label'),`Página ${target} de 6`,'o pager acompanha a página atual');
+ assert.equal(await first.locator('.page-number').getAttribute('aria-label'),`Página ${target} de 6`,'o campo acompanha a página atual');
  assert.ok(await first.locator('.pager').isVisible(),'Enter devolve o pager ao lugar do campo');
  await first.focus();
  await page.keyboard.press('ArrowRight');
- await page.waitForFunction(()=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()==='4',undefined,{timeout:8000});
+ await page.waitForFunction(n=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()===String(n),target+1,{timeout:8000});
  await page.keyboard.press('ArrowLeft');
- await page.waitForFunction(()=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()==='3',undefined,{timeout:8000});
+ await page.waitForFunction(n=>document.querySelector('#pdf-grid .pdf-panel .pager-current')?.textContent.trim()===String(n),target,{timeout:8000});
 
  /* Material: trocar pelo nome na barra. */
  const options=await first.locator('.pdf-select option').evaluateAll(list=>list.map(o=>({value:o.value,text:o.textContent,selected:o.selected})));

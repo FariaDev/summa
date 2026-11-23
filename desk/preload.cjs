@@ -373,6 +373,10 @@ const deskApi={
  studyNotesUndo:payload=>invoke('study-notes-undo',asPlain(payload,'Não foi possível desfazer.')),
  /* Idioma da interface (#41): o main passa o idioma já resolvido na abertura da janela (sem piscar em outro idioma); a troca vai por `languageSet`. */
  initialLanguage:(process.argv.find(arg=>arg.startsWith('--mesa-language='))||'').slice('--mesa-language='.length),
+ /* Barra de título própria no Windows e no Linux (title-bar-host.cjs): o main diz na abertura se ela vale. */
+ titleBarMode:(process.argv.find(arg=>arg.startsWith('--mesa-titlebar='))||'').slice('--mesa-titlebar='.length),
+ titleBarOverlay:overlay=>invoke('title-bar-overlay',asPlain(overlay,'Barra de título inválida.')),
+ titleBarMenu:at=>invoke('title-bar-menu',asPlain(at,'Posição do menu inválida.')),
  languageGet:()=>invoke('language-get'),
  languageRelink:()=>invoke('language-relink'),
  languageSet:request=>{

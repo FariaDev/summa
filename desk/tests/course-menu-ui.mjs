@@ -17,8 +17,10 @@ await withArtifacts('course-menu',async ctx=>{
  const page=await ctx.app.firstWindow();
  const errors=[];page.on('pageerror',error=>errors.push(error.message));
  /* A janela do runner pode abrir menor que 1100px: aí o `fitTabs` troca as
-    abas pelo seletor e a aba Hostil fica oculta (#165). */
- await resizeWindow(ctx.app,page,1440,900);
+    abas pelo seletor e a aba Hostil fica oculta (#165). No Windows e no Linux
+    a faixa guarda ~138px para os botões da janela (#205) e o nome hostil, de
+    uns 60 caracteres, já não cabe em 1440px: 1600 dá folga. */
+ await resizeWindow(ctx.app,page,1600,900);
  await statusOnline(page);
  await freezeMotion(page);
  await page.waitForSelector('#course-tabs button[data-id=Hostil]');

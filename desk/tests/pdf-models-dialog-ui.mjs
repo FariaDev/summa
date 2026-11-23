@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {launchDesk,withArtifacts,enterFree,screenshotDirectory,freeMenuClick,setTheme,freezeMotion} from './helpers.mjs';
+import {launchDesk,withArtifacts,enterFree,screenshotDirectory,freeMenuClick,setTheme,freezeMotion,resizeWindow} from './helpers.mjs';
 import {layoutStable,nextFrames} from './waits.mjs';
 
 const out=process.env.MESA_REVIEW_SHOTS?screenshotDirectory('pdf-models-dialog-ui'):'';
@@ -39,8 +39,7 @@ await withArtifacts('pdf-models-dialog-ui',async ctx=>{
  await enterFree(page);
  /* A janela da página, não a primeira da lista: a prévia do PDF abre uma
     janela escondida que pode vir antes e levar o redimensionamento. */
- const win=await ctx.app.browserWindow(page);
- const setSize=(w,h)=>win.evaluate((bw,[w,h])=>bw.setSize(w,h),[w,h]);
+ const setSize=(w,h)=>resizeWindow(ctx.app,page,w,h);
  await setSize(1440,900);
  await page.evaluate(async()=>{const {S,connect}=await import('./src/state.mjs');window.__mesaState=S;if(!S.connected)await connect();});
  await page.waitForFunction(()=>window.__mesaState.connected&&!window.__mesaState.busy);
@@ -125,8 +124,9 @@ await withArtifacts('pdf-models-dialog-ui',async ctx=>{
 
  /* ---------- medidas: dois temas × dois tamanhos ---------- */
  for(const [theme,size] of [['light',[1440,900]],['dark',[1440,900]],['light',[900,650]],['dark',[900,650]]]){
+  /* `resizeWindow` confere o tamanho pela janela: sem a moldura do sistema no
+     Windows (#205), o `outerWidth` da página não bate com o `setSize`. */
   await setSize(...size);
-  await page.waitForFunction(([w])=>Math.abs(outerWidth-w)<=1,[size[0]]);
   await setTheme(page,theme);
   await layoutStable(page,'main');
   const m=await page.evaluate(()=>{
