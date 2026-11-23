@@ -358,6 +358,7 @@ export function initFreeStudy(){
  $('#free-materials').addEventListener('change',event=>openMaterial(event.target.value));
  $('#free-title').addEventListener('change',renameSession);
  $('#free-title').addEventListener('keydown',event=>{
+  if(event.isComposing)return;
   if(event.key==='Enter'){
    event.preventDefault();
    renameSession();
@@ -367,12 +368,14 @@ export function initFreeStudy(){
     Enter no título cairia nele (fechar) em vez da ação principal. O Enter do
     campo de texto confirma; o do conteúdo (textarea) continua quebrando linha. */
  $('#free-pdf-title').addEventListener('keydown',event=>{
+  if(event.isComposing)return;
   if(event.key==='Enter'){
    event.preventDefault();
    savePdf();
   }
  });
  $('#free-promote-name').addEventListener('keydown',event=>{
+  if(event.isComposing)return;
   if(event.key==='Enter'){
    event.preventDefault();
    promote();

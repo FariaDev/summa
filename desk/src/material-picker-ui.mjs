@@ -293,6 +293,7 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
 
   /** @param {KeyboardEvent} event */
   function onKeydown(event) {
+    if (event.isComposing) return;
     const {key} = event;
     if (key === 'Escape') {
       event.preventDefault();
@@ -329,6 +330,7 @@ export function createMaterialPicker({select, label, library, onPick, onOpenFile
   /** @param {Event} event */
   function onSelectActivate(event) {
     if (event instanceof KeyboardEvent) {
+      if (event.isComposing) return;
       if (event.key === 'Escape') {
         if (box.hidden) return;
         event.preventDefault();
