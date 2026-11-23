@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Site da Summa: r2</title>
+<!-- r2 (2026-11-22): topo B escolhido; a captura vira uma demo viva da Mesa ao
+     lado de uma janela do Xournal++, e entra a seção de perguntas. Tokens de
+     desk/style.css; o "pensando" é a integral com o brilho de tutor-chat.css. -->
+<style>
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-Regular.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-Medium.woff2") format("woff2");font-weight:500}
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-SemiBold.woff2") format("woff2");font-weight:600}
+@font-face{font-family:"IBM Plex Mono";src:url("../../../desk/src/fonts/IBMPlexMono-Regular.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"STIX Two Text";src:url("../../../desk/src/fonts/STIXTwoText.woff2") format("woff2");font-weight:400 700;font-style:normal}
+@font-face{font-family:"STIX Two Text";src:url("../../../desk/src/fonts/STIXTwoText-Italic.woff2") format("woff2");font-weight:400 700;font-style:italic}
+
+.site{
+ color-scheme:light;
+ --font-sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+ --serif:"STIX Two Text","Iowan Old Style",Charter,Georgia,serif;
+ --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ --bg:light-dark(#ffffff,#161616);--surface:light-dark(#ffffff,#161616);--stage:light-dark(#f4f4f4,#262626);
+ --fg:light-dark(#161616,#f4f4f4);--fg-strong:light-dark(#0e0e0e,#ffffff);
+ --muted:light-dark(#525252,#c6c6c6);--faint:light-dark(#6f6f6f,#a8a8a8);
+ --border:light-dark(#e0e0e0,#393939);--border-strong:light-dark(#8d8d8d,#6f6f6f);
+ --raised:light-dark(#ffffff,#393939);--user:light-dark(#f4f4f4,#262626);--code:light-dark(#f4f4f4,#262626);
+ --hover:light-dark(#e8e8e8,#333333);--active:light-dark(#d4d4d4,#454545);--selected:light-dark(#dedede,#393939);
+ --success:light-dark(#24a148,#42be65);
+ --acc-graphite:light-dark(#303030,#e6e6e6);--acc-violet:light-dark(#8044ca,#8957d0);--acc-violet-text:light-dark(#8044ca,#b89cea);
+ --accent-fill:var(--acc-graphite);--accent-text:var(--acc-graphite);--accent-fg:light-dark(#ffffff,#161616);
+ --ring:var(--accent-text);
+ --tint:color-mix(in oklab,var(--accent-fill) 11%,transparent);
+ --highlight:color-mix(in oklch,var(--accent-fill) 18%,var(--raised));
+ --find-mark:rgb(250 204 21/.42);
+ --plot-1:light-dark(#2548c7,#8fa8ff);--plot-2:light-dark(#c2410c,#fb923c);
+ --shadow-pop:0 8px 24px -10px light-dark(rgb(0 0 0/.18),rgb(0 0 0/.8));
+ --shadow-dialog:0 16px 48px -16px light-dark(rgb(0 0 0/.22),rgb(0 0 0/.85));
+ --mix-black:#000;
+ --r-sm:4px;--r-md:8px;--r-round:999px;
+ --fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:15px;--fs-2xl:18px;--fs-3xl:22px;--fs-display:30px;
+ --space-0:2px;--space-1:4px;--space-2:6px;--space-3:8px;--space-4:10px;--space-5:12px;--space-6:16px;--space-7:24px;
+ --header:44px;--bar:40px;--ctl:28px;--control-md:40px;--pad:12px;
+ --t-fast:120ms;--t-base:180ms;--t-slow:320ms;--t-loop:1.2s;
+ --ease-out:cubic-bezier(.22,.61,.36,1);--ease-move:cubic-bezier(.4,0,.2,1);
+ --from-rise:translateY(4px);--from-drop:translateY(-3px) scale(.995);
+ --col:1120px;--gutter:clamp(16px,4vw,40px);
+ font-family:var(--font-sans);font-size:var(--fs-xl);line-height:1.55;color:var(--fg);background:var(--bg);
+ -webkit-font-smoothing:antialiased;border-radius:var(--r-md);overflow:hidden;
+}
+.site[data-theme=dark]{color-scheme:dark}
+.site[data-accent=violet]{--accent-fill:var(--acc-violet);--accent-text:var(--acc-violet-text);--accent-fg:#ffffff}
+.site *{box-sizing:border-box;corner-shape:squircle}
+.site a{color:inherit;text-decoration:none}
+.site button{font:inherit;color:inherit}
+.site :focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.site ::selection{background:color-mix(in oklab,var(--ring) 26%,transparent)}
+.icon{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:var(--col);margin:0 auto;padding:0 var(--gutter)}
+.frame{container:site/inline-size}
+
+/* ---------- Botões (os do app) ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);height:var(--ctl);padding:0 var(--space-4);border-radius:var(--r-sm);
+ font-size:var(--fs-sm);color:var(--fg);border:1px solid transparent;background:transparent;white-space:nowrap;cursor:pointer;
+ transition:background var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out)}
+.btn:hover{background:var(--hover)}
+.btn:active{background:var(--active)}
+.btn.primary{background:var(--accent-fill);color:var(--accent-fg);font-weight:500}
+.btn.primary:hover{background:light-dark(color-mix(in oklab,var(--accent-fill) 78%,black),color-mix(in oklab,var(--accent-fill) 82%,white))}
+.btn.big{height:var(--control-md);padding:0 var(--space-6);font-size:var(--fs-lg)}
+.icon-btn{width:var(--ctl);height:var(--ctl);padding:0;color:var(--muted)}
+.icon-btn:hover{color:var(--fg)}
+.icon-btn[aria-pressed=true]{background:var(--tint);color:var(--accent-text)}
+
+/* ---------- Cabeçalho do site: a barra de 44px do app ---------- */
+.top{height:var(--header);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:var(--space-4);padding:0 var(--pad);background:var(--bg);position:sticky;top:0;z-index:5}
+.mark{display:flex;align-items:center;gap:var(--space-2);font-family:var(--serif);font-size:20px;line-height:1;color:var(--fg-strong);padding-right:var(--space-3)}
+.mark svg{width:12px;height:19px}
+.tabs{display:flex;align-self:stretch;flex:1;min-width:0}
+.tabs a{display:flex;align-items:center;padding:0 var(--space-5);font-size:var(--fs-lg);color:var(--muted);border-bottom:2px solid transparent}
+.tabs a:hover{background:var(--hover);color:var(--fg)}
+.tabs a.active{color:var(--fg);font-weight:500;border-bottom-color:var(--accent-fill)}
+.top-actions{display:flex;gap:var(--space-1);align-items:center}
+.lang{font-size:var(--fs-sm);color:var(--muted)}
+.lang b{color:var(--fg);font-weight:500}
+
+/* ---------- Topo B ---------- */
+.hero{text-align:center;padding:80px var(--gutter) 0;border-bottom:1px solid var(--border);}
+.lock{display:flex;justify-content:center;align-items:flex-end;gap:.18em;font-family:var(--serif);color:var(--fg-strong);line-height:.9;margin:0;font-weight:400;font-size:clamp(56px,8vw,104px)}
+.lock svg{width:.5em;height:.78em;flex:none;margin-bottom:-.06em}
+.motto{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:clamp(24px,3vw,34px);line-height:1.2;margin:var(--space-5) 0 0}
+.pitch{font-size:var(--fs-2xl);line-height:1.5;margin:var(--space-7) auto 0;max-width:30ch;text-wrap:pretty}
+.get{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);margin-top:var(--space-7)}
+.get-meta{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint);display:flex;gap:var(--space-2);flex-wrap:wrap;justify-content:center}
+.get-meta a{color:var(--muted);text-decoration:underline dotted;text-underline-offset:2px}
+.get-meta a:hover{color:var(--fg)}
+
+/* ---------- A demo: duas janelas lado a lado, como na mesa do aluno ---------- */
+.stage{container:stage/inline-size;max-width:1240px;margin:56px auto 0;text-align:left;display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--space-6);align-items:end;padding-bottom:56px}
+.win{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;box-shadow:var(--shadow-dialog);display:flex;flex-direction:column;position:relative}
+.titlebar{height:28px;display:flex;align-items:center;gap:var(--space-3);padding:0 var(--space-4);border-bottom:1px solid var(--border);font-size:var(--fs-sm);color:var(--faint);flex:none}
+.dots{display:flex;gap:6px}
+.dots i{width:10px;height:10px;border-radius:var(--r-round);corner-shape:round;background:var(--active)}
+.titlebar span{flex:1;text-align:center;margin-right:46px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Xournal++: o programa de escrita é outro app, então leva cor de papel fixa. */
+.xpp{height:560px}
+.xpp-tools{height:var(--bar);display:flex;align-items:center;gap:var(--space-1);padding:0 var(--space-3);border-bottom:1px solid var(--border);color:var(--muted);flex:none}
+.xpp-tools .icon{width:15px;height:15px}
+.xpp-tools .ink-dot{width:12px;height:12px;border-radius:var(--r-round);corner-shape:round;background:#1f3a93;margin-left:auto}
+.xpp-desk{flex:1;background:var(--stage);padding:var(--space-5);display:flex;min-height:0}
+.xpp-page{flex:1;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgb(0 0 0/.06),0 1px 3px rgb(0 0 0/.08);position:relative;overflow:hidden;
+ background-image:repeating-linear-gradient(transparent 0 33px,#dbe4f3 33px 34px);background-position:0 26px}
+.xpp-page svg{position:absolute;inset:0;width:100%;height:100%}
+.ink{fill:none;stroke:#1f3a93;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ink.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:ink-draw var(--d,300ms) linear forwards;animation-delay:var(--at,0ms)}
+@keyframes ink-draw{to{stroke-dashoffset:0}}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.flash.on{animation:flash var(--t-slow) var(--ease-out)}
+@keyframes flash{30%{opacity:.85}to{opacity:0}}
+.capture-ring{position:absolute;inset:-1px;border:2px solid var(--accent-text);border-radius:var(--r-md);opacity:0;pointer-events:none}
+.capture-ring.on{animation:ring 700ms var(--ease-out)}
+@keyframes ring{20%,60%{opacity:1}to{opacity:0}}
+
+/* A Summa: a mesma grade do app (cabeçalho, leitores colados e tutor). */
+.app{height:560px;transition:none}
+.app-head{height:var(--header);display:flex;align-items:center;gap:var(--space-1);padding:0 var(--space-3);border-bottom:1px solid var(--border);flex:none;min-width:0}
+.course-tabs{display:flex;align-self:stretch;min-width:0;overflow:hidden}
+.course-tabs button{height:100%;padding:0 var(--space-4);font-size:var(--fs-lg);border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.course-tabs button:hover{background:var(--hover);color:var(--fg)}
+.course-tabs button[aria-selected=true]{color:var(--fg);font-weight:500;border-bottom-color:var(--accent-fill);background:transparent}
+.course-tabs .ggb .icon{width:14px;height:14px}
+.tab-sep{width:1px;height:16px;background:var(--border);margin:0 var(--space-1);align-self:center;flex:none}
+.badge{font-family:var(--font-mono);font-size:var(--fs-xs);background:var(--code);border-radius:var(--r-sm);padding:0 5px;line-height:16px;color:var(--muted)}
+.badge.bump{animation:bump var(--t-slow) var(--ease-out)}
+@keyframes bump{40%{background:var(--accent-fill);color:var(--accent-fg)}}
+.head-actions{margin-left:auto;display:flex;align-items:center;gap:var(--space-1);flex:none}
+.palette-field{display:inline-flex;align-items:center;gap:var(--space-3);width:150px;height:var(--ctl);padding:0 var(--space-3);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--muted);font-size:var(--fs-sm);background:var(--surface);cursor:pointer;justify-content:flex-start}
+.palette-field:hover{background:var(--hover);color:var(--fg)}
+.palette-field kbd{margin-left:auto}
+kbd{display:inline-block;min-width:1.4em;padding:0 var(--space-1);border:1px solid var(--border);border-bottom-width:2px;border-radius:var(--r-sm);background:var(--surface);font:500 var(--fs-xs)/16px var(--font-sans);text-align:center;color:var(--muted)}
+
+.app-body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr) 330px;min-height:0}
+.app[data-view=caderno] .app-body,.app[data-view=ggb] .app-body{display:none}
+.view{display:none;flex:1;min-height:0;overflow:auto}
+.app[data-view=caderno] .view-caderno,.app[data-view=ggb] .view-ggb{display:flex}
+
+.reader{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border)}
+.bar{height:var(--bar);display:flex;align-items:center;gap:var(--space-3);padding:0 var(--pad);border-bottom:1px solid var(--border);font-size:var(--fs-md);white-space:nowrap;overflow:hidden;flex:none}
+.bar .k{color:var(--muted);font-size:var(--fs-sm)}
+.bar .doc{overflow:hidden;text-overflow:ellipsis}
+.bar .n{font-variant-numeric:tabular-nums;font-size:var(--fs-sm);color:var(--muted);margin-left:auto}
+.pdf{flex:1;background:var(--stage);padding:var(--space-5);overflow:hidden;min-height:0}
+.paper{background:#fff;color:#161616;border-radius:2px;padding:22px 22px;height:100%;box-shadow:0 0 0 1px rgb(0 0 0/.06);font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.5;overflow:hidden}
+.site[data-theme=dark] .paper{filter:invert(.85) hue-rotate(180deg) brightness(.92)}
+.paper h4{font-size:17px;margin:0 0 2px;font-weight:700}
+.paper .sub{font-size:10px;margin:0 0 14px}
+.paper ol{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+.paper h5{font-size:11.5px;margin:12px 0 4px}
+.paper p{margin:0 0 3px}
+.paper mark{background:transparent;border-radius:2px;transition:background var(--t-slow) var(--ease-out);color:inherit}
+.paper mark.on{background:var(--find-mark)}
+
+/* Tutor */
+.tutor{display:flex;flex-direction:column;min-width:0;min-height:0}
+.tbar{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-2) var(--space-2) var(--space-2) var(--pad);border-bottom:1px solid var(--border);flex:none}
+.tbar-text{flex:1;min-width:0}
+.tbar-title{font-size:var(--fs-lg);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbar-sub{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread{flex:1;overflow-y:auto;padding:var(--space-5) var(--pad);display:flex;flex-direction:column;gap:var(--space-4);font-size:var(--fs-lg);scroll-behavior:smooth}
+.thread .empty{margin:auto;color:var(--faint);font-size:var(--fs-md);text-align:center}
+.msg-user{align-self:flex-end;background:var(--user);border-radius:var(--r-md);padding:var(--space-3) var(--space-4);max-width:92%;display:flex;flex-direction:column;gap:var(--space-2)}
+.thumb{width:132px;height:84px;border-radius:var(--r-sm);border:1px solid var(--border);background:#fff;overflow:hidden;position:relative}
+.thumb svg{position:absolute;inset:0;width:100%;height:100%}
+.thumb-cap{font-size:var(--fs-xs);color:var(--muted)}
+.enter{animation:enter var(--t-base) var(--ease-out) both}
+@keyframes enter{from{opacity:0;transform:var(--from-rise)}}
+.work{border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.work-head{display:flex;align-items:center;gap:var(--space-2);min-height:28px;padding:var(--space-1) var(--space-2);font-size:var(--fs-sm);color:var(--muted)}
+.work-head .icon{width:14px;height:14px;color:var(--success)}
+.work-shine{display:flex;align-items:center;gap:var(--space-2);color:var(--fg);flex:1;min-width:0;
+ -webkit-mask-image:linear-gradient(90deg,color-mix(in srgb,var(--mix-black) 30%,transparent) 0 40%,var(--mix-black) 50%,color-mix(in srgb,var(--mix-black) 30%,transparent) 60% 100%);
+ mask-image:linear-gradient(90deg,color-mix(in srgb,var(--mix-black) 30%,transparent) 0 40%,var(--mix-black) 50%,color-mix(in srgb,var(--mix-black) 30%,transparent) 60% 100%);
+ -webkit-mask-size:300% 100%;mask-size:300% 100%;animation:work-shine calc(var(--t-loop) * 1.5) linear infinite}
+.site[data-accent=violet] .work-shine svg{color:var(--acc-violet-text)}
+.work-shine svg{width:18px;height:18px;fill:currentColor}
+@keyframes work-shine{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0 0;mask-position:0 0}}
+.reply{display:flex;flex-direction:column;gap:var(--space-3);line-height:1.55}
+.reply > *{margin:0}
+.reply b{font-weight:600}
+.m{font-family:var(--serif);font-style:italic;font-size:1.12em}
+.m .r{font-style:normal}
+.disp{display:flex;justify-content:center;align-items:center;gap:4px;font-family:var(--serif);font-size:19px;font-style:italic}
+.frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05;font-size:15px}
+.disp sup{font-size:.62em}
+.frac span:first-child{border-bottom:1px solid currentColor;padding:0 2px}
+.pdf-ref{display:inline;padding:0 2px;border:0;background:transparent;color:var(--ring);cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;font-size:inherit}
+.pdf-ref:hover{background:var(--hover)}
+.msg-foot{display:flex;align-items:center;gap:var(--space-1);font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint)}
+.msg-foot .sp{flex:1}
+.msg-foot .icon-btn{width:24px;height:24px}
+.msg-foot .icon{width:14px;height:14px}
+.save-btn[aria-pressed=true] .icon{fill:currentColor}
+
+.composer{border-top:1px solid var(--border);padding:var(--space-3) var(--pad) var(--space-2);flex:none}
+.composer textarea{width:100%;border:0;background:transparent;resize:none;height:36px;font-size:var(--fs-lg);color:var(--fg);outline:none;padding:var(--space-1) 0}
+.composer textarea::placeholder{color:var(--faint)}
+.c-actions{display:flex;align-items:center;gap:var(--space-1)}
+.c-actions .model{margin-left:auto;font-size:var(--fs-sm);color:var(--muted);display:flex;align-items:center;gap:var(--space-1);white-space:nowrap;overflow:hidden}
+#d-check{position:relative}
+#d-check.coach::after{content:"";position:absolute;inset:-3px;border-radius:var(--r-md);border:2px solid var(--accent-text);animation:coach calc(var(--t-loop) * 1.5) var(--ease-move) infinite;pointer-events:none}
+@keyframes coach{0%,100%{opacity:.15}50%{opacity:1}}
+.calc{display:flex;align-items:center;gap:var(--space-3);height:var(--bar);padding:0 var(--pad);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:var(--fs-sm);flex:none;color:var(--muted)}
+.calc input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--fg);outline:none}
+.calc output{color:var(--fg);font-weight:500;min-width:4ch;text-align:right;font-variant-numeric:tabular-nums}
+
+/* Caderno */
+.view-caderno{flex-direction:column;padding:var(--space-7);gap:var(--space-5);background:var(--bg)}
+.view-caderno h3{font-family:var(--serif);font-weight:500;font-size:24px;margin:0}
+.card{border:1px solid var(--border);border-radius:var(--r-md);padding:var(--space-5) var(--space-6);max-width:560px;display:flex;flex-direction:column;gap:var(--space-2)}
+.card .q{font-family:var(--serif);font-weight:500;font-size:18px}
+.card .meta{font-size:var(--fs-sm);color:var(--muted);display:flex;gap:var(--space-2);align-items:center}
+.pill{background:var(--tint);color:var(--accent-text);border-radius:var(--r-sm);padding:0 var(--space-2);font-size:var(--fs-xs);font-weight:500;line-height:18px}
+.view-caderno .empty{color:var(--faint);font-size:var(--fs-lg)}
+
+/* GeoGebra: a tangente segue o mouse (a regra do tombo, na prática). */
+.view-ggb{flex-direction:column;background:var(--bg)}
+.view-ggb svg{flex:1;width:100%;min-height:0;cursor:crosshair;touch-action:none}
+.ggb-read{display:flex;gap:var(--space-6);padding:0 var(--pad);height:var(--bar);align-items:center;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--muted)}
+.ggb-read b{color:var(--fg);font-weight:500}
+.axis{stroke:var(--border-strong);stroke-width:1}
+.grid{stroke:var(--border);stroke-width:1}
+.curve{fill:none;stroke:var(--plot-1);stroke-width:2.2}
+.tan{stroke:var(--plot-2);stroke-width:1.6}
+.pt{fill:var(--plot-2)}
+
+/* Popovers: gear e ⌘K */
+.pop{position:absolute;z-index:4;background:var(--raised);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--shadow-pop);padding:var(--space-1);animation:pop var(--t-base) var(--ease-out)}
+.pop[hidden]{display:none}
+@keyframes pop{from{opacity:0;transform:var(--from-drop)}}
+.settings-pop{top:40px;right:8px;width:220px;padding:var(--space-3)}
+.settings-pop .lbl{font-size:var(--fs-sm);color:var(--muted);margin:var(--space-2) 0 var(--space-2)}
+.seg{display:flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.seg button{flex:1;height:26px;border:0;background:transparent;font-size:var(--fs-sm);cursor:pointer;color:var(--muted)}
+.seg button:hover{background:var(--hover);color:var(--fg)}
+.seg button[aria-pressed=true]{background:var(--selected);color:var(--fg);font-weight:500}
+.palette{top:56px;left:50%;width:min(420px,90%);transform:translateX(-50%);padding:0;overflow:hidden}
+.palette input{width:100%;height:40px;border:0;border-bottom:1px solid var(--border);background:transparent;padding:0 var(--space-5);font-size:var(--fs-lg);outline:none;color:var(--fg)}
+.palette ul{list-style:none;margin:0;padding:var(--space-1);max-height:220px;overflow:auto}
+.palette li{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) var(--space-3);border-radius:var(--r-sm);font-size:var(--fs-md);cursor:pointer}
+.palette li .icon{color:var(--muted)}
+.palette li[aria-selected=true]{background:var(--hover-row,var(--hover))}
+.palette li:hover{background:var(--hover)}
+
+/* Modo mini: o tutor vira a janelinha de 360×480 por cima do Xournal++. */
+.stage[data-mini=true]{grid-template-columns:minmax(0,1fr) 360px}
+.stage[data-mini=true] .xpp{height:560px}
+.stage[data-mini=true] .app{height:480px}
+.stage[data-mini=true] .app-head,.stage[data-mini=true] .reader,.stage[data-mini=true] .calc{display:none}
+.stage[data-mini=true] .app-body{grid-template-columns:1fr}
+
+/* Estreito: some primeiro o formulário, depois a janela do Xournal++ vai para cima. */
+@container stage (max-width:1060px){
+ .app-body{grid-template-columns:minmax(0,1fr) 300px}
+ .reader.second{display:none}
+}
+@container stage (max-width:820px){
+ .stage,.stage[data-mini=true]{grid-template-columns:1fr}
+ .xpp,.stage[data-mini=true] .xpp{height:220px}
+ .xpp-page{background-position:0 16px}
+ .palette-field{width:auto}.palette-field span{display:none}
+ .course-tabs .opt{display:none}
+}
+@container stage (max-width:560px){
+ .app-body{grid-template-columns:1fr}
+ .reader{display:none}
+}
+
+/* ---------- Seções ---------- */
+section{padding:80px 0;border-bottom:1px solid var(--border)}
+h2{font-family:var(--serif);font-weight:400;font-size:var(--fs-display);line-height:1.2;color:var(--fg-strong);margin:0 0 var(--space-7)}
+h3{font-size:var(--fs-lg);font-weight:500;margin:0}
+p{margin:0}
+
+/* Recursos: cada linha liga a demo lá em cima. */
+.feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-7);border-top:1px solid var(--border)}
+.feat{display:grid;grid-template-columns:16px 1fr auto;gap:var(--space-2) var(--space-5);padding:var(--space-6) var(--space-3);border-bottom:1px solid var(--border);text-align:left;background:transparent;border-left:0;border-right:0;border-top:0;border-radius:0;cursor:default}
+button.feat{cursor:pointer}
+button.feat:hover{background:var(--hover)}
+.feat > .icon{color:var(--muted);margin-top:3px}
+.feat p{grid-column:2;font-size:var(--fs-lg);color:var(--muted);text-wrap:pretty}
+.feat .go{grid-column:3;grid-row:1;font-size:var(--fs-sm);color:var(--accent-text);display:flex;align-items:center;gap:var(--space-1);opacity:0;transition:opacity var(--t-fast) var(--ease-out)}
+button.feat:hover .go,button.feat:focus-visible .go{opacity:1}
+
+.out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-7)}
+.out p{font-size:var(--fs-lg);color:var(--muted)}
+.out h3{margin-bottom:var(--space-2)}
+
+/* Perguntas: o recolhível do "Trabalhou por" do tutor. */
+.faq{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 var(--space-7);border-top:1px solid var(--border)}
+.faq details{border-bottom:1px solid var(--border)}
+.faq summary{list-style:none;display:flex;align-items:center;gap:var(--space-3);padding:var(--space-5) var(--space-3);cursor:pointer;font-size:var(--fs-lg);font-weight:500}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{background:var(--hover)}
+.faq summary .icon{margin-left:auto;color:var(--muted);transition:transform var(--t-base) var(--ease-out)}
+.faq details[open] summary .icon{transform:rotate(180deg)}
+.faq details p{padding:0 var(--space-3) var(--space-6);font-size:var(--fs-lg);color:var(--muted);max-width:60ch;text-wrap:pretty}
+.faq details[open] p{animation:enter var(--t-base) var(--ease-out)}
+.faq code{font-family:var(--font-mono);font-size:var(--fs-md);background:var(--code);border-radius:var(--r-sm);padding:0 4px}
+
+/* Instalar */
+.os-tabs{display:flex;height:var(--bar);border-bottom:1px solid var(--border);margin-bottom:var(--space-7)}
+.os-tabs button{height:100%;padding:0 var(--space-5);font-size:var(--fs-lg);color:var(--muted);background:transparent;border:0;border-bottom:2px solid transparent;cursor:pointer}
+.os-tabs button:hover{background:var(--hover);color:var(--fg)}
+.os-tabs button[aria-selected=true]{color:var(--fg);font-weight:500;border-bottom-color:var(--accent-fill);background:transparent}
+.os-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-7) 48px;align-items:start}
+.os-panel[hidden]{display:none}
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:var(--space-5)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;font-size:var(--fs-lg)}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint);padding-top:2px}
+.steps b{font-weight:500}
+.code{position:relative;background:var(--code);border-radius:var(--r-md);padding:var(--space-5) 44px var(--space-5) var(--space-6);font-family:var(--font-mono);font-size:var(--fs-md);line-height:1.7;white-space:pre;overflow-x:auto}
+.code .icon-btn{position:absolute;top:var(--space-2);right:var(--space-2)}
+.note{border-left:2px solid var(--border-strong);padding:var(--space-1) 0 var(--space-1) var(--space-5);font-size:var(--fs-lg);color:var(--muted)}
+.note b{color:var(--fg);font-weight:500}
+
+footer{padding:var(--space-7) 0}
+footer .wrap{display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;font-size:var(--fs-md);color:var(--muted)}
+footer .mark{font-size:17px}
+footer .motto{font-size:17px;margin:0}
+footer nav{margin-left:auto;display:flex;gap:var(--space-1)}
+footer nav a{padding:var(--space-1) var(--space-3);border-radius:var(--r-sm)}
+footer nav a:hover{background:var(--hover);color:var(--fg)}
+
+@container site (max-width:900px){
+ .tabs{display:none}
+ .top-actions{margin-left:auto}
+ .feats,.faq,.os-panel{grid-template-columns:1fr}
+ section{padding:56px 0}
+}
+@container site (max-width:560px){
+ .out{grid-template-columns:1fr}
+ .lang,.gh{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+ .site *{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}
+ .work-shine{-webkit-mask-image:none;mask-image:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="int" viewBox="320 150 610 940"><path fill="currentColor" d="M 800.500 166.419 C 799.950 166.646, 795.232 168.019, 790.016 169.470 C 744.006 182.270, 703.646 214.434, 675.789 260.500 C 658.982 288.293, 644.491 321.376, 635.433 352.636 C 629.407 373.430, 625.123 389.837, 624.502 394.500 C 622.644 408.446, 620.640 417.915, 618.439 423.145 C 617.097 426.332, 615.993 430.866, 615.984 433.220 C 615.976 435.574, 615.065 441.775, 613.961 447 C 612.857 452.225, 610.610 464.375, 608.968 474 C 607.326 483.625, 605.086 495.527, 603.991 500.449 C 602.896 505.371, 601.995 511.446, 601.988 513.949 C 601.982 516.452, 601.090 522.100, 600.006 526.500 C 598.201 533.826, 596.857 542.368, 592.372 575 C 591.503 581.325, 590.160 589.055, 589.388 592.177 C 588.615 595.300, 587.744 600.475, 587.453 603.677 C 586.597 613.084, 584.963 625.685, 583.001 638 C 581.993 644.325, 580.419 657.375, 579.503 667 C 578.586 676.625, 577.263 687.512, 576.561 691.192 C 575.859 694.873, 575.199 701.418, 575.095 705.736 C 574.991 710.054, 574.719 715.367, 574.490 717.543 C 574.262 719.719, 573.407 727.800, 572.592 735.500 C 571.776 743.200, 570.605 757.150, 569.991 766.500 C 569.376 775.850, 568.203 788.216, 567.384 793.980 C 565.715 805.734, 562.929 833.352, 562.491 842.500 C 560.072 892.946, 536.484 966.120, 510.962 1002.344 C 500.851 1016.695, 485.487 1031.601, 473.973 1038.229 C 451.408 1051.220, 420.902 1049.709, 407.010 1034.912 C 397.581 1024.869, 396.778 1014.630, 404.025 996.880 C 411.081 979.602, 411.240 979.012, 410.705 972.130 C 410.086 964.144, 408.620 962.118, 398.156 954.778 C 385.715 946.051, 378.291 944.612, 362 947.772 C 353.362 949.447, 345.156 956.040, 337.398 967.538 C 329.878 978.683, 330.006 1004.267, 337.658 1019.754 C 351.301 1047.365, 377.906 1069.204, 405.254 1075.239 C 418.021 1078.056, 442.837 1078.201, 458 1075.546 C 508.291 1066.740, 554.660 1028.375, 596.444 961 C 599.684 955.775, 603.123 950.600, 604.085 949.500 C 606.378 946.880, 632.311 894.796, 634.429 888.558 C 635.788 884.554, 642.575 868.145, 646.034 860.500 C 647.252 857.807, 655.859 831.673, 661.020 815 C 663.318 807.575, 666.091 799.025, 667.182 796 C 668.855 791.361, 674.078 770.044, 679.554 745.500 C 680.291 742.200, 681.840 736.575, 682.998 733 C 684.155 729.425, 686.624 715.873, 688.484 702.884 C 690.344 689.896, 692.557 676.846, 693.401 673.884 C 694.246 670.923, 694.903 666.700, 694.863 664.500 C 694.762 659.057, 696.731 642.046, 698.451 633.500 C 699.226 629.650, 700.389 620.200, 701.036 612.500 C 702.258 597.945, 702.695 593.479, 705.342 568.500 C 707.366 549.392, 708.668 532.012, 710.495 499.691 C 711.298 485.497, 712.194 473.495, 712.487 473.021 C 712.780 472.547, 713.231 461.210, 713.490 447.829 C 714.967 371.274, 721.307 306.129, 729.882 279.392 C 748.666 220.824, 788.369 186.454, 826.781 195.511 C 847.859 200.480, 854.550 213.255, 849.129 238.177 C 844.843 257.882, 851.100 269.391, 870.102 276.754 C 879.686 280.467, 881.917 280.630, 892.127 278.363 C 913.624 273.589, 922.505 258.896, 917.509 236.371 C 914.826 224.275, 910.637 217.096, 896.404 200.207 C 884.567 186.162, 862.147 173.635, 840.500 168.972 C 832.265 167.198, 803.119 165.338, 800.500 166.419"/></symbol>
+ <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+ <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+ <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+ <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+ <symbol id="i-notebook" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></symbol>
+ <symbol id="i-pip" viewBox="0 0 24 24"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+ <symbol id="i-tablet" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+ <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+ <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+ <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
+ <symbol id="i-retry" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+ <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+ <symbol id="i-pen" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/></symbol>
+ <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+ <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+ <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+
+<div class="frame">
+<div class="site" id="site" data-theme="light" data-accent="graphite">
+
+ <header class="top">
+  <a class="mark" href="#"><svg aria-hidden="true"><use href="#int"/></svg>Summa</a>
+  <nav class="tabs">
+   <a href="#demo" class="active">Experimente</a>
+   <a href="#recursos">Recursos</a>
+   <a href="#perguntas">Perguntas</a>
+   <a href="#instalar">Instalar</a>
+  </nav>
+  <div class="top-actions">
+   <span class="lang btn"><b>PT</b>·EN</span>
+   <button class="btn icon-btn" id="theme-btn" aria-label="Tema escuro"><svg class="icon"><use href="#i-moon"/></svg></button>
+   <a class="btn gh" href="https://github.com/FariaDev/summa">GitHub</a>
+   <a class="btn primary" href="#instalar"><svg class="icon"><use href="#i-download"/></svg>Baixar</a>
+  </div>
+ </header>
+
+ <div class="hero" id="demo">
+  <h1 class="lock"><svg aria-hidden="true"><use href="#int"/></svg>Summa</h1>
+  <p class="motto">Solvitur ambulando.</p>
+  <p class="pitch">Estude com seus PDFs e um tutor que não dá a resposta antes de você.</p>
+  <div class="get">
+   <a class="btn primary big" href="#instalar"><svg class="icon"><use href="#i-download"/></svg><span class="os-label">Baixar para macOS</span></a>
+   <span class="get-meta">v1.3.3</span>
+  </div>
+
+  <div class="stage" id="stage" data-mini="false">
+   <div class="win xpp" aria-label="Janela do Xournal++ com a resolução escrita à mão">
+    <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span>derivadas.xopp · Xournal++</span></div>
+    <div class="xpp-tools" aria-hidden="true">
+     <svg class="icon"><use href="#i-pen"/></svg><svg class="icon"><use href="#i-eraser"/></svg><svg class="icon"><use href="#i-hand"/></svg><span class="ink-dot"></span>
+    </div>
+    <div class="xpp-desk"><div class="xpp-page" id="xpp-page"><svg id="ink" viewBox="0 0 300 380" preserveAspectRatio="xMinYMin meet"></svg><div class="flash" id="flash"></div></div></div>
+    <div class="capture-ring" id="capture-ring"></div>
+   </div>
+
+   <div class="win app" id="app" data-view="calc1">
+    <div class="app-head">
+     <div class="course-tabs" role="tablist">
+      <button role="tab" class="opt" data-tab="livre" aria-selected="false">Livre</button>
+      <button role="tab" data-tab="calc1" aria-selected="true">Cálculo I</button>
+      <button role="tab" class="opt" data-tab="fis1" aria-selected="false">Física I</button>
+      <span class="tab-sep"></span>
+      <button role="tab" data-tab="caderno" aria-selected="false">Caderno <span class="badge" id="cad-count">0</span></button>
+      <button role="tab" class="ggb" data-tab="ggb" aria-selected="false"><svg class="icon"><use href="#i-chart"/></svg>GeoGebra</button>
+     </div>
+     <div class="head-actions">
+      <button class="palette-field" id="palette-btn"><svg class="icon"><use href="#i-search"/></svg><span>Buscar…</span><kbd>⌘K</kbd></button>
+      <button class="btn icon-btn" id="gear-btn" aria-label="Configurações" aria-expanded="false"><svg class="icon"><use href="#i-gear"/></svg></button>
+     </div>
+    </div>
+
+    <div class="app-body">
+     <div class="reader">
+      <div class="bar"><span class="k">Enunciado</span><span class="doc" id="r1-doc">lista-derivadas.pdf</span><span class="n">1 / 2</span></div>
+      <div class="pdf"><div class="paper" id="r1-paper"></div></div>
+     </div>
+     <div class="reader second">
+      <div class="bar"><span class="k">Formulário</span><span class="doc" id="r2-doc">formulario-derivadas.pdf</span><span class="n">1 / 1</span></div>
+      <div class="pdf"><div class="paper" id="r2-paper"></div></div>
+     </div>
+     <div class="tutor">
+      <div class="tbar">
+       <div class="tbar-text"><div class="tbar-title" id="t-title">Nova conversa</div><div class="tbar-sub" id="t-sub">Cálculo I</div></div>
+       <button class="btn icon-btn" id="mini-btn" aria-label="Modo mini" aria-pressed="false"><svg class="icon"><use href="#i-pip"/></svg></button>
+       <button class="btn icon-btn" id="new-btn" aria-label="Nova conversa"><svg class="icon"><use href="#i-plus"/></svg></button>
+      </div>
+      <div class="thread" id="thread" aria-live="polite"></div>
+      <div class="composer">
+       <textarea id="ask" placeholder="Pergunte…" rows="1"></textarea>
+       <div class="c-actions">
+        <button class="btn icon-btn" aria-label="Anexar"><svg class="icon"><use href="#i-clip"/></svg></button>
+        <button class="btn" id="d-check"><svg class="icon"><use href="#i-tablet"/></svg>Conferir</button>
+        <span class="model">DeepSeek V4.1 Flash Free · padrão</span>
+        <button class="btn icon-btn" id="send" aria-label="Enviar"><svg class="icon"><use href="#i-up"/></svg></button>
+       </div>
+      </div>
+      <label class="calc"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><input id="calc" value="sqrt(16) + sin(pi/2)" spellcheck="false" aria-label="Calculadora"><span>=</span><output id="calc-out">5</output><span>RAD</span></label>
+     </div>
+    </div>
+
+    <div class="view view-caderno" id="caderno"></div>
+    <div class="view view-ggb">
+     <svg id="ggb" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet" aria-label="Gráfico de f(x) = x³ − 3x² + 4 com a reta tangente"></svg>
+     <div class="ggb-read"><span><span class="m">f</span>(<span class="m">x</span>) = <span class="m">x</span>³ − 3<span class="m">x</span>² + 4</span><span>x = <b id="g-x">1,00</b></span><span><span class="m">f′</span>(<span class="m">x</span>) = <b id="g-d">−3,00</b></span></div>
+    </div>
+
+    <div class="pop settings-pop" id="settings" hidden>
+     <div class="lbl">Tema</div>
+     <div class="seg" data-k="theme"><button data-v="light" aria-pressed="true">Claro</button><button data-v="dark" aria-pressed="false">Escuro</button></div>
+     <div class="lbl">Acento</div>
+     <div class="seg" data-k="accent"><button data-v="graphite" aria-pressed="true">Grafite</button><button data-v="violet" aria-pressed="false">Violeta</button></div>
+    </div>
+    <div class="pop palette" id="palette" hidden>
+     <input id="palette-in" placeholder="Buscar comandos…" aria-label="Buscar comandos">
+     <ul id="palette-list" role="listbox"></ul>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <section id="recursos">
+  <div class="wrap">
+   <h2>O que tem na mesa</h2>
+   <div class="feats">
+    <button class="feat" data-go="ref"><svg class="icon"><use href="#i-book"/></svg><h3>Dois leitores de PDF</h3><span class="go">Ver<svg class="icon"><use href="#i-arrow"/></svg></span><p>Busca, sumário e favoritos. O tutor cita “Arquivo.pdf, p. N” e o clique abre a página.</p></button>
+    <button class="feat" data-go="check"><svg class="icon"><use href="#i-camera"/></svg><h3>Conferir e foto do celular</h3><span class="go">Ver<svg class="icon"><use href="#i-arrow"/></svg></span><p>Manda a página escrita ao tutor. Sem computador por perto, um QR code recebe as fotos.</p></button>
+    <div class="feat"><svg class="icon"><use href="#i-file"/></svg><h3>PDFs pelo tutor</h3><p>Lista, apostila, resumo, simulado e formulário, com prévia em A4 antes de salvar.</p></div>
+    <button class="feat" data-go="caderno"><svg class="icon"><use href="#i-notebook"/></svg><h3>Caderno</h3><span class="go">Ver<svg class="icon"><use href="#i-arrow"/></svg></span><p>O que você guardou volta no Revisar hoje.</p></button>
+    <button class="feat" data-go="ggb"><svg class="icon"><use href="#i-chart"/></svg><h3>Figuras e GeoGebra</h3><span class="go">Ver<svg class="icon"><use href="#i-arrow"/></svg></span><p>Gráficos e atividades no chat, offline. GeoGebra quando precisar.</p></button>
+    <button class="feat" data-go="mini"><svg class="icon"><use href="#i-pip"/></svg><h3>Modo mini</h3><span class="go">Ver<svg class="icon"><use href="#i-arrow"/></svg></span><p>A conversa numa janela pequena, sempre por cima do Xournal++.</p></button>
+   </div>
+  </div>
+ </section>
+
+ <section>
+  <div class="wrap out">
+   <div><h3>Fica no seu computador</h3><p>PDFs, conversas e caderno moram numa pasta sua. Sem conta na nuvem.</p></div>
+   <div><h3>Sem telemetria</h3><p>A Summa não manda nada sobre você para lugar nenhum.</p></div>
+   <div><h3>Modelos grátis ou o seu</h3><p>Começa com os modelos grátis do OpenCode. A conta de outro provedor entra no próprio app.</p></div>
+  </div>
+ </section>
+
+ <section id="perguntas">
+  <div class="wrap">
+   <h2>Perguntas</h2>
+   <div class="faq">
+    <div>
+     <details><summary>Quanto custa?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Nada. A Summa é código aberto, sob a licença MIT. Os modelos grátis do OpenCode funcionam sem cartão; se você já paga um provedor, a conta dele entra no app.</p></details>
+     <details><summary>O tutor me dá a resposta?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Não antes de você tentar. Ele aponta onde está o erro, cita a página do seu material e devolve a pergunta. A resposta certa só aparece depois da sua.</p></details>
+     <details><summary>Preciso do Xournal++?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Não. O Conferir captura a janela de qualquer programa de escrita, e a foto do celular serve para o caderno de papel. O Ambitus, versão do Xournal++ feita para a Summa, manda a página direto.</p></details>
+     <details><summary>Meus PDFs vão para a nuvem?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Os arquivos ficam na sua pasta. Para responder, o tutor lê as páginas que precisa e manda esse trecho ao modelo que você escolheu, como em qualquer chat de IA.</p></details>
+    </div>
+    <div>
+     <details><summary>Funciona em qual sistema?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>macOS, Windows e Linux (AppImage). No Linux, o Conferir funciona com o Ambitus.</p></details>
+     <details><summary>Funciona sem internet?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Leitores, Caderno, calculadora e as figuras do chat, sim. O tutor precisa de internet para falar com o modelo.</p></details>
+     <details><summary>Por que o macOS avisa na primeira abertura?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>O app ainda não é notarizado pela Apple. O passo a passo está em <a href="#instalar" style="text-decoration:underline dotted">Instalar</a>; depois disso, as atualizações chegam assinadas por <code>Sobre → Atualizar</code>.</p></details>
+     <details><summary>Tem em inglês?<svg class="icon"><use href="#i-chevron"/></svg></summary><p>Sim. Interface e tutor em português ou inglês.</p></details>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <section id="instalar">
+  <div class="wrap">
+   <h2>Instalar</h2>
+   <div class="os-tabs" role="tablist">
+    <button role="tab" data-os="mac" aria-selected="true">macOS</button>
+    <button role="tab" data-os="win" aria-selected="false">Windows</button>
+    <button role="tab" data-os="linux" aria-selected="false">Linux</button>
+   </div>
+   <div class="os-panel" data-os="mac">
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-1.3.3.dmg</b>.</span></li>
+     <li><span>Abra a imagem e arraste <b>Summa</b> para <b>Aplicativos</b>.</span></li>
+     <li><span>Na primeira abertura, siga o aviso ao lado.</span></li>
+    </ol>
+    <div class="note"><b>“Summa Not Opened”?</b> Clique em Concluído e vá a Ajustes do Sistema → Privacidade e Segurança → <b>Abrir Mesmo Assim</b>. É uma vez só.</div>
+   </div>
+   <div class="os-panel" data-os="win" hidden>
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-Setup-1.3.3.exe</b>.</span></li>
+     <li><span>Abra o arquivo. Não precisa de administrador.</span></li>
+    </ol>
+    <div class="note">Se faltar o <b>Visual C++ Redistributable x64</b>, a Summa mostra o link.</div>
+   </div>
+   <div class="os-panel" data-os="linux" hidden>
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-1.3.3-x86_64.AppImage</b> para uma pasta sua.</span></li>
+     <li><span>Dê permissão e abra. O atalho do menu aparece sozinho.</span></li>
+    </ol>
+    <div class="code"><button class="btn icon-btn" aria-label="Copiar"><svg class="icon"><use href="#i-copy"/></svg></button>chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage</div>
+   </div>
+  </div>
+ </section>
+
+ <footer>
+  <div class="wrap">
+   <span class="mark"><svg aria-hidden="true"><use href="#int"/></svg>Summa</span>
+   <p class="motto">Solvitur ambulando.</p>
+   <nav><a href="https://github.com/FariaDev/summa">GitHub</a><a href="https://github.com/FariaDev/ambitus">Ambitus</a><a href="https://github.com/FariaDev/summa/blob/main/LICENSE">Licença MIT</a></nav>
+  </div>
+ </footer>
+</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const site=$('#site'), app=$('#app'), stage=$('#stage'), thread=$('#thread');
+const svgNS='http://www.w3.org/2000/svg';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>new Promise(r=>setTimeout(r,reduced?0:ms));
+const m=t=>`<span class="m">${t}</span>`;
+
+/* ---------- Escrita à mão: glifos em traço, desenhados com pathLength=1 ---------- */
+const GLYPHS={
+ '1':{w:9,p:['M2 18l5-5v24']},
+ 'f':{w:13,p:['M15 8c-2-4-7-4-9 1L1 37c-1 5-5 6-7 3','M-1 19h11']},
+ "'":{w:6,p:['M5 9 2 15']},
+ '(':{w:8,p:['M7 13c-6 6-6 17 0 23']},
+ ')':{w:9,p:['M1 13c6 6 6 17 0 23']},
+ 'x':{w:15,p:['M1 19c4-1 6 2 7 7s3 7 6 5','M13 19c-4 2-7 6-11 12']},
+ '=':{w:18,p:['M3 23h12','M3 29h12']},
+ '3':{w:14,p:['M2 17c3-4 10-3 9 2s-6 4-6 4c6-1 9 3 7 7s-9 4-11 1']},
+ '6':{w:14,p:['M11 15c-6 2-9 9-8 14s7 4 8 0-3-6-8-2']},
+ '2':{w:9,p:['M1 7c2-3 7-2 6 2l-6 6h7'],up:true},
+ '-':{w:16,p:['M2 26h11']},
+ ' ':{w:5,p:[]},
+ '✓':{w:20,p:['M2 24l6 6 11-15']},
+};
+// Escreve `text` na folha do Xournal++, letra por letra; devolve a duração total.
+function write(text,x,y,{color='#1f3a93',start=0,scale=1}={}){
+ const g=document.createElementNS(svgNS,'g');
+ g.setAttribute('transform',`translate(${x} ${y}) scale(${scale})`);
+ let cx=0,t=start;
+ for(const ch of text){
+  const gl=GLYPHS[ch];if(!gl)continue;
+  for(const d of gl.p){
+   const p=document.createElementNS(svgNS,'path');
+   p.setAttribute('d',d);p.setAttribute('pathLength','1');p.setAttribute('class','ink draw');
+   if(color!=='#1f3a93')p.style.stroke=color;
+   const len=gl.up?120:200;
+   p.style.setProperty('--at',(reduced?0:t)+'ms');p.style.setProperty('--d',(reduced?1:len)+'ms');
+   p.setAttribute("transform",`translate(${gl.up?cx-3:cx} ${gl.up?2:0})`);
+   g.appendChild(p);t+=len*.8;
+  }
+  cx+=gl.w;
+ }
+ $('#ink').appendChild(g);
+ return t-start;
+}
+function inkReset(){$('#ink').innerHTML='';write('1)',14,8,{scale:.7})}
+
+/* ---------- Leitores ---------- */
+const DOCS={
+ lista:{name:'lista-derivadas.pdf',html:`<h4>Lista de exercícios</h4><p class="sub">Cálculo I · Derivadas</p><ol>
+  <li><mark id="q1">Calcule a derivada de f(x) = x³ − 3x² + 4.</mark></li><li>Derive g(x) = sen(x)·cos(x) usando a regra do produto.</li>
+  <li>Encontre a reta tangente a y = x³ no ponto (2, 8).</li><li>Use a regra da cadeia em h(x) = (2x + 1)⁵.</li><li>Calcule a derivada de y = ln(x² + 1).</li></ol>`},
+ form:{name:'formulario-derivadas.pdf',html:`<h4>Formulário</h4><p class="sub">Derivadas</p><h5>Regras básicas</h5>
+  <p><mark id="tombo">(xⁿ)′ = n xⁿ⁻¹</mark></p><p>(sen x)′ = cos x</p><p>(cos x)′ = −sen x</p><p>(eˣ)′ = eˣ</p><p>(ln x)′ = 1/x</p>
+  <h5>Regras de combinação</h5><p>(f + g)′ = f′ + g′</p><p>(fg)′ = f′g + fg′</p><p>(f/g)′ = (f′g − fg′)/g²</p>`},
+ cine:{name:'lista-cinematica.pdf',html:`<h4>Lista 1</h4><p class="sub">Física I · Cinemática</p><ol><li>Um carro parte do repouso com a = 2 m/s². Qual a velocidade após 5 s?</li><li>Uma bola é lançada para cima a 20 m/s. Qual a altura máxima?</li><li>Esboce v(t) para s(t) = t³ − 6t² + 9t.</li></ol>`},
+ form2:{name:'formulario-cinematica.pdf',html:`<h4>Formulário</h4><p class="sub">Cinemática</p><p>v = v₀ + at</p><p>s = s₀ + v₀t + at²/2</p><p>v² = v₀² + 2aΔs</p>`},
+};
+function openDoc(slot,key){$(`#r${slot}-doc`).textContent=DOCS[key].name;$(`#r${slot}-paper`).innerHTML=DOCS[key].html}
+
+/* ---------- Tutor: o roteiro do Conferir ---------- */
+let step=0,busy=false,saved=[];
+function add(html,cls=''){const d=document.createElement('div');d.className=cls+' enter';d.innerHTML=html;thread.appendChild(d);thread.scrollTop=thread.scrollHeight;return d}
+function thumbOfPage(){return `<div class="thumb">${$('#ink').outerHTML.replace('id="ink"','').replace(/ draw/g,'')}</div>`}
+function coach(on){$('#d-check').classList.toggle('coach',on)}
+function now(){return new Date().toTimeString().slice(0,5)}
+
+const REPLIES=[
+ {title:'Conferir a derivada de f(x)',user:'Confere o 1?',reads:'Lendo lista-derivadas.pdf, p. 1',blocks:[
+  `<p><b>Quase.</b> O primeiro termo está certo, e a constante some mesmo. Olhe de novo o termo do meio, ${m('−3x')}², com a regra do tombo (<button class="pdf-ref" data-ref="tombo">formulario-derivadas.pdf, p. 1</button>):</p>`,
+  `<div class="disp"><span class="frac"><span>d</span><span>dx</span></span><span>(<i>x</i><sup>n</sup>) = <i>n</i><i>x</i><sup><i>n</i>−1</sup></span></div>`,
+  `<p>O expoente desce e <b>multiplica</b> o coeficiente. Quanto dá ${m('−3x')}² agora?</p>`]},
+ {title:'Conferir a derivada de f(x)',user:'E agora?',reads:'Lendo a página 1',blocks:[
+  `<p><b>Isso.</b> ${m('f′')}(${m('x')}) = 3${m('x')}² − 6${m('x')}. O 2 do expoente desceu e multiplicou o −3.</p>`,
+  `<p>Quer ver onde a tangente fica horizontal? Abra o <button class="pdf-ref" data-go="ggb">GeoGebra</button> e passe o mouse na curva.</p>`],save:true},
+];
+async function conferir(){
+ if(busy)return;
+ if(step>=REPLIES.length){add(`<p class="msg-foot">A demo acaba aqui. Na Summa, a conversa continua.</p>`);return}
+ busy=true;coach(false);
+ if(app.dataset.view!=='calc1')setTab('calc1');
+ // A captura: a janela do Xournal++ pisca e a página entra como anexo.
+ $('#flash').classList.remove('on');void $('#flash').offsetWidth;$('#flash').classList.add('on');
+ $('#capture-ring').classList.remove('on');void $('#capture-ring').offsetWidth;$('#capture-ring').classList.add('on');
+ const r=REPLIES[step];
+ $('#t-title').textContent=r.title;$('#t-sub').textContent='lista-derivadas.pdf, p. 1 +1';
+ thread.querySelector('.empty')?.remove();
+ await wait(260);
+ add(`${thumbOfPage()}<span class="thumb-cap">derivadas.xopp, p. 1</span><span>${r.user}</span>`,'msg-user');
+ const work=add(`<div class="work-head"><span class="work-shine"><svg viewBox="155 150 940 940"><use href="#int"/></svg><span>${r.reads}</span></span></div>`,'work');
+ await wait(1500);
+ work.innerHTML=`<div class="work-head"><svg class="icon"><use href="#i-check"/></svg>Trabalhou por 1s · 1 leitura</div>`;
+ const reply=add('','reply');
+ for(const b of r.blocks){reply.insertAdjacentHTML('beforeend',b);reply.lastElementChild.classList.add('enter');thread.scrollTop=thread.scrollHeight;await wait(380)}
+ add(`<span>${now()}</span><span class="sp"></span><button class="btn icon-btn save-btn" aria-label="Guardar no Caderno" aria-pressed="false" data-save="${step}"><svg class="icon"><use href="#i-bookmark"/></svg></button><button class="btn icon-btn" aria-label="Tentar de novo"><svg class="icon"><use href="#i-retry"/></svg></button>`,'msg-foot');
+ step++;busy=false;
+ if(step===1){ // O aluno corrige na folha e confere de novo.
+  await wait(900);
+  const t=write('f\'(x) = 3x2 - 6x',30,92,{start:0});
+  await wait(t+200);coach(true);
+ }
+}
+function freeAsk(text){
+ if(!text.trim())return;
+ thread.querySelector('.empty')?.remove();
+ add(`<span>${text.replace(/[<&]/g,c=>c==='<'?'&lt;':'&amp;')}</span>`,'msg-user');
+ setTimeout(()=>add(`<p>Na demo eu só confiro a lista. Escreva no Xournal++ ao lado e aperte <b>Conferir</b>; na Summa, pergunte o que quiser.</p>`,'reply'),500);
+}
+function resetChat(){
+ step=0;busy=false;thread.innerHTML='<p class="empty">Escreva no Xournal++ e aperte Conferir.</p>';
+ $('#t-title').textContent='Nova conversa';$('#t-sub').textContent='Cálculo I';
+ inkReset();const t=write('f\'(x) = 3x2 - 3x',30,40,{start:400});setTimeout(()=>coach(true),reduced?0:t+600);
+}
+thread.addEventListener('click',e=>{
+ const ref=e.target.closest('.pdf-ref');
+ if(ref?.dataset.ref)return highlight(ref.dataset.ref);
+ if(ref?.dataset.go)return setTab(ref.dataset.go);
+ const sv=e.target.closest('.save-btn');
+ if(sv&&sv.getAttribute('aria-pressed')!=='true'){sv.setAttribute('aria-pressed','true');saved.push(+sv.dataset.save);bumpCaderno()}
+});
+function highlight(id){
+ // Sem a coluna do formulário (janela estreita), o primeiro leitor troca de documento.
+ const second=getComputedStyle($('.reader.second')).display!=='none';
+ if(!second)openDoc(1,'form');
+ const el=$('#'+id);if(!el)return;
+ el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200);
+}
+function bumpCaderno(){const b=$('#cad-count');b.textContent=saved.length;b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');renderCaderno()}
+function renderCaderno(){
+ const c=$('#caderno');
+ if(!saved.length){c.innerHTML='<h3>Caderno</h3><p class="empty">Nada guardado ainda. Guarde uma resposta do tutor pelo marcador.</p>';return}
+ c.innerHTML='<h3>Revisar hoje</h3>'+saved.map(i=>`<div class="card"><div class="q">${i?'Derivada de x³ − 3x² + 4':'Regra do tombo no termo do meio'}</div><div class="meta"><span class="pill">Hoje</span>Cálculo I · lista-derivadas.pdf, p. 1</div></div>`).join('');
+}
+
+/* ---------- Abas da matéria ---------- */
+function setTab(tab){
+ for(const b of $$('.course-tabs button'))b.setAttribute('aria-selected',String(b.dataset.tab===tab));
+ if(tab==='caderno'||tab==='ggb'){app.dataset.view=tab;if(tab==='caderno')renderCaderno();return}
+ app.dataset.view=tab;
+ if(tab==='fis1'){openDoc(1,'cine');openDoc(2,'form2')}else{openDoc(1,'lista');openDoc(2,'form')}
+}
+$('.course-tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab)});
+
+/* ---------- GeoGebra: f(x) = x³ − 3x² + 4 e a tangente sob o mouse ---------- */
+const G={x0:-1.6,x1:3.6,y0:-2.5,y1:6.5,W:600,H:340};
+const f=x=>x**3-3*x**2+4, df=x=>3*x**2-6*x;
+const sx=x=>(x-G.x0)/(G.x1-G.x0)*G.W, sy=y=>G.H-(y-G.y0)/(G.y1-G.y0)*G.H;
+function drawGgb(){
+ const s=$('#ggb');let h='';
+ for(let x=-1;x<=3;x++)h+=`<line class="grid" x1="${sx(x)}" x2="${sx(x)}" y1="0" y2="${G.H}"/>`;
+ for(let y=-2;y<=6;y+=2)h+=`<line class="grid" y1="${sy(y)}" y2="${sy(y)}" x1="0" x2="${G.W}"/>`;
+ h+=`<line class="axis" x1="0" x2="${G.W}" y1="${sy(0)}" y2="${sy(0)}"/><line class="axis" y1="0" y2="${G.H}" x1="${sx(0)}" x2="${sx(0)}"/>`;
+ let d='';for(let i=0;i<=200;i++){const x=G.x0+(G.x1-G.x0)*i/200;d+=(i?'L':'M')+sx(x).toFixed(1)+' '+sy(f(x)).toFixed(1)}
+ h+=`<path class="curve" d="${d}"/><line class="tan" id="g-tan"/><circle class="pt" id="g-pt" r="5"/>`;
+ s.innerHTML=h;tangent(1);
+ s.addEventListener('pointermove',e=>{const r=s.getBoundingClientRect();const k=Math.min(r.width/G.W,r.height/G.H);const ox=(r.width-G.W*k)/2;
+  tangent(Math.max(-1.4,Math.min(3.4,G.x0+((e.clientX-r.left-ox)/k)/G.W*(G.x1-G.x0))))});
+}
+function tangent(x){
+ const y=f(x),k=df(x),a=x-1.2,b=x+1.2;
+ const t=$('#g-tan');t.setAttribute('x1',sx(a));t.setAttribute('y1',sy(y+k*(a-x)));t.setAttribute('x2',sx(b));t.setAttribute('y2',sy(y+k*(b-x)));
+ $('#g-pt').setAttribute('cx',sx(x));$('#g-pt').setAttribute('cy',sy(y));
+ const fmt=v=>v.toFixed(2).replace('.',',').replace('-','−');
+ $('#g-x').textContent=fmt(x);$('#g-d').textContent=fmt(k);
+}
+
+/* ---------- Calculadora (a do rodapé do tutor) ---------- */
+function calc(src){
+ if(!/^[\d\s+\-*/^().,a-z]*$/i.test(src))return '—';
+ const js=src.replace(/,/g,'.').replace(/\^/g,'**').replace(/[a-z]+/gi,w=>{
+  const ok=['sqrt','sin','cos','tan','log','exp','abs','pi','e','ln'];
+  if(!ok.includes(w))throw 0;return w==='pi'?'Math.PI':w==='e'?'Math.E':w==='ln'?'Math.log':'Math.'+w});
+ const v=Function('"use strict";return ('+js+')')();
+ return Number.isFinite(v)?String(+v.toFixed(6)).replace('.',','):'—';
+}
+$('#calc').addEventListener('input',e=>{let o;try{o=e.target.value.trim()?calc(e.target.value):''}catch{o='—'}$('#calc-out').textContent=o});
+
+/* ---------- Configurações, ⌘K e modo mini ---------- */
+function setPref(k,v){
+ site.dataset[k]=v;
+ for(const b of $$(`.seg[data-k=${k}] button`))b.setAttribute('aria-pressed',String(b.dataset.v===v));
+ if(k==='theme')$('#theme-btn').setAttribute('aria-label',v==='dark'?'Tema claro':'Tema escuro');
+}
+for(const seg of $$('.seg[data-k]'))seg.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setPref(seg.dataset.k,b.dataset.v)});
+$('#theme-btn').addEventListener('click',()=>setPref('theme',site.dataset.theme==='dark'?'light':'dark'));
+$('#gear-btn').addEventListener('click',e=>{e.stopPropagation();const p=$('#settings');p.hidden=!p.hidden;$('#gear-btn').setAttribute('aria-expanded',String(!p.hidden))});
+function setMini(on){stage.dataset.mini=String(on);$('#mini-btn').setAttribute('aria-pressed',String(on))}
+$('#mini-btn').addEventListener('click',()=>setMini(stage.dataset.mini!=='true'));
+$('#new-btn').addEventListener('click',resetChat);
+
+const CMDS=[
+ ['Conferir a página do Xournal++','i-tablet',()=>conferir()],
+ ['Abrir o Caderno','i-notebook',()=>setTab('caderno')],
+ ['Abrir o GeoGebra','i-chart',()=>setTab('ggb')],
+ ['Modo mini','i-pip',()=>setMini(stage.dataset.mini!=='true')],
+ ['Alternar tema claro e escuro','i-moon',()=>setPref('theme',site.dataset.theme==='dark'?'light':'dark')],
+ ['Acento violeta','i-gear',()=>setPref('accent','violet')],
+ ['Acento grafite','i-gear',()=>setPref('accent','graphite')],
+ ['Nova conversa','i-plus',()=>resetChat()],
+];
+let palSel=0;
+function renderPalette(){
+ const q=$('#palette-in').value.toLowerCase().normalize('NFD').replace(/\p{M}/gu,'');
+ const list=CMDS.filter(c=>c[0].toLowerCase().normalize('NFD').replace(/\p{M}/gu,'').includes(q));
+ palSel=Math.min(palSel,Math.max(0,list.length-1));
+ $('#palette-list').innerHTML=list.map((c,i)=>`<li role="option" aria-selected="${i===palSel}" data-i="${CMDS.indexOf(c)}"><svg class="icon"><use href="#${c[1]}"/></svg>${c[0]}</li>`).join('');
+}
+function openPalette(){const p=$('#palette');p.hidden=false;$('#palette-in').value='';palSel=0;renderPalette();$('#palette-in').focus({preventScroll:true})}
+function runCmd(i){$('#palette').hidden=true;CMDS[i][2]()}
+$('#palette-btn').addEventListener('click',e=>{e.stopPropagation();openPalette()});
+$('#palette-in').addEventListener('input',()=>{palSel=0;renderPalette()});
+$('#palette-in').addEventListener('keydown',e=>{
+ const items=$$('#palette-list li');
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();palSel=(palSel+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;renderPalette()}
+ if(e.key==='Enter'&&items[palSel])runCmd(+items[palSel].dataset.i);
+ if(e.key==='Escape')$('#palette').hidden=true;
+});
+$('#palette-list').addEventListener('click',e=>{const li=e.target.closest('li');if(li)runCmd(+li.dataset.i)});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPalette()}});
+document.addEventListener('click',e=>{
+ if(!e.target.closest('#settings,#gear-btn'))$('#settings').hidden=true;
+ if(!e.target.closest('#palette,#palette-btn'))$('#palette').hidden=true;
+});
+
+$('#d-check').addEventListener('click',conferir);
+$('#send').addEventListener('click',()=>{freeAsk($('#ask').value);$('#ask').value=''});
+$('#ask').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();freeAsk(e.target.value);e.target.value=''}});
+
+/* Recursos lá embaixo dirigem a demo. */
+for(const b of $$('button.feat'))b.addEventListener('click',()=>{
+ $('#stage').scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
+ const go=b.dataset.go;
+ setTimeout(()=>{
+  if(go==='check'){setTab('calc1');conferir()}
+  if(go==='ref'){setTab('calc1');highlight(step?'tombo':'q1')}
+  if(go==='caderno'||go==='ggb')setTab(go);
+  if(go==='mini')setMini(true);
+ },reduced?0:450);
+});
+
+/* ---------- Instalar ---------- */
+function selectOs(os){
+ for(const t of $$('.os-tabs button'))t.setAttribute('aria-selected',String(t.dataset.os===os));
+ for(const p of $$('.os-panel'))p.hidden=p.dataset.os!==os;
+}
+for(const t of $$('.os-tabs button'))t.addEventListener('click',()=>selectOs(t.dataset.os));
+// O botão do topo segue o sistema de quem visita; no site final o link vem da última Release.
+const ua=navigator.userAgent;
+const os=/Windows/.test(ua)?['win','Windows']:/Linux/.test(ua)&&!/Android/.test(ua)?['linux','Linux']:['mac','macOS'];
+$('.os-label').textContent=`Baixar para ${os[1]}`;
+const others=[['mac','macOS'],['win','Windows'],['linux','Linux']].filter(o=>o[0]!==os[0]);
+$('.get-meta').innerHTML='v1.3.3 · '+others.map(o=>`<a href="#instalar" data-os="${o[0]}">${o[1]}</a>`).join(' · ');
+$('.get-meta').addEventListener('click',e=>{const a=e.target.closest('a');if(a)selectOs(a.dataset.os)});
+selectOs(os[0]);
+
+setTab('calc1');drawGgb();renderCaderno();resetChat();
+</script>
+</body>
+</html>
