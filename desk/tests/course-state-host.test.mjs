@@ -12,6 +12,7 @@ const require = createRequire(import.meta.url);
 const {createCourseStateHost} = require('../course-state-host.cjs');
 const {createPdfGrants} = require('../pdf-grants.cjs');
 const {historyIdentity} = require('../src/history-identity.cjs');
+const resume = require('../resume.cjs');
 
 const dirs = [];
 after(() => { for (const dir of dirs) fs.rmSync(dir, {recursive: true, force: true}); });
@@ -22,8 +23,8 @@ function memoryGgbCache() {
   return {saved, persist: (id, value) => saved.set(id, value), read: id => saved.get(id) || '', remember: (id, value) => saved.set(id, value)};
 }
 
-function courseStateHost({courseStates = {}, live: liveOverrides = {}, resumeSession = (file) => file, conversationData = () => ({}), trimMessageImages, historyIdentity: identityOf} = {}) {
-  const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-state-'));
+function courseStateHost({runtime: runtimeOverride, courseStates = {}, live: liveOverrides = {}, resumeSession = (file) => file, conversationData = () => ({}), trimMessageImages, historyIdentity: identityOf, allowedXopp = new Set()} = {}) {
+  const runtime = runtimeOverride || fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-state-'));
   dirs.push(runtime);
   const live = {config: {courses: []}, courses: [{id: 'calc', name: 'Cálculo', path: path.join(runtime, 'calc')}, {id: 'fis', name: 'Física', path: ''}],
     courseId: 'calc', course: '', session: path.join(runtime, 'a.jsonl'), state: {theme: 'dark', study: {}, pdfs: []}, win: null, freeSessionId: '',
@@ -32,12 +33,12 @@ function courseStateHost({courseStates = {}, live: liveOverrides = {}, resumeSes
   const calls = [];
   const allowed = new Set();
   const host = createCourseStateHost({live, runtime, FREE_ID: '__free__', stateFile: path.join(runtime, 'desk.json'), courseStates,
-    allowed, pdfGrants: createPdfGrants({allowed}), allowedXopp: new Set(), ggb: {resetRestored: () => calls.push('ggb-reset')}, ggbCache, appendLog: () => {},
+    allowed, pdfGrants: createPdfGrants({allowed}), allowedXopp, ggb: {resetRestored: () => calls.push('ggb-reset')}, ggbCache, appendLog: () => {},
     previewFile: () => '', sessionInfo: () => ({}), conversationData, piBinary: () => '', newSessionPath: (courseId) => path.join(runtime, `pi-${courseId}.jsonl`), resumeSession, freeSessionList: () => [],
     ...(trimMessageImages ? {trimMessageImages} : {}), ...(identityOf ? {historyIdentity: identityOf} : {}),
     persistFreeSession: () => calls.push('free-persist'), applyFreeCourse: () => calls.push('free-apply'), freeWorkspacePayload: () => null,
     captureAvailable: () => false, deskVersionLabel: () => 'v-teste'});
-  return {host, live, runtime, courseStates, ggbCache, calls};
+  return {host, live, runtime, courseStates, ggbCache, calls, allowedXopp};
 }
 
 test('persist grava o desk.json da matéria e guarda o último payload', () => {
@@ -117,6 +118,40 @@ test('initialData monta o payload da matéria com sessão, versão e matérias',
   assert.equal(host.materialContext(), 'Cálculo');
 });
 
+test('resumePayload não autoriza .xopp externo sem concessão', () => {
+  const {host, runtime, allowedXopp} = courseStateHost();
+  const xopp = path.join(runtime, 'fora.xopp');
+  fs.writeFileSync(xopp, 'caderno');
+  resume.saveResume(runtime, 'calc', {stopped: 'onde parei', next: 'próximo passo', xopp});
+
+  const payload = host.resumePayload();
+  assert.equal(payload.xopp, '');
+  assert.equal(allowedXopp.has(xopp), false);
+});
+
+test('resumePayload permite .xopp externo escolhido no estado de sessão da matéria', () => {
+  const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-state-xopp-'));
+  const xopp = path.join(runtime, 'fora.xopp');
+  fs.writeFileSync(xopp, 'caderno');
+  const {host, allowedXopp} = courseStateHost({runtime, courseStates: {calc: {sessionStudies: {'/sessao': {xopp}}}}});
+  resume.saveResume(runtime, 'calc', {stopped: 'onde parei', next: 'próximo passo', xopp});
+
+  const payload = host.resumePayload();
+  assert.equal(payload.xopp, xopp);
+  assert.equal(allowedXopp.has(xopp), true);
+});
+
+test('resumePayload mantém .xopp externo que já está autorizado', () => {
+  const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-state-xopp-'));
+  const xopp = path.join(runtime, 'fora.xopp');
+  fs.writeFileSync(xopp, 'caderno');
+  const allowedXopp = new Set([xopp]);
+  const {host} = courseStateHost({runtime, allowedXopp});
+  resume.saveResume(runtime, 'calc', {stopped: 'onde parei', next: 'próximo passo', xopp});
+
+  assert.equal(host.resumePayload().xopp, xopp);
+});
+
 test('resumePayload guarda o canônico do .xopp atrás de symlink', async () => {
   const {gzipSync} = await import('node:zlib');
   const {readNotebookPage} = await import('../src/extensions/summa-mcp/notebook-tool.mjs');
@@ -137,7 +172,7 @@ test('resumePayload guarda o canônico do .xopp atrás de symlink', async () => 
     const resume = require('../resume.cjs');
     const runtime = fs.mkdtempSync(path.join(os.tmpdir(), 'mesa-course-rt-'));
     dirs.push(runtime);
-    const live = {config: {courses: []}, courses: [{id: 'calc', name: 'Cálculo', path: path.join(runtime, 'calc')}], courseId: 'calc', course: '', session: path.join(runtime, 'a.jsonl'), state: {theme: 'dark', study: {}, pdfs: []}, win: null, freeSessionId: '', freeMutation: false, deferredPersist: false, lastPersist: '', languageHost: {payload: () => ({lang: 'pt-BR'})}};
+    const live = {config: {courses: []}, courses: [{id: 'calc', name: 'Cálculo', path: base}], courseId: 'calc', course: base, session: path.join(runtime, 'a.jsonl'), state: {theme: 'dark', study: {}, pdfs: []}, win: null, freeSessionId: '', freeMutation: false, deferredPersist: false, lastPersist: '', languageHost: {payload: () => ({lang: 'pt-BR'})}};
     const allowedXopp = new Set();
     const allowed = new Set();
     const host = makeHost({live, runtime, FREE_ID: '__free__', stateFile: path.join(runtime, 'desk.json'), courseStates: {}, allowed, pdfGrants: makeGrants({allowed}), allowedXopp, ggb: {resetRestored: () => {}}, ggbCache: {persist: () => {}, read: () => '', remember: () => {}}, appendLog: () => {}, previewFile: () => '', sessionInfo: () => ({}), conversationData: () => ({}), resumeSession: (file) => file, freeSessionList: () => [], persistFreeSession: () => {}, applyFreeCourse: () => {}, freeWorkspacePayload: () => null, captureAvailable: () => false, deskVersionLabel: () => 'v-teste'});

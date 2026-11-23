@@ -2,6 +2,7 @@
 'use strict';
 
 const fs=require('node:fs');
+const path=require('node:path');
 const pending=require('./pending.cjs');
 const resume=require('./resume.cjs');
 const bookmarks=require('./bookmarks.cjs');
@@ -112,14 +113,24 @@ function createCourseStateHost({live,runtime,FREE_ID,stateFile,courseStates,allo
   live.state={...live.state,pdfs:saved.pdfs||[],materialFolders:saved.materialFolders||{},pdfRotations:saved.pdfRotations||{},referenceVisible:layout.referenceVisible,chatWidth:layout.chatWidth,calcHeight:layout.calcHeight,pdfSplit:layout.pdfSplit,draft:layout.draft,theme:layout.theme,ggbBase64:ggbSaved,study:restoredStudy,studyPlan:saved.studyPlan};
   ggb.resetRestored();
  }
- /* Registro de retomada da matéria ativa (o cartão do "Encerrar por hoje"). O
-    `.xopp` guardado volta a ser autorizado como o da questão — sem o arquivo, o
-    Retomar não o traz de volta — e só entram as páginas que a biblioteca desta
-    matéria conhece. Nunca escreve. */
+ /* O resume importado não pode conceder acesso a um caderno local. Só volta ao
+    cartão um `.xopp` já autorizado, escolhido no estado da matéria ou dentro da
+    pasta ativa; sem o arquivo, Retomar não o traz de volta. Nunca escreve. */
+ function resumeXoppGranted(xopp){
+  if(allowedXopp.has(xopp))return true;
+  const saved=/** @type {{study?: {xopp?: string}, sessionStudies?: Record<string, {xopp?: string}>}|undefined} */ (courseStates[live.courseId]);
+  if(saved?.study?.xopp===xopp||Object.values(saved?.sessionStudies||{}).some(study=>study?.xopp===xopp))return true;
+  if(!live.course)return false;
+  try{
+   const value=fs.realpathSync.native(xopp),base=fs.realpathSync.native(live.course);
+   return value===base||value.startsWith(base+path.sep);
+  }catch{return false;}
+ }
  function resumePayload(){
   const saved=resume.readResume(runtime,live.courseId);
   if(!saved)return null;
-  const xopp=saved.xopp?cleanStudy({title:'',xopp:saved.xopp}).xopp:'';
+  const candidate=saved.xopp?cleanStudy({title:'',xopp:saved.xopp}).xopp:'';
+  const xopp=candidate&&resumeXoppGranted(candidate)?candidate:'';
   if(xopp){authorizeXopp(allowedXopp,xopp);}
   return {...saved,xopp,pages:saved.pages.filter(ref=>allowed.has(ref.path))};
  }
