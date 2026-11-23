@@ -129,7 +129,9 @@ await withArtifacts('mini-mode',async ctx=>{
  assert.equal(await page.evaluate(()=>document.body.classList.contains('chat-full')),false,'a tela inteira que o mini ligou sai com ele');
  assert.equal(await page.locator('#references').isVisible(),true,'os leitores voltam');
  assert.equal(await page.locator('body>header').isVisible(),true,'o cabeçalho da Mesa volta');
- if(process.platform!=='darwin')assert.equal(await win.evaluate(bw=>bw.isMenuBarVisible()),true);
+ /* #202: no Windows e no Linux a barra de menu fica escondida e volta com Alt;
+    sair do mini devolve esse estado, não uma barra sempre à vista. */
+ if(process.platform!=='darwin')assert.deepEqual(await win.evaluate(bw=>[bw.isMenuBarVisible(),bw.isMenuBarAutoHide()]),[false,true],'a barra volta escondida, ainda com Alt');
 
  /* ---- 5. Ctrl+Shift+M alterna; o mini volta ao lugar guardado ---- */
  await page.keyboard.press('Control+Shift+M');
