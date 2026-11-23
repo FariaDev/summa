@@ -545,6 +545,7 @@ const deskApi={
   const listener=(_event,data)=>fn(data);ipcRenderer.on('link-confirm',listener);
   return ()=>ipcRenderer.removeListener('link-confirm',listener);
  },
+ updateSwitchTarget:()=>invoke('update-switch-target'),updateSwitch:()=>invoke('update-switch'),
  updateCheck:o=>invoke('update-check',o),updateOrigin:()=>invoke('update-origin'),updateApply:()=>invoke('update-apply'),updateResult:()=>invoke('update-result'),components:o=>invoke('components',o),toolNotices:()=>invoke('tool-notices'),toolNoticesOpened:()=>invoke('tool-notices-opened'),toolNoticePostpone:id=>invoke('tool-notice-postpone',id),toolNoticeIgnore:id=>invoke('tool-notice-ignore',id),toolUpdateRun:id=>invoke('tool-update-run',id),openExternal:url=>invoke('open-external',url),openLog:()=>invoke('open-log'),
  testMode:()=>invoke('test-mode'),
  conversations:()=>invoke('conversation-list'),

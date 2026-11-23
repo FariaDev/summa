@@ -6,6 +6,7 @@ import {t,text,formatDate} from './ui-text.mjs';
 import {renderAboutLead,renderAboutOrigin,renderAboutUpdate,renderComponentChecking,renderHelpVersion} from './dialogs.mjs';
 import {noticesOpened,showRows,askUpdate} from './tool-notices.mjs';
 import {isOffline,onOfflineChange} from './offline-state.mjs';
+import {refreshInstallerSwitch} from './installer-switch.mjs';
 
 /* Guia, Sobre e aviso de atualização: estado da verificação, componentes,
    abrir o Sobre e o selo do cabeçalho.
@@ -131,6 +132,7 @@ async function refreshMesaUpdate(manual){
 /* O painel de componentes pinta por conta própria, sem esperar a checagem da
    Mesa; a promessa devolvida é a das linhas (quem precisa delas espera só ela). */
 function refreshAbout(manual){
+ refreshInstallerSwitch();
  const rows=refreshComponents(manual);
  refreshMesaUpdate(manual);
  return rows;

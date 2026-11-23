@@ -719,7 +719,7 @@ const toolHost={
  relink:()=>{persist();stopBridge();},
  fixtures:toolTestFixtures(TEST_MODE),
 };
-const {scheduleUpdateCheck,usesSystemNode}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
+const {scheduleUpdateCheck,usesSystemNode}=registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile,logFile,testMode:TEST_MODE,config:()=>config,win:()=>win,appendLog,toolHost});
 ggb.register(ipcMain);
 
 app.on('window-all-closed',()=>app.quit());
