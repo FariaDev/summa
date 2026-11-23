@@ -33,6 +33,14 @@ type NoteRef is Data:
 type NoteItem is Data:
   NoteItem{id: String, kind: NoteKind, quote: String, note: String, ref: NoteRef}
 
+# Reabrir uma edição não muda o material nem a página da anotação.
+def reopenRef(editing: Bool, draft: NoteRef, reader: NoteRef) -> NoteRef:
+  match editing:
+    case True{}:
+      draft
+    case False{}:
+      reader
+
 # ---------- tetos (o host compara; o núcleo documenta) ----------
 
 def maxId() -> Nat:

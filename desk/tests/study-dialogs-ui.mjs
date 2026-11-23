@@ -71,6 +71,7 @@ window.__host = {
   },
   studyNotesSave(payload) {
     window.__calls.save.push(JSON.parse(JSON.stringify(payload)));
+    if (window.__saveError) throw new Error(window.__saveError);
     if (payload.mode === 'remove') window.__notes = window.__notes.filter((item) => item.id !== payload.id);
     else if (payload.mode === 'edit') window.__notes = window.__notes.map((item) => (item.id === payload.id ? {...payload.item, id: payload.id} : item));
     else window.__notes = [{...payload.item, id: 'n-novo'}, ...window.__notes];
@@ -130,6 +131,48 @@ async function launch({hash = ''} = {}) {
 }
 
 const openSearch = (page) => page.waitForSelector('#study-search-dialog[open]');
+
+test('anotações: reabrir edição preserva referência, rascunho e falha de gravação', async () => {
+  const {app, page} = await launch();
+  try {
+    await page.click('#study-notes-open');
+    await page.waitForSelector('.study-note-edit');
+    await page.click('.study-note-edit');
+    await page.fill('#study-note-note', '  revisão ainda não salva  ');
+    await page.fill('#study-note-page', '7');
+    await page.evaluate(() => {
+      document.querySelector('.pdf-select').add(new Option('Beta.pdf', '/tmp/beta.pdf'));
+      document.querySelector('.pdf-select').value = '/tmp/beta.pdf';
+      window.__ui.closePdfNotes();
+      window.__ui.openPdfNotes({quote: 'trecho de Beta', path: '/tmp/beta.pdf', name: 'Beta.pdf', page: 9});
+    });
+    assert.equal(await page.inputValue('#study-note-page'), '7');
+    assert.equal(await page.inputValue('#study-note-quote'), 'trecho antigo');
+    assert.equal(await page.inputValue('#study-note-note'), '  revisão ainda não salva  ');
+    await page.evaluate(() => window.dispatchEvent(new Event('desk-language')));
+    assert.equal(await page.inputValue('#study-note-note'), '  revisão ainda não salva  ');
+    await page.evaluate(() => {window.__saveError = 'disco cheio';});
+    await page.click('#study-note-save');
+    await page.waitForFunction(() => document.querySelector('#study-notes-status').textContent === 'disco cheio');
+    await page.click('#study-notes-close');
+    await page.click('#study-notes-open');
+    await page.evaluate(() => {window.__saveError = '';});
+    await page.click('#study-note-save');
+    await page.waitForFunction(() => window.__calls.save.length === 2);
+    const edit = await page.evaluate(() => window.__calls.save.at(-1));
+    assert.equal(edit.mode, 'edit');
+    assert.equal(edit.id, 'n-1');
+    assert.deepEqual(edit.item.ref, {name: 'Limites.pdf', rel: 'Limites.pdf', path: '/tmp/limites.pdf', page: 7});
+    await page.click('#study-notes-close');
+    await page.click('#study-notes-open');
+    assert.equal(await page.inputValue('#study-note-note'), '');
+    assert.match(await page.textContent('.study-notes-target'), /beta\.pdf/i);
+    await page.click('#study-note-save');
+    assert.equal(await page.evaluate(() => window.__calls.save.length), 2, 'rascunho vazio não grava');
+  } finally {
+    await app.close();
+  }
+});
 
 test('Ctrl/Cmd+Shift+F abre e Esc fecha; Ctrl+F fica para o PDF', async () => {
   const {app, page} = await launch();

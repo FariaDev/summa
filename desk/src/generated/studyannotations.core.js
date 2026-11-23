@@ -73,6 +73,13 @@ function $msg_msg4(_key_0, _n1_0, _v1_0, _n2_0, _v2_0, _n3_0, _v3_0, _n4_0, _v4_
 function $msg_isMsg(_s_0) {
   return $String_starts_with(_s_0, $$msg_mark());
 }
+function $reopenRef(_editing_0, _draft_0, _reader_0) {
+  if (_editing_0) {
+    return _draft_0;
+  } else {
+    return _reader_0;
+  }
+}
 function $maxId() {
   return 80;
 }
@@ -647,6 +654,7 @@ var studyannotations_default = {
   "msg:msg3": run_lib((a0, a1, a2, a3, a4, a5, a6) => str_out(run_loop($msg_msg3(str_in(a0), str_in(a1), str_in(a2), str_in(a3), str_in(a4), str_in(a5), str_in(a6)))), 7),
   "msg:msg4": run_lib((a0, a1, a2, a3, a4, a5, a6, a7, a8) => str_out(run_loop($msg_msg4(str_in(a0), str_in(a1), str_in(a2), str_in(a3), str_in(a4), str_in(a5), str_in(a6), str_in(a7), str_in(a8)))), 9),
   "msg:isMsg": run_lib((a0) => run_loop($msg_isMsg(str_in(a0))), 1),
+  reopenRef: run_lib((a0, a1, a2) => run_loop($reopenRef(a0, a1, a2)), 3),
   maxId: run_lib(() => run_loop($maxId()), 0),
   maxQuote: run_lib(() => run_loop($maxQuote()), 0),
   maxNote: run_lib(() => run_loop($maxNote()), 0),

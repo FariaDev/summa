@@ -45,6 +45,10 @@ const state = {
 };
 
 let deps = {};
+/** @type {{dialog: HTMLDialogElement, form: HTMLFormElement, quote: HTMLTextAreaElement,
+ * note: HTMLTextAreaElement, kind: HTMLSelectElement, page: HTMLInputElement,
+ * status: HTMLParagraphElement, list: HTMLOListElement, target: HTMLSpanElement,
+ * cancelEdit: HTMLButtonElement, pageFilter: HTMLSelectElement, materialFilter: HTMLSelectElement} | null} */
 let refs = null;
 
 const element = (tag, props = {}, children = []) => {
@@ -412,15 +416,18 @@ export function openPdfNotes(preset = {}) {
   state.error = '';
   const reader = currentReader();
   const selection = selectionInfo();
-  if (typeof preset.quote === 'string') refs.quote.value = preset.quote;
-  else if (selection) refs.quote.value = selection.quote;
+  if (!state.editing && typeof preset.quote === 'string') refs.quote.value = preset.quote;
+  else if (!state.editing && selection) refs.quote.value = selection.quote;
   const targetPath = preset.path || selection?.path || reader?.path || '';
   const targetName = preset.name || selection?.name || reader?.name || '';
-  refs.quote.dataset.path = targetPath;
-  refs.quote.dataset.name = targetName;
-  refs.quote.dataset.rel = targetName;
   const page = Number(preset.page) || selection?.page || reader?.page || 1;
-  refs.page.value = String(page);
+  const target = notesCore.reopenRef(!!state.editing,
+    {$: 'NoteRef', ...draftFromFields().ref, page: wholeNat(Number(refs.page.value) || 1)},
+    {$: 'NoteRef', path: targetPath, name: targetName, rel: targetName, page: wholeNat(page)});
+  refs.quote.dataset.path = target.path;
+  refs.quote.dataset.name = target.name;
+  refs.quote.dataset.rel = target.rel;
+  refs.page.value = String(target.page);
   if (already) {
     render();
     return true;
@@ -436,17 +443,22 @@ export function openPdfNotes(preset = {}) {
 /* O diálogo é montado uma vez; trocar o idioma o refaz, levando o rascunho. */
 function rebuildForLanguage() {
   if (!refs) return;
-  const {dialog, quote, note, page} = refs;
+  const {dialog} = refs;
   const wasOpen = dialog.open;
-  const draft = {quote: quote.value, note: note.value, page: page.value, path: quote.dataset.path || '', name: quote.dataset.name || ''};
+  const draft = {...draftFromFields(), quote: refs.quote.value, note: refs.note.value, page: refs.page.value};
   dialog.remove();
   refs = null;
   fallbackButton?.remove();
   fallbackButton = null;
   state.open = false;
-  if (!wasOpen) return;
-  openPdfNotes({quote: draft.quote, page: draft.page, path: draft.path, name: draft.name});
-  refs.note.value = draft.note;
+  const ui = ensureDialog();
+  ui.quote.value = draft.quote;
+  ui.note.value = draft.note;
+  ui.kind.value = draft.kind;
+  ui.page.value = draft.page;
+  const {path, name, rel} = draft.ref;
+  Object.assign(ui.quote.dataset, {path, name, rel});
+  if (wasOpen) openPdfNotes({quote: draft.quote, ...draft.ref});
 }
 
 export function closePdfNotes() {

@@ -73,6 +73,12 @@ def pageOf(item: N.NoteItem) -> Nat:
         case N.NoteRef{_, _, _, +page}:
           page
 
+law pn_reopen_edit_preserves_ref:
+  {N.reopenRef(True{}, refOf(itemA()), refOf(itemB())) == refOf(itemA()) : N.NoteRef}
+
+law pn_reopen_new_uses_reader:
+  {N.reopenRef(False{}, refOf(itemA()), refOf(itemB())) == refOf(itemB()) : N.NoteRef}
+
 def nameOf(item: N.NoteItem) -> String:
   match item:
     case N.NoteItem{_, _, _, _, ref}:
