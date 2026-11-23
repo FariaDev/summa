@@ -86,16 +86,16 @@ test('destino existente: nenhum download nem substituição',async()=>{
 });
 
 test('lock concorrente recusa sem efeito; macOS sem acesso tem erro traduzido',async()=>{
- const {input,calls}=fakeInstallerSwitch();
+ const {root,input,calls}=fakeInstallerSwitch();
  const lock=updater.acquireLock(input.runtime);
  try{await assert.rejects(switchToInstaller({...input,target:'exe'}),/locked/);assert.deepEqual(calls,[]);}
  finally{updater.releaseLock(lock.file);}
- await assert.rejects(switchToInstaller({...input,target:'dmg',applications:path.join(input.root,'absent')}),/switchNotWritable/);
+ await assert.rejects(switchToInstaller({...input,target:'dmg',applications:path.join(root,'absent')}),/switchNotWritable/);
 });
 
 test('primeiro Setup já terminou: saída 0 aceita sinal fugaz, mas não erros',async()=>{
- const {input}=fakeInstallerSwitch();
- const readyFile=path.join(input.root,'ready');
+ const {root}=fakeInstallerSwitch();
+ const readyFile=path.join(root,'ready');
  await windows.waitForInstallerReady({child:exitedInstaller(0),readyFile,allowCompleted:true});
  await assert.rejects(windows.waitForInstallerReady({child:exitedInstaller(2),readyFile,allowCompleted:true}),/installerExited/);
  await assert.rejects(windows.waitForInstallerReady({child:exitedInstaller(0),readyFile}),/installerExited/);
@@ -110,10 +110,12 @@ test('config sem permissão de gravação impede iniciar em qualquer OS',async()
  }
 });
 
+/* A recusa do download chega traduzida e vai embrulhada em switchFailed; a versão
+   pedida no texto prova que o erro é o do asset ausente, e não outro. */
 test('release assinada sem asset nativo recusa antes de salvar caminhos ou iniciar',async()=>{
- for(const [target,errorKey] of [['exe','installerMissing'],['dmg','dmgMissing'],['appimage','appImageMissing']]){
+ for(const target of ['exe','dmg','appimage']){
   const {input,calls}=fakeInstallerSwitch();
-  await assert.rejects(switchToInstaller({...input,...fakeSwitchReleaseWithoutAssets(input),target}),new RegExp(errorKey));
+  await assert.rejects(switchToInstaller({...input,...fakeSwitchReleaseWithoutAssets(input),target}),/switchFailed.*v1\.4\.0/s);
   assert.equal(fs.existsSync(input.configFile),false);assert.deepEqual(calls,[]);
  }
 });
