@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="{{html.lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{meta.title}}</title>
+<meta name="description" content="{{meta.description}}">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="{{meta.url}}">
+<link rel="alternate" hreflang="pt-BR" href="{{meta.url.pt}}">
+<link rel="alternate" hreflang="en" href="{{meta.url.en}}">
+<link rel="alternate" hreflang="x-default" href="{{meta.url.pt}}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Summa">
+<meta property="og:description" content="{{meta.description}}">
+<meta property="og:url" content="{{meta.url}}">
+<meta property="og:image" content="{{meta.image}}">
+<meta property="og:locale" content="{{meta.locale}}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="{{base}}assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="{{base}}assets/fonts/IBMPlexSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{base}}assets/fonts/STIXTwoText.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{base}}assets/style.css">
+<!-- O tema e o acento escolhidos voltam antes da pintura, sem piscar o claro. -->
+<script>try{const p=JSON.parse(localStorage.getItem('summa-site')||'{}');for(const k of ['theme','accent'])if(p[k])document.documentElement.dataset[k]=p[k]}catch{}</script>
+<script type="module" src="{{base}}assets/js/main.js"></script>
+</head>
+<body>
+<a class="skip" href="#recursos">{{a11y.skip}}</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="int" viewBox="320 150 610 940"><path fill="currentColor" d="M 800.500 166.419 C 799.950 166.646, 795.232 168.019, 790.016 169.470 C 744.006 182.270, 703.646 214.434, 675.789 260.500 C 658.982 288.293, 644.491 321.376, 635.433 352.636 C 629.407 373.430, 625.123 389.837, 624.502 394.500 C 622.644 408.446, 620.640 417.915, 618.439 423.145 C 617.097 426.332, 615.993 430.866, 615.984 433.220 C 615.976 435.574, 615.065 441.775, 613.961 447 C 612.857 452.225, 610.610 464.375, 608.968 474 C 607.326 483.625, 605.086 495.527, 603.991 500.449 C 602.896 505.371, 601.995 511.446, 601.988 513.949 C 601.982 516.452, 601.090 522.100, 600.006 526.500 C 598.201 533.826, 596.857 542.368, 592.372 575 C 591.503 581.325, 590.160 589.055, 589.388 592.177 C 588.615 595.300, 587.744 600.475, 587.453 603.677 C 586.597 613.084, 584.963 625.685, 583.001 638 C 581.993 644.325, 580.419 657.375, 579.503 667 C 578.586 676.625, 577.263 687.512, 576.561 691.192 C 575.859 694.873, 575.199 701.418, 575.095 705.736 C 574.991 710.054, 574.719 715.367, 574.490 717.543 C 574.262 719.719, 573.407 727.800, 572.592 735.500 C 571.776 743.200, 570.605 757.150, 569.991 766.500 C 569.376 775.850, 568.203 788.216, 567.384 793.980 C 565.715 805.734, 562.929 833.352, 562.491 842.500 C 560.072 892.946, 536.484 966.120, 510.962 1002.344 C 500.851 1016.695, 485.487 1031.601, 473.973 1038.229 C 451.408 1051.220, 420.902 1049.709, 407.010 1034.912 C 397.581 1024.869, 396.778 1014.630, 404.025 996.880 C 411.081 979.602, 411.240 979.012, 410.705 972.130 C 410.086 964.144, 408.620 962.118, 398.156 954.778 C 385.715 946.051, 378.291 944.612, 362 947.772 C 353.362 949.447, 345.156 956.040, 337.398 967.538 C 329.878 978.683, 330.006 1004.267, 337.658 1019.754 C 351.301 1047.365, 377.906 1069.204, 405.254 1075.239 C 418.021 1078.056, 442.837 1078.201, 458 1075.546 C 508.291 1066.740, 554.660 1028.375, 596.444 961 C 599.684 955.775, 603.123 950.600, 604.085 949.500 C 606.378 946.880, 632.311 894.796, 634.429 888.558 C 635.788 884.554, 642.575 868.145, 646.034 860.500 C 647.252 857.807, 655.859 831.673, 661.020 815 C 663.318 807.575, 666.091 799.025, 667.182 796 C 668.855 791.361, 674.078 770.044, 679.554 745.500 C 680.291 742.200, 681.840 736.575, 682.998 733 C 684.155 729.425, 686.624 715.873, 688.484 702.884 C 690.344 689.896, 692.557 676.846, 693.401 673.884 C 694.246 670.923, 694.903 666.700, 694.863 664.500 C 694.762 659.057, 696.731 642.046, 698.451 633.500 C 699.226 629.650, 700.389 620.200, 701.036 612.500 C 702.258 597.945, 702.695 593.479, 705.342 568.500 C 707.366 549.392, 708.668 532.012, 710.495 499.691 C 711.298 485.497, 712.194 473.495, 712.487 473.021 C 712.780 472.547, 713.231 461.210, 713.490 447.829 C 714.967 371.274, 721.307 306.129, 729.882 279.392 C 748.666 220.824, 788.369 186.454, 826.781 195.511 C 847.859 200.480, 854.550 213.255, 849.129 238.177 C 844.843 257.882, 851.100 269.391, 870.102 276.754 C 879.686 280.467, 881.917 280.630, 892.127 278.363 C 913.624 273.589, 922.505 258.896, 917.509 236.371 C 914.826 224.275, 910.637 217.096, 896.404 200.207 C 884.567 186.162, 862.147 173.635, 840.500 168.972 C 832.265 167.198, 803.119 165.338, 800.500 166.419"/></symbol>
+ <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+ <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+ <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+ <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+ <symbol id="i-notebook" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></symbol>
+ <symbol id="i-pip" viewBox="0 0 24 24"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+ <symbol id="i-tablet" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+ <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+ <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+ <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
+ <symbol id="i-retry" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+ <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+ <symbol id="i-pen" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/></symbol>
+ <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+ <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+ <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.53 2.3a.53.53 0 0 1 .95 0l2.31 4.68a2.12 2.12 0 0 0 1.6 1.16l5.16.76a.53.53 0 0 1 .3.9l-3.74 3.64a2.12 2.12 0 0 0-.61 1.88l.88 5.14a.53.53 0 0 1-.77.56l-4.62-2.43a2.12 2.12 0 0 0-1.97 0L6.4 21.01a.53.53 0 0 1-.77-.56l.88-5.14a2.12 2.12 0 0 0-.61-1.88L2.16 9.8a.53.53 0 0 1 .3-.9l5.16-.76a2.12 2.12 0 0 0 1.6-1.16z"/></symbol>
+ <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+ <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+</svg>
+
+<header class="top">
+ <a class="mark" href="#demo"><svg aria-hidden="true"><use href="#int"/></svg>Summa</a>
+ <nav class="tabs" aria-label="{{nav.label}}">
+  <a href="#demo" class="active">{{nav.demo}}</a>
+  <a href="#recursos">{{nav.features}}</a>
+  <a href="#perguntas">{{nav.faq}}</a>
+  <a href="#instalar">{{nav.install}}</a>
+ </nav>
+ <div class="top-actions">
+  <span class="lang">{{nav.lang}}</span>
+  <button class="btn icon-btn" id="theme-btn" aria-label="{{nav.theme}}"><svg class="icon"><use href="#i-moon"/></svg></button>
+  <a class="btn gh" href="https://github.com/FariaDev/summa">GitHub</a>
+  <a class="btn primary" href="#instalar"><svg class="icon"><use href="#i-download"/></svg>{{nav.download}}</a>
+ </div>
+</header>
+
+<main>
+<div class="hero" id="demo">
+ <h1 class="lock"><svg aria-hidden="true"><use href="#int"/></svg>Summa</h1>
+ <p class="motto">Solvitur ambulando.</p>
+ <p class="pitch">{{hero.pitch}}</p>
+ <div class="get">
+  <a class="btn primary big" id="get-btn" href="{{dl.mac.href}}"><svg class="icon"><use href="#i-download"/></svg><span class="os-label">{{hero.download}} macOS</span></a>
+  <span class="get-meta"></span>
+ </div>
+ <script type="application/json" id="downloads">{{dl.json}}</script>
+
+ <div class="stage-wrap"><div class="stage" id="stage" data-mini="false">
+  <div class="win xpp" role="group" aria-label="{{xpp.label}}">
+   <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span id="xpp-title"></span></div>
+   <div class="xpp-tools" role="toolbar" aria-label="{{xpp.tools}}">
+    <button class="btn icon-btn" data-tool="pen" aria-label="{{xpp.pen}}" title="{{xpp.pen}}"><svg class="icon"><use href="#i-pen"/></svg></button>
+    <button class="btn icon-btn" data-tool="eraser" aria-label="{{xpp.eraser}}" title="{{xpp.eraser}}"><svg class="icon"><use href="#i-eraser"/></svg></button>
+    <button class="btn icon-btn" id="undo-btn" aria-label="{{xpp.undo}}" title="{{xpp.undo}} (Ctrl+Z)"><svg class="icon"><use href="#i-undo"/></svg></button>
+    <span class="ink-swatches">
+     <button class="ink-swatch" data-ink="#1f3a93" aria-label="{{xpp.blue}}" aria-pressed="true" style="--ink:#1f3a93"></button>
+     <button class="ink-swatch" data-ink="#c62828" aria-label="{{xpp.red}}" aria-pressed="false" style="--ink:#c62828"></button>
+     <button class="ink-swatch" data-ink="#161616" aria-label="{{xpp.black}}" aria-pressed="false" style="--ink:#161616"></button>
+    </span>
+   </div>
+   <div class="xpp-desk"><div class="xpp-page" id="xpp-page"><svg id="ink" width="300" height="380" viewBox="0 0 300 380"></svg><div class="flash" id="flash"></div></div></div>
+   <div class="capture-ring" id="capture-ring"></div>
+  </div>
+
+  <div class="win app" id="app" data-view="calc1" role="group" aria-label="{{app.label}}">
+   <div class="app-head">
+    <div class="course-tabs" role="tablist">
+     <button role="tab" data-tab="livre" aria-selected="false">{{app.free}}</button>
+     <button role="tab" data-tab="calc1" aria-selected="true">{{app.calc1}}</button>
+     <button role="tab" data-tab="fis1" aria-selected="false">{{app.fis1}}</button>
+     <span class="tab-sep"></span>
+     <button role="tab" data-tab="caderno" aria-selected="false">{{app.notebook}} <span class="badge" id="cad-count">0</span></button>
+     <button role="tab" class="ggb" data-tab="ggb" aria-selected="false"><svg class="icon"><use href="#i-chart"/></svg>GeoGebra</button>
+    </div>
+    <div class="head-actions">
+     <button class="palette-field" id="palette-btn"><svg class="icon"><use href="#i-search"/></svg><span>{{app.search}}</span><kbd id="palette-kbd">⌘K</kbd></button>
+     <button class="btn icon-btn" id="gear-btn" aria-label="{{app.settings}}" aria-expanded="false"><svg class="icon"><use href="#i-gear"/></svg></button>
+    </div>
+   </div>
+
+   <div class="app-body">
+    <div class="reader">
+     <div class="bar"><span class="k">{{app.problems}}</span><span class="doc" id="r1-doc"></span><span class="n"></span></div>
+     <div class="pdf"><div class="paper" id="r1-paper"></div></div>
+    </div>
+    <div class="reader second">
+     <div class="bar"><span class="k">{{app.formulas}}</span><span class="doc" id="r2-doc"></span><span class="n"></span></div>
+     <div class="pdf"><div class="paper" id="r2-paper"></div></div>
+    </div>
+    <div class="tutor">
+     <div class="tbar">
+      <div class="tbar-text"><div class="tbar-title" id="t-title"></div><div class="tbar-sub" id="t-sub"></div></div>
+      <button class="btn icon-btn" id="mini-btn" aria-label="{{app.mini}}" aria-pressed="false"><svg class="icon"><use href="#i-pip"/></svg></button>
+      <button class="btn icon-btn" id="new-btn" aria-label="{{app.new}}"><svg class="icon"><use href="#i-plus"/></svg></button>
+     </div>
+     <div class="thread" id="thread" aria-live="polite"></div>
+     <div class="composer">
+      <textarea id="ask" placeholder="{{app.ask}}" aria-label="{{app.askLabel}}" rows="1"></textarea>
+      <div class="c-actions">
+       <button class="btn icon-btn" id="attach-btn" aria-label="{{app.phone}}"><svg class="icon"><use href="#i-clip"/></svg></button>
+       <button class="btn" id="d-check"><svg class="icon"><use href="#i-tablet"/></svg>{{app.check}}</button>
+       <button class="model" id="model-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="{{picker.label}}"><span class="provider-mono sm" aria-hidden="true">Z</span><span class="mi-text"><span id="model-name">DeepSeek V4.1 Flash</span><span id="model-level" class="mi-level"></span></span><svg class="icon caret"><use href="#i-chevron"/></svg></button>
+       <button class="btn icon-btn" id="send" aria-label="{{app.send}}"><svg class="icon"><use href="#i-up"/></svg></button>
+      </div>
+     </div>
+     <label class="calc"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg><input id="calc" value="sqrt(16) + sin(pi/2)" spellcheck="false" aria-label="{{app.calc}}"><span>=</span><output id="calc-out">5</output><span>RAD</span></label>
+    </div>
+   </div>
+
+   <div class="view view-caderno" id="caderno"></div>
+   <div class="view view-ggb">
+    <svg id="ggb" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{{app.ggbLabel}}"></svg>
+    <div class="ggb-read"><span><span class="m">f</span>(<span class="m">x</span>) = <span class="m">x</span>³ − 3<span class="m">x</span>² + 4</span><span>x = <b id="g-x"></b></span><span><span class="m">f′</span>(<span class="m">x</span>) = <b id="g-d"></b></span></div>
+   </div>
+
+   <div class="pop settings-pop" id="settings" hidden>
+    <div class="lbl">{{settings.theme}}</div>
+    <div class="seg" data-k="theme"><button data-v="light" aria-pressed="true">{{settings.light}}</button><button data-v="dark" aria-pressed="false">{{settings.dark}}</button></div>
+    <div class="lbl">{{settings.accent}}</div>
+    <div class="seg" data-k="accent"><button data-v="graphite" aria-pressed="true">{{settings.graphite}}</button><button data-v="violet" aria-pressed="false">{{settings.violet}}</button></div>
+   </div>
+   <div class="pop qr-pop" id="qr-pop" hidden><svg id="qr" viewBox="0 0 25 25" shape-rendering="crispEdges" aria-hidden="true"></svg><p>{{app.qr}}</p></div>
+   <div class="pop model-pop" id="model-pop" role="dialog" aria-label="{{picker.dialog}}" hidden>
+    <div class="model-picker">
+     <div class="model-rail" aria-hidden="true"></div>
+     <div class="model-main">
+      <label class="model-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="model-search" placeholder="{{picker.search}}" autocomplete="off" spellcheck="false" aria-label="{{picker.label}}"></label>
+      <div class="model-list" id="model-list" role="listbox" aria-label="{{picker.label}}"></div>
+     </div>
+    </div>
+    <p class="model-hint">{{picker.onlyFree}}</p>
+    <div class="effort-field"><span id="effort-label">{{picker.effort}}</span><span class="effort-strip" role="radiogroup" aria-labelledby="effort-label">
+     <button role="radio" data-effort="default" aria-checked="true">{{effort.default}}</button><button role="radio" data-effort="low" aria-checked="false">{{effort.low}}</button><button role="radio" data-effort="medium" aria-checked="false">{{effort.medium}}</button><button role="radio" data-effort="high" aria-checked="false">{{effort.high}}</button>
+    </span></div>
+   </div>
+   <div class="pop palette" id="palette" hidden>
+    <input id="palette-in" placeholder="{{palette.search}}" aria-label="{{palette.search}}">
+    <ul id="palette-list" role="listbox"></ul>
+   </div>
+  </div>
+ </div></div>
+</div>
+
+<section id="recursos">
+ <div class="wrap">
+  <h2>{{features.title}}</h2>
+  <div class="feats">
+   <button class="feat" data-go="ref"><svg class="icon"><use href="#i-book"/></svg><h3>{{features.readers}}</h3><span class="go">{{features.see}}<svg class="icon"><use href="#i-arrow"/></svg></span><p>{{features.readersText}}</p></button>
+   <button class="feat" data-go="check"><svg class="icon"><use href="#i-camera"/></svg><h3>{{features.check}}</h3><span class="go">{{features.see}}<svg class="icon"><use href="#i-arrow"/></svg></span><p>{{features.checkText}}</p></button>
+   <div class="feat"><svg class="icon"><use href="#i-file"/></svg><h3>{{features.pdfs}}</h3><p>{{features.pdfsText}}</p></div>
+   <button class="feat" data-go="caderno"><svg class="icon"><use href="#i-notebook"/></svg><h3>{{features.notebook}}</h3><span class="go">{{features.see}}<svg class="icon"><use href="#i-arrow"/></svg></span><p>{{features.notebookText}}</p></button>
+   <button class="feat" data-go="ggb"><svg class="icon"><use href="#i-chart"/></svg><h3>{{features.figures}}</h3><span class="go">{{features.see}}<svg class="icon"><use href="#i-arrow"/></svg></span><p>{{features.figuresText}}</p></button>
+   <button class="feat" data-go="mini"><svg class="icon"><use href="#i-pip"/></svg><h3>{{features.mini}}</h3><span class="go">{{features.see}}<svg class="icon"><use href="#i-arrow"/></svg></span><p>{{features.miniText}}</p></button>
+  </div>
+ </div>
+</section>
+
+<section aria-label="{{out.label}}">
+ <div class="wrap out">
+  <div><h3>{{out.local}}</h3><p>{{out.localText}}</p></div>
+  <div><h3>{{out.telemetry}}</h3><p>{{out.telemetryText}}</p></div>
+  <div><h3>{{out.models}}</h3><p>{{out.modelsText}}</p></div>
+ </div>
+</section>
+
+<section id="perguntas">
+ <div class="wrap">
+  <h2>{{faq.title}}</h2>
+  <div class="faq">
+   <div>
+    <details><summary>{{faq.cost}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.costText}}</p></details>
+    <details><summary>{{faq.answer}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.answerText}}</p></details>
+    <details><summary>{{faq.xournal}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.xournalText}}</p></details>
+    <details><summary>{{faq.cloud}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.cloudText}}</p></details>
+   </div>
+   <div>
+    <details><summary>{{faq.os}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.osText}}</p></details>
+    <details><summary>{{faq.offline}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.offlineText}}</p></details>
+    <details><summary>{{faq.warning}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.warningText}}</p></details>
+    <details><summary>{{faq.models}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.modelsText}}</p></details>
+    <details><summary>{{faq.lang}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.langText}}</p></details>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section id="instalar">
+ <div class="wrap">
+  <h2>{{install.title}}</h2>
+  <div class="os-tabs" role="tablist">
+   <button role="tab" data-os="mac" aria-selected="true">macOS</button>
+   <button role="tab" data-os="win" aria-selected="false">Windows</button>
+   <button role="tab" data-os="linux" aria-selected="false">Linux</button>
+  </div>
+  <div class="os-panel" data-os="mac" role="tabpanel">
+   <ol class="steps">
+    <li><span>{{install.get}} <a href="{{dl.mac.href}}">{{dl.mac.file}}</a>.</span></li>
+    <li><span>{{install.mac2}}</span></li>
+    <li><span>{{install.mac3}}</span></li>
+   </ol>
+   <div class="note">{{install.macNote}}</div>
+  </div>
+  <div class="os-panel" data-os="win" role="tabpanel" hidden>
+   <ol class="steps">
+    <li><span>{{install.get}} <a href="{{dl.win.href}}">{{dl.win.file}}</a>.</span></li>
+    <li><span>{{install.win2}}</span></li>
+   </ol>
+   <div class="note">{{install.winNote}}</div>
+  </div>
+  <div class="os-panel" data-os="linux" role="tabpanel" hidden>
+   <ol class="steps">
+    <li><span>{{install.get}} <a href="{{dl.linux.href}}">{{dl.linux.file}}</a> {{install.linux1}}</span></li>
+    <li><span>{{install.linux2}}</span></li>
+   </ol>
+   <div class="code"><button class="btn icon-btn" aria-label="{{install.copy}}" data-copied="{{install.copied}}"><svg class="icon"><use href="#i-copy"/></svg></button>chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage</div>
+  </div>
+ </div>
+</section>
+</main>
+
+<footer>
+ <div class="wrap">
+  <span class="mark"><svg aria-hidden="true"><use href="#int"/></svg>Summa</span>
+  <p class="motto">Solvitur ambulando.</p>
+  <nav aria-label="{{footer.label}}"><a href="https://github.com/FariaDev/summa">GitHub</a><a href="https://github.com/FariaDev/ambitus">Ambitus</a><a href="https://github.com/FariaDev/summa/blob/main/LICENSE">{{footer.license}}</a></nav>
+ </div>
+</footer>
+</body>
+</html>

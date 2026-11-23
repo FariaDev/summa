@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Site da Summa: r1</title>
+<!-- Protótipo do site (r1). Tokens copiados de desk/style.css e desk/src/fonts.css:
+     mesmas cores light-dark, raios, escala de fonte, abas do cabeçalho e fios de 1px.
+     A barra .proto fica fora do site: só serve para trocar tema, acento e topo na revisão. -->
+<style>
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-Regular.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-Medium.woff2") format("woff2");font-weight:500}
+@font-face{font-family:"IBM Plex Sans";src:url("../../../desk/src/fonts/IBMPlexSans-SemiBold.woff2") format("woff2");font-weight:600}
+@font-face{font-family:"IBM Plex Mono";src:url("../../../desk/src/fonts/IBMPlexMono-Regular.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"STIX Two Text";src:url("../../../desk/src/fonts/STIXTwoText.woff2") format("woff2");font-weight:400 700;font-style:normal}
+@font-face{font-family:"STIX Two Text";src:url("../../../desk/src/fonts/STIXTwoText-Italic.woff2") format("woff2");font-weight:400 700;font-style:italic}
+
+.site{
+ color-scheme:light;
+ --font-sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+ --serif:"STIX Two Text","Iowan Old Style",Charter,Georgia,serif;
+ --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+ --bg:light-dark(#ffffff,#161616);--surface:light-dark(#ffffff,#161616);--stage:light-dark(#f4f4f4,#262626);
+ --fg:light-dark(#161616,#f4f4f4);--fg-strong:light-dark(#0e0e0e,#ffffff);
+ --muted:light-dark(#525252,#c6c6c6);--faint:light-dark(#6f6f6f,#a8a8a8);
+ --border:light-dark(#e0e0e0,#393939);--border-strong:light-dark(#8d8d8d,#6f6f6f);
+ --raised:light-dark(#ffffff,#393939);--user:light-dark(#f4f4f4,#262626);--code:light-dark(#f4f4f4,#262626);
+ --hover:light-dark(#e8e8e8,#333333);--active:light-dark(#d4d4d4,#454545);
+ --success:light-dark(#24a148,#42be65);
+ --acc-graphite:light-dark(#303030,#e6e6e6);--acc-violet:light-dark(#8044ca,#8957d0);--acc-violet-text:light-dark(#8044ca,#b89cea);
+ --accent-fill:var(--acc-graphite);--accent-text:var(--acc-graphite);--accent-fg:light-dark(#ffffff,#161616);
+ --ring:var(--accent-text);
+ --tint:color-mix(in oklab,var(--accent-fill) 11%,transparent);
+ --r-sm:4px;--r-md:8px;--r-round:999px;
+ --fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:15px;--fs-2xl:18px;--fs-3xl:22px;--fs-display:30px;
+ --space-1:4px;--space-2:6px;--space-3:8px;--space-4:10px;--space-5:12px;--space-6:16px;--space-7:24px;
+ --header:44px;--bar:40px;--ctl:28px;--control-md:40px;--pad:12px;
+ --t-fast:120ms;--ease-out:cubic-bezier(.22,.61,.36,1);
+ --col:1120px;--gutter:clamp(16px,4vw,40px);
+ font-family:var(--font-sans);font-size:var(--fs-xl);line-height:1.55;color:var(--fg);background:var(--bg);
+ -webkit-font-smoothing:antialiased;border-radius:var(--r-md);overflow:hidden;
+}
+.site[data-theme=dark]{color-scheme:dark}
+.site[data-accent=violet]{--accent-fill:var(--acc-violet);--accent-text:var(--acc-violet-text);--accent-fg:#ffffff}
+.site *{box-sizing:border-box;corner-shape:squircle}
+.site a{color:inherit;text-decoration:none}
+.site :focus-visible{outline:2px solid var(--ring);outline-offset:1px}
+.icon{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:var(--col);margin:0 auto;padding:0 var(--gutter)}
+
+/* Botões: os do app. O principal é o preenchimento do acento; o comum, sem fio. */
+.btn{display:inline-flex;align-items:center;gap:var(--space-2);height:var(--ctl);padding:0 var(--space-4);border-radius:var(--r-sm);
+ font-size:var(--fs-sm);color:var(--fg);border:1px solid transparent;background:transparent;white-space:nowrap;cursor:pointer;
+ transition:background var(--t-fast) var(--ease-out)}
+.btn:hover{background:var(--hover)}
+.btn:active{background:var(--active)}
+.btn.primary{background:var(--accent-fill);color:var(--accent-fg);font-weight:500}
+.btn.primary:hover{background:light-dark(color-mix(in oklab,var(--accent-fill) 78%,black),color-mix(in oklab,var(--accent-fill) 82%,white))}
+.btn.big{height:var(--control-md);padding:0 var(--space-6);font-size:var(--fs-lg)}
+.btn.line{border-color:var(--border)}
+
+/* Cabeçalho: a barra de 44px do app, com as abas de 14px e o sublinhado de 2px. */
+.top{height:var(--header);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:var(--space-4);padding:0 var(--pad);background:var(--bg)}
+.mark{display:flex;align-items:center;gap:var(--space-2);font-family:var(--serif);font-size:20px;line-height:1;color:var(--fg-strong);padding-right:var(--space-3)}
+.mark svg{width:12px;height:19px}
+.tabs{display:flex;align-self:stretch;flex:1;min-width:0}
+.tabs a{display:flex;align-items:center;padding:0 var(--space-5);font-size:var(--fs-lg);color:var(--muted);border-bottom:2px solid transparent}
+.tabs a:hover{background:var(--hover);color:var(--fg)}
+.tabs a.active{color:var(--fg);font-weight:500;border-bottom-color:var(--accent-fill)}
+.top-actions{display:flex;gap:var(--space-1);align-items:center}
+.lang{font-size:var(--fs-sm);color:var(--muted)}
+.lang b{color:var(--fg);font-weight:500}
+
+/* Topo A: a prancheta D da divulgação (marca e lema à esquerda, o app sangrando à direita). */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero-a{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--space-7);padding:72px 0 0 var(--gutter);max-width:calc(var(--col) + 200px);margin:0 auto}
+.hero-a .side{padding-bottom:72px;align-self:center}
+.lock{display:flex;align-items:flex-end;gap:.18em;font-family:var(--serif);color:var(--fg-strong);line-height:.9;margin:0;font-weight:400;font-size:clamp(56px,8vw,104px)}
+.lock svg{width:.5em;height:.78em;flex:none;margin-bottom:-.06em}
+.motto{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:clamp(24px,3vw,34px);line-height:1.2;margin:var(--space-5) 0 0}
+.pitch{font-size:var(--fs-2xl);line-height:1.5;color:var(--fg);margin:var(--space-7) 0 0;max-width:30ch;text-wrap:pretty}
+.get{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-3);margin-top:var(--space-7)}
+.get-meta{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint);display:flex;gap:var(--space-2);flex-wrap:wrap}
+.get-meta a{color:var(--muted);text-decoration:underline dotted;text-underline-offset:2px}
+.get-meta a:hover{color:var(--fg)}
+.shot{border:1px solid var(--border);border-radius:var(--r-md) 0 0 0;border-right:0;border-bottom:0;overflow:hidden;align-self:end;background:var(--bg)}
+.shot img{display:block;width:100%;height:auto}
+/* Recorte da direita da captura (formulário e tutor), como na prancheta D. */
+.hero-a .shot{height:540px;position:relative}
+.hero-a .shot img{position:absolute;top:0;left:-62%;width:162%;max-width:none}
+.shot img.dark-only{display:none}
+.site[data-theme=dark] .shot img.dark-only{display:block}
+.site[data-theme=dark] .shot img.light-only{display:none}
+
+/* Topo B: centrado, a captura inteira embaixo. */
+.hero-b{text-align:center;padding:80px var(--gutter) 0}
+.hero-b .lock{justify-content:center}
+.hero-b .pitch{margin-inline:auto}
+.hero-b .get{align-items:center}
+.hero-b .shot{max-width:1040px;margin:56px auto 0;border:1px solid var(--border);border-bottom:0;border-radius:var(--r-md) var(--r-md) 0 0}
+.site[data-hero=a] .hero-b,.site[data-hero=b] .hero-a{display:none}
+
+/* Seções: título em STIX (o --fs-display do app), sem sobretítulo. */
+section{padding:80px 0;border-bottom:1px solid var(--border)}
+h2{font-family:var(--serif);font-weight:400;font-size:var(--fs-display);line-height:1.2;color:var(--fg-strong);margin:0 0 var(--space-7)}
+h3{font-size:var(--fs-lg);font-weight:500;color:var(--fg);margin:0}
+p{margin:0}
+.muted{color:var(--muted)}
+
+/* Como funciona: três painéis colados por fio de 1px, cada um com a barra de 40px do leitor. */
+.mesa{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.pane{border-left:1px solid var(--border);display:flex;flex-direction:column;min-width:0}
+.pane:first-child{border-left:0}
+.bar{height:var(--bar);display:flex;align-items:center;gap:var(--space-3);padding:0 var(--pad);border-bottom:1px solid var(--border);font-size:var(--fs-md);white-space:nowrap;overflow:hidden}
+.bar .k{color:var(--muted)}
+.bar .n{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint);margin-left:auto}
+.pane-body{padding:var(--space-6) var(--pad) var(--space-7);display:flex;flex-direction:column;gap:var(--space-5);flex:1}
+.pane-body > p{font-size:var(--fs-lg);color:var(--muted)}
+.sheet{background:var(--stage);border-radius:var(--r-sm);padding:var(--space-5);flex:1;display:flex}
+.page{background:#fff;color:#161616;border-radius:2px;padding:14px 16px;font-family:var(--serif);font-size:13px;line-height:1.7;flex:1;box-shadow:0 0 0 1px rgb(0 0 0/.06)}
+.page b{font-family:var(--font-sans);font-weight:600;font-size:14px;display:block;margin-bottom:4px}
+.page .num{font-family:var(--font-mono);font-size:11px;color:#6f6f6f;margin-right:6px}
+.page svg{display:block;max-height:96px}
+.ink{fill:none;stroke:#1f3a93;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.chat{display:flex;flex-direction:column;gap:var(--space-4);font-size:var(--fs-lg);flex:1}
+.msg-user{align-self:flex-end;background:var(--user);border-radius:var(--r-md);padding:var(--space-4) var(--space-5);max-width:92%}
+.msg-meta{font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint)}
+.tool{display:flex;align-items:center;gap:var(--space-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--space-1) var(--space-3);font-size:var(--fs-md);color:var(--muted)}
+.tool .icon{width:14px;height:14px;color:var(--success)}
+.chat i{font-family:var(--serif);font-size:1.12em}
+.check{align-self:flex-start;display:inline-flex;align-items:center;gap:var(--space-2);height:var(--ctl);padding:0 var(--space-4);border-radius:var(--r-sm);background:var(--tint);color:var(--accent-text);font-size:var(--fs-sm);font-weight:500}
+
+/* Recursos: linhas com fio, ícone Lucide no traço 2 em --muted. */
+.feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-7);border-top:1px solid var(--border)}
+.feat{display:grid;grid-template-columns:16px 1fr;gap:var(--space-2) var(--space-5);padding:var(--space-6) 0;border-bottom:1px solid var(--border)}
+.feat .icon{color:var(--muted);margin-top:3px}
+.feat p{grid-column:2;font-size:var(--fs-lg);color:var(--muted);text-wrap:pretty}
+
+.out{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-7)}
+.out p{font-size:var(--fs-lg);color:var(--muted)}
+.out h3{margin-bottom:var(--space-2)}
+
+/* Instalar: as abas do cabeçalho, de novo, e o bloco de código do chat. */
+.os-tabs{display:flex;height:var(--bar);border-bottom:1px solid var(--border);margin-bottom:var(--space-7)}
+.os-tabs button{height:100%;padding:0 var(--space-5);font:inherit;font-size:var(--fs-lg);color:var(--muted);background:transparent;border:0;border-bottom:2px solid transparent;cursor:pointer}
+.os-tabs button:hover{background:var(--hover);color:var(--fg)}
+.os-tabs button[aria-selected=true]{color:var(--fg);font-weight:500;border-bottom-color:var(--accent-fill);background:transparent}
+.os-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-7) 48px;align-items:start}
+.os-panel[hidden]{display:none}
+.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:var(--space-5)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;font-size:var(--fs-lg)}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--font-mono);font-size:var(--fs-sm);color:var(--faint);padding-top:2px}
+.steps b{font-weight:500}
+.code{position:relative;background:var(--code);border-radius:var(--r-md);padding:var(--space-5) 44px var(--space-5) var(--space-6);font-family:var(--font-mono);font-size:var(--fs-md);line-height:1.7;white-space:pre;overflow-x:auto}
+.code .copy{position:absolute;top:var(--space-2);right:var(--space-2);width:var(--ctl);height:var(--ctl);display:grid;place-items:center;border-radius:var(--r-sm);color:var(--muted);border:0;background:transparent;cursor:pointer}
+.code .copy:hover{background:var(--hover);color:var(--fg)}
+.note{border-left:2px solid var(--border-strong);padding:var(--space-1) 0 var(--space-1) var(--space-5);font-size:var(--fs-lg);color:var(--muted)}
+.note b{color:var(--fg);font-weight:500}
+kbd{display:inline-block;min-width:1.4em;padding:1px var(--space-2);border:1px solid var(--border);border-bottom-width:2px;border-radius:var(--r-sm);background:var(--surface);font:500 var(--fs-xs) var(--font-sans);text-align:center}
+
+footer{padding:var(--space-7) 0}
+footer .wrap{display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;font-size:var(--fs-md);color:var(--muted)}
+footer .mark{font-size:17px}
+footer .motto{font-size:17px;margin:0}
+footer nav{margin-left:auto;display:flex;gap:var(--space-1)}
+footer nav a{padding:var(--space-1) var(--space-3);border-radius:var(--r-sm)}
+footer nav a:hover{background:var(--hover);color:var(--fg)}
+
+/* Estreito (o preview do T3 tem 728px; celular abaixo de 560). */
+@container site (max-width:900px){
+ .hero-a{grid-template-columns:1fr;padding:56px var(--gutter) 0;gap:40px}
+ .hero-a .side{padding-bottom:0}
+ .hero-a .shot{height:420px;margin-right:calc(var(--gutter) * -1)}
+ .tabs{display:none}
+ .top-actions{margin-left:auto}
+ .mesa{grid-template-columns:1fr}
+ .pane{border-left:0;border-top:1px solid var(--border)}
+ .pane:first-child{border-top:0}
+ .feats{grid-template-columns:1fr}
+ .os-panel{grid-template-columns:1fr}
+ section{padding:56px 0}
+}
+@container site (max-width:560px){
+ .out{grid-template-columns:1fr}
+ .lang,.gh{display:none}
+}
+.frame{container:site/inline-size}
+
+/* Barra de revisão (fora do site). */
+.proto{display:flex;gap:var(--space-6);flex-wrap:wrap;align-items:center;margin:0 0 10px;font:12px/1 "IBM Plex Sans",system-ui,sans-serif}
+.proto .seg{display:inline-flex;border:1px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:4px;overflow:hidden}
+.proto button{font:inherit;color:inherit;background:transparent;border:0;padding:6px 10px;cursor:pointer;opacity:.65}
+.proto button[aria-pressed=true]{opacity:1;background:color-mix(in srgb,currentColor 14%,transparent);font-weight:500}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="int" viewBox="320 150 610 940"><path fill="currentColor" d="M 800.500 166.419 C 799.950 166.646, 795.232 168.019, 790.016 169.470 C 744.006 182.270, 703.646 214.434, 675.789 260.500 C 658.982 288.293, 644.491 321.376, 635.433 352.636 C 629.407 373.430, 625.123 389.837, 624.502 394.500 C 622.644 408.446, 620.640 417.915, 618.439 423.145 C 617.097 426.332, 615.993 430.866, 615.984 433.220 C 615.976 435.574, 615.065 441.775, 613.961 447 C 612.857 452.225, 610.610 464.375, 608.968 474 C 607.326 483.625, 605.086 495.527, 603.991 500.449 C 602.896 505.371, 601.995 511.446, 601.988 513.949 C 601.982 516.452, 601.090 522.100, 600.006 526.500 C 598.201 533.826, 596.857 542.368, 592.372 575 C 591.503 581.325, 590.160 589.055, 589.388 592.177 C 588.615 595.300, 587.744 600.475, 587.453 603.677 C 586.597 613.084, 584.963 625.685, 583.001 638 C 581.993 644.325, 580.419 657.375, 579.503 667 C 578.586 676.625, 577.263 687.512, 576.561 691.192 C 575.859 694.873, 575.199 701.418, 575.095 705.736 C 574.991 710.054, 574.719 715.367, 574.490 717.543 C 574.262 719.719, 573.407 727.800, 572.592 735.500 C 571.776 743.200, 570.605 757.150, 569.991 766.500 C 569.376 775.850, 568.203 788.216, 567.384 793.980 C 565.715 805.734, 562.929 833.352, 562.491 842.500 C 560.072 892.946, 536.484 966.120, 510.962 1002.344 C 500.851 1016.695, 485.487 1031.601, 473.973 1038.229 C 451.408 1051.220, 420.902 1049.709, 407.010 1034.912 C 397.581 1024.869, 396.778 1014.630, 404.025 996.880 C 411.081 979.602, 411.240 979.012, 410.705 972.130 C 410.086 964.144, 408.620 962.118, 398.156 954.778 C 385.715 946.051, 378.291 944.612, 362 947.772 C 353.362 949.447, 345.156 956.040, 337.398 967.538 C 329.878 978.683, 330.006 1004.267, 337.658 1019.754 C 351.301 1047.365, 377.906 1069.204, 405.254 1075.239 C 418.021 1078.056, 442.837 1078.201, 458 1075.546 C 508.291 1066.740, 554.660 1028.375, 596.444 961 C 599.684 955.775, 603.123 950.600, 604.085 949.500 C 606.378 946.880, 632.311 894.796, 634.429 888.558 C 635.788 884.554, 642.575 868.145, 646.034 860.500 C 647.252 857.807, 655.859 831.673, 661.020 815 C 663.318 807.575, 666.091 799.025, 667.182 796 C 668.855 791.361, 674.078 770.044, 679.554 745.500 C 680.291 742.200, 681.840 736.575, 682.998 733 C 684.155 729.425, 686.624 715.873, 688.484 702.884 C 690.344 689.896, 692.557 676.846, 693.401 673.884 C 694.246 670.923, 694.903 666.700, 694.863 664.500 C 694.762 659.057, 696.731 642.046, 698.451 633.500 C 699.226 629.650, 700.389 620.200, 701.036 612.500 C 702.258 597.945, 702.695 593.479, 705.342 568.500 C 707.366 549.392, 708.668 532.012, 710.495 499.691 C 711.298 485.497, 712.194 473.495, 712.487 473.021 C 712.780 472.547, 713.231 461.210, 713.490 447.829 C 714.967 371.274, 721.307 306.129, 729.882 279.392 C 748.666 220.824, 788.369 186.454, 826.781 195.511 C 847.859 200.480, 854.550 213.255, 849.129 238.177 C 844.843 257.882, 851.100 269.391, 870.102 276.754 C 879.686 280.467, 881.917 280.630, 892.127 278.363 C 913.624 273.589, 922.505 258.896, 917.509 236.371 C 914.826 224.275, 910.637 217.096, 896.404 200.207 C 884.567 186.162, 862.147 173.635, 840.500 168.972 C 832.265 167.198, 803.119 165.338, 800.500 166.419"/></symbol>
+ <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+ <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+ <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+ <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+ <symbol id="i-notebook" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m9 10 2 2 4-4"/></symbol>
+ <symbol id="i-pip" viewBox="0 0 24 24"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+ <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></symbol>
+</svg>
+
+<div class="proto" id="proto">
+ <span class="seg" data-k="theme"><button data-v="light" aria-pressed="true">Claro</button><button data-v="dark" aria-pressed="false">Escuro</button></span>
+ <span class="seg" data-k="accent"><button data-v="graphite" aria-pressed="true">Grafite</button><button data-v="violet" aria-pressed="false">Violeta</button></span>
+ <span class="seg" data-k="hero"><button data-v="a" aria-pressed="true">Topo A</button><button data-v="b" aria-pressed="false">Topo B</button></span>
+</div>
+
+<div class="frame">
+<div class="site" id="site" data-theme="light" data-accent="graphite" data-hero="a">
+
+ <header class="top">
+  <a class="mark" href="#"><svg aria-hidden="true"><use href="#int"/></svg>Summa</a>
+  <nav class="tabs">
+   <a href="#como" class="active">Como funciona</a>
+   <a href="#recursos">Recursos</a>
+   <a href="#instalar">Instalar</a>
+  </nav>
+  <div class="top-actions">
+   <span class="lang btn"><b>PT</b>·EN</span>
+   <a class="btn gh" href="https://github.com/FariaDev/summa">GitHub</a>
+   <a class="btn primary" href="#instalar"><svg class="icon"><use href="#i-download"/></svg>Baixar</a>
+  </div>
+ </header>
+
+ <div class="hero">
+  <div class="hero-a">
+   <div class="side">
+    <h1 class="lock"><svg aria-hidden="true"><use href="#int"/></svg>Summa</h1>
+    <p class="motto">Solvitur ambulando.</p>
+    <p class="pitch">Estude com seus PDFs e um tutor que não dá a resposta antes de você.</p>
+    <div class="get">
+     <a class="btn primary big" href="#instalar"><svg class="icon"><use href="#i-download"/></svg><span class="os-label">Baixar para macOS</span></a>
+     <span class="get-meta">v1.3.3 · <a href="#instalar">Windows</a> · <a href="#instalar">Linux</a></span>
+    </div>
+   </div>
+   <div class="shot">
+    <img class="light-only" src="../../release-assets/v1.3.0/app-claro-pt.png" alt="A Summa com a lista de derivadas e o formulário à esquerda e o tutor à direita">
+    <img class="dark-only" src="../../release-assets/v1.3.0/app-escuro-pt.png" alt="">
+   </div>
+  </div>
+  <div class="hero-b">
+   <h1 class="lock"><svg aria-hidden="true"><use href="#int"/></svg>Summa</h1>
+   <p class="motto">Solvitur ambulando.</p>
+   <p class="pitch">Estude com seus PDFs e um tutor que não dá a resposta antes de você.</p>
+   <div class="get">
+    <a class="btn primary big" href="#instalar"><svg class="icon"><use href="#i-download"/></svg><span class="os-label">Baixar para macOS</span></a>
+    <span class="get-meta">v1.3.3 · <a href="#instalar">Windows</a> · <a href="#instalar">Linux</a></span>
+   </div>
+   <div class="shot">
+    <img class="light-only" src="../../release-assets/v1.3.0/app-claro-pt.png" alt="A Summa com a lista de derivadas e o formulário à esquerda e o tutor à direita">
+    <img class="dark-only" src="../../release-assets/v1.3.0/app-escuro-pt.png" alt="">
+   </div>
+  </div>
+ </div>
+
+ <section id="como">
+  <div class="wrap">
+   <h2>Você resolve à mão. O tutor confere.</h2>
+   <div class="mesa">
+    <div class="pane">
+     <div class="bar"><span class="k">Enunciado</span><span>lista-derivadas.pdf</span><span class="n">1 / 2</span></div>
+     <div class="pane-body">
+      <p>O PDF da matéria abre na Summa, ao lado do formulário.</p>
+      <div class="sheet"><div class="page"><b>Lista de exercícios</b><span class="num">1.</span>Calcule a derivada de <i>f</i>(<i>x</i>) = <i>x</i>³ − 3<i>x</i>² + 4.<br><span class="num">2.</span>Derive <i>g</i>(<i>x</i>) = sen <i>x</i> · cos <i>x</i>.</div></div>
+     </div>
+    </div>
+    <div class="pane">
+     <div class="bar"><span class="k">Xournal++</span><span>derivadas.xopp</span></div>
+     <div class="pane-body">
+      <p>A resolução fica no seu programa de escrita, à mão.</p>
+      <div class="sheet"><div class="page" aria-label="Resolução escrita à mão: f linha de x igual a 3x² menos 3x">
+       <svg viewBox="0 0 200 92" width="100%" aria-hidden="true">
+        <path class="ink" d="M24 12c-3-3-7-1-8 4l-5 24c-1 4-4 5-6 3m3-20h12"/>
+        <path class="ink" d="M24 14l2 6"/>
+        <path class="ink" d="M34 18c-4 4-4 14 0 18m4-12 8 10m0-10-8 10m12-16c4 4 4 14 0 18"/>
+        <path class="ink" d="M62 25h10m-10 5h10"/>
+        <path class="ink" d="M80 20c6-3 9 1 5 5 5 1 5 7-1 8m10-14 7 11m0-11-7 11m8-16c2-2 5-1 4 1l-4 4h5"/>
+        <path class="ink" d="M118 27h8"/>
+        <path class="ink" d="M134 20c6-3 9 1 5 5 5 1 5 7-1 8m10-14 7 11m0-11-7 11"/>
+        <path class="ink" d="M14 70c18-3 50-4 70-1" stroke-dasharray="2 4"/>
+       </svg></div></div>
+      <span class="check"><svg class="icon"><use href="#i-scan"/></svg>Conferir</span>
+     </div>
+    </div>
+    <div class="pane">
+     <div class="bar"><span>Tutor</span><span class="k">lista-derivadas.pdf, p. 1</span></div>
+     <div class="pane-body">
+      <div class="chat">
+       <div class="msg-user">Derivei e deu <i>f′</i>(<i>x</i>) = 3<i>x</i>² − 3<i>x</i>. Está certo?</div>
+       <div class="tool"><svg class="icon"><use href="#i-check"/></svg>Trabalhou por 1s · 1 leitura</div>
+       <p><b>Quase.</b> O primeiro termo está certo. Olhe de novo o termo do meio, −3<i>x</i>², com a regra do tombo. Quanto dá agora?</p>
+       <span class="msg-meta">21:35</span>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <section id="recursos">
+  <div class="wrap">
+   <h2>O que tem na mesa</h2>
+   <div class="feats">
+    <div class="feat"><svg class="icon"><use href="#i-book"/></svg><h3>Dois leitores de PDF</h3><p>Busca, sumário e favoritos. O tutor cita “Arquivo.pdf, p. N” e o clique abre a página.</p></div>
+    <div class="feat"><svg class="icon"><use href="#i-camera"/></svg><h3>Conferir e foto do celular</h3><p>Manda a página escrita ao tutor. Sem computador por perto, um QR code recebe as fotos.</p></div>
+    <div class="feat"><svg class="icon"><use href="#i-file"/></svg><h3>PDFs pelo tutor</h3><p>Lista, apostila, resumo, simulado e formulário, com prévia em A4 antes de salvar.</p></div>
+    <div class="feat"><svg class="icon"><use href="#i-notebook"/></svg><h3>Caderno</h3><p>O que você guardou volta no Revisar hoje.</p></div>
+    <div class="feat"><svg class="icon"><use href="#i-chart"/></svg><h3>Figuras e GeoGebra</h3><p>Gráficos e atividades no chat, offline. GeoGebra quando precisar.</p></div>
+    <div class="feat"><svg class="icon"><use href="#i-pip"/></svg><h3>Modo mini</h3><p>A conversa numa janela pequena, sempre por cima do Xournal++.</p></div>
+   </div>
+  </div>
+ </section>
+
+ <section>
+  <div class="wrap out">
+   <div><h3>Fica no seu computador</h3><p>PDFs, conversas e caderno moram numa pasta sua. Sem conta na nuvem.</p></div>
+   <div><h3>Sem telemetria</h3><p>A Summa não manda nada sobre você para lugar nenhum.</p></div>
+   <div><h3>Modelos grátis ou o seu</h3><p>Começa com os modelos grátis do OpenCode. A conta de outro provedor entra no próprio app.</p></div>
+  </div>
+ </section>
+
+ <section id="instalar">
+  <div class="wrap">
+   <h2>Instalar</h2>
+   <div class="os-tabs" role="tablist">
+    <button role="tab" data-os="mac" aria-selected="true">macOS</button>
+    <button role="tab" data-os="win" aria-selected="false">Windows</button>
+    <button role="tab" data-os="linux" aria-selected="false">Linux</button>
+   </div>
+   <div class="os-panel" data-os="mac">
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-1.3.3.dmg</b>.</span></li>
+     <li><span>Abra a imagem e arraste <b>Summa</b> para <b>Aplicativos</b>.</span></li>
+     <li><span>Na primeira abertura, siga o aviso ao lado.</span></li>
+    </ol>
+    <div class="note"><b>“Summa Not Opened”?</b> O app ainda não é notarizado pela Apple. Clique em Concluído e vá a Ajustes do Sistema → Privacidade e Segurança → <b>Abrir Mesmo Assim</b>. É uma vez só; as atualizações vêm por Sobre → Atualizar.</div>
+   </div>
+   <div class="os-panel" data-os="win" hidden>
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-Setup-1.3.3.exe</b>.</span></li>
+     <li><span>Abra o arquivo. Não precisa de administrador.</span></li>
+    </ol>
+    <div class="note">Se o Windows pedir o <b>Visual C++ Redistributable x64</b>, a Summa mostra o link.</div>
+   </div>
+   <div class="os-panel" data-os="linux" hidden>
+    <ol class="steps">
+     <li><span>Baixe <b>Summa-1.3.3-x86_64.AppImage</b> para uma pasta sua.</span></li>
+     <li><span>Dê permissão e abra. O atalho do menu aparece sozinho.</span></li>
+    </ol>
+    <div class="code"><button class="copy" aria-label="Copiar"><svg class="icon"><use href="#i-copy"/></svg></button>chmod +x ~/Applications/Summa-*.AppImage
+~/Applications/Summa-*.AppImage</div>
+   </div>
+  </div>
+ </section>
+
+ <footer>
+  <div class="wrap">
+   <span class="mark"><svg aria-hidden="true"><use href="#int"/></svg>Summa</span>
+   <p class="motto">Solvitur ambulando.</p>
+   <nav><a href="https://github.com/FariaDev/summa">GitHub</a><a href="https://github.com/FariaDev/ambitus">Ambitus</a><a href="https://github.com/FariaDev/summa/blob/main/LICENSE">Licença MIT</a></nav>
+  </div>
+ </footer>
+</div>
+</div>
+
+<script>
+const site=document.getElementById('site');
+for(const seg of document.querySelectorAll('#proto .seg')){
+ seg.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  site.dataset[seg.dataset.k]=b.dataset.v;
+  for(const x of seg.children)x.setAttribute('aria-pressed',String(x===b));
+ });
+}
+for(const tab of document.querySelectorAll('.os-tabs button')){
+ tab.addEventListener('click',()=>selectOs(tab.dataset.os));
+}
+function selectOs(os){
+ for(const t of document.querySelectorAll('.os-tabs button'))t.setAttribute('aria-selected',String(t.dataset.os===os));
+ for(const p of document.querySelectorAll('.os-panel'))p.hidden=p.dataset.os!==os;
+}
+// O botão do topo segue o sistema de quem visita; no site final o link vem da última Release.
+const ua=navigator.userAgent;
+const os=/Windows/.test(ua)?['win','Windows']:/Linux/.test(ua)&&!/Android/.test(ua)?['linux','Linux']:['mac','macOS'];
+for(const l of document.querySelectorAll('.os-label'))l.textContent=`Baixar para ${os[1]}`;
+const others=[['mac','macOS'],['win','Windows'],['linux','Linux']].filter(o=>o[0]!==os[0]);
+for(const m of document.querySelectorAll('.get-meta'))m.innerHTML='v1.3.3 · '+others.map(o=>`<a href="#instalar">${o[1]}</a>`).join(' · ');
+selectOs(os[0]);
+</script>
+</body>
+</html>

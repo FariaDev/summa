@@ -1,0 +1,219 @@
+// A demo do site num Chromium sem tela, em PT e EN: matérias, Conferir, tinta,
+// seletor de modelos, paleta, tema, download e larguras de 320 a 1440 px.
+//
+//   node site/test/demo-ui.mjs [pasta-de-capturas]
+//
+// O Playwright vem do desk/ (devDependency @playwright/test): rode `npm ci` lá antes.
+// SUMMA_DESK_DIR aponta para outro desk/ com node_modules; CHROMIUM_PATH, para outro Chromium.
+import {createServer} from 'node:http';
+import {createRequire} from 'node:module';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {dirname, extname, join, normalize} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {build} from '../build.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const deskDir = process.env.SUMMA_DESK_DIR || join(here, '../../desk');
+const {chromium} = createRequire(join(deskDir, 'package.json'))('playwright');
+const shots = process.argv[2] || '';
+const fails = [];
+const check = (ok, msg) => { console.log((ok ? 'ok   ' : 'FAIL ') + msg); if (!ok) fails.push(msg); };
+
+const TYPES = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png'};
+// Módulos ES não carregam de file://; um servidor estático mínimo basta.
+function serve(root) {
+  const server = createServer(async (req, res) => {
+    let path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname));
+    if (path.endsWith('/')) path += 'index.html';
+    try {
+      const body = await readFile(join(root, path));
+      res.writeHead(200, {'content-type': TYPES[extname(path)] || 'application/octet-stream'});
+      res.end(body);
+    } catch { res.writeHead(404); res.end(); }
+  });
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+async function scenario(browser, base, lang) {
+  const c = (await import(`../src/assets/js/content-${lang}.js`)).default;
+  const tag = `[${lang}] `;
+  const ok = (cond, msg) => check(cond, tag + msg);
+  const errors = [];
+  const page = await browser.newPage({viewport: {width: 1280, height: 900}, reducedMotion: 'reduce'});
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await page.goto(base + (lang === 'en' ? 'en/' : ''));
+  await page.waitForFunction(() => document.querySelector('#xpp-title').textContent);
+  const txt = (s) => page.$eval(s, (e) => e.textContent.trim());
+  const count = (s) => page.$$eval(s, (e) => e.length);
+  const lastReply = () => page.$$eval('#thread .reply', (e) => e.at(-1).textContent);
+  // Com movimento normal a demo anda no tempo real; espera a resposta terminar.
+  const settle = async () => { await page.waitForTimeout(100); await page.waitForFunction(() => !document.querySelector('#d-check').disabled); };
+  const calc1 = c.courses.calc1, fis1 = c.courses.fis1;
+
+  // Download: o fixture tem AppImage na v1.4.0, e o Chromium sem tela se diz Linux.
+  ok((await page.$eval('#get-btn', (e) => e.href)) === 'https://example.test/Summa-1.4.0-x86_64.AppImage', 'botão aponta para o AppImage');
+  ok((await txt('.os-label')) === `${c.text.downloadFor} Linux`, 'rótulo do sistema');
+  ok((await txt('.get-meta')).startsWith('v1.4.0'), 'versão do instalador');
+  ok(!(await page.$eval('.os-panel[data-os=linux]', (e) => e.hidden)), 'Instalar abre na aba Linux');
+
+  // Cálculo: dois Conferir e o fim
+  await page.click('#d-check'); await settle();
+  ok((await count('#thread .reply')) === 1, 'cálculo: 1ª resposta');
+  ok((await txt('#t-title')) === calc1.replies[0].title, 'cálculo: título');
+  await page.click('#d-check'); await settle();
+  ok((await count('#thread .reply')) === 2, 'cálculo: 2ª resposta');
+  await page.click('#d-check'); await page.click('#d-check'); await page.waitForTimeout(100);
+  ok((await page.$$eval('#thread .msg-foot', (e, end) => e.filter((x) => x.textContent.includes(end)).length, c.text.demoEnd)) === 1, 'fim da demo aparece uma vez só');
+
+  // Física: conversa e folha próprias; o Cálculo fica como estava
+  await page.click('.course-tabs [data-tab=fis1]');
+  ok((await count('#thread .reply')) === 0, 'física: conversa vazia');
+  ok((await txt('#t-title')) === c.text.newChat, 'física: título novo');
+  ok((await txt('#r1-doc')) === c.docs.cine.name, 'física: leitor troca');
+  ok((await txt('#xpp-title')).startsWith(fis1.xopp), 'física: folha troca');
+  await page.click('#d-check'); await settle();
+  ok((await txt('#t-title')) === fis1.replies[0].title, 'física: roteiro próprio');
+  await page.click('.course-tabs [data-tab=calc1]');
+  ok((await count('#thread .reply')) === 2, 'cálculo: conversa preservada');
+  ok((await count('#ink path')) > 10, 'cálculo: folha preservada');
+  await page.click('.course-tabs [data-tab=livre]');
+  ok((await txt('#r1-paper')) === c.docs.none.blank, 'livre: leitor vazio');
+  await page.click('#d-check'); await settle();
+  ok((await lastReply()).includes(c.courses.livre.replies[0].blocks[0].replace(/<[^>]+>/g, '').slice(0, 20)), 'livre: folha em branco');
+  await page.click('.course-tabs [data-tab=calc1]');
+
+  // Mini a partir do GeoGebra volta para a matéria
+  await page.click('.course-tabs [data-tab=ggb]');
+  ok((await txt('#g-x')).includes(c.decimal), 'GeoGebra usa o separador do idioma');
+  ok(!(await page.$eval('#mini-btn', (e) => e.offsetParent !== null)), 'no GeoGebra o botão do mini não aparece');
+  await page.click('button.feat[data-go=mini]'); await page.waitForTimeout(300);
+  ok((await page.$eval('#app', (e) => e.dataset.view)) === 'calc1', 'mini pelo recurso volta à matéria');
+  await page.click('#mini-btn');
+  ok((await page.$eval('#stage', (e) => e.dataset.mini)) === 'false', 'sai do mini');
+
+  // Navegação nativa do topo
+  await page.click('.tabs a[href="#perguntas"]'); await page.waitForTimeout(400);
+  const y = await page.$eval('#perguntas', (e) => e.getBoundingClientRect().top);
+  ok(y > -5 && y < 120, `aba Perguntas rola até a seção (top=${Math.round(y)})`);
+  ok(await page.$eval('.tabs a[href="#perguntas"]', (e) => e.classList.contains('active')), 'aba ativa acompanha');
+  // Fora da demo, Ctrl+K e Ctrl+Z ficam com o navegador.
+  await page.keyboard.press('Control+k');
+  ok(await page.$eval('#palette', (e) => e.hidden), 'Ctrl+K longe da demo não abre a paleta');
+  await page.click('.get-meta a[data-os=mac]'); await page.waitForTimeout(400);
+  ok(!(await page.$eval('.os-panel[data-os=mac]', (e) => e.hidden)), 'link do sistema no topo escolhe a aba de Instalar');
+  await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(200);
+
+  // Ferramentas
+  await page.click('#attach-btn');
+  ok(await page.$eval('#qr-pop', (e) => !e.hidden), 'clipe abre o QR');
+  ok((await txt('#palette-kbd')) === 'Ctrl K', 'atalho mostrado como Ctrl K fora do Mac');
+  await page.keyboard.press('Control+k');
+  ok(await page.$eval('#palette', (e) => !e.hidden), 'Ctrl+K abre a paleta');
+  await page.keyboard.type(lang === 'en' ? 'physics' : 'fisica'); await page.keyboard.press('Enter');
+  ok((await page.$eval('#app', (e) => e.dataset.view)) === 'fis1', 'paleta: ir para Física I');
+  await page.fill('#calc', '1/4');
+  ok((await txt('#calc-out')) === `0${c.decimal}25`, 'calculadora com o separador do idioma');
+
+  // Tema: segue o sistema, alterna e volta depois de recarregar
+  ok(!(await page.evaluate(() => document.documentElement.dataset.theme)), 'sem escolha, tema do sistema');
+  await page.click('#theme-btn');
+  ok((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'botão liga o escuro');
+  ok((await page.$eval('#theme-btn', (e) => e.getAttribute('aria-label'))) === c.text.themeToLight, 'rótulo do botão vira');
+  ok((await page.$eval('.seg[data-k=theme] [data-v=dark]', (e) => e.getAttribute('aria-pressed'))) === 'true', 'Configurações acompanham');
+
+  // Xournal++: caneta, cor, desfazer e borracha (em Física I, com a tentativa 1 na folha)
+  const box = await page.$eval('#ink', (e) => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top}; });
+  const users = () => count('#ink path.user');
+  const drag = async (pts) => {
+    await page.mouse.move(box.x + pts[0][0], box.y + pts[0][1]); await page.mouse.down();
+    for (const [x, yy] of pts.slice(1)) await page.mouse.move(box.x + x, box.y + yy, {steps: 4});
+    await page.mouse.up();
+  };
+  await drag([[60, 250], [120, 270], [180, 250]]);
+  ok((await users()) === 1, 'caneta desenha um traço');
+  await page.click('.ink-swatch[data-ink="#c62828"]');
+  await drag([[60, 300], [160, 310]]);
+  ok((await page.$eval('#ink path.user:last-of-type', (e) => e.style.stroke)).includes('198'), 'cor vermelha no traço novo');
+  await page.click('#undo-btn');
+  ok((await users()) === 1, 'desfazer tira o último traço');
+  await page.click('[data-tool=eraser]');
+  await drag([[50, 260], [200, 260]]);
+  ok((await users()) === 0, 'borracha apaga o traço');
+  // A Física já foi conferida uma vez, então a última tentativa é a correção, na linha de baixo.
+  const lastAttempt = () => page.$$eval('#ink g[data-n]', (g) => g.at(-1).childElementCount);
+  const before = await lastAttempt();
+  for (const yy of [116, 124, 132, 140]) await drag([[25, yy], [230, yy]]);
+  const after = await lastAttempt();
+  ok(after < before * 0.6, `borracha apaga a tentativa (${before} → ${after})`);
+  await page.click('#d-check'); await settle();
+  ok((await lastReply()).includes(c.sheet.erased.replace(/<[^>]+>/g, '').slice(0, 15)), 'Conferir nota a tentativa apagada');
+  ok((await txt('#t-title')) === fis1.replies[0].title && (await count('#thread .reply')) === 2, 'sem roteiro avançado');
+  await page.keyboard.press('Control+z');
+  for (let i = 0; i < 40; i++) await page.click('#undo-btn');
+  ok((await lastAttempt()) === before, 'desfazer devolve a tentativa');
+  await page.click('#d-check'); await settle();
+  ok((await lastReply()).includes(fis1.replies[1].blocks[0].replace(/<[^>]+>/g, '').slice(0, 12)), 'Conferir segue o roteiro depois de desfazer');
+  await page.click('[data-tool=pen]');
+
+  // Seletor de modelos
+  await page.click('#model-btn');
+  ok(await page.$eval('#model-pop', (e) => !e.hidden), 'nome do modelo abre o seletor');
+  ok((await page.$$eval('.model-group-title', (e) => e.map((x) => x.textContent).join())) === `${c.picker.recent},OpenCode Zen`, 'grupos Recentes e OpenCode Zen');
+  ok((await txt('.model-group[data-group="1"] .model-row-meta')) === c.picker.policy.zero, 'linha do provedor mostra a política');
+  await page.keyboard.type('glmzzz');
+  ok((await txt('#model-list')) === c.picker.none('glmzzz'), 'busca vazia avisa');
+  await page.fill('#model-search', 'mimo'); await page.keyboard.press('Enter');
+  ok((await txt('#model-name')) === 'MiMo V2.6 Flash', 'Enter escolhe e o rótulo troca');
+  await page.click('#model-btn');
+  const glm = '.model-group[data-group="1"] .model-row[data-id="glm-5.3-flash-free"]';
+  await page.hover(glm); await page.click(glm + ' .model-row-star');
+  ok((await page.$$eval('.model-group-title', (e) => e.map((x) => x.textContent).join())) === `${c.picker.recent},${c.picker.favorites},OpenCode Zen`, 'estrela abre Favoritos sem fechar');
+  await page.click('.effort-strip [data-effort=high]');
+  ok((await txt('#model-level')) === `· ${c.picker.effort.high}`, 'esforço no indicador');
+  await page.mouse.click(5, 5);
+  ok(await page.$eval('#model-pop', (e) => e.hidden), 'clique fora fecha');
+  await page.click('#new-btn');
+  ok((await txt('#t-title')) === c.text.newChat && (await count('#thread .reply')) === 0, 'Nova conversa zera a matéria');
+  await page.click('#d-check'); await settle();
+  ok((await page.$$eval('#thread .msg-foot', (e) => e.at(-1).textContent)).includes('mimo-v2.6-flash-free'), 'resposta assinada pelo modelo escolhido');
+
+  // O tema escolhido volta depois de recarregar, antes da pintura.
+  await page.reload();
+  ok((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'tema escolhido volta ao recarregar');
+
+  // Larguras: nada estoura para os lados
+  for (const w of [1440, 1024, 768, 600, 390, 320]) {
+    for (const mini of [false, true]) {
+      await page.setViewportSize({width: w, height: 900});
+      await page.evaluate((m) => { document.getElementById('stage').dataset.mini = String(m); }, mini);
+      await page.waitForTimeout(50);
+      const r = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth, vw: innerWidth,
+        wins: [...document.querySelectorAll('.win')].map((e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.right)]; }),
+      }));
+      ok(r.doc <= r.vw + 1 && r.wins.every(([l, rr]) => l >= -1 && rr <= r.vw + 1), `largura ${w}${mini ? ' mini' : ''}: sem estouro`);
+    }
+    if (shots && (w === 1440 || w === 390)) await page.screenshot({path: join(shots, `site-${lang}-${w}.png`), fullPage: true});
+  }
+  // Quem chega pela página do idioma errado precisa achar a troca também no celular.
+  ok(await page.$eval('.lang', (e) => e.getBoundingClientRect().width > 0), 'PT · EN visível em 320 px');
+  ok(errors.length === 0, 'sem erros no console: ' + errors.join(' | '));
+  await page.close();
+}
+
+const out = await mkdtemp(join(tmpdir(), 'summa-site-ui-'));
+const server = await serve(out);
+const browser = await chromium.launch(process.env.CHROMIUM_PATH ? {executablePath: process.env.CHROMIUM_PATH} : {});
+try {
+  await build({out, releases: join(here, 'fixtures/releases.json'), offline: false});
+  const base = `http://127.0.0.1:${server.address().port}/`;
+  for (const lang of ['pt', 'en']) await scenario(browser, base, lang);
+} finally {
+  await browser.close();
+  server.close();
+  await rm(out, {recursive: true, force: true});
+}
+console.log(fails.length ? `\n${fails.length} falha(s)` : '\ntudo ok');
+process.exitCode = fails.length ? 1 : 0;

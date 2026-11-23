@@ -1,0 +1,12 @@
+[
+  {"tag_name": "v1.5.0-beta.1", "prerelease": true, "assets": [
+    {"name": "Summa-1.5.0.dmg", "browser_download_url": "https://example.test/beta.dmg"}]},
+  {"tag_name": "v1.4.0", "assets": [
+    {"name": "mesa-estudos-1.4.0.zip", "browser_download_url": "https://example.test/mesa-estudos-1.4.0.zip"},
+    {"name": "Summa-1.4.0.dmg", "browser_download_url": "https://example.test/Summa-1.4.0.dmg"},
+    {"name": "Summa-1.4.0-x86_64.AppImage", "browser_download_url": "https://example.test/Summa-1.4.0-x86_64.AppImage"}]},
+  {"tag_name": "v1.3.9", "assets": [
+    {"name": "Summa-Setup-1.3.9.exe", "browser_download_url": "https://example.test/Summa-Setup-1.3.9.exe"}]},
+  {"tag_name": "v1.3.3", "assets": [
+    {"name": "mesa-estudos-1.3.3.zip", "browser_download_url": "https://example.test/mesa-estudos-1.3.3.zip"}]}
+]
