@@ -19,6 +19,7 @@ Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhoria
 - **Sobre e ícone:** os instaladores não mostram mais o Node do sistema como requisito para atualizar; no Linux, as janelas de abertura usam o ícone compacto do app (#150, #161).
 - **Busca no PDF:** apagar o campo limpa na hora a contagem e os destaques da página (#193).
 - **Sessões:** depois de marcar ou desmarcar **Favorito**, o foco continua no botão, e o teclado segue dali (#191).
+- **Plano na barra:** o botão **Plano** tem o tamanho de letra, a altura e o ícone das abas **Caderno** e **GeoGebra** ao lado (#197).
 - **Pasta de dados:** a primeira abertura respeita a pasta Documentos do sistema, inclusive OneDrive no Windows e `Documentos` no Linux (#136).
 
 ### Correções
@@ -30,7 +31,8 @@ Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhoria
 - **Instalação e remoção no Windows:** dois instaladores, ou o instalador e o desinstalador, não mexem na mesma instalação ao mesmo tempo. Falha ao migrar uma instalação de desenvolvimento preserva a anterior; o instalador pede para fechar a Summa logo no começo, e o desinstalador permite tentar de novo depois de fechá-la (#140, #156, #157, #170).
 - **Plano sem perder edições:** tarefas, anotações e rascunhos de mensagem editados logo antes de fechar a Summa são salvos. O plano atualiza as opções de ligar ao PDF ao abrir, fecha com Esc e não cria tarefa ao confirmar um caractere com um teclado de composição (#168, #178, #184, #186).
 - **Teclados de composição:** confirmar um caractere com Enter no seletor de material não abre o PDF destacado, e nas janelas da aba **Livre** (**Montar PDF**, renomear sessão e **Criar matéria**) não envia o formulário antes da hora (#189, #190).
-- **Notas do PDF:** editar uma nota, fechar as notas e reabri-las com outro PDF aberto não muda mais a nota de PDF nem de página ao salvar (#192).
+- **Notas do PDF:** editar uma nota, fechar as notas e reabri-las com outro PDF aberto não muda mais a nota de PDF nem de página ao salvar. Uma nota salva em outra página aparece mesmo com o filtro de página ligado, e um filtro que ficou sem notas volta a **Todas** (#192, #194).
+- **Seletor de material:** Tab e Shift+Tab fecham a lista em vez de deixá-la aberta sobre o leitor (#195).
 - **Busca de estudos:** PDFs com o mesmo nome em subpastas abrem o arquivo certo; renomear uma matéria atualiza a busca, e o nome da matéria não aparece repetido no resultado (#172, #173, #175).
 - **Busca das Configurações:** corrigir uma busca sem resultados volta a mostrar a seção encontrada; a busca também encontra títulos de grupos e botões como **Adicionar matéria** (#177, #185).
 - **Leitores recolhidos:** abrir uma referência pelo plano, pela busca ou pelos favoritos torna o leitor visível de novo (#169).
