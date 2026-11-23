@@ -68,6 +68,29 @@ test('Windows e Linux ficam sem os itens só do macOS', () => {
   }
 });
 
+test('itens com papel do Electron levam rótulo traduzido: no Windows e no Linux o padrão era "Exit", "Undo", "Copy" em inglês', () => {
+  for (const platform of ['win32', 'linux', 'darwin']) {
+    const {host, menu} = deskMenu({platform});
+    host.buildMenu();
+    const items = menu.template.flatMap(item => item.submenu || []);
+    const translated = ['quit', 'undo', 'redo', 'cut', 'copy', 'paste', 'selectAll', 'reload', 'togglefullscreen'];
+    for (const role of translated) {
+      const item = items.find(entry => entry.role === role);
+      assert.equal(item?.label, `menu.role.${role}`, `${platform}: ${role} sem rótulo traduzido`);
+    }
+  }
+});
+
+test('todo rótulo de papel do menu existe nos dois idiomas', async () => {
+  const fs = await import('node:fs');
+  for (const file of ['pt-BR.json', 'en.json']) {
+    const locale = JSON.parse(fs.readFileSync(new URL(`../src/locales/${file}`, import.meta.url), 'utf8'));
+    for (const role of ['quit', 'undo', 'redo', 'cut', 'copy', 'paste', 'selectAll', 'reload', 'togglefullscreen']) {
+      assert.ok(String(locale[`menu.role.${role}`] || '').trim(), `${file}: menu.role.${role} ausente`);
+    }
+  }
+});
+
 test('janela principal: barra de menu escondida (volta com Alt) no Windows e no Linux, normal no macOS', () => {
   const {mainWindowMenuBar} = require('../desk-menu.cjs');
   assert.deepEqual(mainWindowMenuBar('win32'), {autoHideMenuBar: true});

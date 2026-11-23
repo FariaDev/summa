@@ -81,16 +81,21 @@ function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++',p
      Zoom, a lista de janelas); os papéis do Electron os trazem prontos. Windows e Linux
      não têm esses itens. */
   const mac=platform==='darwin';
+  /* Sem `label`, o Electron mostra o rótulo do papel em inglês no Windows e no Linux
+     ("Exit", "Undo", "Copy"), mesmo com a interface em português (teste da 1.4.0 na VM).
+     O papel continua dando o atalho e o comportamento do sistema. */
+  /** @param {'quit'|'undo'|'redo'|'cut'|'copy'|'paste'|'selectAll'|'reload'|'togglefullscreen'} role */
+  const roleItem=role=>({role,label:live.languageHost.t(`menu.role.${role}`)});
   /** @type {import('electron').MenuItemConstructorOptions[]} */
   const macAppItems=mac?[{role:'hide'},{role:'hideOthers'},{role:'unhide'},{type:'separator'}]:[];
   /** @type {import('electron').MenuItemConstructorOptions[]} */
   const macWindowMenu=mac?[{label:live.languageHost.t('menu.window'),role:'windowMenu'}]:[];
   Menu.setApplicationMenu(Menu.buildFromTemplate([
-   {label:'Summa',submenu:[{label:live.languageHost.t('menu.aboutApp'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}},{label:live.languageHost.t('menu.settingsItem'),...accelProps('settings'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-settings');}},{type:'separator'},...macAppItems,{role:'quit'}]},
-   {label:live.languageHost.t('menu.edit'),submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
+   {label:'Summa',submenu:[{label:live.languageHost.t('menu.aboutApp'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}},{label:live.languageHost.t('menu.settingsItem'),...accelProps('settings'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-settings');}},{type:'separator'},...macAppItems,roleItem('quit')]},
+   {label:live.languageHost.t('menu.edit'),submenu:[roleItem('undo'),roleItem('redo'),{type:'separator'},roleItem('cut'),roleItem('copy'),roleItem('paste'),roleItem('selectAll')]},
    {label:live.languageHost.t('chrome.study'),submenu:study},
    {label:live.languageHost.t('menu.view'),submenu:[{id:'command-palette',label:live.languageHost.t('menu.palette'),...accelProps('command-palette'),click:()=>{if(live.win&&!live.win.isDestroyed()){live.win.webContents.focus();
-       live.win.webContents.send('menu-palette');}}},{type:'separator'},{role:'reload'},{role:'togglefullscreen'}]},
+       live.win.webContents.send('menu-palette');}}},{type:'separator'},roleItem('reload'),roleItem('togglefullscreen')]},
    ...macWindowMenu,
    {label:live.languageHost.t('menu.help'),submenu:[{label:live.languageHost.t('menu.guide'),...accelProps('help'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-help');}},{label:live.languageHost.t('menu.about'),click:()=>{if(live.win&&!live.win.isDestroyed())live.win.webContents.send('menu-about');}}]}
   ]));
