@@ -142,6 +142,10 @@ function renderStatus() {
 function renderFilters() {
   const pages = [...new Set(state.items.map((item) => item.ref.page))].sort((a, b) => a - b);
   const materials = [...new Set(state.items.map((item) => item.ref.name).filter(Boolean))];
+  /* Filtro sem opção (a última nota da página saiu, ou outra matéria) escondia a
+     lista inteira com o seletor mostrando outra coisa; volta a Todas. */
+  if (!pages.includes(state.pageFilter)) state.pageFilter = 0;
+  if (!materials.includes(state.materialFilter)) state.materialFilter = '';
   refs.pageFilter.replaceChildren(
     element('option', {value: '', text: text(notesCore.filterAllLabel()), selected: state.pageFilter === 0}),
     ...pages.map((page) => element('option', {value: String(page), text: text(notesCore.pageLabel(wholeNat(page))), selected: state.pageFilter === page}))
@@ -282,11 +286,19 @@ async function submit() {
   const mode = state.editing ? 'edit' : 'add';
   const payload = mode === 'edit' ? {mode, id: state.editing, item} : {mode: 'add', item};
   if (await save(payload)) {
+    revealSaved(item.ref);
     state.editing = '';
     refs.quote.value = '';
     refs.note.value = '';
     render();
   }
+}
+
+/* A nota recém-salva fica à vista: um filtro de outra página ou material a
+   escondia, e parecia que o salvar não tinha funcionado. */
+function revealSaved(ref) {
+  if (state.pageFilter && state.pageFilter !== ref.page) state.pageFilter = 0;
+  if (state.materialFilter && state.materialFilter !== ref.name) state.materialFilter = '';
 }
 
 function editItem(item) {
