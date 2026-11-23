@@ -411,12 +411,12 @@ test('lê o catálogo de uma query já conectada sem criar consulta nem insistir
   assert.equal((await controls.readCatalogFromQuery({supportedModels: 'não é função'})).reason, controls.REASONS.CATALOG_MISSING);
 });
 
-test('compatibilidade com o SDK pinado 0.3.325 (tipos reais do sdk.d.ts)', {skip: (() => {
+test('compatibilidade com o SDK pinado 0.3.330 (tipos reais do sdk.d.ts)', {skip: (() => {
   const dts = fileURLToPath(new URL('../node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts', import.meta.url));
   return !existsSync(dts);
 })()}, () => {
   const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../node_modules/@anthropic-ai/claude-agent-sdk/package.json', import.meta.url)), 'utf8'));
-  assert.equal(pkg.version, '0.3.325', 'o módulo só documenta o pin instalado');
+  assert.equal(pkg.version, '0.3.330', 'o módulo só documenta o pin instalado');
 
   const dts = readFileSync(fileURLToPath(new URL('../node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts', import.meta.url)), 'utf8');
   assert.match(dts, /initializationResult\(\): Promise<SDKControlInitializeResponse>;/, 'initializationResult existe e devolve a resposta de init');

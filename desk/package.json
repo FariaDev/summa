@@ -46,20 +46,20 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.3.325",
+    "@anthropic-ai/claude-agent-sdk": "0.3.330",
     "chart.js": "4.6.1",
-    "dompurify": "^3.4.17",
-    "electron": "^45.3.2",
+    "dompurify": "^3.5.0",
+    "electron": "^45.4.1",
     "katex": "^0.19.1",
-    "marked": "^18.2.0",
+    "marked": "^18.2.1",
     "pdfjs-dist": "^6.5.438"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "^1.65.1",
     "electron-vite": "6.0.0",
-    "eslint": "10.14.0",
-    "globals": "17.13.0",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
     "typescript": "7.0.2",
     "vite": "7.3.8"
   },
