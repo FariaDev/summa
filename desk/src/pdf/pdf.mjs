@@ -162,6 +162,7 @@ export class PdfPanel {
   /** @type {Map<number, any>} */ this.renderTasks=new Map();
   /** @type {number} */ this.version=0;
   /** @type {number} */ this._renderSeq=0;
+  this._findRevision=0;
   /** @type {Map<any, any>} */ this.docMemo=new Map();
   Object.assign(this,{page:1,zoom:1,scrollX:0,scrollY:0,invert:false,minimized:false,findOpen:false,loading:false,path:null,doc:null,rotation:0,pageEls:[],findTerm:'',findPages:[],findTotal:0,textDoc:null,textPages:null,pageLabels:[],pageOffset:null,printedOpen:false,dropHint:null,printedRow:null,_dropping:false,_dropOver:false,_drop:null});
   this.handlers={
@@ -205,6 +206,10 @@ export class PdfPanel {
   iconize(this.el);
   this.el.addEventListener('pointerdown',()=>rememberPdfReader(this));
   $('#pdf-grid').append(this.el);this.q=s=>this.el.querySelector(s);
+  this.q('.pdf-find input').addEventListener('input',event=>{
+   const input=/** @type {HTMLInputElement} */ (event.currentTarget);
+   if(!input.value.trim())this.clearFind();
+  });
   /* Seletor de material (#74): o `<select>` continua sendo o valor e o nome
      acessível; clique/teclado nele abrem a busca e os grupos por subpasta. */
   this.materialPicker=createMaterialPicker({
@@ -520,7 +525,7 @@ export class PdfPanel {
   if(!this.doc)return;
   const term=foldSearch(this.q('.pdf-find input').value.trim());
   if(!term){this.clearFind();return;}
-  const doc=this.doc,button=this.q('.pdf-find button'),version=this.version;
+  const doc=this.doc,button=this.q('.pdf-find button'),version=this.version,revision=this._findRevision;
   button.disabled=true;button.textContent='…';
   try{
    const pages=[];let total=0;
@@ -530,12 +535,12 @@ export class PdfPanel {
     // A geração da carga invalida a varredura no ato do `load` (o `doc` só
     // troca depois do PDF novo abrir; sem isto a varredura do doc antigo
     // terminava nessa janela e deixava contador/estado presos no doc novo).
-    if(version!==this.version||doc!==this.doc)return;
+    if(version!==this.version||doc!==this.doc||revision!==this._findRevision)return;
     let idx=0,count=0;
     while((idx=text.indexOf(term,idx))!==-1){count++;idx+=term.length;}
     if(count){pages.push({page:n,count});total+=count;}
    }
-   if(version!==this.version||doc!==this.doc)return;
+   if(version!==this.version||doc!==this.doc||revision!==this._findRevision)return;
    const cycle=this.findTerm===term&&this.findPages.length>0;
    this.findTerm=total?term:'';this.findPages=pages;this.findTotal=total;this.refreshFind();this.updateFindCount();
    if(!total){toast(uiMessage('pdf.find.none'));return;}
@@ -683,7 +688,7 @@ const explicitRotation=Object.prototype.hasOwnProperty.call(settings,'rotation')
   renderInto(el,pdfView.findCountLabel(chrome));
  }
  refreshFind(){for(const el of this.pageEls)if(el.dataset.rendered)delete el.dataset.rendered;this.renderVisible();}
- clearFind(){this.findTerm='';this.findPages=[];this.findTotal=0;this.refreshFind();this.updateFindCount();}
+ clearFind(){this._findRevision++;this.findTerm='';this.findPages=[];this.findTotal=0;this.refreshFind();this.updateFindCount();}
  // Cada `span` do textLayer vira texto + `.pdf-hl` no núcleo; aqui só entra a
  // dobra (mesma largura) e o recorte dos spans que contêm o termo.
  highlightLayer(layer){
