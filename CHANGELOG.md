@@ -43,7 +43,7 @@ Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhoria
 
 ### Desenvolvimento
 
-- **Ferramentas e release:** `npm run dev` tem recarga imediata do renderer; build e preview testam o bundle, e `npm start` segue abrindo o fonte. A checagem de tipos cobre o projeto inteiro. A preparação da release confere produto e versão dos instaladores; dependências, testes e caminhos internos foram atualizados e simplificados (#125, #140, #142–#147, #158–#160, #171, #179, #182).
+- **Ferramentas e release:** `npm run dev` tem recarga imediata do renderer; build e preview testam o bundle, e `npm start` segue abrindo o fonte. A checagem de tipos cobre o projeto inteiro. A preparação da release confere produto e versão dos instaladores; dependências, testes e caminhos internos foram atualizados e simplificados (#125, #140, #142–#147, #158–#160, #171, #179, #182). A triagem automática de issues só busca no repositório da Summa (#180).
 
 ## 1.3.3
 
