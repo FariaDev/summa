@@ -33,6 +33,13 @@ try{
  await page.locator('#chat-library-query').fill('propriedades');assert.equal(await page.locator('.chat-library-row').count(),1);
  await page.locator('.chat-library-row').getByRole('button',{name:'☆ Favoritar',exact:true}).click();
  await page.waitForSelector('.chat-library-row button:has-text("★ Favorita")');
+ /* Favoritar redesenha a lista: o foco fica no botão novo da mesma conversa, não no BODY. */
+ const focusedAction=()=>page.evaluate(()=>{const el=document.activeElement;return el?.closest('.chat-library-row')?`${el.closest('.chat-library-row').querySelector('strong').textContent}|${el.textContent}`:el?.id||el?.tagName;});
+ assert.equal(await focusedAction(),'Limites: propriedades e exemplos|★ Favorita');
+ await page.keyboard.press('Space');await page.waitForSelector('.chat-library-row button:has-text("☆ Favoritar")');
+ assert.equal(await focusedAction(),'Limites: propriedades e exemplos|☆ Favoritar');
+ await page.keyboard.press('Enter');await page.waitForSelector('.chat-library-row button:has-text("★ Favorita")');
+ assert.equal(await focusedAction(),'Limites: propriedades e exemplos|★ Favorita');
  await page.locator('#chat-library-query').fill('');
  await reviewShot(page,out,'01-conversas.png');
  await reviewShot(page.locator('#chat-library-dialog'),out,'01-conversas-detalhe.png');
@@ -72,6 +79,10 @@ try{
  /* A janela muda depois de o pedido voltar: mede só com a página em 900×650. */
  await resizeWindow(app,reopened,900,650,{content:true});
  const bounds=await reopened.locator('#chat-library-dialog').boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=900&&bounds.y+bounds.height<=650);
+ /* Com "Só favoritas", desfavoritar some com a fileira: o foco volta para a busca. */
+ await reopened.locator('.chat-library-row').getByRole('button',{name:'★ Favorita',exact:true}).click();
+ await reopened.waitForFunction(()=>!document.querySelector('.chat-library-row'));
+ assert.equal(await reopened.evaluate(()=>document.activeElement?.id),'chat-library-query');
  assert.deepEqual(errors,[]);
   console.log('CHAT LIBRARY UI PASSED: conversa de um ano, título/assunto/favoritos, filtros, retomada, rascunhos por conversa, reabertura e 900x650. Provider fake-OpenCode; dados sintéticos.');
 }finally{if(app)await closeApp(app,{ledgerDir:runtime}).catch(()=>{});fs.rmSync(runtime,{recursive:true,force:true});}
