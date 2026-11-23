@@ -360,6 +360,7 @@
   "chrome.palette.aria": "Search actions",
   "chrome.palette.text": "Search…",
   "chrome.palette.title": "Search for an action by name",
+  "chrome.appMenu": "Summa menu",
   "chrome.settings": "Settings",
   "chrome.settings.withUpdate": "Settings · an update is available",
   "chrome.study": "Study",

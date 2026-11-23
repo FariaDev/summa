@@ -5,7 +5,8 @@ import {activateGeogebra,deactivateGeogebra} from './ggb.mjs';
 import {activateReview,deactivateReview} from './review-loader.mjs';
 import tabsCore from './generated/tabsview.core.js';
 import {renderChildren} from './view-host.mjs';
-import {t} from './ui-text.mjs';
+import {t,LANGUAGE_EVENT} from './ui-text.mjs';
+import {initTitleBar} from './title-bar.mjs';
 import {renderTutorMenus} from './tutor/tutor-header.mjs';
 import {initStudyPlanView} from './study/study-plan-view.mjs';
 import {xournalMenuAvailable} from './study/xournal-menu.mjs';
@@ -218,6 +219,7 @@ function initHeaderTabs({openSettings,syncPaletteField,menu}){
  window.addEventListener('desk-tab-marked',()=>renderCourseMenu());
  window.addEventListener('desk-tabs-lock',()=>renderTabsView());
  initStudyPlanView();
+ initTitleBar({doc:document,desk:/** @type {any} */ (window).desk,label:()=>t('chrome.appMenu'),languageEvent:LANGUAGE_EVENT});
 }
 
 export {menuHandlers,renderTabsView,renderMenus,selectTab,openReviewToday,moveTabFocus,numberedTabs,cycleToTab,getTabsCourses,setTabsCourses,refreshTabsOnReviewCount,initHeaderTabs};

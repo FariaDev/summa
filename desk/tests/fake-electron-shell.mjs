@@ -17,9 +17,11 @@ export function fakeIpcMain() {
 
 /** Menu do Electron que guarda o último template montado. */
 export function fakeMenu() {
-  const menu = {template: null, builds: 0};
+  const menu = {template: null, builds: 0, popups: []};
   menu.buildFromTemplate = template => template;
   menu.setApplicationMenu = template => { menu.template = template; menu.builds += 1; };
+  /* O ≡ da barra de título abre o menu da aplicação como popup. */
+  menu.getApplicationMenu = () => (menu.template ? {popup: options => menu.popups.push(options)} : null);
   return menu;
 }
 
@@ -39,7 +41,9 @@ export function fakeNotificationClass({supported = true} = {}) {
 export function fakeWindow({focused = false, minimized = false} = {}) {
   const calls = [];
   const overlays = [];
-  return {calls, overlays, destroyed: false, sent: [], isDestroyed() { return this.destroyed; }, isFocused: () => focused, isMinimized: () => minimized,
+  const titleBarOverlays = [];
+  return {calls, overlays, titleBarOverlays, destroyed: false,
+    setTitleBarOverlay: options => titleBarOverlays.push(options), sent: [], isDestroyed() { return this.destroyed; }, isFocused: () => focused, isMinimized: () => minimized,
     setOverlayIcon: (image, description) => overlays.push({image, description}),
     restore: () => calls.push('restore'), show: () => calls.push('show'), focus: () => calls.push('focus'),
     webContents: {send(channel) { calls.push(`send:${channel}`); }, focus() {}}};

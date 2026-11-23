@@ -5,6 +5,7 @@ const svg=(d)=>`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="curren
 
 const icons={
  plus:svg('<path d="M5 12h14"/><path d="M12 5v14"/>'),
+ menu:svg('<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/>'),
  minus:svg('<path d="M5 12h14"/>'),
  close:svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
  chevronLeft:svg('<path d="m15 18-6-6 6-6"/>'),
