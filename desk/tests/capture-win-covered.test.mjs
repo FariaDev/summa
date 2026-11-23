@@ -30,11 +30,15 @@ test('Windows capture reports failed HWND rendering and cleans up instead of att
  assert.equal(fs.existsSync(dir),false);
 });
 
+/* #199: no runner windows-latest frio, o PowerShell + WinForms passou dos 15 s
+   para imprimir READY; o prazo por janela vai a 30 s. */
+const READY_MS=30000;
+
 function openWindow(role){
  const child=spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',fixture,'-Role',role],{stdio:['ignore','pipe','pipe']});
  const ready=new Promise((resolve,reject)=>{
   let output='',errors='';
-  const timer=setTimeout(()=>reject(Error(`Window ${role} did not become ready: ${errors}`)),15000);
+  const timer=setTimeout(()=>reject(Error(`Window ${role} did not become ready: ${errors}`)),READY_MS);
   child.stdout.on('data',chunk=>{output+=chunk; if(output.includes('READY')){clearTimeout(timer);resolve();}});
   child.stderr.on('data',chunk=>{errors+=chunk;});
   child.once('error',error=>{clearTimeout(timer);reject(error);});
@@ -43,7 +47,10 @@ function openWindow(role){
  return {child,ready};
 }
 
-test('Windows real capture excludes an opaque covering window and is not blank',{skip:process.platform!=='win32',timeout:45000},async()=>{
+/* #199: o orçamento cobre duas janelas (até 2 × 30 s de READY), a captura
+   (até 20 s, o timeout do exec em capture-win.cjs) e a inspeção de pixels, que
+   não tem prazo próprio; 120 s deixa folga para o PowerShell frio. */
+test('Windows real capture excludes an opaque covering window and is not blank',{skip:process.platform!=='win32',timeout:120000},async()=>{
  const dir=tempDir('capture-covered-');
  const target=openWindow('target');
  let cover;
