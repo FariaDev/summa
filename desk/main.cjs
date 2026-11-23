@@ -40,7 +40,7 @@ const {createCardHost}=require('./card-host.cjs');
 const {registerChatExportHost}=require('./chat-export-host.cjs');
 const {registerStudyRecordsHost}=require('./study-records-host.cjs');
 const {createCourseStateHost}=require('./course-state-host.cjs');const {historyIdentity}=require('./src/history-identity.cjs');
-const {createDeskMenu}=require('./desk-menu.cjs');
+const {createDeskMenu,mainWindowMenuBar}=require('./desk-menu.cjs');
 const {createDeskNotifier}=require('./desk-notify-host.cjs');
 const {createFreePromotionHost}=require('./free-promotion-host.cjs');
 const {writeConfigPreservingExtras}=require('./config-write.cjs');
@@ -430,7 +430,7 @@ app.whenReady().then(async()=>{
  app.setAboutPanelOptions({applicationName:'Summa',applicationVersion:app.getVersion(),copyright:languageHost.t('about.copyright'),iconPath:path.join(__dirname,'assets','mesa-1024.png')});
  const displays=screen.getAllDisplays();
  const placed=placeWindow(displays,screen.getPrimaryDisplay().id,state.bounds);
- win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',icon:startupWindowIcon(path.join(__dirname,'assets'),process.platform),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
+ win=new BrowserWindow({width:placed.width,height:placed.height,...(placed.x!=null?{x:placed.x,y:placed.y}:{}),minWidth:900,minHeight:650,title:'Summa',...mainWindowMenuBar(process.platform),icon:startupWindowIcon(path.join(__dirname,'assets'),process.platform),backgroundColor:state.theme==='dark'?'#191919':'#f7f7f7',show:!TEST_MODE,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false,additionalArguments:[`--mesa-language=${languageHost.ui()}`]}});
  keepWindowOnDisplays({screenLike:screen,window:win,log:line=>appendLog('janela',line),skip:()=>miniMode?.isOn()===true});
  startBootReady();
  for(const event of ['hide','minimize'])win.on(event,()=>studyServices.lifecycle('hide'));

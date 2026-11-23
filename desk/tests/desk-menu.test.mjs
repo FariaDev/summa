@@ -90,3 +90,17 @@ test('todo rótulo de papel do menu existe nos dois idiomas', async () => {
     }
   }
 });
+
+test('janela principal: barra de menu escondida (volta com Alt) no Windows e no Linux, normal no macOS', () => {
+  const {mainWindowMenuBar} = require('../desk-menu.cjs');
+  assert.deepEqual(mainWindowMenuBar('win32'), {autoHideMenuBar: true});
+  assert.deepEqual(mainWindowMenuBar('linux'), {autoHideMenuBar: true});
+  assert.deepEqual(mainWindowMenuBar('darwin'), {autoHideMenuBar: false});
+});
+
+test('janela principal: main.cjs cria a janela com as opções de barra de menu', async () => {
+  const fs = await import('node:fs');
+  const source = fs.readFileSync(new URL('../main.cjs', import.meta.url), 'utf8');
+  const creation = source.split('\n').find(line => /win=new BrowserWindow\(/.test(line)) || '';
+  assert.match(creation, /\.\.\.mainWindowMenuBar\(process\.platform\)/);
+});
