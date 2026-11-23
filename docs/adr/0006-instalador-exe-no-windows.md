@@ -36,17 +36,19 @@ vinham desse mesmo desenho.
 
 ## Migração
 
-Quem instalou pelo clone recebe a 1.4.0 pelo caminho antigo e passa ao `.exe` na
-atualização seguinte, ou baixa o `.exe` direto. O runtime continua em
-`<clone>\desk\.runtime`: o `runtimePath` salvo na config vale, e o instalador guarda
-a origem em `previous-install-source.json` para quem nunca salvou a config. **A
-pasta do clone não pode ser apagada** enquanto o runtime morar nela.
+Quem roda da pasta do zip/clone continua recebendo atualizações pelo caminho
+antigo. A ação separada **Instalar a versão para Windows (.exe)** no Sobre
+baixa o instalador assinado e salva antes `runtimePath` e `vaultPath`, mesmo
+sem config anterior (#187). Não move dados: o runtime continua em
+`<clone>\desk\.runtime`. Quem já usava o app instalado de um clone também tem
+a origem preservada em `previous-install-source.json`. **A pasta do clone
+não pode ser apagada** enquanto o runtime morar nela.
 
 ## Consequências
 
 - Instalar e atualizar no Windows deixam de exigir Node, npm, Git e clone.
 - A Release publica mais um asset, e o `update:sign` recusa assinar sem ele.
-- O zip continua publicado: é ele que atualiza macOS e instalações por zip.
+- O zip continua publicado para instalações por zip/código; o DMG tem updater próprio.
 - Sem certificado de assinatura de código, o SmartScreen avisa no primeiro
   download. A atualização pelo app não passa por esse aviso.
 - O `npm run install-app` fica para quem desenvolve.

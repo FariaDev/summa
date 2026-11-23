@@ -94,11 +94,11 @@ function launchInstaller({file,readyFile='',env=process.env,spawnFn=spawn}){
 /**
  * Espera a versão nova ficar pronta para a troca. Se o instalador sair antes ou o
  * prazo acabar, recusa, e a Summa continua aberta nesta versão.
- * @param {{child: {exitCode: number|null, once: Function, off: Function}, readyFile: string, timeoutMs?: number, pollMs?: number}} input
+ * @param {{child: {exitCode: number|null, once: Function, off: Function}, readyFile: string, timeoutMs?: number, pollMs?: number, allowCompleted?:boolean}} input
  * @returns {Promise<void>}
  * @example await waitForInstallerReady({child,readyFile:installerReadyFile()})
  */
-function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOUT_MS,pollMs=500}){
+function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOUT_MS,pollMs=500,allowCompleted=false}){
  return new Promise((resolve,reject)=>{
   const deadline=Date.now()+timeoutMs;
   /** @type {NodeJS.Timeout | undefined} */
@@ -108,7 +108,7 @@ function waitForInstallerReady({child,readyFile,timeoutMs=INSTALLER_READY_TIMEOU
    child.off('exit',onExit);
    if(error)reject(error);else resolve();
   };
-  const onExit=code=>finish(Error(code===3?uiMsg('err.update.installerBusy'):uiMsg('err.update.installerExited',{code})));
+  const onExit=code=>finish(allowCompleted&&code===0?null:Error(code===3?uiMsg('err.update.installerBusy'):uiMsg('err.update.installerExited',{code})));
   const tick=()=>{
    if(fs.existsSync(readyFile))return finish();
    if(child.exitCode!==null&&child.exitCode!==undefined)return onExit(child.exitCode);

@@ -182,6 +182,21 @@ o bundle no macOS e reabre. Comportamento real, por modo:
 - **Windows pelo `.exe` (#119, ADR 0006)**: o instalador troca a pasta inteira
   depois de a Summa fechar. Se ela não fechar em 120 s, a versão anterior fica e
   reabre; o Sobre mostra o resultado na abertura seguinte.
+- **Zip/código → app nativo (#187)**: no Sobre, a ação **Instalar a versão para…**
+  é independente do update por zip/git. Aparece só com origem disponível do
+  Summa e formato compatível: Windows/Linux x64, macOS arm64 (DMG gerado no
+  `macos-latest`). Usa a versão anunciada em cache se mais nova, senão a instalada;
+  sem asset nativo no manifesto assinado, recusa antes de gravar os caminhos.
+  Antes de abrir o app novo, salva `runtimePath` efetivamente em uso e `vaultPath`
+  na mesma config, preservando extras; não copia nem move estudos. O override
+  `LEARNING_DESK_RUNTIME` não vira caminho persistente. **Mantenha a pasta antiga**
+  enquanto o runtime morar nela. Linux instala em `~/Applications/Summa-x86_64.AppImage`;
+  macOS em `/Applications/Summa.app`; destinos existentes são recusados.
+  No Windows, `/S /UPDATE` também faz a primeira instalação e reabre o app;
+  a troca libera a instância antes de abrir Setup e aceita saída 0 se o sinal
+  de prontidão já tiver sido apagado pelo instalador. Falha mantém o app de
+  origem aberto. Ensaie separadamente oferta/cancelamento, asset ausente,
+  primeira instalação e abertura com o runtime antigo em cada OS.
 - **Windows por clone (#181, só para quem desenvolve)**: `npm run install-app` copia o Electron e o
   mesmo payload do `.app` para `%LOCALAPPDATA%\Programs\Summa`
   (`resources\app`). O `install-source.json` no payload deixa o updater em modo

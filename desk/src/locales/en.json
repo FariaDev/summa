@@ -1,4 +1,13 @@
 {
+ "update.switch.exe": "Install the Windows version (.exe)",
+ "update.switch.dmg": "Install the macOS version (DMG)",
+ "update.switch.appimage": "Install the Linux version (AppImage)",
+ "update.switch.confirm": "Your studies stay where they are. Keep the old folder: your runtime still lives there. Install and reopen Summa?",
+ "update.switch.busy": "Installing…",
+ "err.update.switchUnavailable": "No native build is available for this installation.",
+ "err.update.switchExists": "{path} already exists. Nothing was replaced. Move it yourself before trying again.",
+ "err.update.switchNotWritable": "Summa cannot write to {path}. Check its permissions and try again.",
+ "err.update.switchFailed": "Could not switch to the native app: {error}",
  "err.update.installerExited": "The installer exited with code {code}; expected 0 and the ready signal.",
  "err.update.installerReadyTimeout": "The installer was not ready within {minutes} min.",
  "err.update.installerBusy": "Another Summa installer is already open. Close it and try again.",

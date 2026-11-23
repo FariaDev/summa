@@ -15,10 +15,11 @@ const windowsInstallerUpdate=require('./windows-installer-update.cjs');
 const linuxAppImageUpdate=require('./linux-appimage-update.cjs');
 const macosDmgUpdate=require('./macos-dmg-update.cjs');
 const {isMacosRelease}=require('./macos-release.cjs');
+const installerSwitch=require('./installer-switch.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
-function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,env=process.env,installerUpdate=windowsInstallerUpdate,appImageUpdate=linuxAppImageUpdate,dmgUpdate=macosDmgUpdate}){
+function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',logFile,testMode,config,win,appendLog,toolHost,platform=process.platform,arch=process.arch,env=process.env,installerUpdate=windowsInstallerUpdate,appImageUpdate=linuxAppImageUpdate,dmgUpdate=macosDmgUpdate,nativeSwitch=installerSwitch}){
  const TEST_MODE=testMode;
  /* ---------- updater por clique + painel de componentes ----------
     Somente GETs públicos (releases do GitHub + registry npm); zero telemetria.
@@ -62,6 +63,18 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,logFile,testMode,
     Summa (histórico novo): o Sobre manda reinstalar e o clique recusa sem
     abrir o worker. */
  function oldRepository(){return isOldRepositoryInstall({deskDir});}
+ function switchTarget(){
+  if(!usesSystemNode||originFacts().kind==='unavailable'||oldRepository())return null;
+  return nativeSwitch.switchTarget({platform,arch});
+ }
+ ipcMain.handle('update-switch-target',()=>switchTarget());
+ ipcMain.handle('update-switch',async()=>{
+  if(TEST_MODE)throw Error(uiMsg('err.update.testMode'));
+  const target=switchTarget();
+  if(!target||!configFile)throw Error(uiMsg('err.update.switchUnavailable'));
+  return nativeSwitch.switchToInstaller({target,installed:app.getVersion(),runtime,deskDir,configFile,config:config(),app,env,
+   windowsUpdate:installerUpdate,linuxUpdate:appImageUpdate,macosUpdate:dmgUpdate});
+ });
  function updateContext(){
   const root=path.join(deskDir,'..');
   const bundle=path.resolve(deskDir,'..','..','..');
