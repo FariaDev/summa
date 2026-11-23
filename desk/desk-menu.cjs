@@ -105,4 +105,17 @@ function createDeskMenu({live,Menu,captureAvailable,writingApp=()=>'Xournal++',p
  return {buildMenu,setKeymap,register};
 }
 
-module.exports={MENU_ACCEL,validAccelerator,normalizeKeymap,createDeskMenu};
+/**
+ * Opções de barra de menu da janela principal. No Windows e no Linux a faixa
+ * "Summa Editar Estudar…" fica escondida e volta com Alt: a janela tinha quatro
+ * faixas (título, menu, abas, leitor) contra duas no macOS, onde o menu mora no
+ * topo da tela. Os atalhos continuam valendo com a barra escondida.
+ * @param {string} platform `process.platform`
+ * @returns {{autoHideMenuBar: boolean}}
+ * @example mainWindowMenuBar('win32'); // {autoHideMenuBar: true}
+ */
+function mainWindowMenuBar(platform){
+ return {autoHideMenuBar:platform!=='darwin'};
+}
+
+module.exports={MENU_ACCEL,validAccelerator,normalizeKeymap,createDeskMenu,mainWindowMenuBar};
