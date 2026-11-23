@@ -2,10 +2,13 @@
    GeoGebra e a lista suspensa da matéria. Usa só os tokens do app (style.css),
    então vale no claro e no escuro e segue o acento. */
 #study-plan-menu{flex:none;align-self:stretch;display:flex;align-items:center}
-#study-plan-menu .study-plan-trigger{display:inline-flex;align-items:center;gap:var(--space-2);max-width:320px;padding:0 var(--space-3);color:var(--muted)}
+/* O gatilho herda o .nav-trigger (12px, pílula de 28px) dos menus da direita;
+   ao lado de Caderno e GeoGebra ele segue as abas: 14px, altura da barra e
+   ícone de 16px, como o da aba GeoGebra. */
+#study-plan-menu .study-plan-trigger{display:inline-flex;align-items:center;gap:5px;max-width:320px;height:100%;padding:0 var(--space-5);border-radius:0;font-size:var(--fs-lg);color:var(--muted)}
 #study-plan-menu .study-plan-trigger:hover{color:var(--fg)}
 #study-plan-menu .study-plan-icon{display:inline-flex;flex:none}
-#study-plan-menu .study-plan-icon .icon{width:14px;height:14px}
+#study-plan-menu .study-plan-icon .icon{width:16px;height:16px}
 #study-plan-menu .study-plan-now{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--faint)}
 #study-plan-menu .study-plan-now:empty{display:none}
 #study-plan-pop{left:0;right:auto;width:440px;box-sizing:border-box;max-width:calc(100vw - 2 * var(--pad));max-height:min(600px,75vh);overflow-y:auto;padding:0;gap:0;cursor:default}
