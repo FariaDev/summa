@@ -56,11 +56,17 @@ export function initConversationLibrary({resume}){
    const detail=[row.courseName,date,({claude:'Claude Code',opencode:'OpenCode'})[row.engine]||'Pi'].join(' · ');
    const article=build(view.row(row.id,row.title,detail,row.preview||t('chatlib.ui.noMessages'),row.topic||t('chatlib.ui.noTopic'),!!row.favorite,!!row.current),{
     ResumeChat:async()=>{try{if(await resume(row)){dialog.close();}}catch(error){toast(error.message);}},
-    FavoriteChat:async()=>{try{await window.desk.libraryChatUpdate({id:row.id,patch:{favorite:!row.favorite}});await refresh();}catch(error){toast(error.message);}},
+    FavoriteChat:async()=>{try{await window.desk.libraryChatUpdate({id:row.id,patch:{favorite:!row.favorite}});await refresh();focusFavorite(row.id);}catch(error){toast(error.message);}},
     LabelChat:()=>edit(row)
    });list.append(article);
   }
   if(!filtered.length)list.append(node('p',t('chatlib.ui.noMatch'),'study-muted'));
+ }
+ /* `draw` troca todas as fileiras: sem devolver o foco ao botão novo da mesma conversa,
+    ele cai no BODY a cada Favoritar. Se a fileira saiu do filtro, volta para a busca. */
+ function focusFavorite(id){
+  const button=dialog.querySelector(`.chat-library-row[data-id="${CSS.escape(id)}"] .chat-library-row-actions button`);
+  (button||dialog.querySelector('#chat-library-query')).focus();
  }
  function edit(row){
   const editor=dialog.querySelector('#chat-library-editor');editor.replaceChildren();editor.hidden=false;

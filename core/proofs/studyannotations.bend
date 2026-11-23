@@ -1,6 +1,12 @@
 import Base
 import ../laws/studyannotations.bend as Laws
 
+def Laws.pn_reopen_edit_preserves_ref():
+  {==}
+
+def Laws.pn_reopen_new_uses_reader():
+  {==}
+
 # Uma prova por lei; o cenário concreto é o cenário concreto do módulo.
 
 def Laws.pn_max_id():

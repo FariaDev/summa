@@ -128,9 +128,14 @@ await withArtifacts('seletor-material',async ctx=>{
  await page.keyboard.type('integrais');
  await pollUntil(()=>page.evaluate(()=>document.activeElement?.getAttribute('aria-activedescendant')),id=>!!id,{what:'a linha ativa do teclado'});
  await page.keyboard.press('ArrowDown');
+ await search.dispatchEvent('keydown',{key:'Enter',isComposing:true});
+ assert.equal(await pop.isVisible(),true,'Enter durante composição não fecha o seletor');
+ assert.equal(await select.inputValue(),lista10,'Enter durante composição não troca o PDF');
  await page.keyboard.press('Enter');
  await pop.waitFor({state:'hidden',timeout:5000});
  await pollUntil(()=>select.inputValue(),value=>value===integrais,{what:'o PDF escolhido pelo teclado'});
+ await select.dispatchEvent('keydown',{key:'Enter',isComposing:true});
+ assert.equal(await page.locator('.material-pop:not([hidden])').count(),0,'Enter durante composição não abre o seletor');
 
  /* ---- o grupo fechado fica no desk.json (estado de interface, não no config) ---- */
  await pollUntil(()=>readDesk(runtime),state=>state?.courseStates?.calc?.materialFolders?.['Cap 3 - Derivadas']===false,{what:'o grupo fechado no desk.json'});
