@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,tinyPdfPages,statusOnline,freezeMotion,enterFree,openMore} from './helpers.mjs';
+import {withArtifacts,launchDesk,newRuntime,seedCourse,writeConfigJson,tinyPdfPages,statusOnline,freezeMotion,enterFree,openMore,reviewShot,screenshotDirectory} from './helpers.mjs';
 import {pollUntil} from './waits.mjs';
 
 /* Plano de estudo na barra de cima (#110): o botão "Plano" mostra o "agora", a
@@ -117,20 +117,28 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.equal(await page.locator('#study-plan-notes').inputValue(),'Prova sexta. Regra da cadeia.','as Anotações voltaram');
  assert.equal(await page.locator('#study-plan-pop .study-plan-count').textContent(),'1 de 2','a contagem reflete a marca');
 
- /* ---------- 6. abrir restaura o leitor, volta à página e fecha a lista ---------- */
- await page.keyboard.press('Escape');
+ /* ---------- 6. Esc libera o paginador; o link restaura o leitor e volta à página ---------- */
+ const trigger=page.locator('#study-plan-menu .study-plan-trigger');
+ const pop=page.locator('#study-plan-pop');
+ await trigger.press('Escape');
+ await pop.waitFor({state:'hidden',timeout:5000});
+ await openPlan(page);
+ await page.locator('#study-plan-notes').press('Escape');
+ await pop.waitFor({state:'hidden',timeout:5000});
+ assert.equal(await trigger.evaluate(button=>button===document.activeElement),true,'Esc nas Anotações devolve o foco ao gatilho');
  const reader=page.locator('.pdf-panel').first();
  const pageNumber=reader.locator('.page-number');
  await reader.locator('.pager').click();
  await pageNumber.fill('3');
  await pageNumber.press('Enter');
- await pollUntil(()=>pageNumber.inputValue(),value=>value==='3',{timeout:5000,what:'o leitor na página 3'});
+ await pollUntil(()=>reader.locator('.pager-current').textContent(),value=>value==='3',{timeout:5000,what:'o leitor na página 3'});
+ if(process.env.MESA_REVIEW_SHOTS)await reviewShot(page,screenshotDirectory('plano-paginador'),'esc-fecha-plano.png');
  await (await openMore(reader)).locator('.collapse').click();
  const restore=reader.locator('.pdf-restore');
  await restore.waitFor({state:'visible'});
  await openPlan(page);
  await page.locator('#study-plan-pop .study-plan-row').nth(0).locator('.study-plan-ref').click();
- await page.locator('#study-plan-pop').waitFor({state:'hidden'});
+ await pop.waitFor({state:'hidden'});
  await pollUntil(()=>restore.isVisible(),visible=>!visible,{timeout:5000,what:'o leitor restaurado pelo link no Plano'});
  await pollUntil(()=>pageNumber.inputValue(),value=>value==='1',{timeout:5000,what:'o leitor na página ligada à tarefa'});
  await reader.locator('.pdf-page[data-page="1"] canvas').waitFor({state:'visible'});
@@ -147,4 +155,5 @@ await withArtifacts('plano-estudo',async ctx=>{
  assert.equal(await triggerText(page),'Plano · agora: Q2 limites','a matéria volta com o seu plano');
 
  assert.deepEqual(errors,[],'nenhum erro de página');
+ console.log('PASS: Esc closes Study Plan from its trigger and notes; the PDF pager reaches page 3 and the task link returns to page 1');
 });
