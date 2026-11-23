@@ -12,18 +12,6 @@
 /** @type {readonly ReleaseNote[]} */
 export const RELEASE_NOTES = Object.freeze([
   {
-    version: '1.4.0',
-    title: 'releaseNotes.installers.title',
-    lead: 'releaseNotes.installers.lead',
-    groups: [
-      {title: 'releaseNotes.installers.also', cards: [
-        {icon: 'plug', title: 'releaseNotes.installers.install', body: 'releaseNotes.installers.installBody'},
-        {icon: 'check', title: 'releaseNotes.installers.plan', body: 'releaseNotes.installers.planBody'},
-        {icon: 'book', title: 'releaseNotes.installers.search', body: 'releaseNotes.installers.searchBody'},
-      ]},
-    ],
-  },
-  {
     version: '1.3.0',
     title: 'releaseNotes.summa.title',
     lead: 'releaseNotes.summa.lead',

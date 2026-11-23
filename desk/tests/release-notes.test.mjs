@@ -10,16 +10,6 @@ const {releaseNotesVersion} = require('../desk-version.cjs');
 const note = (version) => ({version, title: 't', lead: 'l', groups: []});
 const notes = [note('1.3.0'), note('1.1.0')];
 
-test('1.4.0 mostra as novidades a quem vem da 1.3.3, sem repetir nem abrir na instalação nova', () => {
-  const current = require('../package.json').version;
-  assert.equal(current, '1.4.0');
-  const pending = pendingReleaseNotes({seen: '1.3.3', current});
-  assert.deepEqual(pending.notes.map((item) => item.version), [current]);
-  assert.equal(pending.notes[0].groups[0].cards.length, 3);
-  assert.deepEqual(pendingReleaseNotes({seen: current, current}), {notes: [], seen: null});
-  assert.deepEqual(pendingReleaseNotes({current, firstRun: true}), {notes: [], seen: current});
-});
-
 test('versão de release: só X.Y.Z, comparada por número', () => {
   assert.deepEqual(parseReleaseVersion(' 1.10.2 '), [1, 10, 2]);
   assert.equal(parseReleaseVersion('1.1.0-beta'), null);
