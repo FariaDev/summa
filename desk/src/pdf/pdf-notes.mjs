@@ -3,6 +3,7 @@ import notesCore from '../generated/studyannotations.core.js';
 import {showUndoNotice, cancelUndoNotice} from '../undo-deletion.mjs';
 import {t, text, LANGUAGE_EVENT} from '../ui-text.mjs';
 import {toNat, wholeNat} from '../bend-nat.mjs';
+import {readerSelectionSnapshot} from './reader-selection.mjs';
 
 /* ---------------------------------------------------------------------------
    Anotações de página (Mesa): guarda trecho/observação/dúvida de um PDF, por
@@ -98,28 +99,10 @@ function host() {
 
 /* ---------- seleção e página do leitor (o gesto já existe no PDF) ---------- */
 
+/* O mesmo trecho do ouvinte da partida, cortado no tamanho que o núcleo guarda. */
 function selectionInfo() {
-  try {
-    const view = deps.document.defaultView;
-    const selection = view?.getSelection?.();
-    if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
-    const range = selection.getRangeAt(0);
-    const node = range.commonAncestorContainer;
-    const el = node?.nodeType === 1 ? node : node?.parentElement;
-    const layer = el?.closest?.('.textLayer');
-    const panel = layer?.closest?.('.pdf-panel');
-    if (!panel) return null;
-    const page = Number(layer.closest?.('.pdf-page')?.dataset?.page) || 0;
-    const path = panel.querySelector?.('.pdf-select')?.value || '';
-    const name = path.split(/[/\\]/).at(-1) || '';
-    /* `Selection.toString()` devolve vazio quando o foco está num campo do
-     * diálogo; a seleção real está no range. */
-    const quote = String(range.toString() || selection.toString() || '').replace(/\s+/g, ' ').trim().slice(0, Number(notesCore.maxQuote()));
-    if (!quote) return null;
-    return {quote, page, path, name};
-  } catch {
-    return null;
-  }
+  const info = readerSelectionSnapshot(deps.document);
+  return info && {...info, quote: info.quote.slice(0, Number(notesCore.maxQuote()))};
 }
 
 function currentReader() {
