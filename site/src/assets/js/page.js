@@ -1,26 +1,23 @@
 // O resto da página em volta da demo: aba do topo que segue a seção, recursos que
-// dirigem a demo, a seção Instalar e o botão de baixar do sistema de quem visita.
+// dirigem a demo, as abas de Instalar e Conectar e o botão de baixar do sistema de quem visita.
 import {$, $$, reduced} from './dom.js';
+import {OS_NAMES, detectOs} from './os.js';
+import {initHandoff} from './handoff.js';
 
 const RELEASES_PAGE = 'https://github.com/FariaDev/summa/releases/latest';
-const OS_NAMES = {mac: 'macOS', win: 'Windows', linux: 'Linux'};
 
-/** O sistema de quem visita, pelo user agent; sem pista, macOS. @param {string} ua @returns {'mac'|'win'|'linux'} */
-export function detectOs(ua) {
-  if (/Windows/.test(ua)) return 'win';
-  if (/Linux/.test(ua) && !/Android/.test(ua)) return 'linux';
-  return 'mac';
+// Instalar e Conectar: a aba e o painel com o mesmo data-tab, dentro da seção.
+function selectTab(section, key) {
+  for (const t of $$(`#${section} [role=tab]`)) t.setAttribute('aria-selected', String(t.dataset.tab === key));
+  for (const p of $$(`#${section} [role=tabpanel]`)) p.hidden = p.dataset.tab !== key;
 }
-
-function selectOs(os) {
-  for (const t of $$('.os-tabs button')) t.setAttribute('aria-selected', String(t.dataset.os === os));
-  for (const p of $$('.os-panel')) p.hidden = p.dataset.os !== os;
-}
+const selectOs = (os) => selectTab('instalar', os);
 
 // O botão do topo aponta para o instalador da última Release que tem um; o build
 // grava a lista em #downloads. Sem instalador, vai para a página de Releases.
 function initDownload(text) {
-  const os = detectOs(navigator.userAgent);
+  const os = detectOs(navigator.userAgent, navigator.maxTouchPoints);
+  if (os === 'mobile') { initHandoff(text); return; }
   let downloads = {};
   try { downloads = JSON.parse($('#downloads').textContent); } catch { /* fica o link da página de Releases */ }
   const item = downloads[os];
@@ -37,16 +34,22 @@ function initDownload(text) {
 function initNav() {
   // Âncoras nativas (com scroll-padding no CSS); o data-os só escolhe a aba de Instalar.
   document.addEventListener('click', (e) => { const a = e.target.closest('a[data-os]'); if (a && a.getAttribute('href') === '#instalar') selectOs(a.dataset.os); });
-  for (const t of $$('.os-tabs button')) t.addEventListener('click', () => selectOs(t.dataset.os));
-  // A aba do topo segue a seção à vista.
+  for (const section of ['instalar', 'conectar']) {
+    for (const t of $$(`#${section} [role=tab]`)) t.addEventListener('click', () => selectTab(section, t.dataset.tab));
+  }
+  // A aba do topo segue a seção à vista: a última cujo topo passou do primeiro terço da tela.
+  // Uma faixa fixa no meio perdia seção curta (Instalar acaba antes dela) e a última, que nunca
+  // sobe até lá; por isso, no fim da página, a ativa é a última.
   const links = $$('.tabs a');
-  const spy = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      for (const a of links) a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
-    }
-  }, {rootMargin: '-45% 0px -50% 0px'});
-  for (const id of ['demo', 'recursos', 'perguntas', 'instalar']) spy.observe($('#' + id));
+  const ids = ['demo', 'recursos', 'perguntas', 'instalar', 'conectar'];
+  const mark = () => {
+    const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+    const passed = ids.filter((id) => $('#' + id).getBoundingClientRect().top <= innerHeight / 3);
+    const id = atEnd ? ids.at(-1) : passed.at(-1) || ids[0];
+    for (const a of links) a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+  };
+  addEventListener('scroll', mark, {passive: true});
+  mark();
 }
 
 // Os recursos lá embaixo sobem até a demo e mostram o que descrevem.

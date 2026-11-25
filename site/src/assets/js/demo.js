@@ -60,7 +60,7 @@ export function createDemo(content, ink, picker) {
     const st = state[c], C = COURSES[c];
     openDoc(1, C.docs[0]);
     openDoc(2, C.docs[1]);
-    $('#xpp-title').textContent = `${C.xopp} · Xournal++`;
+    $('#xpp-title').textContent = C.xopp;
     thread.innerHTML = st.thread;
     $('#ink').innerHTML = st.ink;
     ink.resetUndo();

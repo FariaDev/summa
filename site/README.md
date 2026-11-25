@@ -24,4 +24,8 @@ por exemplo `npx serve site/dist`.
 - Downloads: `lib/downloads.mjs` procura `Summa-X.Y.Z.dmg`, `Summa-Setup-X.Y.Z.exe` e
   `Summa-X.Y.Z-x86_64.AppImage` na Release mais nova que tiver cada um
   (nomes do `docs/agents/release.md`). Sem nenhum, o botão leva à página de Releases.
+- Conectar (`connect.*` nos strings) repete o login do app: `releaseNotes.login.*` e
+  `opencodeProviders.*` em `desk/src/locales/`. Mudou o fluxo lá, mude aqui.
+- Celular e tablet não recebem instalador: `src/assets/js/os.js` dá `mobile` e
+  `handoff.js` troca os botões de baixar por "Mandar para o computador".
 - O protótipo que deu origem fica em `docs/design/site/r4.html` (histórico).

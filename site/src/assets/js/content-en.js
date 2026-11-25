@@ -64,6 +64,8 @@ export default {
     themeToLight: 'Light theme', themeToDark: 'Dark theme',
     miniOn: 'Mini mode', miniOff: 'Leave mini mode',
     downloadFor: 'Download for', copy: 'Copy',
+    sendToComputer: 'Send to my computer', sendShort: 'Send', linkCopied: 'Link copied',
+    mobileNote: 'Summa runs on macOS, Windows and Linux. The demo below works here.',
   },
   picker: {
     policy: {zero: 'Does not store or train', improve: 'May be used for training', trial: 'Trial only: do not send personal data'},

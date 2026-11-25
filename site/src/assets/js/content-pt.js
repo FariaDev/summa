@@ -68,6 +68,8 @@ export default {
     themeToLight: 'Tema claro', themeToDark: 'Tema escuro',
     miniOn: 'Modo mini', miniOff: 'Sair do modo mini',
     downloadFor: 'Baixar para', copy: 'Copiar',
+    sendToComputer: 'Mandar para o computador', sendShort: 'Mandar', linkCopied: 'Link copiado',
+    mobileNote: 'A Summa roda no macOS, no Windows e no Linux. A demo abaixo funciona aqui.',
   },
   picker: {
     policy: {zero: 'Não guarda nem treina', improve: 'Pode usar para treinar', trial: 'Só teste: não mande dados pessoais'},

@@ -38,6 +38,7 @@
  <symbol id="i-pip" viewBox="0 0 24 24"><path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"/><rect width="10" height="7" x="12" y="13" rx="2"/></symbol>
  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/></symbol>
  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-send" viewBox="0 0 24 24"><path d="M14.5 21.7a.5.5 0 0 0 .9 0l6.6-19a.5.5 0 0 0-.7-.6l-19 6.5a.5.5 0 0 0 0 .9l7.9 3.2a2 2 0 0 1 1.1 1.1z"/><path d="m21.9 2.1-11 11"/></symbol>
  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
  <symbol id="i-tablet" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
@@ -64,6 +65,7 @@
   <a href="#recursos">{{nav.features}}</a>
   <a href="#perguntas">{{nav.faq}}</a>
   <a href="#instalar">{{nav.install}}</a>
+  <a href="#conectar">{{nav.connect}}</a>
  </nav>
  <div class="top-actions">
   <span class="lang">{{nav.lang}}</span>
@@ -211,6 +213,7 @@
     <details><summary>{{faq.answer}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.answerText}}</p></details>
     <details><summary>{{faq.xournal}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.xournalText}}</p></details>
     <details><summary>{{faq.cloud}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.cloudText}}</p></details>
+    <details><summary>{{faq.plan}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.planText}}</p></details>
    </div>
    <div>
     <details><summary>{{faq.os}}<svg class="icon"><use href="#i-chevron"/></svg></summary><p>{{faq.osText}}</p></details>
@@ -227,11 +230,11 @@
  <div class="wrap">
   <h2>{{install.title}}</h2>
   <div class="os-tabs" role="tablist">
-   <button role="tab" data-os="mac" aria-selected="true">macOS</button>
-   <button role="tab" data-os="win" aria-selected="false">Windows</button>
-   <button role="tab" data-os="linux" aria-selected="false">Linux</button>
+   <button role="tab" data-tab="mac" aria-selected="true">macOS</button>
+   <button role="tab" data-tab="win" aria-selected="false">Windows</button>
+   <button role="tab" data-tab="linux" aria-selected="false">Linux</button>
   </div>
-  <div class="os-panel" data-os="mac" role="tabpanel">
+  <div class="os-panel" data-tab="mac" role="tabpanel">
    <ol class="steps">
     <li><span>{{install.get}} <a href="{{dl.mac.href}}">{{dl.mac.file}}</a>.</span></li>
     <li><span>{{install.mac2}}</span></li>
@@ -239,20 +242,79 @@
    </ol>
    <div class="note">{{install.macNote}}</div>
   </div>
-  <div class="os-panel" data-os="win" role="tabpanel" hidden>
+  <div class="os-panel" data-tab="win" role="tabpanel" hidden>
    <ol class="steps">
     <li><span>{{install.get}} <a href="{{dl.win.href}}">{{dl.win.file}}</a>.</span></li>
     <li><span>{{install.win2}}</span></li>
    </ol>
    <div class="note">{{install.winNote}}</div>
   </div>
-  <div class="os-panel" data-os="linux" role="tabpanel" hidden>
+  <div class="os-panel" data-tab="linux" role="tabpanel" hidden>
    <ol class="steps">
     <li><span>{{install.get}} <a href="{{dl.linux.href}}">{{dl.linux.file}}</a> {{install.linux1}}</span></li>
     <li><span>{{install.linux2}}</span></li>
    </ol>
    <div class="code"><button class="btn icon-btn" aria-label="{{install.copy}}" data-copied="{{install.copied}}"><svg class="icon"><use href="#i-copy"/></svg></button>chmod +x ~/Applications/Summa-*.AppImage
 ~/Applications/Summa-*.AppImage</div>
+  </div>
+ </div>
+</section>
+
+<section id="conectar">
+ <div class="wrap">
+  <h2>{{connect.title}}</h2>
+  <div class="os-tabs" role="tablist">
+   <button role="tab" data-tab="go" aria-selected="true">OpenCode Go <span class="tab-badge">{{connect.recommended}}</span></button>
+   <button role="tab" data-tab="chatgpt" aria-selected="false">ChatGPT</button>
+   <button role="tab" data-tab="claude" aria-selected="false">Claude</button>
+   <button role="tab" data-tab="grok" aria-selected="false">Grok</button>
+   <button role="tab" data-tab="free" aria-selected="false">{{connect.free}}</button>
+   <button role="tab" data-tab="other" aria-selected="false">{{connect.other}}</button>
+  </div>
+  <!-- Os passos e o cartão repetem o app (releaseNotes.login e opencodeProviders no pt-BR.json do desk/): mudou lá, muda aqui. -->
+  <div class="os-panel" data-tab="go" role="tabpanel">
+   <ol class="steps"><li><span>{{connect.go1}}</span></li><li><span>{{connect.go2}}</span></li><li><span>{{connect.go3}}</span></li></ol>
+   <div class="acct" aria-hidden="true">
+    <div class="acct-head"><b>{{connect.cardTitle}}</b><span>{{connect.cardLead}}</span></div>
+    <div class="acct-row"><i>G</i><span>ChatGPT<small>OpenAI</small></span><em>{{connect.off}}</em></div>
+    <div class="acct-row"><i>X</i><span>Grok<small>xAI</small></span><em>{{connect.off}}</em></div>
+    <div class="acct-row on"><i>⋯</i><span>{{connect.otherShort}}<small>OpenCode Go</small></span></div>
+    <div class="acct-key"><span>sk-••••••••••••••••3f9a</span><b>{{connect.useKey}}</b></div>
+   </div>
+  </div>
+  <div class="os-panel" data-tab="chatgpt" role="tabpanel" hidden>
+   <ol class="steps"><li><span>{{connect.openSettings}}</span></li><li><span>{{connect.gpt2}}</span></li><li><span>{{connect.gpt3}}</span></li></ol>
+   <div class="acct" aria-hidden="true">
+    <div class="acct-head"><b>{{connect.cardTitle}}</b><span>{{connect.cardLead}}</span></div>
+    <div class="acct-row on"><i>G</i><span>ChatGPT<small>OpenAI</small></span><b>{{connect.signIn}}</b></div>
+    <div class="acct-row"><i>X</i><span>Grok<small>xAI</small></span><u>{{connect.signIn}}</u></div>
+    <div class="acct-row"><i>⋯</i><span>{{connect.otherLong}}</span></div>
+   </div>
+  </div>
+  <div class="os-panel" data-tab="claude" role="tabpanel" hidden>
+   <ol class="steps"><li><span>{{connect.claude1}}</span></li><li><span>{{connect.claude2}}</span></li><li><span>{{connect.claude3}}</span></li></ol>
+   <div class="code"><button class="btn icon-btn" aria-label="{{install.copy}}" data-copied="{{install.copied}}"><svg class="icon"><use href="#i-copy"/></svg></button>claude auth login
+opencode auth login claude-agent</div>
+  </div>
+  <div class="os-panel" data-tab="grok" role="tabpanel" hidden>
+   <ol class="steps"><li><span>{{connect.openSettings}}</span></li><li><span>{{connect.grok2}}</span></li><li><span>{{connect.grok3}}</span></li></ol>
+   <div class="acct" aria-hidden="true">
+    <div class="acct-head"><b>{{connect.cardTitle}}</b><span>{{connect.cardLead}}</span></div>
+    <div class="acct-row"><i>G</i><span>ChatGPT<small>OpenAI</small></span><em class="ok">{{connect.connected}}</em></div>
+    <div class="acct-row on"><i>X</i><span>Grok<small>xAI</small></span><b>{{connect.signIn}}</b></div>
+    <div class="acct-row"><i>⋯</i><span>{{connect.otherLong}}</span></div>
+   </div>
+  </div>
+  <div class="os-panel" data-tab="free" role="tabpanel" hidden>
+   <ol class="steps"><li><span>{{connect.free1}}</span></li><li><span>{{connect.free2}}</span></li><li><span>{{connect.free3}}</span></li></ol>
+   <div class="acct" aria-hidden="true">
+    <div class="acct-head"><b>{{connect.zenTitle}}</b><span>{{connect.zenLead}}</span></div>
+    <div class="acct-key"><span>••••••••••••••••••••</span><u>{{connect.test}}</u><u>{{connect.createKey}}</u></div>
+   </div>
+  </div>
+  <div class="os-panel" data-tab="other" role="tabpanel" hidden>
+   <ol class="steps"><li><span>{{connect.other1}}</span></li><li><span>{{connect.other2}}</span></li><li><span>{{connect.other3}}</span></li></ol>
+   <div class="code"><button class="btn icon-btn" aria-label="{{install.copy}}" data-copied="{{install.copied}}"><svg class="icon"><use href="#i-copy"/></svg></button>opencode auth login</div>
   </div>
  </div>
 </section>

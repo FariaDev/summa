@@ -63,11 +63,15 @@ export function createPicker(t) {
     for (const r of $$('.model-rail-item')) r.classList.toggle('active', +r.dataset.group === at);
   }
   function showModel() {
-    const name = $('#model-name'), btn = $('#model-btn');
+    const name = $('#model-name');
     // No compositor o "Free" sobra: a coluna do tutor da demo é estreita.
     name.textContent = modelById(modelId).name.replace(/ Free$/, '');
     $('#model-level').textContent = effort === 'default' ? '' : ` · ${t.effort[effort]}`;
-    // Como o data-fit do app (header.css): sem espaço, o nível sai antes do nome cortar.
+    fitModel();
+  }
+  // Como o data-fit do app (header.css): sem espaço, o nível sai antes do nome cortar.
+  function fitModel() {
+    const name = $('#model-name'), btn = $('#model-btn');
     btn.dataset.fit = '';
     if (name.scrollWidth > name.clientWidth) btn.dataset.fit = 'model';
   }
@@ -124,6 +128,8 @@ export function createPicker(t) {
     if (e.target.isConnected && !e.target.closest('#model-pop,#model-btn')) closeModels();
   });
   showModel();
+  // A coluna muda com a janela e com o modo mini; o nível só sai se o nome não couber na largura de agora.
+  new ResizeObserver(fitModel).observe($('#model-btn').parentElement);
 
   return {current: () => modelId};
 }
