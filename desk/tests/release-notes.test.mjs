@@ -10,12 +10,13 @@ const {releaseNotesVersion} = require('../desk-version.cjs');
 const note = (version) => ({version, title: 't', lead: 'l', groups: []});
 const notes = [note('1.3.0'), note('1.1.0')];
 
-test('1.4.0 mostra as novidades a quem vem da 1.3.3, sem repetir nem abrir na instalação nova', () => {
+test('1.4.1 não tem novidades próprias: quem vem da 1.3.3 vê as da 1.4.0, e quem vem da 1.4.0 não vê nada', () => {
   const current = require('../package.json').version;
-  assert.equal(current, '1.4.0');
-  const pending = pendingReleaseNotes({seen: '1.3.3', current});
-  assert.deepEqual(pending.notes.map((item) => item.version), [current]);
-  assert.equal(pending.notes[0].groups[0].cards.length, 3);
+  assert.equal(current, '1.4.1');
+  const fromOld = pendingReleaseNotes({seen: '1.3.3', current});
+  assert.deepEqual(fromOld.notes.map((item) => item.version), ['1.4.0']);
+  assert.equal(fromOld.notes[0].groups[0].cards.length, 3);
+  assert.deepEqual(pendingReleaseNotes({seen: '1.4.0', current}), {notes: [], seen: current});
   assert.deepEqual(pendingReleaseNotes({seen: current, current}), {notes: [], seen: null});
   assert.deepEqual(pendingReleaseNotes({current, firstRun: true}), {notes: [], seen: current});
 });

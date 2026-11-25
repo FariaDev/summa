@@ -1,5 +1,19 @@
 # Novidades da Summa
 
+## 1.4.1
+
+Janela mais limpa no Windows e no Linux, menus traduzidos e um caminho do zip para o instalador. Quem tem a 1.4.0 recebe pelo **Atualizar**.
+
+### Melhorias
+
+- **Abas na barra de título (Windows e Linux):** a janela deixa de ter faixas de título e de menu acima das abas. Minimizar, maximizar e fechar ficam na própria faixa das abas, que também arrasta a janela, como no macOS. O menu da Summa (Summa, Editar, Estudar, Visualizar e Ajuda) abre pelo novo botão **≡** à esquerda das abas. Para voltar à moldura do sistema, abra a Summa com `SUMMA_SYSTEM_TITLEBAR=1` (#202, #205).
+- **Do zip para o instalador:** quem instalou pelo zip ou roda pelo código vê no **Sobre** a opção de trocar para o instalador do sistema (`.exe` no Windows, DMG no Mac com Apple Silicon, AppImage no Linux). A Summa baixa e confere o instalador, abre a versão instalada com as mesmas pastas de estudo e fecha a do zip; a pasta do zip precisa continuar onde está (#196).
+- **Cabeçalho do tutor:** a barra da conversa tem a mesma altura das barras dos leitores, e a linha do contexto fica logo abaixo dela (#206).
+
+### Correções
+
+- **Menus em português no Windows e no Linux:** Sair da Summa, Desfazer, Refazer, Recortar, Copiar, Colar, Selecionar tudo, Recarregar e Tela cheia apareciam em inglês mesmo com a interface em português (#200).
+
 ## 1.4.0
 
 Instaladores para Windows, macOS e Linux, com atualização pelo app, e melhorias no plano e nas buscas. Quem tem a 1.3.x recebe pelo **Atualizar**, inclusive quem instalou pelo zip.
