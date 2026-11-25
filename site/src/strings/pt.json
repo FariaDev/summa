@@ -17,6 +17,9 @@
   "nav.download": "Baixar",
 
   "hero.pitch": "Estude com seus PDFs e um tutor que não dá a resposta antes de você.",
+  "egg.intLabel": "De onde vem a integral",
+  "egg.int": "<b>∫</b> é um S alongado, de <i>summa</i>, “soma”. Leibniz o criou em 1675 para somar infinitas partes pequenas. Daí o nome.",
+  "egg.motto": "<b><i>Solvitur ambulando</i></b>: resolve-se andando. Conta-se que, quando Zenão argumentou que o movimento era impossível, Diógenes se levantou e andou.",
   "hero.download": "Baixar para",
 
   "xpp.label": "Janela do Xournal++ com a resolução escrita à mão",

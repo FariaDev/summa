@@ -92,8 +92,18 @@
 
 <main>
 <div class="hero" id="demo">
- <h1 class="lock"><svg aria-hidden="true"><use href="#int"/></svg>Summa</h1>
- <p class="motto">Solvitur ambulando.</p>
+ <!-- A integral tem a altura do nome (topo acima do S, pé abaixo da base, como no LaTeX) e o lema
+      começa no S: antes o par era centrado junto e o lema, sozinho, e os dois S não batiam. -->
+ <div class="lockup">
+  <span class="lock-row">
+   <button type="button" class="egg egg-int" aria-label="{{egg.intLabel}}" aria-describedby="egg-int" aria-expanded="false"><svg aria-hidden="true"><use href="#int"/></svg></button>
+   <h1 class="lock">Summa</h1>
+   <span class="lock-shine" aria-hidden="true"></span>
+  </span>
+  <p class="motto"><button type="button" class="egg egg-motto" aria-describedby="egg-motto" aria-expanded="false">Solvitur ambulando.</button></p>
+  <div class="egg-card" role="tooltip" id="egg-int">{{egg.int}}</div>
+  <div class="egg-card" role="tooltip" id="egg-motto">{{egg.motto}}</div>
+ </div>
  <p class="pitch">{{hero.pitch}}</p>
  <div class="get">
   <a class="btn primary big" id="get-btn" href="{{dl.mac.href}}"><svg class="icon"><use href="#i-download"/></svg><span class="os-label">{{hero.download}} macOS</span></a>

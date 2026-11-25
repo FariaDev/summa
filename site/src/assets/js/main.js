@@ -5,6 +5,7 @@ import {createDemo} from './demo.js';
 import {initTools} from './tools.js';
 import {initPrefs} from './prefs.js';
 import {initPage} from './page.js';
+import {initLockup} from './lockup.js';
 
 const lang = document.documentElement.lang.startsWith('en') ? 'en' : 'pt';
 const {default: content} = await import(`./content-${lang}.js`);
@@ -15,3 +16,4 @@ const picker = createPicker(content.picker);
 const demo = createDemo(content, ink, picker);
 initTools(content, demo);
 initPage(content.text, demo);
+initLockup();
