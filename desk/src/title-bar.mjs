@@ -76,6 +76,7 @@ export function initTitleBar({doc, desk, label, languageEvent}) {
   const win = /** @type {any} */ (doc.defaultView);
   doc.body.classList.add('custom-titlebar');
   const menuButton = addMenuButton(doc, desk, label);
+  watchLoneAlt(win, () => { if (menuButton.offsetParent) openMenu(menuButton, desk); });
   win.addEventListener(languageEvent, () => paintMenuLabel(menuButton, label));
   let last = '';
   let queued = false;
@@ -107,12 +108,40 @@ function addMenuButton(doc, desk, label) {
   button.className = 'nav-trigger';
   button.innerHTML = icon('menu');
   paintMenuLabel(button, label);
-  button.addEventListener('click', () => {
-    const rect = button.getBoundingClientRect();
-    desk.titleBarMenu({x: rect.left, y: rect.bottom});
-  });
+  button.addEventListener('click', () => openMenu(button, desk));
   doc.querySelector('header .header-nav')?.prepend(button);
   return button;
+}
+
+function openMenu(button, desk) {
+  const rect = button.getBoundingClientRect();
+  desk.titleBarMenu({x: rect.left, y: rect.bottom});
+}
+
+/**
+ * Chama `open` quando o Alt é apertado e solto sozinho, como a barra de menu do
+ * Windows fazia. Sem a moldura do sistema não há barra para o Alt mostrar
+ * (visto na VM Windows 11, teste da 1.4.1). Outra tecla ou clique no meio
+ * desarma: Alt+Shift, Alt+F4 e o AltGr não abrem o menu.
+ * @param {Window} win
+ * @param {() => void} open
+ * @returns {void}
+ * @example watchLoneAlt(window, () => openMenu(button, desk));
+ */
+export function watchLoneAlt(win, open) {
+  let armed = false;
+  win.addEventListener('keydown', event => {
+    if (event.key !== 'Alt') { armed = false; return; }
+    if (!event.repeat) armed = !event.ctrlKey && !event.shiftKey && !event.metaKey;
+  }, true);
+  win.addEventListener('keyup', event => {
+    if (event.key !== 'Alt') return;
+    const lone = armed;
+    armed = false;
+    if (lone) open();
+  }, true);
+  win.addEventListener('mousedown', () => { armed = false; }, true);
+  win.addEventListener('blur', () => { armed = false; });
 }
 
 function paintMenuLabel(button, label) {
