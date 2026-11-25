@@ -1,7 +1,7 @@
 // node tests/title-bar-ui.mjs — barra de título própria no Windows e no Linux (Electron real).
 // Cobre: a faixa das abas arrasta a janela e os botões dela não; o espaço dos
 // botões do sistema fica reservado; o tema escuro pinta os botões da janela com
-// a cor da faixa; o ≡ abre o menu da aplicação embaixo dele. No macOS nada muda.
+// a cor da faixa; o ≡ e o Alt sozinho abrem o menu da aplicação embaixo do ≡. No macOS nada muda.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -63,6 +63,20 @@ await withArtifacts('title-bar',async ctx=>{
  await page.locator('#app-menu-button').click();
  const opened=await pollUntil(recorded,state=>state.popups.length>0,{timeout:5000,interval:100,what:'o ≡ abrir o menu'});
  assert.deepEqual(opened.popups[0],{x:Math.round(button.x),y:Math.round(button.y+button.height)},'o menu abre embaixo do ≡');
+
+ /* Alt sozinho abre o mesmo menu: sem a moldura do sistema não há barra de menu
+    para o Alt mostrar (visto na VM Windows 11, teste da 1.4.1). */
+ await page.locator('#course-tabs button[role=tab]').first().focus();
+ await page.keyboard.press('Alt');
+ const byAlt=await pollUntil(recorded,state=>state.popups.length>1,{timeout:5000,interval:100,what:'o Alt sozinho abrir o menu'});
+ assert.deepEqual(byAlt.popups[1],opened.popups[0],'o Alt abre o menu embaixo do ≡');
+ assert.equal(await win.evaluate(bw=>bw.isMenuBarVisible()),false,'o Alt não traz de volta a faixa do menu');
+ /* Sem espera fixa: um Alt sozinho depois do atalho serve de marco, e o pedido
+    do atalho, se houvesse, chegaria antes dele. */
+ await page.keyboard.down('Alt');await page.keyboard.press('Shift');await page.keyboard.up('Alt');
+ await page.keyboard.press('Alt');
+ const afterCombo=await pollUntil(recorded,state=>state.popups.length>2,{timeout:5000,interval:100,what:'o Alt de marco abrir o menu'});
+ assert.equal(afterCombo.popups.length,3,'Alt usado num atalho não abre o menu');
  assert.deepEqual(errors,[]);
 });
-console.log('title-bar-ui: PASS — faixa que arrasta, espaço dos botões, cor do tema e o ≡ com o menu');
+console.log('title-bar-ui: PASS — faixa que arrasta, espaço dos botões, cor do tema, o ≡ e o Alt com o menu');
