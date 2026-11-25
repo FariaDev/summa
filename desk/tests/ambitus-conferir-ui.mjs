@@ -47,12 +47,18 @@ await withArtifacts('ambitus-conferir',async ctx=>{
  assert.match(await page.locator('#check').getAttribute('title'),/página aberta no Ambitus/,'a dica fala da página, não da janela');
 
  /* ---- 3. Tutor: a página entra na bandeja como "<caderno> — pág. N" ---- */
+ /* O aviso dura 3,2 s e um aviso seguinte o troca na hora: no runner Windows ele
+    já tinha saído quando o teste chegava a procurá-lo. Registra desde antes do clique. */
+ await page.evaluate(()=>{
+  window.__toasts=[];
+  new MutationObserver(()=>window.__toasts.push(document.querySelector('#toast').textContent)).observe(document.querySelector('#toast'),{subtree:true,childList:true,characterData:true});
+ });
  await page.locator('#attach').click();
  await page.locator('#check').click();
  await page.waitForSelector('#attachments .attachment img',{timeout:15000});
  const alt=await page.locator('#attachments .attachment img').first().getAttribute('alt');
  assert.match(alt,/Limites — aula 3 — pág\. 2/,'o anexo se chama "<caderno> — pág. N"');
- await page.waitForFunction(()=>/Página do Ambitus anexada/.test(document.body.innerText),undefined,{timeout:5000});
+ await page.waitForFunction(()=>window.__toasts.some(text=>/Página do Ambitus anexada/.test(text)),undefined,{timeout:5000});
  assert.equal(ambitus.asked.length,1,'um pedido, uma página');
  await page.locator('#attachments .attachment-remove').first().click();
 
