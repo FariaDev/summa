@@ -1041,7 +1041,7 @@
   "err.update.commitMismatch": "The commit of tag {tag} ({commit}) does not match the signed manifest commit ({expected}) — update refused.",
   "err.update.downloadTooLarge": "The download went past the {max}-byte cap ({received} bytes) — aborted.",
   "err.update.headMismatch": "The repository ended at commit {commit} but the signed manifest is for commit {expected} — update refused.",
-  "err.update.locked": "an update is already in progress (or the lock got stuck; delete {file})",
+  "err.update.locked": "An update is already in progress. Summa reopens by itself when it is done; if nothing happens within 30 minutes, try again.",
   "err.update.appImageNotWritable": "Could not write to the AppImage folder ({error}). Move Summa to a folder you own, such as ~/Applications, and try again.",
   "err.update.appImageDownload": "Could not download and verify the AppImage for v{version} ({error}) — update refused.",
   "err.update.appImageFailed": "The new version did not start. The previous version is still open; try updating again.",

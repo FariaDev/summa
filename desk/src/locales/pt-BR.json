@@ -1041,7 +1041,7 @@
   "err.update.commitMismatch": "O commit da tag {tag} ({commit}) não bate com o commit do manifesto assinado ({expected}) — atualização recusada.",
   "err.update.downloadTooLarge": "O download passou do teto de {max} bytes ({received} bytes) — abortado.",
   "err.update.headMismatch": "O repositório ficou no commit {commit}, mas o manifesto assinado é do commit {expected} — atualização recusada.",
-  "err.update.locked": "já existe uma atualização em andamento (ou o lock ficou preso; apague {file})",
+  "err.update.locked": "Já existe uma atualização em andamento. A Summa reabre sozinha quando ela terminar; se nada acontecer em 30 minutos, tente de novo.",
   "err.update.appImageNotWritable": "Não foi possível gravar na pasta do AppImage ({error}). Mova a Summa para uma pasta sua, como ~/Applications, e tente novamente.",
   "err.update.appImageDownload": "Não foi possível baixar e conferir o AppImage da v{version} ({error}) — atualização recusada.",
   "err.update.appImageFailed": "A nova versão não iniciou. A versão anterior continua aberta; tente atualizar novamente.",

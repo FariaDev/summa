@@ -12,6 +12,7 @@ import {tempDir} from './temp-dir.mjs';
    fala com a rede (as versões "mais novas" entram por `latestOverride`). */
 const require = createRequire(import.meta.url);
 const {createToolUpdates, sanitizeNotices} = require('../tool-updates.cjs');
+const updater = require('../updater.cjs');
 const {CLAUDE_RANGE} = require('../src/agents/claude-environment.cjs');
 const tested = require('../src/tested-versions.json');
 
@@ -123,6 +124,20 @@ test('run (Claude Code): `claude update`; o tutor "religa na versão nova" se el
   assert.equal(r2.relink, true, 'o tutor reconecta mesmo assim (e a coluna diz a recusa)');
 });
 
+test('run: outra atualização com o lock recusa, loga caminho e idade e não roda o comando', async () => {
+  const h = harness({fake: {claudeAfter: '2.1.326'}});
+  const lock = updater.acquireLock(path.join(h.dir, 'runtime'));
+  try {
+    const error = await h.host.run('claude').then(() => assert.fail('devia recusar'), (e) => e);
+    assert.match(error.message, /err\.update\.locked/);
+    assert.equal(error.message.includes(lock.file), false, 'o caminho fica no log');
+    assert.deepEqual(h.tools.calls(), []);
+    assert.deepEqual(h.seen.logs, [`update: atualização recusada: lock ${lock.file} com 0 s`]);
+  } finally {
+    updater.releaseLock(lock.file);
+  }
+});
+
 test('run: comando que falha vira frase e saída, sem religar nada', async () => {
   const h = harness({fake: {failClaude: true}});
   const r = await h.host.run('claude');
@@ -157,7 +172,7 @@ test('run: o lock compartilhado impede duas atualizações ao mesmo tempo e é s
   const h = harness();
   const lockFile = require('../updater.cjs').lockFileOf(path.join(h.dir, 'runtime'));
   fs.writeFileSync(lockFile, JSON.stringify({at: Date.now()}));
-  await assert.rejects(() => h.host.run('claude'), (error) => /já existe uma atualização em andamento/.test(ptText(error.message)));
+  await assert.rejects(() => h.host.run('claude'), (error) => /Já existe uma atualização em andamento\. A Summa reabre sozinha/.test(ptText(error.message)));
   fs.rmSync(lockFile);
   await h.host.run('claude');
   assert.equal(fs.existsSync(lockFile), false, 'o lock não fica preso depois do comando');

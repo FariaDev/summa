@@ -15,6 +15,7 @@ const os=require('node:os');
 const {message: uiMsg}=require('./src/i18n.mjs');
 const path=require('node:path');
 const updater=require('./updater.cjs');
+const {lockedUpdateError}=require('./update-lock-refusal.cjs');
 const components=require('./components.cjs');
 const toolFacts=require('./tool-facts.cjs');
 const toolRun=require('./tool-run.cjs');
@@ -175,7 +176,7 @@ function createToolUpdates(deps){
   const before=(await components.collectTools(toolOpts({cacheOnly:true})))[id];
   if(before.plan.mode!=='run')throw Error(uiMsg('err.update.noCommand',{id,kind:before.installKind||'—'}));
   const lock=updater.acquireLock(runtime);
-  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  if(!lock.ok)throw lockedUpdateError({lock,appendLog});
   running=id;
   try{
    return await execute(id,before);

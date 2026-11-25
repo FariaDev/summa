@@ -15,6 +15,7 @@ const macos=require('./macos-dmg-update.cjs');
 const {reopenArgs}=require('./macos-dmg-worker.cjs');
 const {message,parseMessage}=require('./src/i18n.mjs');
 const {causeArg}=require('./src/error-detail.mjs');
+const {lockedUpdateError}=require('./update-lock-refusal.cjs');
 const runFile=promisify(execFile);
 
 /**
@@ -110,13 +111,13 @@ async function switchMacos(ctx){
 /**
  * Baixa a release assinada e abre o app nativo sem mover os estudos (#187).
  * @param {{target:'exe'|'dmg'|'appimage',installed:string,runtime:string,deskDir:string,configFile:string,config:any,app:any,
- * env?:NodeJS.ProcessEnv,home?:string,applications?:string,windowsUpdate?:any,linuxUpdate?:any,macosUpdate?:any,run?:Function}} input
+ * env?:NodeJS.ProcessEnv,appendLog?:(src:string,line:string)=>void,home?:string,applications?:string,windowsUpdate?:any,linuxUpdate?:any,macosUpdate?:any,run?:Function}} input
  * @returns {Promise<{ok:boolean,version:string}>}
  * @example await switchToInstaller({target,installed,runtime,deskDir,configFile,config,app})
  */
-async function switchToInstaller({target,installed,runtime,deskDir,configFile,config,app,env=process.env,home=os.homedir(),applications='/Applications',windowsUpdate=windows,linuxUpdate=linux,macosUpdate=macos,run=runFile}){
+async function switchToInstaller({target,installed,runtime,deskDir,configFile,config,app,env=process.env,appendLog=()=>{},home=os.homedir(),applications='/Applications',windowsUpdate=windows,linuxUpdate=linux,macosUpdate=macos,run=runFile}){
  const lock=worker.acquireLock(runtime);
- if(!lock.ok)throw Error(message('err.update.locked',{file:lock.file}));
+ if(!lock.ok)throw lockedUpdateError({lock,appendLog});
  const cacheFile=path.join(runtime,'update.json');
  const announced=readCache(cacheFile)?.release?.version;
  const version=isNewer(announced,installed)?announced:installed;
