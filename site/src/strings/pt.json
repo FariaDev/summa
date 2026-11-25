@@ -2,6 +2,7 @@
   "html.lang": "pt-BR",
   "meta.title": "Summa: estude com seus PDFs e um tutor",
   "meta.description": "Estude com seus PDFs e um tutor que não dá a resposta antes de você. Grátis, código aberto, para macOS, Windows e Linux.",
+  "meta.imageAlt": "∫ Summa: estude com seus PDFs e um tutor que não dá a resposta antes de você.",
   "meta.locale": "pt_BR",
   "a11y.skip": "Pular a demo",
 
@@ -119,6 +120,7 @@
   "install.winNote": "<b>“O Windows protegeu o computador”?</b> Clique em <b>Mais informações</b> e em <b>Executar assim mesmo</b>. É uma vez só. Se faltar o Visual C++ Redistributable x64, a Summa mostra o link.",
   "install.linux1": "para uma pasta sua.",
   "install.linux2": "Dê permissão e abra. O atalho do menu aparece sozinho.",
+  "install.linux3": "Para o Conferir, instale também o <a href=\"https://github.com/FariaDev/ambitus\">Ambitus</a>, a versão do Xournal++ que manda a página para a Summa.",
   "install.copy": "Copiar",
   "install.copied": "Copiado",
   "dl.missing.mac": "o instalador na página de Releases",

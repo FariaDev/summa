@@ -56,6 +56,7 @@ async function scenario(browser, base, lang) {
   ok((await page.$eval('#get-btn', (e) => e.href)) === 'https://example.test/Summa-1.4.0-x86_64.AppImage', 'botão aponta para o AppImage');
   ok((await txt('.os-label')) === `${c.text.downloadFor} Linux`, 'rótulo do sistema');
   ok((await txt('.get-meta')).startsWith('v1.4.0'), 'versão do instalador');
+  ok((await page.$eval('.get-meta .whats-new', (e) => e.href + ' ' + e.textContent)) === `https://github.com/FariaDev/summa/releases/tag/v1.4.0 ${c.text.whatsNew}`, 'o que mudou leva às notas da versão');
   ok(!(await page.$eval('.os-panel[data-tab=linux]', (e) => e.hidden)), 'Instalar abre na aba Linux');
 
   // Cálculo: dois Conferir e o fim
@@ -114,6 +115,19 @@ async function scenario(browser, base, lang) {
   ok((await shown('conectar')) === 'claude', 'aba Claude troca o painel');
   ok((await shown('instalar')) === installTab, 'as abas de Conectar não mexem em Instalar');
   ok((await page.$eval('#conectar [data-tab=claude] .code', (e) => e.textContent)).includes('opencode auth login claude-agent'), 'Claude mostra os dois comandos');
+  // Teclado: só a aba escolhida entra no Tab; setas, Home e End trocam e levam o foco.
+  const tabIndexes = () => page.$$eval('#conectar [role=tab]', (ts) => ts.map((t) => t.tabIndex).join());
+  ok((await tabIndexes()) === '-1,-1,0,-1,-1,-1', 'só a aba escolhida tem tabindex 0');
+  ok(await page.$eval('#conectar [role=tab][data-tab=claude]', (t) => document.getElementById(t.getAttribute('aria-controls'))?.dataset.tab === 'claude'), 'aria-controls aponta para o painel');
+  await page.focus('#conectar [role=tab][data-tab=claude]');
+  await page.keyboard.press('ArrowRight');
+  ok((await shown('conectar')) === 'grok' && (await page.evaluate(() => document.activeElement.dataset.tab)) === 'grok', 'seta para a direita vai para a próxima aba');
+  await page.keyboard.press('End');
+  ok((await shown('conectar')) === 'other', 'End vai para a última');
+  await page.keyboard.press('ArrowRight');
+  ok((await shown('conectar')) === 'go', 'depois da última, volta à primeira');
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('Home');
+  ok((await shown('conectar')) === 'go' && (await shown('instalar')) === installTab, 'Home volta à primeira sem mexer em Instalar');
   await page.click('#perguntas details:nth-of-type(5) summary');
   await page.click('#perguntas a[href="#conectar"]'); await page.waitForTimeout(400);
   ok((await active()) === '#conectar', 'a pergunta do plano leva a Conectar');
@@ -248,6 +262,7 @@ async function mobileScenario(browser, base, lang, device, ua) {
   ok((await page.$eval('.get-note', (e) => e.textContent)) === c.text.mobileNote, 'nota diz onde a Summa roda');
   ok(!(await page.$eval('#get-btn', (e) => e.href)).match(/\.(dmg|exe|AppImage)$/), 'botão não aponta para instalador');
   ok((await page.$eval('.top-actions .btn.primary', (e) => e.textContent.trim())) === c.text.sendShort, 'botão do topo vira "Mandar"');
+  ok((await page.$eval('.stage', (e) => e.getBoundingClientRect().height)) < 760, 'no celular a demo encolhe (antes ocupava 862 px)');
   await page.click('#get-btn');
   ok((await label()) === c.text.linkCopied, 'sem compartilhamento, avisa que copiou');
   ok((await page.evaluate(() => navigator.clipboard.readText())) === base + (lang === 'en' ? 'en/' : ''), 'copia o link da página, sem âncora');

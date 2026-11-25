@@ -63,7 +63,7 @@ export default {
     review: 'Review today', today: 'Today',
     themeToLight: 'Light theme', themeToDark: 'Dark theme',
     miniOn: 'Mini mode', miniOff: 'Leave mini mode',
-    downloadFor: 'Download for', copy: 'Copy',
+    downloadFor: 'Download for', whatsNew: "what's new", copy: 'Copy',
     sendToComputer: 'Send to my computer', sendShort: 'Send', linkCopied: 'Link copied',
     mobileNote: 'Summa runs on macOS, Windows and Linux. The demo below works here.',
   },

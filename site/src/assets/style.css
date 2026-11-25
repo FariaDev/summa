@@ -356,6 +356,9 @@ kbd{display:inline-block;min-width:1.4em;padding:0 var(--space-1);border:1px sol
  .bar .k{display:none}
 }
 @container stage (max-width:540px){
+ /* No celular a demo ocupava a tela e meia; a folha só precisa da primeira linha e o tutor rola. */
+ .xpp{height:200px}
+ .app{height:440px}
  .app-body{grid-template-columns:minmax(0,1fr)}
  .reader{display:none}
  .course-tabs button{padding:0 var(--space-3)}
