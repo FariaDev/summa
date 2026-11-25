@@ -29,3 +29,22 @@ export function fakeInstalledApp({target='appimage',record=true}={}){
  const lines=[];
  return {root,source,deskDir,runtime,appPath,lines,log:line=>lines.push(line)};
 }
+
+/** Finder falso: resolve o alias pelo mapa, sem `osascript` (#196). */
+export function fakeFinderAlias(targets={}){
+ const asked=[];
+ return {asked,resolveAlias(alias){asked.push(alias);return targets[alias]||'';}};
+}
+
+/** App do DMG depois da troca: runtime da cópia de código, payload da release e ~/Applications (#196). */
+export function fakeDmgAfterSwitch(){
+ const fixture=fakeInstalledApp({target:'dmg'});
+ const payload=path.join(fixture.root,'Applications','Summa.app.payload');
+ fs.mkdirSync(payload,{recursive:true});
+ fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:'macos-dmg'}));
+ const home=path.join(fixture.root,'home'),userApps=path.join(home,'Applications');
+ fs.mkdirSync(userApps,{recursive:true});
+ const sourceBundle=path.join(fixture.source,'Summa.app');
+ fs.mkdirSync(path.join(sourceBundle,'Contents'),{recursive:true});
+ return {...fixture,payload,home,userApps,sourceBundle};
+}

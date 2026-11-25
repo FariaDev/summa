@@ -15,7 +15,7 @@ const {reopenArgs}=require('./macos-dmg-worker.cjs');
    cópia foi substituída e por qual app; só essa cópia passa a abrir o app
    instalado no lugar dela. */
 
-/** @typedef {{from:string,target:'dmg'|'exe'|'appimage',path:string,version:string,at:number,noticed?:boolean}} InstalledAppRecord */
+/** @typedef {{from:string,target:'dmg'|'exe'|'appimage',path:string,version:string,at:number,noticed?:boolean,aliasChecked?:boolean}} InstalledAppRecord */
 
 const TARGETS=new Set(['dmg','exe','appimage']);
 

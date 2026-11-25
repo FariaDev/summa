@@ -130,6 +130,8 @@ const appendLog=createDeskLog({logFile,logText:raw=>languageHost.logText(raw)});
 /* #196: a cópia de código que a troca para o instalador substituiu abre o app
    instalado e sai antes do lock de instância e da janela (`SUMMA_NO_REDIRECT=1` desliga). */
 if(require('./installed-app-redirect.cjs').redirectToInstalledApp({runtime,deskDir,testMode:process.env.DESK_TEST==='1',log:line=>appendLog('update',line)}))process.exit(0);
+/* #196: no app do DMG, o alias de ~/Applications que levava à cópia substituída sai uma vez. */
+if(process.env.DESK_TEST!=='1')require('./switch-alias-cleanup.cjs').removeReplacedAlias({runtime,deskDir,log:line=>appendLog('update',line)});
 process.on('uncaughtException',e=>{try{appendLog('main',e&&(e.stack||e.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
 process.on('unhandledRejection',e=>{try{const error=/** @type {{stack?: string, message?: string}} */(e);appendLog('main',error&&(error.stack||error.message)||String(e));}catch{/* o log não pode falhar o tratador de erro */}});
 /* O Electron entrega (event, details) e (event, webContents, details): até a
