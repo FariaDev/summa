@@ -16,13 +16,28 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  deploy:
+  # O ambiente github-pages só aceita deploy da main, e o evento release roda na
+  # tag: na v1.4.1 o deploy foi recusado e o site ficou na 1.4.0. A Release então
+  # só redispara este workflow na main, que lê as Releases da API do mesmo jeito.
+  # O workflow_dispatch é um dos eventos que o GITHUB_TOKEN pode disparar.
+  relay-release:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Redispara o site na main
+        run: gh workflow run site.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  deploy:
+    if: github.event_name != 'release'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
