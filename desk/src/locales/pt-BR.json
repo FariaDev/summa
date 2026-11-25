@@ -4,6 +4,7 @@
  "update.switch.appimage": "Instalar a versão para Linux (AppImage)",
  "update.switch.confirm": "Seus estudos ficam onde estão. Mantenha a pasta antiga: seu runtime continua nela. Instalar e reabrir a Summa?",
  "update.switch.busy": "Instalando…",
+ "update.switch.note": "A Summa agora abre por aqui. Pode trocar o atalho antigo (Dock, Iniciar ou menu) por este; o antigo também traz você para cá.",
  "err.update.switchUnavailable": "Não há versão nativa disponível para esta instalação.",
  "err.update.switchExists": "{path} já existe. Nada foi substituído. Mova-o antes de tentar de novo.",
  "err.update.switchNotWritable": "A Summa não pode gravar em {path}. Confira as permissões e tente de novo.",

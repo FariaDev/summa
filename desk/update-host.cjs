@@ -17,6 +17,7 @@ const macosDmgUpdate=require('./macos-dmg-update.cjs');
 const {isMacosRelease}=require('./macos-release.cjs');
 const installerSwitch=require('./installer-switch.cjs');
 const {lockedUpdateError}=require('./update-lock-refusal.cjs');
+const {takeSwitchNote}=require('./installed-app-redirect.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
@@ -262,10 +263,17 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
  ipcMain.handle('tool-update-run',(_e,id)=>tools.run(id));
  /* Resultado REAL da última atualização (C1): gravado pelo worker em
     update.json; o Sobre mostra na reabertura (atualizada/recuperada/incompleta). */
+ /* #196: na primeira abertura do app instalado depois da troca, `switchNote`
+    avisa uma vez que o atalho antigo agora traz para cá. Lido uma vez por
+    processo: o Sobre pede o resultado de novo sem gastar o aviso. */
+ /** @type {boolean|null} */
+ let switchNote=null;
  ipcMain.handle('update-result',()=>{
   if(TEST_MODE)return null;
+  if(switchNote===null)switchNote=takeSwitchNote({runtime,deskDir,platform,env});
   const r=updater.readCache(updateCacheFile)?.lastResult;
-  return r&&typeof r==='object'?{...r,fresh:Number(r.at)>=performance.timeOrigin}:null;
+  const result=r&&typeof r==='object'?{...r,fresh:Number(r.at)>=performance.timeOrigin}:null;
+  return switchNote?{...result,switchNote:true}:result;
  });
  /* Acesso ao desk.log (C1): o resultado de rollback se explica no log. O
     desk.log é JSON por linha, para máquina; o Sobre abre a versão em texto (#43 fase 3). */

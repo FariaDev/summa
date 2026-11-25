@@ -16,6 +16,7 @@ const {reopenArgs}=require('./macos-dmg-worker.cjs');
 const {message,parseMessage}=require('./src/i18n.mjs');
 const {causeArg}=require('./src/error-detail.mjs');
 const {lockedUpdateError}=require('./update-lock-refusal.cjs');
+const {installedAppPath,recordInstalledApp}=require('./installed-app-redirect.cjs');
 const runFile=promisify(execFile);
 
 /**
@@ -136,6 +137,10 @@ async function switchToInstaller({target,installed,runtime,deskDir,configFile,co
   if(parseMessage(error?.message))throw error;
   throw Error(message('err.update.switchFailed',{error:causeArg(error)}));
  }finally{worker.releaseLock(lock.file);}
+ /* Só depois de o app nativo abrir: a cópia de código passa a abri-lo no lugar
+    dela. Falhar aqui não desfaz a troca que já aconteceu. */
+ try{recordInstalledApp({runtime,deskDir,target,appPath:installedAppPath({target,home,applications,env}),version});}
+ catch{/* sem registro, a cópia antiga só continua abrindo como antes */}
  app.quit();
  return {ok:true,version};
 }

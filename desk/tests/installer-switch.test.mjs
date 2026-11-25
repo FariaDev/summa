@@ -124,3 +124,24 @@ test('release assinada sem asset nativo recusa antes de salvar caminhos ou inici
   assert.equal(fs.existsSync(input.configFile),false);assert.deepEqual(calls,[]);
  }
 });
+
+/* #196: o registro que faz a cópia de código abrir o app instalado nasce só
+   depois de o app nativo abrir; uma troca que falha deixa a cópia como estava. */
+test('sucesso registra a cópia substituída e o app nativo; falha não registra',async()=>{
+ /* Lido direto do disco: o formato do arquivo é o contrato entre a troca e a cópia antiga. */
+ const readInstalledApp=runtime=>{try{return JSON.parse(fs.readFileSync(path.join(runtime,'installed-app.json'),'utf8'));}catch{return null;}};
+ for(const target of ['exe','dmg','appimage']){
+  const {root,input}=fakeInstallerSwitch();
+  const env={LOCALAPPDATA:path.join(root,'Local')};
+  await switchToInstaller({...input,env,target});
+  const record=readInstalledApp(input.runtime);
+  const expected={exe:path.win32.join(env.LOCALAPPDATA,'Programs','Summa','electron.exe'),dmg:path.join(input.applications,'Summa.app'),appimage:path.join(input.home,'Applications','Summa-x86_64.AppImage')}[target];
+  assert.deepEqual({from:record?.from,target:record?.target,path:record?.path,version:record?.version,noticed:record?.noticed},
+   {from:path.dirname(input.deskDir),target,path:expected,version:'1.4.0',noticed:false});
+ }
+ for(const [target,fail] of [['exe','ready'],['dmg','open'],['appimage','launch']]){
+  const {input}=fakeInstallerSwitch({fail});
+  await assert.rejects(switchToInstaller({...input,target}),/switchFailed/);
+  assert.equal(readInstalledApp(input.runtime),null);
+ }
+});

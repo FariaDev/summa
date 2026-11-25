@@ -22,3 +22,18 @@ test('TEST_MODE nunca instala mesmo quando a plataforma permite oferecer',async(
  assert.equal(await ipcMain.invoke('update-switch-target'),'appimage');
  await assert.rejects(ipcMain.invoke('update-switch'),/testMode/);assert.deepEqual(calls,[]);
 });
+/* #196: o app instalado avisa do atalho antigo uma vez; o Sobre relê o resultado
+   na mesma abertura sem perder o aviso, e a abertura seguinte não repete. */
+test('update-result leva o aviso da troca só na primeira abertura do app instalado',async()=>{
+ const fs=await import('node:fs');
+ const {recordInstalledApp}=await import('../installed-app-redirect.cjs');
+ const first=fakeInstallerSwitchHost({mode:'appimage'});
+ recordInstalledApp({runtime:first.input.runtime,deskDir:first.input.deskDir,target:'appimage',appPath:'/apps/Summa.AppImage',version:'1.4.0'});
+ assert.equal((await first.ipcMain.invoke('update-result'))?.switchNote,true);
+ assert.equal((await first.ipcMain.invoke('update-result'))?.switchNote,true);
+ const file=`${first.input.runtime}/installed-app.json`;
+ assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).noticed,true);
+ const source=fakeInstallerSwitchHost({mode:'zip'});
+ recordInstalledApp({runtime:source.input.runtime,deskDir:source.input.deskDir,target:'appimage',appPath:'/apps/Summa.AppImage',version:'1.4.0'});
+ assert.equal(await source.ipcMain.invoke('update-result'),null,'a cópia de código não avisa');
+});
