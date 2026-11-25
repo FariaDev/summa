@@ -16,6 +16,7 @@ const linuxAppImageUpdate=require('./linux-appimage-update.cjs');
 const macosDmgUpdate=require('./macos-dmg-update.cjs');
 const {isMacosRelease}=require('./macos-release.cjs');
 const installerSwitch=require('./installer-switch.cjs');
+const {lockedUpdateError}=require('./update-lock-refusal.cjs');
 
 /* Updater por clique, painel de componentes e acesso ao log. Recebe do main só o
    que usa: `config` e `win` são acessores porque o main os reatribui. */
@@ -72,7 +73,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
   if(TEST_MODE)throw Error(uiMsg('err.update.testMode'));
   const target=switchTarget();
   if(!target||!configFile)throw Error(uiMsg('err.update.switchUnavailable'));
-  return nativeSwitch.switchToInstaller({target,installed:app.getVersion(),runtime,deskDir,configFile,config:config(),app,env,
+  return nativeSwitch.switchToInstaller({target,installed:app.getVersion(),runtime,deskDir,configFile,config:config(),app,env,appendLog,
    windowsUpdate:installerUpdate,linuxUpdate:appImageUpdate,macosUpdate:dmgUpdate});
  });
  function updateContext(){
@@ -100,7 +101,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
   const bundle=path.resolve(deskDir,'..','..','..');
   dmgUpdate.assertWritableBundle(bundle);
   const lock=updater.acquireLock(runtime);
-  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  if(!lock.ok)throw lockedUpdateError({lock,appendLog});
   let child;
   try{
    const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
@@ -119,7 +120,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
  }
  async function applyWithInstaller(target,installed){
   const lock=updater.acquireLock(runtime);
-  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  if(!lock.ok)throw lockedUpdateError({lock,appendLog});
   try{
    const publicKey=updater.readUpdatePublicKey(path.join(deskDir,'update-signing-key.pub'));
    const {file}=await installerUpdate.prepareInstallerUpdate({version:target,publicKey,dir:installerDir});
@@ -141,7 +142,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
  async function applyWithAppImage(target,installed){
   const appImage=String(env.APPIMAGE||'');
   const lock=updater.acquireLock(runtime);
-  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  if(!lock.ok)throw lockedUpdateError({lock,appendLog});
   let partial='';
   let backup='';
   try{
@@ -222,7 +223,7 @@ function registerUpdateHost({ipcMain,app,shell,runtime,deskDir,configFile='',log
   /* A4: lock compartilhado entre Atualizar Mesa e o CLI — dois cliques (ou
      clique + terminal) não abrem dois workers concorrentes. */
   const lock=updater.acquireLock(runtime);
-  if(!lock.ok)throw Error(uiMsg('err.update.locked',{file:lock.file}));
+  if(!lock.ok)throw lockedUpdateError({lock,appendLog});
   const worker=updater.spawnWorker({...context,announcedVersion:target,waitPid:process.pid,cacheFile:updateCacheFile,lockFile:lock.file});
   if(!worker.ok){
    updater.releaseLock(lock.file);

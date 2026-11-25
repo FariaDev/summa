@@ -88,7 +88,12 @@ test('destino existente: nenhum download nem substituição',async()=>{
 test('lock concorrente recusa sem efeito; macOS sem acesso tem erro traduzido',async()=>{
  const {root,input,calls}=fakeInstallerSwitch();
  const lock=updater.acquireLock(input.runtime);
- try{await assert.rejects(switchToInstaller({...input,target:'exe'}),/locked/);assert.deepEqual(calls,[]);}
+ const logs=[];
+ try{
+  const error=await switchToInstaller({...input,target:'exe',appendLog:(src,line)=>logs.push(`${src}: ${line}`)}).then(()=>assert.fail('devia recusar'),e=>e);
+  assert.match(error.message,/locked/);assert.equal(error.message.includes(lock.file),false);assert.deepEqual(calls,[]);
+  assert.equal(logs.length,1);assert.ok(logs[0].startsWith(`update: atualização recusada: lock ${lock.file} com `),logs[0]);
+ }
  finally{updater.releaseLock(lock.file);}
  await assert.rejects(switchToInstaller({...input,target:'dmg',applications:path.join(root,'absent')}),/switchNotWritable/);
 });
