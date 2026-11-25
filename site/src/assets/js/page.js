@@ -86,7 +86,11 @@ function initNav() {
     const id = atEnd ? ids.at(-1) : passed.at(-1) || ids[0];
     for (const a of links) a.classList.toggle('active', a.getAttribute('href') === '#' + id);
   };
-  addEventListener('scroll', mark, {passive: true});
+  // Sem ouvir cada evento de rolagem: a aba só muda quando uma seção cruza a linha do primeiro
+  // terço (a faixa de cima do observador) ou quando o rodapé, o fim da página, aparece inteiro.
+  const line = new IntersectionObserver(mark, {rootMargin: '0px 0px -66.667% 0px'});
+  for (const id of ids) line.observe($('#' + id));
+  new IntersectionObserver(mark, {threshold: .99}).observe($('footer'));
   mark();
 }
 
