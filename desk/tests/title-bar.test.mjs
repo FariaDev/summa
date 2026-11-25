@@ -2,7 +2,7 @@
 // própria (src/title-bar.mjs): qual faixa está no topo e as cores dos botões.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cssColorToHex, topBarOf, overlayOf, initTitleBar} from '../src/title-bar.mjs';
+import {cssColorToHex, topBarOf, overlayOf, initTitleBar, watchLoneAlt} from '../src/title-bar.mjs';
 
 /* Documento mínimo: o body com classes e atributos e as faixas por seletor. */
 function fakeTopDoc({mini = false, firstRun = false, bars = {}} = {}) {
@@ -37,4 +37,23 @@ test('barra de título: cor, cor dos botões e altura sem a borda de baixo', () 
 test('barra de título: com a barra do sistema, nada muda na página', () => {
   const doc = /** @type {any} */ ({body: {classList: {add: () => { throw Error('não deveria marcar o body'); }}}});
   assert.equal(initTitleBar({doc, desk: /** @type {any} */ ({titleBarMode: 'system'}), label: () => 'Menu', languageEvent: 'x'}), null);
+});
+
+test('barra de título: só o Alt apertado e solto sozinho abre o menu', () => {
+  const win = new EventTarget();
+  let opened = 0;
+  watchLoneAlt(/** @type {any} */ (win), () => { opened += 1; });
+  const key = (type, key, extra = {}) => win.dispatchEvent(Object.assign(new Event(type), {key, repeat: false, ctrlKey: false, shiftKey: false, metaKey: false}, extra));
+  key('keydown', 'Alt'); key('keyup', 'Alt');
+  assert.equal(opened, 1, 'Alt sozinho');
+  key('keydown', 'Alt'); key('keydown', 'Alt', {repeat: true}); key('keyup', 'Alt');
+  assert.equal(opened, 2, 'Alt segurado com repetição continua sozinho');
+  key('keydown', 'Alt'); key('keydown', 'F4'); key('keyup', 'F4'); key('keyup', 'Alt');
+  assert.equal(opened, 2, 'Alt+F4 não abre');
+  key('keydown', 'Control', {ctrlKey: true}); key('keydown', 'Alt', {ctrlKey: true}); key('keyup', 'Alt');
+  assert.equal(opened, 2, 'AltGr (Ctrl+Alt) não abre');
+  key('keydown', 'Alt'); win.dispatchEvent(new Event('mousedown')); key('keyup', 'Alt');
+  assert.equal(opened, 2, 'clique no meio desarma');
+  key('keyup', 'Alt');
+  assert.equal(opened, 2, 'soltar sem ter apertado não abre');
 });
