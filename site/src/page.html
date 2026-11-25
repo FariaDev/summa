@@ -27,6 +27,18 @@
 <link rel="stylesheet" href="{{base}}assets/style.css">
 <!-- O tema e o acento escolhidos voltam antes da pintura, sem piscar o claro. -->
 <script>try{const p=JSON.parse(localStorage.getItem('summa-site')||'{}');for(const k of ['theme','accent'])if(p[k])document.documentElement.dataset[k]=p[k]}catch{}</script>
+<!-- O main.js só pede o texto da língua depois de carregar os módulos; pré-carregar tudo poupa essa ida e volta. -->
+<link rel="modulepreload" href="{{base}}assets/js/content-{{lang}}.js">
+<link rel="modulepreload" href="{{base}}assets/js/dom.js">
+<link rel="modulepreload" href="{{base}}assets/js/ink.js">
+<link rel="modulepreload" href="{{base}}assets/js/picker.js">
+<link rel="modulepreload" href="{{base}}assets/js/demo.js">
+<link rel="modulepreload" href="{{base}}assets/js/tools.js">
+<link rel="modulepreload" href="{{base}}assets/js/calc.js">
+<link rel="modulepreload" href="{{base}}assets/js/prefs.js">
+<link rel="modulepreload" href="{{base}}assets/js/page.js">
+<link rel="modulepreload" href="{{base}}assets/js/os.js">
+<link rel="modulepreload" href="{{base}}assets/js/handoff.js">
 <script type="module" src="{{base}}assets/js/main.js"></script>
 </head>
 <body>

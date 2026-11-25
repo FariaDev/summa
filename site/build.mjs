@@ -59,6 +59,7 @@ export async function build(args) {
       ...strings,
       ...downloadStrings(downloads, strings, RELEASES_PAGE),
       base: lang.base,
+      lang: lang.code,
       'meta.url': SITE_URL + (lang.dir ? lang.dir + '/' : ''),
       'meta.url.pt': SITE_URL,
       'meta.url.en': SITE_URL + 'en/',

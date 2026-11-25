@@ -107,6 +107,14 @@ async function scenario(browser, base, lang) {
   ok((await active()) === '#conectar', 'aba Conectar fica ativa no fim da página');
   await page.click('.tabs a[href="#perguntas"]'); await page.waitForTimeout(400);
   ok((await active()) === '#perguntas', 'subindo do fim, Perguntas volta a ser a ativa');
+  // Salto do fim ao topo sem passar pelas seções: o observador da faixa de cima ainda acerta.
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForFunction(() => document.querySelector('.tabs a.active')?.getAttribute('href') === '#conectar');
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForFunction(() => document.querySelector('.tabs a.active')?.getAttribute('href') === '#demo', null, {timeout: 3000}).catch(() => {});
+  ok((await active()) === '#demo', 'saltando do fim ao topo, Demo volta a ser a ativa');
+  const preload = await page.$$eval('link[rel=modulepreload]', (ls) => ls.map((l) => l.href.split('/').pop()));
+  ok(preload.includes(`content-${lang}.js`) && !preload.includes(`content-${lang === 'en' ? 'pt' : 'en'}.js`), `pré-carrega só o texto da língua (${preload.join(' ')})`);
   // Conectar: OpenCode Go abre primeiro; cada aba troca o painel, e Instalar não mexe.
   const shown = (s) => page.$$eval(`#${s} [role=tabpanel]`, (ps) => ps.filter((p) => !p.hidden).map((p) => p.dataset.tab).join());
   ok((await shown('conectar')) === 'go', 'Conectar abre no OpenCode Go');
@@ -245,6 +253,25 @@ async function scenario(browser, base, lang) {
 // Sem navigator.share (o Chromium sem tela no Linux não tem), o link vai para a área de transferência.
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
 const IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15';
+// Com movimento normal: o brilho do "lendo…" anda por transform num véu, sem máscara animada.
+async function motionScenario(browser, base) {
+  const page = await browser.newPage({viewport: {width: 1280, height: 900}});
+  await page.goto(base);
+  await page.waitForFunction(() => !document.querySelector('#d-check').disabled, null, {timeout: 60000});
+  await page.click('#d-check');
+  await page.waitForSelector('.work-shine');
+  const shine = await page.$eval('.work-shine', (e) => {
+    const after = getComputedStyle(e, '::after'), self = getComputedStyle(e);
+    return {name: after.animationName, transform: after.transform, mask: self.maskImage || self.webkitMaskImage};
+  });
+  check(shine.name === 'work-shine' && shine.transform.startsWith('matrix') && shine.mask === 'none', `brilho por transform no ::after (${JSON.stringify(shine)})`);
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForFunction(() => document.querySelector('#stage').dataset.offscreen === 'true');
+  const paused = await page.evaluate(() => document.getAnimations().filter((a) => a.animationName === 'work-shine').map((a) => a.playState));
+  check(paused.length > 0 && paused.every((s) => s === 'paused'), `fora da tela o brilho para (${paused.join()})`);
+  await page.close();
+}
+
 async function mobileScenario(browser, base, lang, device, ua) {
   const c = (await import(`../src/assets/js/content-${lang}.js`)).default;
   const ok = (cond, msg) => check(cond, `[${lang} ${device}] ${msg}`);
@@ -277,6 +304,7 @@ try {
   await build({out, releases: join(here, 'fixtures/releases.json'), offline: false});
   const base = `http://127.0.0.1:${server.address().port}/`;
   for (const lang of ['pt', 'en']) await scenario(browser, base, lang);
+  await motionScenario(browser, base);
   await mobileScenario(browser, base, 'pt', 'iphone', IPHONE);
   await mobileScenario(browser, base, 'en', 'ipad', IPAD);
 } finally {
