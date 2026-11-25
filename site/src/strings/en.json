@@ -17,6 +17,9 @@
   "nav.download": "Download",
 
   "hero.pitch": "Study with your PDFs and a tutor that won’t give you the answer before you do.",
+  "egg.intLabel": "Where the integral comes from",
+  "egg.int": "<b>∫</b> is a long S, from <i>summa</i>, “sum”. Leibniz drew it in 1675 to add up infinitely many small parts. Hence the name.",
+  "egg.motto": "<b><i>Solvitur ambulando</i></b>: it is solved by walking. The story goes that when Zeno argued motion was impossible, Diogenes stood up and walked.",
   "hero.download": "Download for",
 
   "xpp.label": "Xournal++ window with the handwritten solution",

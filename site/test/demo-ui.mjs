@@ -94,6 +94,28 @@ async function scenario(browser, base, lang) {
   await page.click('#mini-btn');
   ok((await page.$eval('#stage', (e) => e.dataset.mini)) === 'false', 'sai do mini');
 
+  // Marca do topo: o lema começa no S do nome, e a integral passa do topo e da base dele.
+  const lockGeo = await page.evaluate(() => {
+    const first = (el) => { const t = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode(); const r = document.createRange(); r.setStart(t, 0); r.setEnd(t, 1); return r.getBoundingClientRect(); };
+    const name = first(document.querySelector('.lock')), motto = first(document.querySelector('.motto')), int = document.querySelector('.egg-int svg').getBoundingClientRect();
+    return {dS: motto.left - name.left, top: int.top - name.top, bottom: int.bottom - name.bottom};
+  });
+  ok(Math.abs(lockGeo.dS) <= 3, `lema alinhado ao S do nome (${lockGeo.dS.toFixed(1)} px)`);
+  ok(lockGeo.top < 0 && lockGeo.bottom > 0, `integral passa do topo e da base do nome (${lockGeo.top.toFixed(1)}, ${lockGeo.bottom.toFixed(1)})`);
+  const cardShown = (id) => page.$eval(id, (e) => getComputedStyle(e).visibility === 'visible');
+  await page.hover('.egg-int');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#egg-int')).visibility === 'visible');
+  ok(!(await cardShown('#egg-motto')), 'hover na integral abre só o cartão dela');
+  await page.mouse.move(2, 600);
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#egg-int')).visibility === 'hidden');
+  await page.click('.egg-motto');
+  ok((await page.$eval('.egg-motto', (e) => e.getAttribute('aria-expanded'))) === 'true', 'clique no lema abre o cartão');
+  await page.keyboard.press('Escape');
+  ok((await page.$eval('.egg-motto', (e) => e.getAttribute('aria-expanded'))) === 'false', 'Esc fecha o cartão');
+  ok((await page.$eval('.lock-shine', (e) => getComputedStyle(e).display)) === 'none', 'com movimento reduzido, sem brilho');
+  ok((await page.$eval('#egg-motto', (e) => e.textContent)).includes('Solvitur ambulando'), 'cartão do lema traz o texto');
+  await page.mouse.move(2, 600);
+
   // Navegação nativa do topo
   await page.click('.tabs a[href="#perguntas"]'); await page.waitForTimeout(400);
   const y = await page.$eval('#perguntas', (e) => e.getBoundingClientRect().top);
@@ -286,6 +308,14 @@ async function mobileScenario(browser, base, lang, device, ua) {
   await page.waitForFunction(() => document.querySelector('#xpp-title').textContent);
   const label = () => page.$eval('.os-label', (e) => e.textContent);
   ok((await label()) === c.text.sendToComputer, 'botão vira "Mandar para o computador"');
+  // Sem hover, o toque abre o cartão do lema e um toque fora fecha.
+  await page.tap('.egg-motto');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#egg-motto')).visibility === 'visible');
+  await page.tap('#egg-motto');
+  ok((await page.$eval('.egg-motto', (e) => e.getAttribute('aria-expanded'))) === 'false', 'toque no cartão fecha o cartão do lema');
+  await page.tap('.egg-int');
+  await page.touchscreen.tap(8, 8);
+  ok((await page.$eval('.egg-int', (e) => e.getAttribute('aria-expanded'))) === 'false', 'toque fora fecha o cartão da integral');
   ok((await page.$eval('.get-note', (e) => e.textContent)) === c.text.mobileNote, 'nota diz onde a Summa roda');
   ok(!(await page.$eval('#get-btn', (e) => e.href)).match(/\.(dmg|exe|AppImage)$/), 'botão não aponta para instalador');
   ok((await page.$eval('.top-actions .btn.primary', (e) => e.textContent.trim())) === c.text.sendShort, 'botão do topo vira "Mandar"');
