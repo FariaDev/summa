@@ -98,8 +98,9 @@ test('aviso do atalho antigo: uma vez, só no app instalado',()=>{
 
 test('caminho do app nativo de cada formato',()=>{
  const where=target=>redirect.installedAppPath({target,home:'/home/ana',applications:'/Applications',env:{LOCALAPPDATA:'C:\\Users\\ana\\AppData\\Local'}});
- assert.equal(where('dmg'),'/Applications/Summa.app');
- assert.equal(where('appimage'),'/home/ana/Applications/Summa-x86_64.AppImage');
+ /* Separador do sistema que roda o teste: no Windows, path.join devolve `\`. */
+ assert.equal(where('dmg'),path.join('/Applications','Summa.app'));
+ assert.equal(where('appimage'),path.join('/home/ana','Applications','Summa-x86_64.AppImage'));
  assert.equal(where('exe'),'C:\\Users\\ana\\AppData\\Local\\Programs\\Summa\\electron.exe');
  assert.equal(redirect.installedAppPath({target:'exe',home:'',applications:'',env:{}}),'');
 });
