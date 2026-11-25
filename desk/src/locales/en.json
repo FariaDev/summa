@@ -4,6 +4,7 @@
  "update.switch.appimage": "Install the Linux version (AppImage)",
  "update.switch.confirm": "Your studies stay where they are. Keep the old folder: your runtime still lives there. Install and reopen Summa?",
  "update.switch.busy": "Installing…",
+ "update.switch.note": "Summa now opens from here. You can replace the old shortcut (Dock, Start or menu) with this one; the old one also brings you here.",
  "err.update.switchUnavailable": "No native build is available for this installation.",
  "err.update.switchExists": "{path} already exists. Nothing was replaced. Move it yourself before trying again.",
  "err.update.switchNotWritable": "Summa cannot write to {path}. Check its permissions and try again.",

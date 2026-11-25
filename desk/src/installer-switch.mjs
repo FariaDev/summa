@@ -33,4 +33,14 @@ export async function refreshInstallerSwitch(){
   row.hidden=false;
  }catch{/* Sem IPC disponível não se oferece uma instalação que não pode começar. */}
 }
+/**
+ * Na primeira abertura do app instalado depois da troca, avisa uma vez que o
+ * atalho antigo pode sair e que ele agora traz para cá (#196).
+ * @returns {Promise<void>}
+ * @example await showSwitchNote();
+ */
+export async function showSwitchNote(){
+ try{if((await window.desk.updateResult())?.switchNote)toast(t('update.switch.note'));}
+ catch{/* Sem IPC não há aviso; a partida segue. */}
+}
 window.addEventListener(LANGUAGE_EVENT,()=>{if($('#about-dialog')?.open)refreshInstallerSwitch();});

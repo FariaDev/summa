@@ -27,3 +27,16 @@ test('cancelar não inicia; confirmar chama uma vez e reabilita após falhar',as
   assert.equal(button.disabled,false);
  }
 });
+
+/* #196: o aviso do atalho antigo sai pelo toast só quando o host o entrega. */
+test('aviso da troca aparece só com switchNote',async()=>{
+ const box=document.querySelector('#toast');
+ for(const [result,shown] of [[{status:'applied',switchNote:true},true],[{status:'applied'},false],[null,false]]){
+  box.replaceChildren();
+  window.desk.updateResult=async()=>result;
+  const {showSwitchNote}=await import('../src/installer-switch.mjs');
+  await showSwitchNote();
+  const text=(box.children||[]).map(item=>(item.children||[]).map(node=>node.textContent||'').join(' ')).join(' ');
+  assert.equal(/atalho antigo/.test(text),shown);
+ }
+});

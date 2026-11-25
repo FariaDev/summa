@@ -23,7 +23,7 @@ import {mountFreeModelsBoot,paintFreeSettings,confirmPaidModel} from './study/fr
 import {mountTriageBoot,openTriage} from './triage-loader.mjs';
 import {initModelPicker,noteModelPicked,noteModelUsed} from './model-picker-ui.mjs';import {initEffortStrip} from './effort-strip.mjs';
 import conferirCore from './generated/conferir.core.js';
-import {createFirstRunBoot} from './setup/first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup/setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings/settings-appearance.mjs';import {mountReadingSettings} from './settings/settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings/settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';
+import {createFirstRunBoot} from './setup/first-run-boot.mjs';import {openReleaseNotes,showPendingReleaseNotes} from './release-notes-ui.mjs';import {mountSetupMarkup} from './setup/setup-markup.mjs';import {mountAccentOptions} from './accent-picker.mjs';import {initAppearanceSettings} from './settings/settings-appearance.mjs';import {mountReadingSettings} from './settings/settings-reading.mjs';import {mountInkSettings,initInkSettings} from './settings/settings-ink.mjs';import {createAmbitusPage} from './ambitus-page.mjs';import {showSwitchNote} from './installer-switch.mjs';
 import resumeCore from './generated/resume.core.js';
 
 import {sendGgbRect,freezeGgbView,thawGgbView} from './ggb.mjs';
@@ -796,5 +796,5 @@ try{
  await loadCourse(data);
  renderTabsView();renderMenus();updateReviewBadge();
  if(!isFirstRun()&&engineReady(data))connect().catch(()=>{});
- showTutorState();await showPendingReleaseNotes(data,{firstRun:isFirstRun()});
+ showTutorState();await showPendingReleaseNotes(data,{firstRun:isFirstRun()});showSwitchNote();
 }catch(e){toast(e.message);showTutorState();}
