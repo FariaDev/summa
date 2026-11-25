@@ -56,7 +56,8 @@ async function scenario(browser, base, lang) {
   ok((await page.$eval('#get-btn', (e) => e.href)) === 'https://example.test/Summa-1.4.0-x86_64.AppImage', 'botão aponta para o AppImage');
   ok((await txt('.os-label')) === `${c.text.downloadFor} Linux`, 'rótulo do sistema');
   ok((await txt('.get-meta')).startsWith('v1.4.0'), 'versão do instalador');
-  ok(!(await page.$eval('.os-panel[data-os=linux]', (e) => e.hidden)), 'Instalar abre na aba Linux');
+  ok((await page.$eval('.get-meta .whats-new', (e) => e.href + ' ' + e.textContent)) === `https://github.com/FariaDev/summa/releases/tag/v1.4.0 ${c.text.whatsNew}`, 'o que mudou leva às notas da versão');
+  ok(!(await page.$eval('.os-panel[data-tab=linux]', (e) => e.hidden)), 'Instalar abre na aba Linux');
 
   // Cálculo: dois Conferir e o fim
   await page.click('#d-check'); await settle();
@@ -98,11 +99,44 @@ async function scenario(browser, base, lang) {
   const y = await page.$eval('#perguntas', (e) => e.getBoundingClientRect().top);
   ok(y > -5 && y < 120, `aba Perguntas rola até a seção (top=${Math.round(y)})`);
   ok(await page.$eval('.tabs a[href="#perguntas"]', (e) => e.classList.contains('active')), 'aba ativa acompanha');
+  // A última seção é curta e não chega à faixa do meio: no fim da página ela é a ativa.
+  const active = () => page.$eval('.tabs a.active', (e) => e.getAttribute('href'));
+  await page.click('.tabs a[href="#instalar"]'); await page.waitForTimeout(400);
+  ok((await active()) === '#instalar', 'aba Instalar acompanha');
+  await page.click('.tabs a[href="#conectar"]'); await page.waitForTimeout(400);
+  ok((await active()) === '#conectar', 'aba Conectar fica ativa no fim da página');
+  await page.click('.tabs a[href="#perguntas"]'); await page.waitForTimeout(400);
+  ok((await active()) === '#perguntas', 'subindo do fim, Perguntas volta a ser a ativa');
+  // Conectar: OpenCode Go abre primeiro; cada aba troca o painel, e Instalar não mexe.
+  const shown = (s) => page.$$eval(`#${s} [role=tabpanel]`, (ps) => ps.filter((p) => !p.hidden).map((p) => p.dataset.tab).join());
+  ok((await shown('conectar')) === 'go', 'Conectar abre no OpenCode Go');
+  const installTab = await shown('instalar');
+  await page.click('#conectar [role=tab][data-tab=claude]');
+  ok((await shown('conectar')) === 'claude', 'aba Claude troca o painel');
+  ok((await shown('instalar')) === installTab, 'as abas de Conectar não mexem em Instalar');
+  ok((await page.$eval('#conectar [data-tab=claude] .code', (e) => e.textContent)).includes('opencode auth login claude-agent'), 'Claude mostra os dois comandos');
+  // Teclado: só a aba escolhida entra no Tab; setas, Home e End trocam e levam o foco.
+  const tabIndexes = () => page.$$eval('#conectar [role=tab]', (ts) => ts.map((t) => t.tabIndex).join());
+  ok((await tabIndexes()) === '-1,-1,0,-1,-1,-1', 'só a aba escolhida tem tabindex 0');
+  ok(await page.$eval('#conectar [role=tab][data-tab=claude]', (t) => document.getElementById(t.getAttribute('aria-controls'))?.dataset.tab === 'claude'), 'aria-controls aponta para o painel');
+  await page.focus('#conectar [role=tab][data-tab=claude]');
+  await page.keyboard.press('ArrowRight');
+  ok((await shown('conectar')) === 'grok' && (await page.evaluate(() => document.activeElement.dataset.tab)) === 'grok', 'seta para a direita vai para a próxima aba');
+  await page.keyboard.press('End');
+  ok((await shown('conectar')) === 'other', 'End vai para a última');
+  await page.keyboard.press('ArrowRight');
+  ok((await shown('conectar')) === 'go', 'depois da última, volta à primeira');
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.press('Home');
+  ok((await shown('conectar')) === 'go' && (await shown('instalar')) === installTab, 'Home volta à primeira sem mexer em Instalar');
+  await page.click('#perguntas details:nth-of-type(5) summary');
+  await page.click('#perguntas a[href="#conectar"]'); await page.waitForTimeout(400);
+  ok((await active()) === '#conectar', 'a pergunta do plano leva a Conectar');
+  await page.click('.tabs a[href="#perguntas"]'); await page.waitForTimeout(400);
   // Fora da demo, Ctrl+K e Ctrl+Z ficam com o navegador.
   await page.keyboard.press('Control+k');
   ok(await page.$eval('#palette', (e) => e.hidden), 'Ctrl+K longe da demo não abre a paleta');
   await page.click('.get-meta a[data-os=mac]'); await page.waitForTimeout(400);
-  ok(!(await page.$eval('.os-panel[data-os=mac]', (e) => e.hidden)), 'link do sistema no topo escolhe a aba de Instalar');
+  ok(!(await page.$eval('.os-panel[data-tab=mac]', (e) => e.hidden)), 'link do sistema no topo escolhe a aba de Instalar');
   await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(200);
 
   // Ferramentas
@@ -194,6 +228,10 @@ async function scenario(browser, base, lang) {
         wins: [...document.querySelectorAll('.win')].map((e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.right)]; }),
       }));
       ok(r.doc <= r.vw + 1 && r.wins.every(([l, rr]) => l >= -1 && rr <= r.vw + 1), `largura ${w}${mini ? ' mini' : ''}: sem estouro`);
+      // Os nomes de arquivo e o do modelo cabem inteiros (antes saíam "derivadas.xop…" e "DeepSeek V4.1 F…").
+      const cut = await page.$$eval('#xpp-title, #model-name, #r1-doc, #r2-doc', (els) => els
+        .filter((e) => e.offsetParent && e.scrollWidth > e.clientWidth).map((e) => `${e.id} "${e.textContent}" ${e.scrollWidth}/${e.clientWidth}`));
+      ok(!cut.length, `largura ${w}${mini ? ' mini' : ''}: sem texto cortado ${cut.join(', ')}`);
     }
     if (shots && (w === 1440 || w === 390)) await page.screenshot({path: join(shots, `site-${lang}-${w}.png`), fullPage: true});
   }
@@ -203,6 +241,35 @@ async function scenario(browser, base, lang) {
   await page.close();
 }
 
+// Celular e tablet: sem instalador, os botões mandam o link para o computador.
+// Sem navigator.share (o Chromium sem tela no Linux não tem), o link vai para a área de transferência.
+const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
+const IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15';
+async function mobileScenario(browser, base, lang, device, ua) {
+  const c = (await import(`../src/assets/js/content-${lang}.js`)).default;
+  const ok = (cond, msg) => check(cond, `[${lang} ${device}] ${msg}`);
+  const context = await browser.newContext({userAgent: ua, viewport: {width: 390, height: 844}, hasTouch: true, isMobile: device === 'iphone'});
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const page = await context.newPage();
+  // O iPad se diz Mac; quem o separa é o toque.
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'maxTouchPoints', {get: () => 5}));
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(base + (lang === 'en' ? 'en/' : ''));
+  await page.waitForFunction(() => document.querySelector('#xpp-title').textContent);
+  const label = () => page.$eval('.os-label', (e) => e.textContent);
+  ok((await label()) === c.text.sendToComputer, 'botão vira "Mandar para o computador"');
+  ok((await page.$eval('.get-note', (e) => e.textContent)) === c.text.mobileNote, 'nota diz onde a Summa roda');
+  ok(!(await page.$eval('#get-btn', (e) => e.href)).match(/\.(dmg|exe|AppImage)$/), 'botão não aponta para instalador');
+  ok((await page.$eval('.top-actions .btn.primary', (e) => e.textContent.trim())) === c.text.sendShort, 'botão do topo vira "Mandar"');
+  ok((await page.$eval('.stage', (e) => e.getBoundingClientRect().height)) < 760, 'no celular a demo encolhe (antes ocupava 862 px)');
+  await page.click('#get-btn');
+  ok((await label()) === c.text.linkCopied, 'sem compartilhamento, avisa que copiou');
+  ok((await page.evaluate(() => navigator.clipboard.readText())) === base + (lang === 'en' ? 'en/' : ''), 'copia o link da página, sem âncora');
+  ok(errors.length === 0, 'sem erros no console: ' + errors.join(' | '));
+  await context.close();
+}
+
 const out = await mkdtemp(join(tmpdir(), 'summa-site-ui-'));
 const server = await serve(out);
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? {executablePath: process.env.CHROMIUM_PATH} : {});
@@ -210,6 +277,8 @@ try {
   await build({out, releases: join(here, 'fixtures/releases.json'), offline: false});
   const base = `http://127.0.0.1:${server.address().port}/`;
   for (const lang of ['pt', 'en']) await scenario(browser, base, lang);
+  await mobileScenario(browser, base, 'pt', 'iphone', IPHONE);
+  await mobileScenario(browser, base, 'en', 'ipad', IPAD);
 } finally {
   await browser.close();
   server.close();
