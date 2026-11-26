@@ -61,3 +61,20 @@ export function fakeDmgFromEarlierSwitch(){
  fs.writeFileSync(path.join(configDir,'previous-install-source.json'),JSON.stringify({path:fixture.source}));
  return {...fixture,bundle,payload,configDir};
 }
+
+/** App do DMG com `runtimePath` próprio e o alias de ~/Applications no Summa.app do clone (#196). */
+export function fakeDmgWithSourceAlias({symlink=true}={}){
+ const fixture=fakeDmgFromEarlierSwitch();
+ fs.rmSync(path.join(fixture.configDir,'previous-install-source.json'));
+ const runtime=path.join(fixture.root,'learning-canvas','desk','.runtime');
+ fs.mkdirSync(runtime,{recursive:true});
+ const sourceBundle=path.join(fixture.source,'Summa.app');
+ const sourcePayload=path.join(sourceBundle,'Contents','Resources','app');
+ fs.mkdirSync(sourcePayload,{recursive:true});
+ fs.writeFileSync(path.join(sourcePayload,'install-source.json'),JSON.stringify({path:fixture.source}));
+ const home=path.join(fixture.root,'home'),alias=path.join(home,'Applications','Summa.app');
+ fs.mkdirSync(path.dirname(alias),{recursive:true});
+ if(symlink)fs.symlinkSync(sourceBundle,alias);
+ else fs.writeFileSync(alias,'finder alias');
+ return {...fixture,runtime,home,alias,sourceBundle,sourcePayload};
+}

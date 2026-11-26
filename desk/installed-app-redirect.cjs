@@ -99,9 +99,20 @@ function redirectRecord({runtime,deskDir,testMode,platform=process.platform,env=
  if(env.npm_lifecycle_event==='start')return null;
  if(testMode&&env.SUMMA_REDIRECT_IN_TEST!=='1')return null;
  if(isReleaseInstall({deskDir,platform,env}))return null;
+ return replacedCopyRecord({runtime,root:installRoot(deskDir),platform});
+}
+
+/**
+ * O registro da troca, se ela substituiu a cópia em `root` e o app instalado
+ * ainda existe. O `npm run install-app` usa para não recriar o alias (#196).
+ * @param {{runtime:string,root:string,platform?:string}} input
+ * @returns {InstalledAppRecord|null}
+ * @example replacedCopyRecord({runtime,root:'/Users/ana/summa'})?.path // '/Applications/Summa.app'
+ */
+function replacedCopyRecord({runtime,root,platform=process.platform}){
  const record=readInstalledApp(runtime);
  if(!record||!fs.existsSync(record.path))return null;
- return samePlace(record.from,installRoot(deskDir),platform)?record:null;
+ return samePlace(record.from,root,platform)?record:null;
 }
 
 /**
@@ -150,4 +161,4 @@ function takeSwitchNote({runtime,deskDir,platform=process.platform,env=process.e
  return true;
 }
 
-module.exports={installedAppFile,installedAppPath,recordInstalledApp,readInstalledApp,isReleaseInstall,redirectRecord,launchInstalledApp,redirectToInstalledApp,takeSwitchNote};
+module.exports={installedAppFile,installedAppPath,recordInstalledApp,readInstalledApp,isReleaseInstall,redirectRecord,replacedCopyRecord,launchInstalledApp,redirectToInstalledApp,takeSwitchNote};

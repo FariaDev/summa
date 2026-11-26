@@ -19,6 +19,7 @@ import {ensureElectronBinary} from './electron-binary.mjs';
 import {ensureVisualHelper} from './visual-helper.mjs';
 import {doctorContext} from '../doctor-checks.mjs';
 import {runtimeKeepNotice} from './runtime-notice.mjs';
+import installedApp from '../installed-app-redirect.cjs';
 
 const desk=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const root=path.resolve(desk,'..');
@@ -100,6 +101,16 @@ const alias=path.join(userApps,'Summa.app');
 /* #190: além das variantes do nome novo, some o alias antigo. */
 for(const name of fs.readdirSync(userApps)){
  if(/^Summa\.app( \d+| alias.*)?$/.test(name)||/^Mesa de Estudos\.app( \d+| alias.*)?$/.test(name))fs.rmSync(path.join(userApps,name),{recursive:true,force:true});
+}
+/* #196: se esta cópia foi trocada pelo app do DMG, o alias faria o Launchpad e o
+   Spotlight mostrarem dois "Summa" de novo; o app do DMG o apaga, e este script
+   não o recria. O bundle daqui continua atualizado e abre o app do DMG. */
+const replaced=installedApp.replacedCopyRecord({runtime:doctorContext().runtime,root});
+if(replaced){
+ console.log('Atualizado:',app);
+ console.log('Sem atalho em ~/Applications: esta cópia foi substituída por',replaced.path);
+ console.log(runtimeKeepNotice(doctorContext().runtime,root));
+ process.exit(0);
 }
 execFileSync('osascript',['-e',[
  'tell application "Finder"',

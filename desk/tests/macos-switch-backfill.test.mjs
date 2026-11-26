@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {fakeDmgFromEarlierSwitch,fakeAppSpawn} from './fake-installed-app.mjs';
+import {fakeDmgFromEarlierSwitch,fakeDmgWithSourceAlias,fakeFinderAlias,fakeAppSpawn} from './fake-installed-app.mjs';
 const require=createRequire(import.meta.url);
 const {adoptEarlierMacosSwitch}=require('../macos-switch-backfill.cjs');
+const {removeReplacedAlias}=require('../switch-alias-cleanup.cjs');
 const redirect=require('../installed-app-redirect.cjs');
 
 /* #196: a troca feita pela 1.4.1 não gravava installed-app.json; o atalho antigo
    seguia abrindo a cópia de código mesmo depois de ela receber a 1.4.2. */
-const adopt=(fixture,extra={})=>adoptEarlierMacosSwitch({runtime:fixture.runtime,deskDir:fixture.payload,configDir:fixture.configDir,version:'1.4.2',platform:'darwin',now:5,...extra});
+const adopt=(fixture,extra={})=>adoptEarlierMacosSwitch({runtime:fixture.runtime,deskDir:fixture.payload,configDir:fixture.configDir,version:'1.4.2',platform:'darwin',now:5,home:fixture.home||path.join(fixture.root,'home'),resolveAlias:()=>'',...extra});
 
 test('o app do DMG grava o registro da troca antiga e a cópia de código passa a desviar',()=>{
  const fixture=fakeDmgFromEarlierSwitch();
@@ -39,4 +40,34 @@ test('sem procedência, com runtime de outra pasta, fora do DMG ou fora do macOS
  assert.equal(adopt(linux,{platform:'linux'}),false);
  for(const fixture of [none,notRelease,linux])assert.equal(redirect.readInstalledApp(fixture.runtime),null);
  assert.equal(redirect.readInstalledApp(ownRuntime),null);
+});
+
+/* Repro do Mac do autor: `runtimePath` aponta para outra pasta, não há
+   previous-install-source.json e o alias de ~/Applications abre o clone. */
+test('com runtime próprio, a cópia substituída sai do alias de ~/Applications e o alias some',()=>{
+ const fixture=fakeDmgWithSourceAlias();
+ assert.equal(adopt(fixture),true);
+ const record=redirect.readInstalledApp(fixture.runtime);
+ assert.deepEqual({from:record.from,path:record.path},{from:fixture.source,path:fixture.bundle});
+ const removed=removeReplacedAlias({runtime:fixture.runtime,deskDir:fixture.payload,log:fixture.log,platform:'darwin',home:fixture.home,resolveAlias:()=>''});
+ assert.deepEqual(removed,[fixture.alias]);
+ assert.equal(fs.existsSync(fixture.sourceBundle),true,'o bundle do clone fica');
+});
+
+test('alias do Finder também identifica a cópia substituída',()=>{
+ const fixture=fakeDmgWithSourceAlias({symlink:false});
+ const finder=fakeFinderAlias({[fixture.alias]:fixture.sourceBundle});
+ assert.equal(adopt(fixture,{resolveAlias:finder.resolveAlias}),true);
+ assert.equal(redirect.readInstalledApp(fixture.runtime).from,fixture.source);
+});
+
+test('alias para app de release ou com procedência de outra pasta não grava registro',()=>{
+ const release=fakeDmgWithSourceAlias();
+ fs.writeFileSync(path.join(release.sourcePayload,'release-install.json'),JSON.stringify({kind:'macos-dmg'}));
+ const elsewhere=fakeDmgWithSourceAlias();
+ fs.writeFileSync(path.join(elsewhere.sourcePayload,'install-source.json'),JSON.stringify({path:path.join(elsewhere.root,'outro')}));
+ for(const fixture of [release,elsewhere]){
+  assert.equal(adopt(fixture),false);
+  assert.equal(redirect.readInstalledApp(fixture.runtime),null);
+ }
 });

@@ -62,4 +62,4 @@ function removeReplacedAlias({runtime,deskDir,log,platform=process.platform,home
  return removed;
 }
 
-module.exports={removeReplacedAlias};
+module.exports={removeReplacedAlias,aliasTarget,ALIAS_NAMES};
