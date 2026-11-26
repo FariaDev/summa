@@ -36,10 +36,15 @@ export async function refreshInstallerSwitch(){
 /**
  * Na primeira abertura do app instalado depois da troca, avisa uma vez que o
  * atalho antigo pode sair e que ele agora traz para cá (#196).
+ * Durante a primeira abertura (setup) não pergunta ao host: o aviso cobria o
+ * botão principal e não diz nada a quem nem configurou a Summa. Sem perguntar,
+ * o aviso não é gasto e aparece na abertura seguinte.
+ * @param {{firstRun?: boolean}} [options]
  * @returns {Promise<void>}
- * @example await showSwitchNote();
+ * @example await showSwitchNote({firstRun: isFirstRun()});
  */
-export async function showSwitchNote(){
+export async function showSwitchNote({firstRun = false} = {}){
+ if(firstRun)return;
  try{if((await window.desk.updateResult())?.switchNote)toast(t('update.switch.note'));}
  catch{/* Sem IPC não há aviso; a partida segue. */}
 }
