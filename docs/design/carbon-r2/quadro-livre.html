@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quadro da aba Livre</title>
+<!-- Protótipo do Quadro na aba Livre (rodada 2, 2026-11-25), para discutir.
+     Peças: cena (quadro-cena.js), roteiro (quadro-kit-roteiro.js, com os roteiros em
+     *.roteiro.js) e desenho narrado (quadro-kit-desenho.js, com o roteiro em
+     pitagoras.desenho.js); a casca é quadro-shell.js. -->
+<link rel="stylesheet" href="quadro.css">
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5v14M18 6l-9 6 9 6z"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M18 5v14M6 6l9 6-9 6z"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-max" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></symbol>
+  <symbol id="i-scene" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M10 13.5v4l3.5-2z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.4 11-9.2 9.2a6 6 0 0 1-8.5-8.5l8.6-8.6A4 4 0 1 1 18 8.8l-8.6 8.6a2 2 0 0 1-2.8-2.8l8.5-8.5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+</svg>
+
+<div class="window" id="win">
+  <header class="app-bar">
+    <nav class="tabs" role="tablist" aria-label="Matérias" id="course-tabs">
+      <button type="button" class="tab" role="tab" data-course="livre" aria-selected="true">Livre</button>
+      <button type="button" class="tab" role="tab" data-course="calc" aria-selected="false">Cálculo I</button>
+      <button type="button" class="tab" role="tab" data-course="fis" aria-selected="false">Física I</button>
+      <button type="button" class="tab" role="tab" data-course="alg" aria-selected="false">Algoritmos II</button>
+      <button type="button" class="icon-btn tab-add" aria-label="Nova matéria"><svg class="icon"><use href="#i-plus"/></svg></button>
+    </nav>
+    <span class="bar-divider bar-extra"></span>
+    <button type="button" class="bar-item bar-extra"><svg class="icon"><use href="#i-book"/></svg>Caderno 0</button>
+    <button type="button" class="bar-item bar-extra"><svg class="icon"><use href="#i-cube"/></svg>GeoGebra</button>
+    <div class="bar-actions">
+      <button type="button" class="bar-search"><svg class="icon"><use href="#i-search"/></svg>Buscar<kbd>⌘K</kbd></button>
+      <button type="button" class="icon-btn" aria-label="Ajustes"><svg class="icon"><use href="#i-settings"/></svg></button>
+    </div>
+  </header>
+
+  <!-- ===== Aba Livre ===== -->
+  <main class="workspace" id="livre">
+    <section class="board" aria-label="Quadro">
+      <div class="panel-head">
+        <div class="tabs piece-tabs" role="tablist" aria-label="Peças do quadro" id="piece-tabs"></div>
+        <span class="grow"></span>
+        <button type="button" class="btn btn-ghost bar-extra">Abrir PDF</button>
+        <button type="button" class="btn btn-primary">PDF pelo tutor</button>
+        <button type="button" class="icon-btn" aria-label="Mais opções da sessão"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+
+      <div class="board-body">
+        <div class="board-feed">
+
+          <article class="piece" id="p-cena" data-kind="cena" data-icon="scene" data-title="Lançamento oblíquo" aria-label="Cena: Lançamento oblíquo">
+            <div class="piece-head">
+              <span class="piece-title">Lançamento oblíquo</span>
+              <span class="piece-kind">cena · 5 passos</span>
+              <span class="piece-origin bar-extra"><svg class="icon"><use href="#i-link"/></svg>de Física I · Cinemática 2D</span>
+              <span class="grow"></span>
+              <button type="button" class="icon-btn" id="c-restart" aria-label="Recomeçar"><svg class="icon"><use href="#i-restart"/></svg></button>
+              <button type="button" class="icon-btn" aria-label="Tela cheia"><svg class="icon"><use href="#i-max"/></svg></button>
+              <button type="button" class="icon-btn" aria-label="Mais opções da cena"><svg class="icon"><use href="#i-menu"/></svg></button>
+            </div>
+            <div class="stage">
+              <canvas id="cv" aria-label="Trajetória da bola"></canvas>
+              <div class="gate" id="gate" hidden>
+                <p>A subida levou <span class="mono" id="g-tp">1,02 s</span>. Quanto tempo ela leva para descer?</p>
+                <div class="gate-row">
+                  <input class="field-control" id="g-in" inputmode="decimal" placeholder="s" aria-label="Sua previsão em segundos">
+                  <button type="button" class="btn btn-primary" id="g-check">Conferir</button>
+                  <button type="button" class="btn btn-ghost" id="g-skip">Ver</button>
+                </div>
+                <p class="gate-fb" id="g-fb" hidden></p>
+              </div>
+            </div>
+            <div class="transport">
+              <button type="button" class="play-btn" id="c-play"><svg class="icon icon-fill" data-when="paused"><use href="#i-play"/></svg><svg class="icon" data-when="playing" hidden><use href="#i-pause"/></svg><span>Tocar</span></button>
+              <button type="button" class="icon-btn" id="c-prev" aria-label="Passo anterior"><svg class="icon"><use href="#i-prev"/></svg></button>
+              <button type="button" class="icon-btn" id="c-next" aria-label="Próximo passo"><svg class="icon"><use href="#i-next"/></svg></button>
+              <div class="scrub" id="scrub" role="slider" aria-label="Tempo da cena" tabindex="0"></div>
+              <span class="t-read" id="t-read">t = 0,00 s</span>
+              <button type="button" class="speed" id="speed">1×</button>
+              <button type="button" class="ask-btn" id="c-ask" hidden><svg class="icon"><use href="#i-ask"/></svg>Perguntar aqui</button>
+            </div>
+            <div class="scene-grid">
+              <div>
+                <div class="narration" aria-live="polite">
+                  <div class="narr-step"><span class="mono" id="n-step">1 / 5</span><span id="n-label">Lançamento</span></div>
+                  <div class="narr-text" id="n-text"></div>
+                </div>
+                <div class="params">
+                  <div class="param"><label for="v0">v₀</label><input type="range" id="v0" min="8" max="30" step="1" value="20"><output id="v0-o">20 m/s</output></div>
+                  <div class="param"><label for="th">θ</label><input type="range" id="th" min="10" max="80" step="1" value="30"><output id="th-o">30°</output></div>
+                </div>
+              </div>
+              <div>
+                <div class="conta"><h3>Conta</h3><p id="conta"></p></div>
+                <div class="stats">
+                  <div class="stat"><span>Alcance</span><b id="s-r">—</b></div>
+                  <div class="stat"><span>Altura máx.</span><b id="s-h">—</b></div>
+                  <div class="stat"><span>Tempo de voo</span><b id="s-t">—</b></div>
+                </div>
+                <div class="trials">
+                  <h3>Tentativas</h3>
+                  <div class="trial-row trial-head"><span></span><span>v₀</span><span>θ</span><span>alcance</span><span>altura</span></div>
+                  <div id="trials"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Roteiros: o kit (quadro-kit-roteiro.js) monta a peça a partir do roteiro. -->
+          <article class="piece" id="p-rot"></article>
+          <article class="piece" id="p-arv"></article>
+
+          <article class="piece" id="p-draw" data-kind="desenho" data-icon="pen" data-title="Teorema de Pitágoras" aria-label="Desenho narrado: Teorema de Pitágoras">
+            <div class="piece-head">
+              <span class="piece-title">Teorema de Pitágoras</span>
+              <span class="piece-kind">desenho narrado · 7 passos</span>
+              <span class="grow"></span>
+              <button type="button" class="icon-btn" id="d-restart" aria-label="Recomeçar"><svg class="icon"><use href="#i-restart"/></svg></button>
+              <button type="button" class="icon-btn" aria-label="Tela cheia"><svg class="icon"><use href="#i-max"/></svg></button>
+              <button type="button" class="icon-btn" aria-label="Mais opções do desenho"><svg class="icon"><use href="#i-menu"/></svg></button>
+            </div>
+            <div class="draw-stage"><svg id="dsvg" viewBox="0 0 720 370" role="img" aria-label="Desenho do teorema de Pitágoras"></svg></div>
+            <div class="transport">
+              <button type="button" class="play-btn" id="d-play"><svg class="icon icon-fill" data-when="paused"><use href="#i-play"/></svg><svg class="icon" data-when="playing" hidden><use href="#i-pause"/></svg><span>Tocar</span></button>
+              <button type="button" class="icon-btn" id="d-prev" aria-label="Passo anterior"><svg class="icon"><use href="#i-prev"/></svg></button>
+              <button type="button" class="icon-btn" id="d-next" aria-label="Próximo passo"><svg class="icon"><use href="#i-next"/></svg></button>
+              <div class="scrub" id="d-scrub" role="slider" aria-label="Tempo do desenho" tabindex="0"></div>
+              <span class="t-read" id="d-read">0:00</span>
+              <button type="button" class="speed" id="d-speed">1×</button>
+              <button type="button" class="text-btn bar-extra" id="d-all">Ver inteiro</button>
+              <button type="button" class="ask-btn" id="d-ask" hidden><svg class="icon"><use href="#i-ask"/></svg>Perguntar aqui</button>
+            </div>
+            <div class="draw-narr" aria-live="polite">
+              <div class="narr-step"><span class="mono" id="dn-step">1 / 7</span><span id="dn-label"></span></div>
+              <div class="narr-text" id="dn-text"></div>
+            </div>
+          </article>
+
+          <article class="piece" id="p-pdf" data-kind="pdf" data-icon="file" data-title="Lista 3" aria-label="PDF: Lista 3">
+            <div class="board-pdf">
+              <article class="paper"><h2>Lista 3 — Cinemática 2D</h2>
+                <p>1. Uma bola é lançada com <i>v</i>₀ = 20 m/s a 30° da horizontal. Encontre o alcance e a altura máxima.</p>
+                <p>2. Para que ângulo o alcance é máximo? Justifique sem derivar.</p>
+                <p>3. Mostre que o tempo de subida é igual ao de descida quando o ponto de chegada está na altura de saída.</p></article>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <aside class="tutor" aria-label="Tutor">
+      <div class="tutor-head">
+        <div class="tutor-titles">
+          <button type="button" class="tutor-title-btn" id="sess-btn" aria-haspopup="dialog" aria-expanded="false"><span class="tutor-title" id="sess-title">Revisão para a P2</span><svg class="icon"><use href="#i-down"/></svg></button>
+          <button type="button" class="tutor-context" id="ctx-btn" aria-haspopup="dialog" aria-expanded="false">
+            <svg class="icon"><use href="#i-link"/></svg><span id="ctx-label">Física I · Cinemática 2D</span><svg class="icon"><use href="#i-down"/></svg>
+          </button>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Chat na tela inteira"><svg class="icon"><use href="#i-max"/></svg></button>
+        <button type="button" class="icon-btn" aria-label="Mais opções do tutor"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+
+      <div class="float-panel link-pop" id="link-pop" role="dialog" aria-label="Ligar conversas" hidden>
+        <p class="float-title">Ligar conversas</p>
+        <input class="field-control" placeholder="Buscar conversas" aria-label="Buscar conversas">
+        <div id="link-list"></div>
+        <p class="link-foot">O tutor lê o resumo e a questão ativa de cada uma e pode abrir os PDFs dela. Nada muda nas conversas ligadas.</p>
+      </div>
+
+      <div class="float-panel sess-pop" id="sess-pop" role="dialog" aria-label="Sessões da Livre" hidden>
+        <p class="float-title">Sessões</p>
+        <div id="sess-list"></div>
+      </div>
+
+      <div class="chat-scroll" id="chat"></div>
+
+      <form class="composer" id="composer">
+        <div class="float-panel payload" id="payload" hidden>
+          <p class="float-title">Vai com a mensagem</p>
+          <div id="payload-rows"></div>
+        </div>
+        <div class="chips" id="chips"></div>
+        <label class="sr-only" for="msg">Mensagem para o tutor</label>
+        <textarea class="composer-input" id="msg" rows="2" placeholder="Pergunte ao tutor…"></textarea>
+        <div class="composer-foot">
+          <button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon"><use href="#i-clip"/></svg></button>
+          <button type="button" class="model-pick"><span class="status-dot"></span>claude · sonnet<svg class="icon"><use href="#i-down"/></svg></button>
+          <span class="grow"></span>
+          <button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon"><use href="#i-up"/></svg></button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <!-- ===== Física I: a peça fica na conversa, como hoje, e abre no quadro ===== -->
+  <main class="course" id="course" hidden>
+    <section class="reader" aria-label="Leitor">
+      <div class="panel-head reader-head"><span class="k">Problemas</span><span>Lista 3 · Cinemática 2D</span><span class="grow"></span><span class="mono k">2 / 4</span></div>
+      <div class="reader-body"><article class="paper"><h2>Lista 3 — Cinemática 2D</h2>
+        <p>1. Uma bola é lançada com <i>v</i>₀ = 20 m/s a 30° da horizontal. Encontre o alcance e a altura máxima.</p>
+        <p>2. Para que ângulo o alcance é máximo? Justifique sem derivar.</p></article></div>
+    </section>
+    <aside class="tutor" aria-label="Tutor da matéria">
+      <div class="tutor-head">
+        <div class="tutor-titles"><div class="tutor-title">Cinemática 2D</div><div class="tutor-context is-static">Lista 3 · p. 2</div></div>
+        <button type="button" class="icon-btn" aria-label="Mais opções do tutor"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+      <div class="chat-scroll" id="course-chat"></div>
+      <form class="composer" onsubmit="return false">
+        <textarea class="composer-input" rows="2" placeholder="Pergunte ao tutor…" aria-label="Mensagem para o tutor"></textarea>
+        <div class="composer-foot"><button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon"><use href="#i-clip"/></svg></button><span class="grow"></span><button type="button" class="send-btn" aria-label="Enviar"><svg class="icon"><use href="#i-up"/></svg></button></div>
+      </form>
+    </aside>
+  </main>
+</div>
+
+<div class="proto" id="proto" hidden>
+  <button type="button" data-preset="perguntar">Cena: perguntar</button>
+  <button type="button" data-preset="respondido">Cena: resposta</button>
+  <button type="button" data-preset="previsao">Previsão</button>
+  <button type="button" data-preset="roteiro">Roteiro</button>
+  <button type="button" data-preset="estruturas">Estruturas</button>
+  <button type="button" data-preset="ver-peca">ver_peca</button>
+  <button type="button" data-preset="desenho">Desenho</button>
+  <button type="button" data-preset="desenho-perguntar">Desenho: perguntar</button>
+  <button type="button" data-preset="desenho-resposta">Desenho: resposta</button>
+  <button type="button" data-preset="ligar">Ligar conversas</button>
+  <button type="button" data-preset="sessoes">Sessões</button>
+  <button type="button" data-preset="materia">Na matéria</button>
+  <span class="sep"></span>
+  <button type="button" id="p-theme">Tema</button>
+  <button type="button" id="p-accent">Acento</button>
+</div>
+
+<script>window.PROTO = window.PROTO || {preset:'desenho', embed:false};</script>
+<script src="quadro-base.js"></script>
+<script src="quadro-cena.js"></script>
+<script src="busca-binaria.roteiro.js"></script>
+<script src="arvore-busca.roteiro.js"></script>
+<script src="quadro-kit-roteiro.js"></script>
+<script src="pitagoras.desenho.js"></script>
+<script src="quadro-kit-desenho.js"></script>
+<script src="quadro-shell.js"></script>
+</body>
+</html>
