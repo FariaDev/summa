@@ -19,6 +19,12 @@ function isMacosRelease({deskDir=__dirname,platform=process.platform}={}){
  return platform==='darwin'&&readJson(path.join(deskDir,'release-install.json'))?.kind==='macos-dmg';
 }
 
+/**
+ * Caminho do original de um alias do Finder; vazio se não resolve em 5 s.
+ * @param {string} alias
+ * @returns {string}
+ * @example resolveFinderAlias('/Users/ana/Applications/Summa.app') // '/Users/ana/summa/Summa.app/'
+ */
 function resolveFinderAlias(alias){
  try{
   return execFileSync('osascript',['-e',`tell application "Finder" to get POSIX path of (original item of alias file (POSIX file ${JSON.stringify(alias)}) as alias)`],{encoding:'utf8',timeout:5000,stdio:['ignore','pipe','ignore']}).trim();
@@ -53,4 +59,4 @@ function previousMacosRuntime({configDir,deskDir=__dirname,home=os.homedir(),res
  return '';
 }
 
-module.exports={isMacosRelease,previousMacosRuntime};
+module.exports={isMacosRelease,previousMacosRuntime,resolveFinderAlias};
