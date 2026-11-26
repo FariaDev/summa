@@ -87,13 +87,16 @@ function samePlace(a,b,platform){
 /**
  * O registro que manda esta cópia abrir o app instalado, ou null para abrir normal.
  * Nunca redireciona o próprio app instalado, outro checkout que divide o runtime,
- * os testes (sem `SUMMA_REDIRECT_IN_TEST=1`) nem quem pediu `SUMMA_NO_REDIRECT=1`.
+ * os testes (sem `SUMMA_REDIRECT_IN_TEST=1`), o `npm start` nem quem pediu `SUMMA_NO_REDIRECT=1`.
  * @param {{runtime:string,deskDir:string,testMode:boolean,platform?:string,env?:NodeJS.ProcessEnv}} input
  * @returns {InstalledAppRecord|null}
  * @example redirectRecord({runtime,deskDir:__dirname,testMode:false})?.path // '/Applications/Summa.app'
  */
 function redirectRecord({runtime,deskDir,testMode,platform=process.platform,env=process.env}){
  if(env.SUMMA_NO_REDIRECT==='1')return null;
+ /* Quem digita `npm start` no clone quer rodar o código, não o app instalado (#196).
+    Os atalhos (Summa.app, .lnk, .desktop) abrem o Electron direto, sem o npm. */
+ if(env.npm_lifecycle_event==='start')return null;
  if(testMode&&env.SUMMA_REDIRECT_IN_TEST!=='1')return null;
  if(isReleaseInstall({deskDir,platform,env}))return null;
  const record=readInstalledApp(runtime);

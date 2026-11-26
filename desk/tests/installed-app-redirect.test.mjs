@@ -104,3 +104,10 @@ test('caminho do app nativo de cada formato',()=>{
  assert.equal(where('exe'),'C:\\Users\\ana\\AppData\\Local\\Programs\\Summa\\electron.exe');
  assert.equal(redirect.installedAppPath({target:'exe',home:'',applications:'',env:{}}),'');
 });
+
+/* #196: depois da troca, o `npm start` no clone abria o app instalado no lugar do código. */
+test('npm start no clone roda o código; o atalho da mesma cópia desvia',()=>{
+ const fixture=fakeInstalledApp();
+ assert.equal(run(fixture,{env:{npm_lifecycle_event:'start'}}).opened,false);
+ assert.equal(run(fixture,{env:{}}).opened,true);
+});
