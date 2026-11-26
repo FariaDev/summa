@@ -1,5 +1,16 @@
 # Novidades da Summa
 
+## 1.4.2
+
+Uma Summa só depois de trocar para o instalador. Quem tem a 1.4.1 recebe pelo **Atualizar**.
+
+### Correções
+
+- **O atalho antigo abre a Summa instalada:** depois de **Instalar a versão para…**, o atalho antigo (Dock, Iniciar ou menu) abre o app instalado em vez de uma segunda Summa com os mesmos estudos. Na primeira abertura do app instalado, um aviso diz que dá para trocar o atalho. Rodar `npm start` no clone continua rodando o código (#215, #218).
+- **Uma Summa só no Launchpad:** no Mac, o app do DMG apaga o atalho antigo de `~/Applications` que apontava para a cópia substituída. Quem já tinha trocado pela 1.4.1 também é atendido: basta atualizar as duas cópias (#216, #219).
+- **Atualização em andamento:** se uma atualização já está rodando, a Summa avisa que reabre sozinha quando ela terminar, em vez de pedir para apagar um arquivo de trava (#213).
+- **Backup:** o registro da troca para o instalador fica fora do backup, porque vale só para esta máquina (#217).
+
 ## 1.4.1
 
 Janela mais limpa no Windows e no Linux, menus traduzidos e um caminho do zip para o instalador. Quem tem a 1.4.0 recebe pelo **Atualizar**.
