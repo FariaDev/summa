@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Livros</title>
+<!-- Protótipo da aba Livros (rodadas 1 e 2, 2026-11-26), para discutir. A aba
+     entra na barra depois do Caderno e do GeoGebra, que fica (#234). O livro
+     abre num leitor com a cortina (leitura ativa) sobre o próprio PDF; o texto
+     da página é de exemplo, escrito para o protótipo, não é do livro. Casca em
+     livros.js; base comum em quadro-base.js. -->
+<link rel="stylesheet" href="quadro.css">
+<link rel="stylesheet" href="livros.css">
+</head>
+<body>
+<svg class="sr-only" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-graph" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M6 16c3-8 6-9 9-5s4 2 5-1"/></symbol>
+  <symbol id="i-shelf" viewBox="0 0 24 24"><path d="M4 4v16M9 4v16M14 5l4.5 14.5M3 20h18"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.4 11-9.2 9.2a6 6 0 0 1-8.5-8.5l8.6-8.6A4 4 0 1 1 18 8.8l-8.6 8.6a2 2 0 0 1-2.8-2.8l8.5-8.5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+  <symbol id="i-ask" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+  <symbol id="i-max" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+</svg>
+
+<div class="window" id="win">
+  <header class="app-bar">
+    <nav class="tabs" role="tablist" aria-label="Matérias">
+      <button type="button" class="tab" role="tab" aria-selected="false">Livre</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Cálculo I</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Física I</button>
+      <button type="button" class="tab" role="tab" aria-selected="false">Algoritmos II</button>
+      <button type="button" class="icon-btn tab-add" aria-label="Nova matéria"><svg class="icon"><use href="#i-plus"/></svg></button>
+    </nav>
+    <span class="bar-divider"></span>
+    <button type="button" class="bar-item"><svg class="icon"><use href="#i-book"/></svg>Caderno <span class="mono k" id="due">3</span></button>
+    <button type="button" class="bar-item"><svg class="icon"><use href="#i-graph"/></svg>GeoGebra</button>
+    <button type="button" class="bar-item" aria-current="page" id="books-tab"><svg class="icon"><use href="#i-shelf"/></svg>Livros</button>
+    <div class="bar-actions">
+      <button type="button" class="bar-search bar-extra"><svg class="icon"><use href="#i-search"/></svg>Buscar<kbd>⌘K</kbd></button>
+      <button type="button" class="icon-btn" aria-label="Ajustes"><svg class="icon"><use href="#i-settings"/></svg></button>
+    </div>
+  </header>
+
+  <!-- ===== Estante ===== -->
+  <main class="shelf" id="shelf">
+    <div class="shelf-grid" id="shelf-grid"></div>
+  </main>
+
+  <!-- ===== Leitor do livro ===== -->
+  <main class="workspace" id="reader" hidden>
+    <section class="book" aria-label="Livro">
+      <div class="panel-head book-head">
+        <button type="button" class="icon-btn" id="to-shelf" aria-label="Voltar à estante"><svg class="icon"><use href="#i-left"/></svg></button>
+        <button type="button" class="toc-btn" id="toc-btn" aria-haspopup="dialog" aria-expanded="false"><span class="toc-ch">1 · Introduction to algorithms</span><svg class="icon"><use href="#i-down"/></svg></button>
+        <span class="grow"></span>
+        <span class="mono k">p. 6 / 256</span>
+        <label class="switch bar-extra"><input type="checkbox" id="active-read" checked><span>Leitura ativa</span></label>
+        <button type="button" class="icon-btn" id="book-more" aria-label="Mais opções do livro" title="Ver os blocos (no protótipo)"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+
+      <div class="float-panel toc-pop" id="toc-pop" role="dialog" aria-label="Sumário" hidden>
+        <div id="toc-list"></div>
+      </div>
+
+      <div class="blocos-strip" id="blocos-strip" hidden>
+        <b>Blocos da página</b><span class="blocos-sel" id="blocos-sel" role="toolbar" aria-label="Blocos escolhidos"></span><span class="grow"></span>
+        <button type="button" class="btn btn-ghost">Desfazer</button><button type="button" class="btn btn-primary" id="blocos-done">Pronto</button>
+      </div>
+
+      <div class="book-body" id="book-body">
+        <article class="page" id="page"></article>
+      </div>
+
+      <div class="read-bar" id="read-bar">
+        <button type="button" class="play-btn" id="reveal"><svg class="icon"><use href="#i-down"/></svg><span>Revelar</span></button>
+        <div class="sec-track" id="sec-track" aria-label="Seções do capítulo"></div>
+        <span class="t-read" id="sec-read"></span>
+      </div>
+    </section>
+
+    <aside class="tutor" aria-label="Tutor do livro">
+      <div class="tutor-head">
+        <div class="tutor-titles">
+          <div class="tutor-title">Grokking Algorithms</div>
+          <div class="tutor-context is-static" id="where">Cap. 1 · Binary search · p. 6</div>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Mais opções do tutor"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+      <div class="chat-scroll" id="chat"></div>
+      <form class="composer" id="composer" onsubmit="return false">
+        <div class="float-panel payload" id="payload" hidden>
+          <p class="float-title">Vai com a mensagem</p>
+          <div id="payload-rows"></div>
+        </div>
+        <div class="chips" id="chips"></div>
+        <label class="sr-only" for="msg">Mensagem para o tutor</label>
+        <textarea class="composer-input" id="msg" rows="2" placeholder="Pergunte ao tutor…"></textarea>
+        <div class="composer-foot">
+          <button type="button" class="icon-btn" aria-label="Anexar"><svg class="icon"><use href="#i-clip"/></svg></button>
+          <button type="button" class="model-pick"><span class="status-dot"></span>claude · sonnet<svg class="icon"><use href="#i-down"/></svg></button>
+          <span class="grow"></span>
+          <button type="submit" class="send-btn" aria-label="Enviar"><svg class="icon"><use href="#i-up"/></svg></button>
+        </div>
+      </form>
+    </aside>
+  </main>
+</div>
+
+<div class="proto" id="proto" hidden>
+  <button type="button" data-preset="estante">Estante</button>
+  <button type="button" data-preset="importar">Importar</button>
+  <button type="button" data-preset="leitura">Leitura</button>
+  <button type="button" data-preset="perguntar">Perguntar aqui</button>
+  <button type="button" data-preset="resposta">Resposta</button>
+  <button type="button" data-preset="conferir">Fim da seção</button>
+  <button type="button" data-preset="sumario">Sumário</button>
+  <button type="button" data-preset="blocos">Ver os blocos</button>
+  <button type="button" data-preset="exercicio">Exercício</button>
+  <span class="sep"></span>
+  <button type="button" id="p-theme">Tema</button>
+  <button type="button" id="p-accent">Acento</button>
+</div>
+
+<script>window.PROTO = window.PROTO || {preset:'leitura', embed:false};</script>
+<script src="quadro-base.js"></script>
+<script src="livros-pagina.js"></script>
+<script src="livros-exercicio.js"></script>
+<script src="livros.js"></script>
+</body>
+</html>
