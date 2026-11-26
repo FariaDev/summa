@@ -131,6 +131,9 @@ const DENY_NAMES = new Set([
   'session-env', 'shell-snapshots', 'file-history', 'mcp-cache.json',
   'mcp-npx-cache.json', 'models-store.json', 'search-keys.json', 'update.json',
   'update.lock', 'settings.local.json', 'cache',
+  /* #196: estado desta máquina (qual cópia a troca substituiu e por qual app). Restaurado
+     em outra máquina, desviaria um checkout ou repetiria o aviso do atalho antigo. */
+  'installed-app.json',
   '.ds_store', 'thumbs.db', 'desktop.ini', 'node_modules', '.git', '.cache',
 ]);
 const DENY_SUFFIX = ['.log', '.pem', '.key', '.crt', '.p12', '.pfx', '.tmp', '.part', '.swp', '.lock'];

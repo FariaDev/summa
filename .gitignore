@@ -16,6 +16,8 @@ desk/.design-test-*/
 desk/.help-shot-*/
 desk/.installed-test-*/
 desk/.test-runtime-*/
+# Capturas do tests/pdf-notes-reopen-ui.mjs (NOTES_REOPEN_ARTIFACTS muda o lugar).
+desk/.notes-reopen-artifacts/
 desk/*.png
 docs/archive/
 visual-check/windows
