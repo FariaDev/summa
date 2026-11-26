@@ -1,6 +1,6 @@
 {
   "name": "summa",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Summa: dois PDFs, calculadora e tutor numa janela, ao lado do Xournal++",
   "main": "main.cjs",
   "scripts": {

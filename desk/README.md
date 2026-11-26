@@ -2,7 +2,7 @@
 
 O **OpenCode** é o motor visível e o padrão. O código do Claude Code continua no repositório para testes e sessões antigas, mas não aparece nesta versão; o Pi foi aposentado e sessões JSONL antigas abrem só para leitura. Cada conversa guarda seu motor; sem escolha, a Mesa usa o motor visível (`visible-engines.cjs`).
 
-A versão atual é a `1.4.2` (`package.json`). Feche a Mesa instalada e execute `npm start` em `desk/` para rodar o código. Implementar e testar não atualiza automaticamente o aplicativo instalado.
+A versão atual é a `1.4.3` (`package.json`). Feche a Mesa instalada e execute `npm start` em `desk/` para rodar o código. Implementar e testar não atualiza automaticamente o aplicativo instalado.
 
 O código do Claude usa o SDK oficial `0.3.314` e o Claude Code instalado (faixa aceita em `src/tested-versions.json`: de `2.1.296` até a série `2.1`), sem passar pelo motor local. O caminho do executável é detectado sozinho (o campo em Configurações → Pastas e programas só aparece com o motor visível, fora de produção). `npm run doctor:claude` verifica instalação, versão e estado de login; para o Claude, a Mesa não faz login nem guarda tokens. Para o teste autenticado, faça login no Claude Code original. Após conectar, Modelo usa o catálogo nativo do Claude Code; Esforço aparece quando o modelo declara suporte. A escolha fica na conversa e “Padrão do Claude Code” devolve o controle ao padrão nativo. Em **Mais opções** do tutor, a compactação manual é do motor e a automática não tem controle (Claude e OpenCode compactam sozinhos). Quiz e perguntas do tutor aparecem como cartões na Mesa, com opções ou resposta livre; o resultado chega numa mensagem nova quando você conclui, sem prender a resposta.
 
