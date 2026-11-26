@@ -111,3 +111,13 @@ test('npm start no clone roda o código; o atalho da mesma cópia desvia',()=>{
  assert.equal(run(fixture,{env:{npm_lifecycle_event:'start'}}).opened,false);
  assert.equal(run(fixture,{env:{}}).opened,true);
 });
+
+/* O `npm run update` da cópia de código recriava o alias de ~/Applications
+   que o app do DMG tinha apagado (#196). */
+test('install-app sabe quando esta cópia foi substituída',()=>{
+ const fixture=fakeInstalledApp({target:'dmg'});
+ assert.equal(redirect.replacedCopyRecord({runtime:fixture.runtime,root:fixture.source}).path,fixture.appPath);
+ assert.equal(redirect.replacedCopyRecord({runtime:fixture.runtime,root:path.join(fixture.root,'outro')}),null);
+ fs.rmSync(fixture.appPath);
+ assert.equal(redirect.replacedCopyRecord({runtime:fixture.runtime,root:fixture.source}),null,'sem o app instalado, o alias volta');
+});
