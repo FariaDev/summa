@@ -1,5 +1,15 @@
 # Novidades da Summa
 
+## 1.4.3
+
+Primeira tela do setup mais limpa e a troca para o instalador terminada também em quem usa uma pasta de runtime própria. Quem tem a 1.4.x recebe pelo **Atualizar**.
+
+### Correções
+
+- **Cor de destaque no setup:** na primeira tela, as opções de cor viram cartões alinhados aos de idioma, em vez de botões soltos (#230).
+- **Aviso da troca não cobre o setup:** o aviso de que o atalho antigo traz para o app instalado espera a próxima abertura quando a Summa abre no setup, em vez de cobrir o botão principal (#231).
+- **Uma Summa só no Launchpad, com runtime próprio:** no Mac, o app do DMG acha a cópia substituída pelo atalho de `~/Applications` mesmo quando a pasta de runtime foi trocada nas configurações, e o `npm run update` dessa cópia não recria o atalho (#232).
+
 ## 1.4.2
 
 Uma Summa só depois de trocar para o instalador. Quem tem a 1.4.1 recebe pelo **Atualizar**.
