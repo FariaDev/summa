@@ -40,3 +40,17 @@ test('aviso da troca aparece só com switchNote',async()=>{
   assert.equal(/atalho antigo/.test(text),shown);
  }
 });
+
+/* Na primeira abertura o aviso cobria o botão principal do setup: espera a próxima abertura sem gastar o aviso. */
+test('na primeira abertura o aviso da troca espera e nem pergunta ao host',async()=>{
+ const box=document.querySelector('#toast');
+ box.replaceChildren();
+ let asked=0;
+ window.desk.updateResult=async()=>{asked++;return {switchNote:true};};
+ const {showSwitchNote}=await import('../src/installer-switch.mjs');
+ await showSwitchNote({firstRun:true});
+ assert.equal(asked,0,'o host não gasta o aviso');
+ assert.equal((box.children||[]).length,0);
+ await showSwitchNote({firstRun:false});
+ assert.equal(asked,1);
+});

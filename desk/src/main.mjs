@@ -796,5 +796,5 @@ try{
  await loadCourse(data);
  renderTabsView();renderMenus();updateReviewBadge();
  if(!isFirstRun()&&engineReady(data))connect().catch(()=>{});
- showTutorState();await showPendingReleaseNotes(data,{firstRun:isFirstRun()});showSwitchNote();
+ showTutorState();await showPendingReleaseNotes(data,{firstRun:isFirstRun()});showSwitchNote({firstRun:isFirstRun()});
 }catch(e){toast(e.message);showTutorState();}
