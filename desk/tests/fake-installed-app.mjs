@@ -48,3 +48,16 @@ export function fakeDmgAfterSwitch(){
  fs.mkdirSync(path.join(sourceBundle,'Contents'),{recursive:true});
  return {...fixture,payload,home,userApps,sourceBundle};
 }
+
+/** App do DMG que herdou o runtime do clone pela 1.4.1, sem registro da troca (#196). */
+export function fakeDmgFromEarlierSwitch(){
+ const fixture=fakeInstalledApp({target:'dmg',record:false});
+ const bundle=path.join(fixture.root,'Applications','Release.app');
+ const payload=path.join(bundle,'Contents','Resources','app');
+ fs.mkdirSync(payload,{recursive:true});
+ fs.writeFileSync(path.join(payload,'release-install.json'),JSON.stringify({kind:'macos-dmg'}));
+ const configDir=path.join(fixture.root,'config');
+ fs.mkdirSync(configDir,{recursive:true});
+ fs.writeFileSync(path.join(configDir,'previous-install-source.json'),JSON.stringify({path:fixture.source}));
+ return {...fixture,bundle,payload,configDir};
+}
