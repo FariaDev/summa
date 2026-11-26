@@ -126,6 +126,14 @@ async function assertAccentLabels(page,language){
  assert.equal(widths.length,2,`${language}: dois rótulos de acento`);
  assert.ok(boxes[1].x>=boxes[0].x+boxes[0].width,`${language}: os rótulos do acento não se sobrepõem (${JSON.stringify(boxes)})`);
  for(const label of widths)assert.ok(label.scrollWidth<=label.clientWidth,`${language}: "${label.text}" cabe inteiro (${label.scrollWidth} > ${label.clientWidth})`);
+ /* As cores eram bolinhas soltas fora da grade: agora são cartões nas mesmas
+    colunas e com a mesma largura dos cartões de idioma logo acima. */
+ const languages=page.locator('#setup-language button');
+ const columns=[await languages.nth(0).boundingBox(),await languages.nth(1).boundingBox()];
+ for(const i of [0,1]){
+  assert.ok(Math.abs(boxes[i].x-columns[i].x)<=1,`${language}: a cor ${i+1} começa na coluna do idioma (${boxes[i].x} vs ${columns[i].x})`);
+  assert.ok(Math.abs(boxes[i].width-columns[i].width)<=1,`${language}: a cor ${i+1} tem a largura do idioma (${boxes[i].width} vs ${columns[i].width})`);
+ }
 }
 
 const setupFacts=page=>page.evaluate(()=>{

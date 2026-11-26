@@ -124,8 +124,14 @@ body[data-first-run] #setup[data-dragging] .setup-card{outline-color:var(--accen
 /* #88: eram 6 colunas de quando havia 6 acentos; com dois, cada coluna ficava
    com 43px e o rótulo nowrap invadia a vizinha ("Graphite" cortado). Duas
    colunas que crescem até o texto, como o #25 nas Configurações. */
-.setup-accent .accent-options{grid-template-columns:repeat(2,minmax(max-content,1fr))}
-.setup-accent .accent-option{padding:0 var(--space-2);gap:6px}
+/* As duas cores eram bolinhas soltas com o rótulo embaixo, fora da grade dos
+   cartões de idioma logo acima. Agora são cartões do mesmo tamanho e com o mesmo
+   estado marcado, com a cor ao lado do nome; as Configurações não mudam. */
+.setup-accent .accent-options{display:flex;gap:8px;width:auto}
+.setup-accent .accent-option{width:200px;min-width:0;height:44px;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;padding:0 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:var(--fs-md);font-weight:600;color:var(--fg-strong)}
+.setup-accent .accent-option:hover{background:var(--hover)}
+.setup-accent .accent-option[aria-checked="true"]{border-color:var(--accent-paper);background:var(--tint,var(--hover));font-weight:600}
+.setup-accent .accent-dot{width:16px;height:16px;outline:0}
 .setup-folder-remove{align-self:flex-start;margin:2px 0 0;font-size:var(--fs-sm)}
 #setup-language button{width:200px;height:56px;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding:0 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);text-align:left;color:var(--fg-strong)}
 #setup-language button span{font-size:var(--fs-sm);color:var(--muted)}
